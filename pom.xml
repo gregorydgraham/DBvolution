@@ -7,7 +7,7 @@
 	<version>0.9.45-SNAPSHOT</version>
 	<packaging>jar</packaging>
     
-	<name>DBvolution</name>
+	<name>DBvolution Website @ IO</name>
 	<description>
 		Advanced Library to Remove Object Relational Impedance. 
 		DBvolution translates all database concepts into Object Oriented concepts, allowing you to spend all your time writing Java rather than fixing broken and awkward SQL.
