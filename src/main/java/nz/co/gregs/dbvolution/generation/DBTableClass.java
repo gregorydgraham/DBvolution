@@ -27,174 +27,181 @@ import nz.co.gregs.dbvolution.datatypes.DBUnknownDatatype;
  */
 public class DBTableClass {
 
-	private final long serialversionUIDBValue = 1L;
+    private final long serialversionUIDBValue = 1L;
 
-	private final Class<DBUnknownDatatype> unknownDatatype = DBUnknownDatatype.class;
-	private String packageName;
-	private String className;
-	private String tableName;
-	private String javaSource;
-	private final List<DBTableField> fields = new ArrayList<DBTableField>();
-	private final String lineSeparator = System.getProperty("line.separator");
-	private final String conceptBreak = lineSeparator + lineSeparator;
+    private final Class<DBUnknownDatatype> unknownDatatype = DBUnknownDatatype.class;
+    private String packageName;
+    private String className;
+    private String tableName;
+    private String javaSource;
+    private final List<DBTableField> fields = new ArrayList<DBTableField>();
+    private final String lineSeparator = System.getProperty("line.separator");
+    private final String conceptBreak = lineSeparator + lineSeparator;
+    private final String tableSchema;
 
-	/**
-	 * Constructor with required information for automatically creating a DBRow
-	 * class.
-	 *
-	 * @param tableName tableName
-	 * @param packageName packageName
-	 * @param className className
-	 */
-	public DBTableClass(String tableName, String packageName, String className) {
-		this.tableName = tableName;
-		this.packageName = packageName;
-		this.className = className;
-	}
+    /**
+     * Constructor with required information for automatically creating a DBRow
+     * class.
+     *
+     * @param tableName tableName
+     * @param tableSchema
+     * @param packageName packageName
+     * @param className className
+     */
+    public DBTableClass(String tableName, String tableSchema, String packageName, String className) {
+        this.tableName = tableName;
+        this.tableSchema = tableSchema;
+        this.packageName = packageName;
+        this.className = className;
+    }
 
-	/**
-	 * Returns the package and class name formatted for use in Java code.
-	 *
-	 * <p>
-	 * For a class named AClass in the package com.acme.database {@link #getFullyQualifiedName()
-	 * } will return "com.acme.database.AClass".
-	 *
-	 * @return a String of the fully qualified class name.
-	 */
-	public String getFullyQualifiedName() {
-		return this.getPackageName() + "." + getClassName();
-	}
+    /**
+     * Returns the package and class name formatted for use in Java code.
+     *
+     * <p>
+     * For a class named AClass in the package com.acme.database {@link #getFullyQualifiedName()
+     * } will return "com.acme.database.AClass".
+     *
+     * @return a String of the fully qualified class name.
+     */
+    public String getFullyQualifiedName() {
+        return this.getPackageName() + "." + getClassName();
+    }
 
-	/**
-	 * Transforms the information encapsulated within the DBTableClass into valid
-	 * Java source code.
-	 *
-	 * <p>
-	 * After all available information has been set for this DBTableClass, this
-	 * method is called to generate the required Java source.
-	 *
-	 * @return a String of the source code of the new DBRow class.
-	 */
-	public String generateJavaSource() {
-		StringBuilder javaSrc = new StringBuilder();
-		final String outputPackageName = this.getPackageName();
-		if (outputPackageName != null) {
-			javaSrc.append("package ").append(outputPackageName).append(";");
-			javaSrc.append(conceptBreak);
-		}
+    /**
+     * Transforms the information encapsulated within the DBTableClass into
+     * valid Java source code.
+     *
+     * <p>
+     * After all available information has been set for this DBTableClass, this
+     * method is called to generate the required Java source.
+     *
+     * @return a String of the source code of the new DBRow class.
+     */
+    public String generateJavaSource() {
+        StringBuilder javaSrc = new StringBuilder();
+        final String outputPackageName = this.getPackageName();
+        if (outputPackageName != null) {
+            javaSrc.append("package ").append(outputPackageName).append(";");
+            javaSrc.append(conceptBreak);
+        }
 
-		final String importPackageName = DBRow.class.getPackage().getName();
-		javaSrc.append("import ").append(importPackageName).append(".*;");
-		javaSrc.append(lineSeparator);
-		javaSrc.append("import ").append(importPackageName).append(".datatypes.*;");
-		javaSrc.append(lineSeparator);
-		javaSrc.append("import ").append(importPackageName).append(".datatypes.spatial2D.*;");
-		javaSrc.append(lineSeparator);
-		javaSrc.append("import ").append(importPackageName).append(".annotations.*;");
-		javaSrc.append(conceptBreak);
+        final String importPackageName = DBRow.class.getPackage().getName();
+        javaSrc.append("import ").append(importPackageName).append(".*;");
+        javaSrc.append(lineSeparator);
+        javaSrc.append("import ").append(importPackageName).append(".datatypes.*;");
+        javaSrc.append(lineSeparator);
+        javaSrc.append("import ").append(importPackageName).append(".datatypes.spatial2D.*;");
+        javaSrc.append(lineSeparator);
+        javaSrc.append("import ").append(importPackageName).append(".annotations.*;");
+        javaSrc.append(conceptBreak);
 
-		final String tableNameAnnotation = DBTableName.class.getSimpleName();
-		final String dbRowClassName = DBRow.class.getSimpleName();
-		final String dbColumnAnnotation = DBColumn.class.getSimpleName();
-		final String primaryKeyAnnotation = DBPrimaryKey.class.getSimpleName();
-		final String autoIncrementAnnotation = DBAutoIncrement.class.getSimpleName();
-		final String foreignKeyAnnotation = DBForeignKey.class.getSimpleName();
-		final String unknownJavaSQLTypeAnnotation = DBUnknownJavaSQLType.class.getSimpleName();
+        final String tableNameAnnotation = DBTableName.class.getSimpleName();
+        final String dbRowClassName = DBRow.class.getSimpleName();
+        final String dbColumnAnnotation = DBColumn.class.getSimpleName();
+        final String primaryKeyAnnotation = DBPrimaryKey.class.getSimpleName();
+        final String autoIncrementAnnotation = DBAutoIncrement.class.getSimpleName();
+        final String foreignKeyAnnotation = DBForeignKey.class.getSimpleName();
+        final String unknownJavaSQLTypeAnnotation = DBUnknownJavaSQLType.class.getSimpleName();
 
-		javaSrc.append("@").append(tableNameAnnotation).append("(\"").append(this.getTableName()).append("\") ");
-		javaSrc.append(lineSeparator);
-		javaSrc.append("public class ").append(this.getClassName()).append(" extends ").append(dbRowClassName).append(" {");
-		javaSrc.append(conceptBreak);
+        if (this.tableSchema == null || "PUBLIC".equals(tableSchema) || "dbo".equals(tableSchema)) {
+            javaSrc.append("@").append(tableNameAnnotation).append("(\"").append(this.getTableName()).append("\") ");
+        } else {
+            javaSrc.append("@").append(tableNameAnnotation).append("(value=\"").append(this.getTableName()).append("\", schema=\"").append(this.tableSchema).append("\") ");
+        }
+        javaSrc.append(lineSeparator);
+        javaSrc.append("public class ").append(this.getClassName()).append(" extends ").append(dbRowClassName).append(" {");
+        javaSrc.append(conceptBreak);
 
-		javaSrc.append("    public static final long serialVersionUID = ").append(serialversionUIDBValue).append("L;");
-		javaSrc.append(conceptBreak);
+        javaSrc.append("    public static final long serialVersionUID = ").append(serialversionUIDBValue).append("L;");
+        javaSrc.append(conceptBreak);
 
-		for (DBTableField field : getFields()) {
-			if (field.comments == null || field.comments.isEmpty()) {
-				javaSrc.append("    @").append(dbColumnAnnotation).append("(\"").append(field.columnName).append("\")");
-			} else {
-				javaSrc.append("    @").append(dbColumnAnnotation).append("(value=\"").append(field.columnName).append("\"")
-						.append(", comments=\"").append(field.comments.replaceAll("\"", "\\\"")).append(")");
-			}
-			javaSrc.append(lineSeparator);
-			if (field.isPrimaryKey) {
-				javaSrc.append("    @").append(primaryKeyAnnotation).append(lineSeparator);
-			}
-			if (field.isAutoIncrement) {
-				javaSrc.append("    @").append(autoIncrementAnnotation).append(lineSeparator);
-			}
-			if (field.isForeignKey) {
-				javaSrc.append("    @").append(foreignKeyAnnotation).append("(").append(field.referencesClass).append(".class)");
-				javaSrc.append(lineSeparator);
-			}
-			if (unknownDatatype.equals(field.columnType)) {
+        for (DBTableField field : getFields()) {
+            if (field.comments == null || field.comments.isEmpty()) {
+                javaSrc.append("    @").append(dbColumnAnnotation).append("(\"").append(field.columnName).append("\")");
+            } else {
+                javaSrc.append("    @").append(dbColumnAnnotation).append("(value=\"").append(field.columnName).append("\"")
+                        .append(", comments=\"").append(field.comments.replaceAll("\"", "\\\"")).append(")");
+            }
+            javaSrc.append(lineSeparator);
+            if (field.isPrimaryKey) {
+                javaSrc.append("    @").append(primaryKeyAnnotation).append(lineSeparator);
+            }
+            if (field.isAutoIncrement) {
+                javaSrc.append("    @").append(autoIncrementAnnotation).append(lineSeparator);
+            }
+            if (field.isForeignKey) {
+                javaSrc.append("    @").append(foreignKeyAnnotation).append("(").append(field.referencesClass).append(".class)");
+                javaSrc.append(lineSeparator);
+            }
+            if (unknownDatatype.equals(field.columnType)) {
 
-				javaSrc.append("    @").append(unknownJavaSQLTypeAnnotation).append("(").append(field.javaSQLDatatype).append(")");
-				javaSrc.append(lineSeparator);
-			}
-			javaSrc.append("    public ").append(field.columnType.getSimpleName()).append(" ").append(field.fieldName).append(" = new ").append(field.columnType.getSimpleName()).append("();");
-			javaSrc.append(conceptBreak);
-		}
-		javaSrc.append("}");
-		javaSrc.append(conceptBreak);
+                javaSrc.append("    @").append(unknownJavaSQLTypeAnnotation).append("(").append(field.javaSQLDatatype).append(")");
+                javaSrc.append(lineSeparator);
+            }
+            javaSrc.append("    public ").append(field.columnType.getSimpleName()).append(" ").append(field.fieldName).append(" = new ").append(field.columnType.getSimpleName()).append("();");
+            javaSrc.append(conceptBreak);
+        }
+        javaSrc.append("}");
+        javaSrc.append(conceptBreak);
 
-		this.javaSource = javaSrc.toString();
-		return this.getJavaSource();
-	}
+        this.javaSource = javaSrc.toString();
+        return this.getJavaSource();
+    }
 
-	/**
-	 * @return the packageName
-	 */
-	public String getPackageName() {
-		return packageName;
-	}
+    /**
+     * @return the packageName
+     */
+    public String getPackageName() {
+        return packageName;
+    }
 
-	/**
-	 * @param packageName the packageName to set
-	 */
-	private void setPackageName(String packageName) {
-		this.packageName = packageName;
-	}
+    /**
+     * @param packageName the packageName to set
+     */
+    private void setPackageName(String packageName) {
+        this.packageName = packageName;
+    }
 
-	/**
-	 * @return the fields
-	 */
-	public List<DBTableField> getFields() {
-		return fields;
-	}
+    /**
+     * @return the fields
+     */
+    public List<DBTableField> getFields() {
+        return fields;
+    }
 
-	/**
-	 * @return the javaSource
-	 */
-	public String getJavaSource() {
-		return javaSource;
-	}
+    /**
+     * @return the javaSource
+     */
+    public String getJavaSource() {
+        return javaSource;
+    }
 
-	/**
-	 * @return the tableName
-	 */
-	public String getTableName() {
-		return tableName;
-	}
+    /**
+     * @return the tableName
+     */
+    public String getTableName() {
+        return tableName;
+    }
 
-	/**
-	 * @param tableName the tableName to set
-	 */
-	private void setTableName(String tableName) {
-		this.tableName = tableName;
-	}
+    /**
+     * @param tableName the tableName to set
+     */
+    private void setTableName(String tableName) {
+        this.tableName = tableName;
+    }
 
-	/**
-	 * @return the className
-	 */
-	public String getClassName() {
-		return className;
-	}
+    /**
+     * @return the className
+     */
+    public String getClassName() {
+        return className;
+    }
 
-	/**
-	 * @param className the className to set
-	 */
-	private void setClassName(String className) {
-		this.className = className;
-	}
+    /**
+     * @param className the className to set
+     */
+    private void setClassName(String className) {
+        this.className = className;
+    }
 }

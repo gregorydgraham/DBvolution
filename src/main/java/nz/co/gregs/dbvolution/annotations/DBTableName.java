@@ -40,4 +40,10 @@ public @interface DBTableName {
 	 * @return the table name.
 	 */
 	String value();
+	/**
+	 * The raw table name as stored in the database.
+	 *
+	 * @return the table name.
+	 */
+	String schema() default "";
 }

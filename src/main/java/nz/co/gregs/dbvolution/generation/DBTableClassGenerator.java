@@ -309,9 +309,10 @@ public class DBTableClassGenerator {
 			try {
 				while (tables.next()) {
 					final String tableName = tables.getString("TABLE_NAME");
+					final String tableSchema = tables.getString("TABLE_SCHEM");
 					if (tableName.matches(database.getDefinition().getSystemTableExclusionPattern())) {
 						final String className = toClassCase(tableName);
-						DBTableClass dbTableClass = new DBTableClass(tableName, packageName, className);
+						DBTableClass dbTableClass = new DBTableClass(tableName, tableSchema, packageName, className);
 
 						ResultSet primaryKeysRS = metaData.getPrimaryKeys(catalog, schema, dbTableClass.getTableName());
 						List<String> pkNames = new ArrayList<String>();
