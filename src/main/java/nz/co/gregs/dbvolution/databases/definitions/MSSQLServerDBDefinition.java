@@ -125,14 +125,19 @@ public class MSSQLServerDBDefinition extends DBDefinition {
 
 	@Override
 	public String formatTableName(DBRow table) {
-		return "[" + table.getTableName() + "]";
+		final String schemaName = table.getSchemaName();
+		if (table.getSchemaName() == null || "".equals(schemaName)) {
+			return "[" + table.getTableName() + "]";
+		} else {
+			return "[" + table.getSchemaName() + "].[" + table.getTableName() + "]";
+		}
 	}
 
 	@Override
 	protected String formatNameForDatabase(final String sqlObjectName) {
 		if (RESERVED_WORDS.contains(sqlObjectName.toUpperCase())) {
 			return ("O" + sqlObjectName.hashCode()).replaceAll("^[_-]", "O").replaceAll("-", "_");
-		}
+	}
 		return sqlObjectName;
 	}
 
@@ -175,8 +180,8 @@ public class MSSQLServerDBDefinition extends DBDefinition {
 	 * like it or not.
 	 *
 	 * <p>
-	 * While this seems useful, in fact it prevents checking for incorrect strings
-	 * and breaks the industrial standard.
+	 * While this seems useful, in fact it prevents checking for incorrect
+	 * strings and breaks the industrial standard.
 	 *
 	 * @param firstSQLExpression the first string value to compare
 	 * @param secondSQLExpression the second string value to compare
@@ -223,8 +228,8 @@ public class MSSQLServerDBDefinition extends DBDefinition {
 	}
 
 	/**
-	 * Wraps the provided SQL snippet in a statement that the length of the value
-	 * of the snippet.
+	 * Wraps the provided SQL snippet in a statement that the length of the
+	 * value of the snippet.
 	 *
 	 * @param enclosedValue	enclosedValue
 	 * @return SQL snippet
@@ -261,7 +266,7 @@ public class MSSQLServerDBDefinition extends DBDefinition {
 
 	@Override
 	public String doBooleanToIntegerTransform(String booleanExpression) {
-		return "(case when ("+booleanExpression + ") then 1 else 0 end)";
+		return "(case when (" + booleanExpression + ") then 1 else 0 end)";
 	}
 
 //	@Override
@@ -387,6 +392,7 @@ public class MSSQLServerDBDefinition extends DBDefinition {
 	public boolean supportsComparingBooleanResults() {
 		return false;
 	}
+
 	/**
 	 * MS SQLServer does not support the LEASTOF operation natively.
 	 *
@@ -419,12 +425,12 @@ public class MSSQLServerDBDefinition extends DBDefinition {
 	}
 
 	/**
-	 * Transforms a SQL snippet of a number expression into a character expression
-	 * for this database.
+	 * Transforms a SQL snippet of a number expression into a character
+	 * expression for this database.
 	 *
 	 * @param numberExpression	numberExpression
-	 * @return a String of the SQL required to transform the number supplied into
-	 * a character or String type.
+	 * @return a String of the SQL required to transform the number supplied
+	 * into a character or String type.
 	 */
 	@Override
 	public String doNumberToStringTransform(String numberExpression) {
@@ -480,7 +486,7 @@ public class MSSQLServerDBDefinition extends DBDefinition {
 			return super.transformToStorableType(columnExpression);
 		}
 	}
-	
+
 	@Override
 	public String doPoint2DEqualsTransform(String firstPoint, String secondPoint) {
 		return "(" + Point2DFunctions.EQUALS + "((" + firstPoint + "), (" + secondPoint + "))=1)";
@@ -598,6 +604,7 @@ public class MSSQLServerDBDefinition extends DBDefinition {
 
 		return "geometry::STGeomFromText('POLYGON ((" + str + "))', 0)";
 	}
+
 	@Override
 	public String transformCoordinateArrayToDatabasePolygon2DFormat(List<String> coordinateSQL) {
 
@@ -621,7 +628,7 @@ public class MSSQLServerDBDefinition extends DBDefinition {
 		StringBuilder str = new StringBuilder();
 		String separator = "";
 		for (String point : pointSQL) {
-			System.out.println(""+point);
+			System.out.println("" + point);
 			final String coordsOnly = point.replaceAll("geometry::STGeomFromText \\('POINT \\(", "").replaceAll("\\)',0\\)", "");
 			str.append(separator).append(coordsOnly);
 			separator = ",";

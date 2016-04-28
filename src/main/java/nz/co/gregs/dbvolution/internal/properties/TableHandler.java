@@ -53,8 +53,8 @@ class TableHandler {
 	}
 
 	/**
-	 * Indicates whether this class maps to a database table. {@code true} always
-	 * with the present implementation.
+	 * Indicates whether this class maps to a database table. {@code true}
+	 * always with the present implementation.
 	 *
 	 * @return TRUE if the class represents a DB table, otherwise FALSE.
 	 */
@@ -64,8 +64,8 @@ class TableHandler {
 
 	/**
 	 * Gets the explicitly or implicitly indicated table name. Defaulted to the
-	 * value of the class if {@link DBTableName} annotation is present but doesn't
-	 * explicitly specify the table name.
+	 * value of the class if {@link DBTableName} annotation is present but
+	 * doesn't explicitly specify the table name.
 	 *
 	 * <p>
 	 * If the {@link DBTableName} annotation is missing, this method returns
@@ -84,5 +84,14 @@ class TableHandler {
 	 */
 	public DBTableName getDBTableNameAnnotation() {
 		return tableNameAnnotation;
+	}
+
+	String getSchemaName() {
+		final DBTableName dbTableNameAnnotation = getDBTableNameAnnotation();
+		if (dbTableNameAnnotation == null) {
+			return "";
+		} else {
+			return dbTableNameAnnotation.schema();
+		}
 	}
 }
