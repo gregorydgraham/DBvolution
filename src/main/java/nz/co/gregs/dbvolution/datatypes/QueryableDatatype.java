@@ -888,4 +888,8 @@ public abstract class QueryableDatatype extends Object implements Serializable, 
 			return getColumnExpression().isPurelyFunctional();
 		}
 	}
+
+    public String formatColumnForSQLStatementQuery(DBDatabase db, String formattedColumnName) {
+        return formattedColumnName;
+    }
 }

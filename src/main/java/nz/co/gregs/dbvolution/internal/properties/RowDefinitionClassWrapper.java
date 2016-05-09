@@ -43,6 +43,7 @@ public class RowDefinitionClassWrapper {
 	 * The property that forms the primary key, null if none.
 	 */
 	private final PropertyWrapperDefinition primaryKeyProperty;
+	private List<PropertyWrapperDefinition> primaryKeyProperties = new ArrayList<PropertyWrapperDefinition>();
 	/**
 	 * All properties of which DBvolution is aware, ordered as first encountered.
 	 * Properties are only included if they are columns.
@@ -155,8 +156,10 @@ public class RowDefinitionClassWrapper {
 				primaryKeyProperties.add(property);
 			}
 		}
+		this.primaryKeyProperties = primaryKeyProperties;
 		if (primaryKeyProperties.size() > 1) {
-			throw new UnsupportedOperationException("Multi-Column Primary Keys are not yet supported: Please remove the excess @PrimaryKey statements from " + clazz.getSimpleName());
+                    this.primaryKeyProperty=null;
+			//throw new UnsupportedOperationException("Multi-Column Primary Keys are not yet supported: Please remove the excess @PrimaryKey statements from " + clazz.getSimpleName());
 		} else {
 			this.primaryKeyProperty = primaryKeyProperties.isEmpty() ? null : primaryKeyProperties.get(0);
 		}

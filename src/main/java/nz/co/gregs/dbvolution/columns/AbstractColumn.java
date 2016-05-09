@@ -73,20 +73,22 @@ public class AbstractColumn implements DBExpression {
 
 	@Override
 	public String toSQLString(DBDatabase db) {
-		RowDefinition rowDefn = this.getRowDefinition();
-		if ((field instanceof QueryableDatatype) && ((QueryableDatatype) field).hasColumnExpression()) {
-			DBExpression columnExpression = ((QueryableDatatype) field).getColumnExpression();
-			return columnExpression.toSQLString(db);
-		} else {
-			if (useTableAlias) {
-				return db.getDefinition().formatTableAliasAndColumnName(rowDefn, propertyWrapper.columnName());
-			} else if (rowDefn instanceof DBRow) {
-				DBRow dbRow = (DBRow) rowDefn;
-				return db.getDefinition().formatTableAndColumnName(dbRow, propertyWrapper.columnName());
-			}
-		}
-		return "";
-	}
+        RowDefinition rowDefn = this.getRowDefinition();
+        if ((field instanceof QueryableDatatype) && ((QueryableDatatype) field).hasColumnExpression()) {
+            DBExpression columnExpression = ((QueryableDatatype) field).getColumnExpression();
+            return columnExpression.toSQLString(db);
+        } else {
+            String formattedName = "";
+            if (useTableAlias) {
+                formattedName = db.getDefinition().formatTableAliasAndColumnName(rowDefn, propertyWrapper.columnName());
+            } else if (rowDefn instanceof DBRow) {
+                DBRow dbRow = (DBRow) rowDefn;
+                formattedName = db.getDefinition().formatTableAndColumnName(dbRow, propertyWrapper.columnName());
+            }
+            return propertyWrapper.getDefinition().getQueryableDatatype(dbrow).formatColumnForSQLStatementQuery(db, formattedName);
+//        return "";
+        }
+    }
 
 	@Override
 	public AbstractColumn copy() {
