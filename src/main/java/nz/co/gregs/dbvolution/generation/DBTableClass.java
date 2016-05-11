@@ -104,7 +104,7 @@ public class DBTableClass {
         final String foreignKeyAnnotation = DBForeignKey.class.getSimpleName();
         final String unknownJavaSQLTypeAnnotation = DBUnknownJavaSQLType.class.getSimpleName();
 
-        if (this.tableSchema == null || "PUBLIC".equals(tableSchema) || "dbo".equals(tableSchema)) {
+        if (this.tableSchema == null || "PUBLIC".equals(tableSchema.toUpperCase()) || "dbo".equals(tableSchema)) {
             javaSrc.append("@").append(tableNameAnnotation).append("(\"").append(this.getTableName()).append("\") ");
         } else {
             javaSrc.append("@").append(tableNameAnnotation).append("(value=\"").append(this.getTableName()).append("\", schema=\"").append(this.tableSchema).append("\") ");
