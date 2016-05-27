@@ -555,7 +555,11 @@ public class StringExpression implements StringResult, RangeComparable<StringRes
 	 * @return a BooleanExpression of the SQL comparison.
 	 */
 	public BooleanExpression is(String equivalentString) {
-		return this.is(value(equivalentString));
+		if (equivalentString == null) {
+			return this.isNull();
+		} else {
+			return this.is(value(equivalentString));
+		}
 	}
 
 	/**
@@ -614,10 +618,8 @@ public class StringExpression implements StringResult, RangeComparable<StringRes
 	public BooleanExpression is(StringResult equivalentString) {
 		if (equivalentString == null) {
 			return new BooleanExpression(this.isNull());
-		} else if (equivalentString.getIncludesNull()) {
-			return new BooleanExpression(this.isNull());
 		} else {
-			return new BooleanExpression(new DBBinaryBooleanArithmetic(this, equivalentString) {
+			final BooleanExpression is = new BooleanExpression(new DBBinaryBooleanArithmetic(this, equivalentString) {
 
 				@Override
 				public String toSQLString(DBDatabase db) {
@@ -634,6 +636,11 @@ public class StringExpression implements StringResult, RangeComparable<StringRes
 					return false;
 				}
 			});
+			if (equivalentString.getIncludesNull()) {
+				return  BooleanExpression.anyOf(this.isNull(),is);
+			} else {
+				return is;
+			}
 		}
 	}
 
