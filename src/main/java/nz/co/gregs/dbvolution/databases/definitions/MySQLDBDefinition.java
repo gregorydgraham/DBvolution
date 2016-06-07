@@ -450,7 +450,7 @@ public class MySQLDBDefinition extends DBDefinition {
 
 	@Override
 	public String doLine2DIntersectsLine2DTransform(String firstLine, String secondLine) {
-		return "Touches((" + firstLine + "), (" + secondLine + "))";
+		return "ST_Intersects((" + firstLine + "), (" + secondLine + "))";
 	}
 
 	@Override
@@ -588,7 +588,7 @@ public class MySQLDBDefinition extends DBDefinition {
 
 	@Override
 	public String doMultiPoint2DToLine2DTransform(String first) {
-		return "LineFromText(REPLACE(ASTEXT(" + first + "),'MULTIPOINT', 'LINESTRING'))";
+		return "LineFromText(REPLACE(REPLACE(REPLACE(REPLACE(ASTEXT(" + first + "),'MULTIPOINT', 'LINESTRING'),'((','('),'),(',','),'))',')'))";
 	}
 
 //	@Override
