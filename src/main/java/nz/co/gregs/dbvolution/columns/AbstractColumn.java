@@ -73,22 +73,27 @@ public class AbstractColumn implements DBExpression {
 
 	@Override
 	public String toSQLString(DBDatabase db) {
-        RowDefinition rowDefn = this.getRowDefinition();
-        if ((field instanceof QueryableDatatype) && ((QueryableDatatype) field).hasColumnExpression()) {
-            DBExpression columnExpression = ((QueryableDatatype) field).getColumnExpression();
-            return columnExpression.toSQLString(db);
-        } else {
-            String formattedName = "";
-            if (useTableAlias) {
-                formattedName = db.getDefinition().formatTableAliasAndColumnName(rowDefn, propertyWrapper.columnName());
-            } else if (rowDefn instanceof DBRow) {
-                DBRow dbRow = (DBRow) rowDefn;
-                formattedName = db.getDefinition().formatTableAndColumnName(dbRow, propertyWrapper.columnName());
-            }
-            return propertyWrapper.getDefinition().getQueryableDatatype(dbrow).formatColumnForSQLStatementQuery(db, formattedName);
+		RowDefinition rowDefn = this.getRowDefinition();
+		if ((field instanceof QueryableDatatype) && ((QueryableDatatype) field).hasColumnExpression()) {
+			final QueryableDatatype qdtField = (QueryableDatatype) field;
+			DBExpression[] columnExpressions = qdtField.getColumnExpression();
+			String toSQLString="";
+			for (DBExpression columnExpression : columnExpressions) {
+				toSQLString += columnExpression.toSQLString(db);
+			}
+			return toSQLString;
+		} else {
+			String formattedName = "";
+			if (useTableAlias) {
+				formattedName = db.getDefinition().formatTableAliasAndColumnName(rowDefn, propertyWrapper.columnName());
+			} else if (rowDefn instanceof DBRow) {
+				DBRow dbRow = (DBRow) rowDefn;
+				formattedName = db.getDefinition().formatTableAndColumnName(dbRow, propertyWrapper.columnName());
+			}
+			return propertyWrapper.getDefinition().getQueryableDatatype(dbrow).formatColumnForSQLStatementQuery(db, formattedName);
 //        return "";
-        }
-    }
+		}
+	}
 
 	@Override
 	public AbstractColumn copy() {

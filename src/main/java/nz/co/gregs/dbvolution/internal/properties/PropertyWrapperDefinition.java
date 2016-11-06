@@ -1,5 +1,8 @@
 package nz.co.gregs.dbvolution.internal.properties;
 
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 import nz.co.gregs.dbvolution.DBDatabase;
 import nz.co.gregs.dbvolution.DBRow;
 import nz.co.gregs.dbvolution.annotations.AutoFillDuringQueryIfPossible;
@@ -8,11 +11,6 @@ import nz.co.gregs.dbvolution.databases.definitions.DBDefinition;
 import nz.co.gregs.dbvolution.datatypes.DBEnumValue;
 import nz.co.gregs.dbvolution.datatypes.InternalQueryableDatatypeProxy;
 import nz.co.gregs.dbvolution.datatypes.QueryableDatatype;
-import nz.co.gregs.dbvolution.datatypes.spatial2D.DBLine2D;
-import nz.co.gregs.dbvolution.datatypes.spatial2D.DBLineSegment2D;
-import nz.co.gregs.dbvolution.datatypes.spatial2D.DBMultiPoint2D;
-import nz.co.gregs.dbvolution.datatypes.spatial2D.DBPoint2D;
-import nz.co.gregs.dbvolution.datatypes.spatial2D.DBPolygon2D;
 import nz.co.gregs.dbvolution.exceptions.DBThrownByEndUserCodeException;
 import nz.co.gregs.dbvolution.expressions.DBExpression;
 import nz.co.gregs.dbvolution.query.RowDefinition;
@@ -70,7 +68,8 @@ public class PropertyWrapperDefinition {
 	private final EnumTypeHandler enumTypeHandler;
 	private boolean checkedForColumnExpression = false;
 	private Integer columnIndex = null;
-	private DBExpression columnExpression = null; // null if not present on propertyf
+	private DBExpression[] columnExpression = new DBExpression[]{}; // empty if not present on propertyf
+	public ArrayList<ColumnAspects> allColumnAspects=null;
 
 	PropertyWrapperDefinition(RowDefinitionClassWrapper classWrapper, JavaProperty javaProperty, boolean processIdentityOnly) {
 		this.classWrapper = classWrapper;
@@ -503,39 +502,73 @@ public class PropertyWrapperDefinition {
 	/**
 	 * @return the columnExpression
 	 */
-	public DBExpression getColumnExpression() {
+	public DBExpression[] getColumnExpression() {
 		return columnExpression;
 	}
 
-	void setColumnExpression(DBExpression expression) {
-		columnExpression = expression;
+	void setColumnExpression(DBExpression... expression) {
+		columnExpression = Arrays.copyOf(expression, expression.length);
 	}
 
 	boolean hasColumnExpression() {
-		return getColumnExpression() != null;
+		return getColumnExpression().length >0;
 	}
 
-	String getSelectableName(DBDatabase db, RowDefinition actualRow) {
+//	String[] getSelectableName(DBDatabase db, RowDefinition actualRow) {
+//		DBDefinition defn = db.getDefinition();
+//		checkForColumnExpression(actualRow);
+//		if (hasColumnExpression()) {
+//			ArrayList<String> strList = new ArrayList<String>();
+//			DBExpression[] columnExpression1 = getColumnExpression();
+//			for (DBExpression dBExpression : columnExpression1) {
+//				strList.add(db.getDefinition().transformToStorableType(dBExpression).toSQLString(db));
+//			}
+//			return strList.toArray(new String[]{});
+//		} else {
+//			return new String[]{defn.formatTableAliasAndColumnName(actualRow, getColumnName())};
+//		}
+//	}
+
+	public List<ColumnAspects> getColumnAspects(DBDatabase db, RowDefinition actualRow) {
 		DBDefinition defn = db.getDefinition();
-		checkForColumnAlias(actualRow);
+		allColumnAspects = new ArrayList<ColumnAspects>();
+		checkForColumnExpression(actualRow);
 		if (hasColumnExpression()) {
-			return db.getDefinition().transformToStorableType(getColumnExpression()).toSQLString(db);
+			DBExpression[] columnExpression1 = getColumnExpression();
+			for (DBExpression dBExpression : columnExpression1) {
+				allColumnAspects.add(new ColumnAspects(
+						db.getDefinition().transformToStorableType(dBExpression).toSQLString(db),
+						defn.formatForColumnAlias(String.valueOf(dBExpression.hashCode())),
+						dBExpression)
+				);
+			}
 		} else {
-			return defn.formatTableAliasAndColumnName(actualRow, getColumnName());
+			allColumnAspects.add(new ColumnAspects(
+					defn.formatTableAliasAndColumnName(actualRow, getColumnName()),
+					defn.formatColumnNameForDBQueryResultSet(actualRow, getColumnName())
+			));
+		}
+		return allColumnAspects;
+	}
+
+	String[] getColumnAlias(DBDatabase db, RowDefinition actualRow) {
+		DBDefinition defn = db.getDefinition();
+		checkForColumnExpression(actualRow);
+		if (hasColumnExpression()) {
+			ArrayList<String> strList = new ArrayList<String>();
+			DBExpression[] columnExpression1 = getColumnExpression();
+			for (DBExpression dBExpression : columnExpression1) {
+				final String formattedForColumnAlias = defn.formatForColumnAlias(String.valueOf(dBExpression.hashCode()));
+//				dBExpression.setColumnAlias(formattedForColumnAlias);
+				strList.add(formattedForColumnAlias);
+			}
+			return strList.toArray(new String[]{});
+		} else {
+			return new String[]{defn.formatColumnNameForDBQueryResultSet(actualRow, getColumnName())};
 		}
 	}
 
-	String getColumnAlias(DBDatabase db, RowDefinition actualRow) {
-		DBDefinition defn = db.getDefinition();
-		checkForColumnAlias(actualRow);
-		if (hasColumnExpression()) {
-			return defn.formatForColumnAlias(String.valueOf(getColumnExpression().hashCode()));
-		} else {
-			return defn.formatColumnNameForDBQueryResultSet(actualRow, getColumnName());
-		}
-	}
-
-	void checkForColumnAlias(RowDefinition actualRow) {
+	void checkForColumnExpression(RowDefinition actualRow) {
 		if (!checkedForColumnExpression && !hasColumnExpression()) {
 			Object value = this.getRawJavaProperty().get(actualRow);
 			if (value != null && QueryableDatatype.class.isAssignableFrom(value.getClass())) {
@@ -578,6 +611,24 @@ public class PropertyWrapperDefinition {
 
 	Class<?> getAutoFillingClass() {
 		return this.javaProperty.getAnnotation(AutoFillDuringQueryIfPossible.class).requiredClass();
+	}
+
+	public static class ColumnAspects {
+
+		public final String selectableName;
+		public final String columnAlias;
+		public final DBExpression expression;
+
+		public ColumnAspects(String selectableName, String columnAlias, DBExpression expression) {
+			this.selectableName = selectableName;
+			this.columnAlias = columnAlias;
+			this.expression = expression;
+		}
+		public ColumnAspects(String selectableName, String columnAlias) {
+			this.selectableName = selectableName;
+			this.columnAlias = columnAlias;
+			this.expression = null;
+		}
 	}
 
 }

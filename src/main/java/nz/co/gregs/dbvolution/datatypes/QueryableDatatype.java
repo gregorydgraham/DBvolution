@@ -20,6 +20,7 @@ import java.lang.reflect.InvocationTargetException;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Timestamp;
+import java.util.Arrays;
 import java.util.Date;
 import java.util.HashSet;
 import java.util.Set;
@@ -27,7 +28,6 @@ import java.util.Set;
 import nz.co.gregs.dbvolution.DBDatabase;
 import nz.co.gregs.dbvolution.DBRow;
 import nz.co.gregs.dbvolution.actions.DBActionList;
-import nz.co.gregs.dbvolution.columns.ColumnProvider;
 import nz.co.gregs.dbvolution.databases.definitions.DBDefinition;
 import nz.co.gregs.dbvolution.exceptions.UnableInstantiateQueryableDatatypeException;
 import nz.co.gregs.dbvolution.exceptions.UnableToCopyQueryableDatatypeException;
@@ -72,8 +72,8 @@ public abstract class QueryableDatatype extends Object implements Serializable, 
 	 */
 	public final static Boolean SORT_DESCENDING = Boolean.FALSE;
 	private Boolean sort = SORT_ASCENDING;
-	transient private PropertyWrapperDefinition propertyWrapperDefn; // no guarantees whether this gets set
-	private DBExpression columnExpression = null;
+	transient PropertyWrapperDefinition propertyWrapperDefn; // no guarantees whether this gets set
+	private DBExpression[] columnExpression = new DBExpression[]{};
 	private boolean setValueHasBeenCalled = false;
 
 	/**
@@ -114,8 +114,25 @@ public abstract class QueryableDatatype extends Object implements Serializable, 
 	 *
 	 * @param columnExpression	columnExpression
 	 */
+	protected QueryableDatatype(DBExpression[] columnExpression) {
+		this.columnExpression = Arrays.copyOf(columnExpression, columnExpression.length);
+	}
+
+	/**
+	 * Create a QDT with a permanent column expression.
+	 *
+	 * <p>
+	 * Use this method within a DBRow sub-class to create a column that uses an
+	 * expression to create the value at query time.
+	 *
+	 * <p>
+	 * This is particularly useful for trimming strings or converting between
+	 * types but also allows for complex arithmetic and transformations.
+	 *
+	 * @param columnExpression	columnExpression
+	 */
 	protected QueryableDatatype(DBExpression columnExpression) {
-		this.columnExpression = columnExpression.copy();
+		this.columnExpression = new DBExpression[]{columnExpression};
 	}
 
 	/**
@@ -134,17 +151,17 @@ public abstract class QueryableDatatype extends Object implements Serializable, 
 		try {
 			return requiredQueryableDatatype.getConstructor().newInstance();
 		} catch (NoSuchMethodException ex) {
-			throw new RuntimeException("Unable To Create " + requiredQueryableDatatype.getClass().getSimpleName() + ": Please ensure that the constructor of  " + requiredQueryableDatatype.getClass().getSimpleName() + " has no arguments, throws no exceptions, and is public", ex);
+			throw new RuntimeException("Unable To Create " + requiredQueryableDatatype.getClass().getSimpleName() + ": Please ensure that the constructor of " + requiredQueryableDatatype.getClass().getSimpleName() + " has no arguments, throws no exceptions, and is public", ex);
 		} catch (SecurityException ex) {
-			throw new RuntimeException("Unable To Create " + requiredQueryableDatatype.getClass().getSimpleName() + ": Please ensure that the constructor of  " + requiredQueryableDatatype.getClass().getSimpleName() + " has no arguments, throws no exceptions, and is public", ex);
+			throw new RuntimeException("Unable To Create " + requiredQueryableDatatype.getClass().getSimpleName() + ": Please ensure that the constructor of " + requiredQueryableDatatype.getClass().getSimpleName() + " has no arguments, throws no exceptions, and is public", ex);
 		} catch (InstantiationException ex) {
-			throw new RuntimeException("Unable To Create " + requiredQueryableDatatype.getClass().getSimpleName() + ": Please ensure that the constructor of  " + requiredQueryableDatatype.getClass().getSimpleName() + " has no arguments, throws no exceptions, and is public", ex);
+			throw new RuntimeException("Unable To Create " + requiredQueryableDatatype.getClass().getSimpleName() + ": Please ensure that the constructor of " + requiredQueryableDatatype.getClass().getSimpleName() + " has no arguments, throws no exceptions, and is public", ex);
 		} catch (IllegalAccessException ex) {
-			throw new RuntimeException("Unable To Create " + requiredQueryableDatatype.getClass().getSimpleName() + ": Please ensure that the constructor of  " + requiredQueryableDatatype.getClass().getSimpleName() + " has no arguments, throws no exceptions, and is public", ex);
+			throw new RuntimeException("Unable To Create " + requiredQueryableDatatype.getClass().getSimpleName() + ": Please ensure that the constructor of " + requiredQueryableDatatype.getClass().getSimpleName() + " has no arguments, throws no exceptions, and is public", ex);
 		} catch (IllegalArgumentException ex) {
-			throw new RuntimeException("Unable To Create " + requiredQueryableDatatype.getClass().getSimpleName() + ": Please ensure that the constructor of  " + requiredQueryableDatatype.getClass().getSimpleName() + " has no arguments, throws no exceptions, and is public", ex);
+			throw new RuntimeException("Unable To Create " + requiredQueryableDatatype.getClass().getSimpleName() + ": Please ensure that the constructor of " + requiredQueryableDatatype.getClass().getSimpleName() + " has no arguments, throws no exceptions, and is public", ex);
 		} catch (InvocationTargetException ex) {
-			throw new RuntimeException("Unable To Create " + requiredQueryableDatatype.getClass().getSimpleName() + ": Please ensure that the constructor of  " + requiredQueryableDatatype.getClass().getSimpleName() + " has no arguments, throws no exceptions, and is public", ex);
+			throw new RuntimeException("Unable To Create " + requiredQueryableDatatype.getClass().getSimpleName() + ": Please ensure that the constructor of " + requiredQueryableDatatype.getClass().getSimpleName() + " has no arguments, throws no exceptions, and is public", ex);
 		}
 	}
 
@@ -756,7 +773,7 @@ public abstract class QueryableDatatype extends Object implements Serializable, 
 	 *
 	 * @return the underlying expression if there is one, or NULL otherwise.
 	 */
-	public final DBExpression getColumnExpression() {
+	public final DBExpression[] getColumnExpression() {
 		return columnExpression;
 	}
 
@@ -770,13 +787,16 @@ public abstract class QueryableDatatype extends Object implements Serializable, 
 	 * @return TRUE if there is a underlying expression, or FALSE otherwise.
 	 */
 	public final boolean hasColumnExpression() {
-		return columnExpression != null;
+		return columnExpression.length>0;
 	}
 
 	@Override
 	public Set<DBRow> getTablesInvolved() {
-		if (getColumnExpression() != null) {
-			return getColumnExpression().getTablesInvolved();
+		if (hasColumnExpression()) {
+			HashSet<DBRow> hashSet = new HashSet<DBRow>();
+			for (DBExpression dBExpression : columnExpression) {
+				hashSet.addAll( dBExpression.getTablesInvolved());
+			}
 		}
 		return new HashSet<DBRow>();
 	}
@@ -868,8 +888,8 @@ public abstract class QueryableDatatype extends Object implements Serializable, 
 	 *
 	 * @param columnExpression the columnExpression to set
 	 */
-	protected void setColumnExpression(DBExpression columnExpression) {
-		this.columnExpression = columnExpression;
+	protected final void setColumnExpression(DBExpression... columnExpression) {
+		this.columnExpression = Arrays.copyOf(columnExpression, columnExpression.length);
 	}
 
 	/**
@@ -885,8 +905,13 @@ public abstract class QueryableDatatype extends Object implements Serializable, 
 		if (!hasColumnExpression()) {
 			return getTablesInvolved().isEmpty();
 		} else {
-			return getColumnExpression().isPurelyFunctional();
+			for (DBExpression dBExpression : columnExpression) {
+				if (!dBExpression.isPurelyFunctional()){
+					return false;
+				}
+			}
 		}
+		return true;
 	}
 
     public String formatColumnForSQLStatementQuery(DBDatabase db, String formattedColumnName) {

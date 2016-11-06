@@ -38,6 +38,7 @@ import nz.co.gregs.dbvolution.columns.ColumnProvider;
 import nz.co.gregs.dbvolution.query.*;
 import nz.co.gregs.dbvolution.internal.querygraph.*;
 import nz.co.gregs.dbvolution.internal.properties.*;
+import nz.co.gregs.dbvolution.internal.properties.PropertyWrapperDefinition.ColumnAspects;
 import nz.co.gregs.dbvolution.internal.query.*;
 
 /**
@@ -429,33 +430,39 @@ public class DBQuery {
 
 				List<PropertyWrapper> tabProps = tabRow.getSelectedProperties();
 				for (PropertyWrapper propWrapper : tabProps) {
-					String selectColumn = defn.doColumnTransformForSelect(propWrapper.getQueryableDatatype(), propWrapper.getSelectableName(getDatabase()));
-					selectClause.append(colSep).append(selectColumn).append(" ").append(propWrapper.getColumnAlias(getDatabase()));
-					colSep = defn.getSubsequentSelectSubClauseSeparator() + lineSep;
+					final QueryableDatatype qdt = propWrapper.getQueryableDatatype();
+					final List<PropertyWrapperDefinition.ColumnAspects> columnAspectsList = propWrapper.getColumnAspects(getDatabase());
+					for (ColumnAspects columnAspects : columnAspectsList) {
+						String selectableName = columnAspects.selectableName;
+						String columnAlias = columnAspects.columnAlias;
+						String selectColumn = defn.doColumnTransformForSelect(qdt, selectableName);
+						selectClause.append(colSep).append(selectColumn).append(" ").append(columnAlias);
+						colSep = defn.getSubsequentSelectSubClauseSeparator() + lineSep;
 
-					// Now deal with the GROUP BY and ORDER BY clause requirements
-					DBExpression expression = propWrapper.getColumnExpression();
-					if (expression != null && expression.isAggregator()) {
-						details.setGroupByRequiredByAggregator(true);
-					}
-					if (expression == null
-							|| (!expression.isAggregator()
-							&& (!expression.isPurelyFunctional() || defn.supportsPurelyFunctionalGroupByColumns()))) {
-						groupByIsRequired = true;
-						groupByColumnIndex += groupByColumnIndexSeparator + columnIndex;
-						groupByColumnIndexSeparator = defn.getSubsequentGroupBySubClauseSeparator();
-						if (expression != null) {
-							groupByClause.append(groupByColSep).append(defn.transformToStorableType(expression).toSQLString(getDatabase()));
-							groupByColSep = defn.getSubsequentGroupBySubClauseSeparator() + lineSep;
-						} else {
-							groupByClause.append(groupByColSep).append(selectColumn);
-							groupByColSep = defn.getSubsequentGroupBySubClauseSeparator() + lineSep;
+						// Now deal with the GROUP BY and ORDER BY clause requirements
+						DBExpression expression = columnAspects.expression;
+						if (expression != null && expression.isAggregator()) {
+							details.setGroupByRequiredByAggregator(true);
+						}
+						if (expression == null
+								|| (!expression.isAggregator()
+								&& (!expression.isPurelyFunctional() || defn.supportsPurelyFunctionalGroupByColumns()))) {
+							groupByIsRequired = true;
+							groupByColumnIndex += groupByColumnIndexSeparator + columnIndex;
+							groupByColumnIndexSeparator = defn.getSubsequentGroupBySubClauseSeparator();
+							if (expression != null) {
+								groupByClause.append(groupByColSep).append(defn.transformToStorableType(expression).toSQLString(getDatabase()));
+								groupByColSep = defn.getSubsequentGroupBySubClauseSeparator() + lineSep;
+							} else {
+								groupByClause.append(groupByColSep).append(selectColumn);
+								groupByColSep = defn.getSubsequentGroupBySubClauseSeparator() + lineSep;
+							}
+
+							indexesOfSelectedColumns.put(propWrapper.getDefinition(), columnIndex);
 						}
 
-						indexesOfSelectedColumns.put(propWrapper.getDefinition(), columnIndex);
+						columnIndex++;
 					}
-
-					columnIndex++;
 				}
 				if (!options.isUseANSISyntax()) {
 					fromClause.append(fromClauseTableSeparator).append(tableName);
@@ -846,12 +853,14 @@ public class DBQuery {
 			for (PropertyWrapper propertyWrapper : selectedProperties) {
 				if (propertyWrapper.getDefinition().equals(newProp.getDefinition())) {
 
-					String resultSetColumnName = newProp.getColumnAlias(getDatabase());
+					String[] resultSetColumnNames = newProp.getColumnAlias(getDatabase());
+					for (String resultSetColumnName : resultSetColumnNames) {
 
-					qdt.setFromResultSet(getDatabase(), resultSet, resultSetColumnName);
+						qdt.setFromResultSet(getDatabase(), resultSet, resultSetColumnName);
 
-					if (newInstance.isEmptyRow() && !qdt.isNull()) {
-						newInstance.setEmptyRow(false);
+						if (newInstance.isEmptyRow() && !qdt.isNull()) {
+							newInstance.setEmptyRow(false);
+						}
 					}
 				}
 			}
@@ -1383,17 +1392,22 @@ public class DBQuery {
 						columnIndex = IndexesOfSelectedExpressions.get(qdt);
 					}
 					if (columnIndex == null) {
-						final DBExpression columnExpression = qdt.getColumnExpression();
-						columnIndex = IndexesOfSelectedExpressions.get(columnExpression);
+						final DBExpression[] columnExpressions = qdt.getColumnExpression();
+						for (DBExpression columnExpression : columnExpressions) {
+							columnIndex = IndexesOfSelectedExpressions.get(columnExpression);
+						}
 					}
 					orderByClause.append(sortSeparator).append(columnIndex).append(defn.getOrderByDirectionClause(qdt.getSortOrder()));
 					sortSeparator = defn.getSubsequentOrderByClauseSeparator();
 				} else {
 					if (qdt.hasColumnExpression()) {
-						final String dbColumnName = defn.transformToStorableType(qdt.getColumnExpression()).toSQLString(getDatabase());
-						if (dbColumnName != null) {
-							orderByClause.append(sortSeparator).append(dbColumnName).append(defn.getOrderByDirectionClause(qdt.getSortOrder()));
-							sortSeparator = defn.getSubsequentOrderByClauseSeparator();
+						final DBExpression[] columnExpressions = qdt.getColumnExpression();
+						for (DBExpression columnExpression : columnExpressions) {
+						final String dbColumnName = defn.transformToStorableType(columnExpression).toSQLString(getDatabase());
+							if (dbColumnName != null) {
+								orderByClause.append(sortSeparator).append(dbColumnName).append(defn.getOrderByDirectionClause(qdt.getSortOrder()));
+								sortSeparator = defn.getSubsequentOrderByClauseSeparator();
+							}							
 						}
 					} else {
 						final RowDefinition possibleDBRow = prop.getRowDefinitionInstanceWrapper().adapteeRowDefinition();

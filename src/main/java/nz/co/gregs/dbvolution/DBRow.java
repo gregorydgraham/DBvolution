@@ -469,9 +469,15 @@ abstract public class DBRow extends RowDefinition implements Serializable {
 			if (column instanceof DBExpression) {
 				DBExpression requiredExpression = (DBExpression) column;
 				if (qdt.hasColumnExpression()) {
-					requiredExpression = qdt.getColumnExpression();
+					DBExpression[] columnExpression = qdt.getColumnExpression();
+					String sep = "";
+					for (DBExpression dBExpression : columnExpression) {
+						whereClause += sep + op.generateWhereExpression(db, dBExpression).toSQLString(db);
+						sep = db.getDefinition().beginAndLine();
+					}
+				} else {
+					whereClause = op.generateWhereExpression(db, requiredExpression).toSQLString(db);
 				}
-				whereClause = op.generateWhereExpression(db, requiredExpression).toSQLString(db);
 			}
 		}
 		return whereClause;
