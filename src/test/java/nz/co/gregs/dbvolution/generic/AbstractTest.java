@@ -130,7 +130,7 @@ public abstract class AbstractTest {
 	public AbstractTest(Object testIterationName, Object db) {
 		if (db instanceof DBDatabase) {
 			this.database = (DBDatabase) db;
-			database.setPrintSQLBeforeExecuting(true);
+			database.setPrintSQLBeforeExecuting(false);
 		}
 	}
 
@@ -238,7 +238,7 @@ public abstract class AbstractTest {
 		marqueRows.add(new Marque(1, "False", 1246974, "", 0, "", "TOYOTA", "", "Y", firstDate, 1, true));
 		marqueRows.add(new Marque(2, "False", 1246974, "", 0, "", "HUMMER", "", "Y", secondDate, 3, null));
 
-		database.setPrintSQLBeforeExecuting(true);
+		//database.setPrintSQLBeforeExecuting(true);
 		marquesTable.insert(marqueRows);
 		database.setPrintSQLBeforeExecuting(false);
 
@@ -250,7 +250,7 @@ public abstract class AbstractTest {
 		database.dropTableNoExceptions(new LinkCarCompanyAndLogo());
 		database.createTable(new LinkCarCompanyAndLogo());
 
-		database.setPrintSQLBeforeExecuting(true);
+		database.setPrintSQLBeforeExecuting(false);
 	}
 
 	@After
