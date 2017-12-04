@@ -33,6 +33,9 @@ import nz.co.gregs.dbvolution.datatypes.QueryableDatatype;
  * The best way to use this is by using {@link DBDelete#getDeletes(nz.co.gregs.dbvolution.DBDatabase, nz.co.gregs.dbvolution.DBRow...)
  * } to automatically use this action.
  *
+ * <p style="color: #F90;">Support DBvolution at
+ * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+ *
  * @author Gregory Graham
  */
 public class DBDeleteByPrimaryKey extends DBDelete {
@@ -126,6 +129,9 @@ public class DBDeleteByPrimaryKey extends DBDelete {
 	 * @param db the target database
 	 * @param row the row to be deleted
 	 * @throws SQLException Database actions can throw SQLException
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return the list of actions required to delete all the rows.
 	 */
 	@Override

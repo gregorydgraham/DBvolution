@@ -51,6 +51,9 @@ import nz.co.gregs.dbvolution.exceptions.AccidentalCartesianJoinException;
  * accelerate and brake as possible or required to achieve close to optimal
  * throughput.
  *
+ * <p style="color: #F90;">Support DBvolution at
+ * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+ *
  * @author Gregory Graham
  */
 public abstract class Extractor extends DBScript {
@@ -115,6 +118,9 @@ public abstract class Extractor extends DBScript {
 	 * @param db
 	 * @param lowerbound
 	 * @param upperbound
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return a DBQuery for the database and range
 	 */
 	abstract public DBQuery getQuery(DBDatabase db, int lowerbound, int upperbound);
@@ -136,6 +142,9 @@ public abstract class Extractor extends DBScript {
 	 * {@link #processRows(java.util.List)} method to provide a dynamic extraction
 	 * process that achieves fast results on unreliable or under-resourced
 	 * databases.
+	 *
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
 	 *
 	 * @return @throws Exception
 	 */
@@ -180,6 +189,9 @@ public abstract class Extractor extends DBScript {
 	 *
 	 * <p>
 	 * This method cannot be changed.
+	 *
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
 	 *
 	 * @return an action list
 	 * @throws java.io.FileNotFoundException
@@ -267,6 +279,9 @@ public abstract class Extractor extends DBScript {
 	}
 
 	/**
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return the noMoreRecords
 	 */
 	private boolean hasMoreRecords() {
@@ -294,6 +309,9 @@ public abstract class Extractor extends DBScript {
 	}
 
 	/**
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return the maxBoundIncrease
 	 */
 	protected int getMaxBoundIncrease() {
@@ -311,6 +329,9 @@ public abstract class Extractor extends DBScript {
 	}
 
 	/**
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return the minBoundIncrease
 	 */
 	private int getMinBoundIncrease() {
@@ -318,6 +339,9 @@ public abstract class Extractor extends DBScript {
 	}
 
 	/**
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return the boundIncrease
 	 */
 	protected int getBoundIncrease() {
@@ -332,6 +356,9 @@ public abstract class Extractor extends DBScript {
 	}
 
 	/**
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return the maxBound
 	 */
 	protected int getMaxBound() {
@@ -348,6 +375,9 @@ public abstract class Extractor extends DBScript {
 	}
 
 	/**
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return the lowerBound
 	 */
 	protected int getLowerBound() {
@@ -431,6 +461,9 @@ public abstract class Extractor extends DBScript {
 	 * <p>
 	 * For use with {@link #setToCountOnly() } but also with {@link #setToRetrieveRows()
 	 * }
+	 *
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
 	 *
 	 * @return the number of rows found in the last partial extraction
 	 */

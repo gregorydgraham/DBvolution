@@ -51,6 +51,9 @@ import nz.co.gregs.dbvolution.results.LineSegment2DResult;
  * Spatial types are not automatically generated during schema extraction so you
  * may need to change some DBString fields.
  *
+ * <p style="color: #F90;">Support DBvolution at
+ * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+ *
  * @author gregorygraham
  */
 public class DBLineSegment2D extends QueryableDatatype implements LineSegment2DResult {
@@ -153,6 +156,9 @@ public class DBLineSegment2D extends QueryableDatatype implements LineSegment2DR
 	/**
 	 * Transform the value of the DBLine2D into a
 	 * {@link LineString JTS LineString}
+	 *
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
 	 *
 	 * @return the value of this object if defined and not NULL, NULL otherwise.
 	 */

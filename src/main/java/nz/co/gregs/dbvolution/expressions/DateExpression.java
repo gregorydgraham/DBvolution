@@ -61,6 +61,9 @@ import org.joda.time.Period;
  * {@link DateExpression#value(java.util.Date) } or
  * {@link DBRow#column(nz.co.gregs.dbvolution.datatypes.DBDate)}.
  *
+ * <p style="color: #F90;">Support DBvolution at
+ * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+ *
  * @author Gregory Graham
  */
 public class DateExpression implements DateResult, RangeComparable<DateResult>, InComparable<DateResult>, ExpressionColumn<DBDate> {
@@ -177,6 +180,9 @@ public class DateExpression implements DateResult, RangeComparable<DateResult>, 
 	 * </ul>
 	 *
 	 * @param date a literal date to be used in the expression
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return a DBExpression instance that is appropriate to the subclass and the
 	 * value supplied.
 	 */
@@ -201,6 +207,9 @@ public class DateExpression implements DateResult, RangeComparable<DateResult>, 
 	 * <p>
 	 * That is to say the expression returns the current day, according to the
 	 * database, with the time set to Midnight.
+	 *
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
 	 *
 	 * @return a date expression of only the date part of the current database
 	 * timestamp.
@@ -228,6 +237,9 @@ public class DateExpression implements DateResult, RangeComparable<DateResult>, 
 	 * That is to say the expression returns the current day and time according to
 	 * the database.
 	 *
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return a date expression of the current database timestamp.
 	 */
 	public static DateExpression currentDate() {
@@ -253,6 +265,9 @@ public class DateExpression implements DateResult, RangeComparable<DateResult>, 
 	 * That is to say the expression returns the current time, according to the
 	 * database, with the date set to database's zero date.
 	 *
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return a date expression of only the time part of the current database
 	 * timestamp.
 	 */
@@ -276,6 +291,9 @@ public class DateExpression implements DateResult, RangeComparable<DateResult>, 
 	 * Creates an SQL expression that returns the year part of this date
 	 * expression.
 	 *
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return the year of this date expression as a number.
 	 */
 	public NumberExpression year() {
@@ -292,6 +310,9 @@ public class DateExpression implements DateResult, RangeComparable<DateResult>, 
 	 * Creates an SQL expression that tests the year part of this date expression.
 	 *
 	 * @param yearRequired the year to used in the expression
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return a BooleanExpression that is TRUE if the year is the same as the
 	 * example supplied.
 	 */
@@ -303,6 +324,9 @@ public class DateExpression implements DateResult, RangeComparable<DateResult>, 
 	 * Creates an SQL expression that tests the year part of this date expression.
 	 *
 	 * @param yearRequired the year to be used in the expression
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return a BooleanExpression that is TRUE if the year is the same as the
 	 * example supplied.
 	 */
@@ -313,6 +337,9 @@ public class DateExpression implements DateResult, RangeComparable<DateResult>, 
 	/**
 	 * Creates an SQL expression that returns the month part of this date
 	 * expression.
+	 *
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
 	 *
 	 * @return the month of this date expression as a number.
 	 */
@@ -331,6 +358,9 @@ public class DateExpression implements DateResult, RangeComparable<DateResult>, 
 	 * expression.
 	 *
 	 * @param monthRequired the month to be used in the expression
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return a BooleanExpression that is TRUE if the month is the same as the
 	 * example supplied.
 	 */
@@ -343,6 +373,9 @@ public class DateExpression implements DateResult, RangeComparable<DateResult>, 
 	 * expression.
 	 *
 	 * @param monthRequired the month to be used in the expression
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return a BooleanExpression that is TRUE if the month is the same as the
 	 * example supplied.
 	 */
@@ -356,6 +389,9 @@ public class DateExpression implements DateResult, RangeComparable<DateResult>, 
 	 * <p>
 	 * Day in this sense is the number of the day within the month: that is the 25
 	 * part of Monday 25th of August 2014
+	 *
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
 	 *
 	 * @return a NumberExpression that will provide the day of this date.
 	 */
@@ -373,6 +409,9 @@ public class DateExpression implements DateResult, RangeComparable<DateResult>, 
 	 * Creates an SQL expression that tests the day part of this date expression.
 	 *
 	 * @param dayRequired the day to be used in the expression
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return a BooleanExpression that is TRUE if the day is the same as the
 	 * example supplied.
 	 */
@@ -384,6 +423,9 @@ public class DateExpression implements DateResult, RangeComparable<DateResult>, 
 	 * Creates an SQL expression that tests the day part of this date expression.
 	 *
 	 * @param dayRequired the day to be used in the expression
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return a BooleanExpression that is TRUE if the day is the same as the
 	 * example supplied.
 	 */
@@ -394,6 +436,9 @@ public class DateExpression implements DateResult, RangeComparable<DateResult>, 
 	/**
 	 * Creates an SQL expression that returns the hour part of this date
 	 * expression.
+	 *
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
 	 *
 	 * @return the hour of this date expression as a number.
 	 */
@@ -411,6 +456,9 @@ public class DateExpression implements DateResult, RangeComparable<DateResult>, 
 	 * Creates an SQL expression that tests the hour part of this date expression.
 	 *
 	 * @param hourRequired the hour to be used in the expression
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return a BooleanExpression that is TRUE if the hour is the same as the
 	 * example supplied.
 	 */
@@ -422,6 +470,9 @@ public class DateExpression implements DateResult, RangeComparable<DateResult>, 
 	 * Creates an SQL expression that tests the hour part of this date expression.
 	 *
 	 * @param hourRequired the hour to be compared to.
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return a BooleanExpression that is TRUE if the hour is the same as the
 	 * example supplied.
 	 */
@@ -432,6 +483,9 @@ public class DateExpression implements DateResult, RangeComparable<DateResult>, 
 	/**
 	 * Creates an SQL expression that returns the minute part of this date
 	 * expression.
+	 *
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
 	 *
 	 * @return the minute of this date expression as a number.
 	 */
@@ -450,6 +504,9 @@ public class DateExpression implements DateResult, RangeComparable<DateResult>, 
 	 * expression.
 	 *
 	 * @param minuteRequired the minute to be compared to
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return a BooleanExpression that is TRUE if the minute is the same as the
 	 * example supplied.
 	 */
@@ -462,6 +519,9 @@ public class DateExpression implements DateResult, RangeComparable<DateResult>, 
 	 * expression.
 	 *
 	 * @param minuteRequired the minute to be compared to
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return a BooleanExpression that is TRUE if the minute is the same as the
 	 * example supplied.
 	 */
@@ -476,6 +536,9 @@ public class DateExpression implements DateResult, RangeComparable<DateResult>, 
 	 * <p>
 	 * Contains only whole seconds, use {@link #subsecond()} to retrieve the
 	 * fractional part.
+	 *
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
 	 *
 	 * @return the second of this date expression as a number.
 	 */
@@ -497,6 +560,9 @@ public class DateExpression implements DateResult, RangeComparable<DateResult>, 
 	 * Contains only the fractional part of the seconds, that is always between 0
 	 * and 1, use {@link #second()} to retrieve the integer part.
 	 *
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return the second of this date expression as a number.
 	 */
 	public NumberExpression subsecond() {
@@ -514,6 +580,9 @@ public class DateExpression implements DateResult, RangeComparable<DateResult>, 
 	 * expression.
 	 *
 	 * @param minuteRequired the minute required
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return a BooleanExpression that is TRUE if the second is the same as the
 	 * example supplied.
 	 */
@@ -526,6 +595,9 @@ public class DateExpression implements DateResult, RangeComparable<DateResult>, 
 	 * expression.
 	 *
 	 * @param minuteRequired the minute that the expression must match
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return a BooleanExpression that is TRUE if the second is the same as the
 	 * example supplied.
 	 */
@@ -542,6 +614,9 @@ public class DateExpression implements DateResult, RangeComparable<DateResult>, 
 	 * is easy to miss a similar date.
 	 *
 	 * @param date the date the expression must match
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return a BooleanExpression comparing the date and this DateExpression.
 	 */
 	public BooleanExpression is(Date date) {
@@ -553,6 +628,9 @@ public class DateExpression implements DateResult, RangeComparable<DateResult>, 
 	 * to the supplied date.
 	 *
 	 * @param dateExpression the date the expression must match
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return a BooleanExpression comparing the DateResult and this
 	 * DateExpression.
 	 */
@@ -576,6 +654,9 @@ public class DateExpression implements DateResult, RangeComparable<DateResult>, 
 	 * equal to the supplied date.
 	 *
 	 * @param dateExpression the date the expression must not match
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return a BooleanExpression comparing the DateResult and this
 	 * DateExpression.
 	 */
@@ -597,6 +678,9 @@ public class DateExpression implements DateResult, RangeComparable<DateResult>, 
 	/**
 	 * Returns FALSE if this expression evaluates to NULL, otherwise TRUE.
 	 *
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return a BooleanExpression
 	 */
 	public BooleanExpression isNotNull() {
@@ -605,6 +689,9 @@ public class DateExpression implements DateResult, RangeComparable<DateResult>, 
 
 	/**
 	 * Returns TRUE if this expression evaluates to NULL, otherwise FALSE.
+	 *
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
 	 *
 	 * @return a BooleanExpression
 	 */
@@ -631,6 +718,9 @@ public class DateExpression implements DateResult, RangeComparable<DateResult>, 
 	 *
 	 * @param lowerBound the lower bound that the expression must exceed
 	 * @param upperBound the upper bound that the expression must not exceed
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return a boolean expression representing the required comparison
 	 */
 	public BooleanExpression isBetween(DateResult lowerBound, DateResult upperBound) {
@@ -659,6 +749,9 @@ public class DateExpression implements DateResult, RangeComparable<DateResult>, 
 	 *
 	 * @param lowerBound the lower bound that the expression must exceed
 	 * @param upperBound the upper bound that the expression must not exceed
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return a boolean expression representing the required comparison
 	 */
 	public BooleanExpression isBetween(Date lowerBound, DateResult upperBound) {
@@ -687,6 +780,9 @@ public class DateExpression implements DateResult, RangeComparable<DateResult>, 
 	 *
 	 * @param lowerBound the lower bound that the expression must exceed
 	 * @param upperBound the upper bound that the expression must not exceed
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return a boolean expression representing the required comparison
 	 */
 	public BooleanExpression isBetween(DateResult lowerBound, Date upperBound) {
@@ -715,6 +811,9 @@ public class DateExpression implements DateResult, RangeComparable<DateResult>, 
 	 *
 	 * @param lowerBound the lower bound that the expression must exceed
 	 * @param upperBound the upper bound that the expression must not exceed
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return a boolean expression representing the required comparison
 	 */
 	public BooleanExpression isBetween(Date lowerBound, Date upperBound) {
@@ -743,6 +842,9 @@ public class DateExpression implements DateResult, RangeComparable<DateResult>, 
 	 *
 	 * @param lowerBound the lower bound that the expression must exceed
 	 * @param upperBound the upper bound that the expression must not exceed
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return a boolean expression representing the required comparison
 	 */
 	public BooleanExpression isBetweenInclusive(DateResult lowerBound, DateResult upperBound) {
@@ -771,6 +873,9 @@ public class DateExpression implements DateResult, RangeComparable<DateResult>, 
 	 *
 	 * @param lowerBound the lower bound that the expression must exceed
 	 * @param upperBound the upper bound that the expression must not exceed
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return a boolean expression representing the required comparison
 	 */
 	public BooleanExpression isBetweenInclusive(Date lowerBound, DateResult upperBound) {
@@ -799,6 +904,9 @@ public class DateExpression implements DateResult, RangeComparable<DateResult>, 
 	 *
 	 * @param lowerBound the lower bound that the expression must exceed
 	 * @param upperBound the upper bound that the expression must not exceed
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return a boolean expression representing the required comparison
 	 */
 	public BooleanExpression isBetweenInclusive(DateResult lowerBound, Date upperBound) {
@@ -827,6 +935,9 @@ public class DateExpression implements DateResult, RangeComparable<DateResult>, 
 	 *
 	 * @param lowerBound the lower bound that the expression must exceed
 	 * @param upperBound the upper bound that the expression must not exceed
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return a boolean expression representing the required comparison
 	 */
 	public BooleanExpression isBetweenInclusive(Date lowerBound, Date upperBound) {
@@ -857,6 +968,9 @@ public class DateExpression implements DateResult, RangeComparable<DateResult>, 
 	 *
 	 * @param lowerBound the lower bound that the expression must exceed
 	 * @param upperBound the upper bound that the expression must not exceed
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return a boolean expression representing the required comparison
 	 */
 	public BooleanExpression isBetweenExclusive(DateResult lowerBound, DateResult upperBound) {
@@ -887,6 +1001,9 @@ public class DateExpression implements DateResult, RangeComparable<DateResult>, 
 	 *
 	 * @param lowerBound the lower bound that the expression must exceed
 	 * @param upperBound the upper bound that the expression must not exceed
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return a boolean expression representing the required comparison
 	 */
 	public BooleanExpression isBetweenExclusive(Date lowerBound, DateResult upperBound) {
@@ -917,6 +1034,9 @@ public class DateExpression implements DateResult, RangeComparable<DateResult>, 
 	 *
 	 * @param lowerBound the lower bound that the expression must exceed
 	 * @param upperBound the upper bound that the expression must not exceed
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return a boolean expression representing the required comparison
 	 */
 	public BooleanExpression isBetweenExclusive(DateResult lowerBound, Date upperBound) {
@@ -947,6 +1067,9 @@ public class DateExpression implements DateResult, RangeComparable<DateResult>, 
 	 *
 	 * @param lowerBound the lower bound that the expression must exceed
 	 * @param upperBound the upper bound that the expression must not exceed
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return a boolean expression representing the required comparison
 	 */
 	public BooleanExpression isBetweenExclusive(Date lowerBound, Date upperBound) {
@@ -961,6 +1084,9 @@ public class DateExpression implements DateResult, RangeComparable<DateResult>, 
 	 * than to the supplied date.
 	 *
 	 * @param date the date this expression must not exceed
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return a boolean expression representing the required comparison
 	 */
 	public BooleanExpression isLessThan(Date date) {
@@ -972,6 +1098,9 @@ public class DateExpression implements DateResult, RangeComparable<DateResult>, 
 	 * than to the supplied date.
 	 *
 	 * @param dateExpression the date this expression must not exceed
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return a boolean expression representing the required comparison
 	 */
 	@Override
@@ -994,6 +1123,9 @@ public class DateExpression implements DateResult, RangeComparable<DateResult>, 
 	 * expression and the one provided
 	 *
 	 * @param date the other date which defines this DateRepeat
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return a DateRepeat expression
 	 */
 	public DateRepeatExpression getDateRepeatFrom(Date date) {
@@ -1005,6 +1137,9 @@ public class DateExpression implements DateResult, RangeComparable<DateResult>, 
 	 * expression and the one provided
 	 *
 	 * @param dateExpression the other date which defines this DateRepeat
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return DateRepeat expression
 	 */
 	public DateRepeatExpression getDateRepeatFrom(DateResult dateExpression) {
@@ -1043,6 +1178,9 @@ public class DateExpression implements DateResult, RangeComparable<DateResult>, 
 	 * offset date.
 	 *
 	 * @param interval the amount of time this date needs to be offset by.
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return a Date expression
 	 */
 	public DateExpression minus(Period interval) {
@@ -1055,6 +1193,9 @@ public class DateExpression implements DateResult, RangeComparable<DateResult>, 
 	 *
 	 * @param intervalExpression the amount of time this date needs to be offset
 	 * by.
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return a Date expression
 	 */
 	public DateExpression minus(DateRepeatResult intervalExpression) {
@@ -1092,6 +1233,9 @@ public class DateExpression implements DateResult, RangeComparable<DateResult>, 
 	 * date.
 	 *
 	 * @param interval the amount of time this date needs to be offset by.
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return a Date expression
 	 */
 	public DateExpression plus(Period interval) {
@@ -1104,6 +1248,9 @@ public class DateExpression implements DateResult, RangeComparable<DateResult>, 
 	 *
 	 * @param intervalExpression the amount of time this date needs to be offset
 	 * by.
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return a Date expression
 	 */
 	public DateExpression plus(DateRepeatResult intervalExpression) {
@@ -1151,6 +1298,9 @@ public class DateExpression implements DateResult, RangeComparable<DateResult>, 
 	 * than or equal to the supplied date.
 	 *
 	 * @param date the date this expression must not exceed
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return a boolean expression representing the required comparison
 	 */
 	public BooleanExpression isLessThanOrEqual(Date date) {
@@ -1162,6 +1312,9 @@ public class DateExpression implements DateResult, RangeComparable<DateResult>, 
 	 * than or equal to the supplied DateResult.
 	 *
 	 * @param dateExpression the date this expression must not exceed
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return a boolean expression representing the required comparison
 	 */
 	@Override
@@ -1184,6 +1337,9 @@ public class DateExpression implements DateResult, RangeComparable<DateResult>, 
 	 * than the supplied date.
 	 *
 	 * @param date the date this expression must be compared to
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return an expression that will evaluate to a greater than operation
 	 */
 	public BooleanExpression isGreaterThan(Date date) {
@@ -1195,6 +1351,9 @@ public class DateExpression implements DateResult, RangeComparable<DateResult>, 
 	 * than the supplied DateResult.
 	 *
 	 * @param dateExpression the date this expression must be compared to
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return a boolean expression representing the required comparison
 	 */
 	@Override
@@ -1217,6 +1376,9 @@ public class DateExpression implements DateResult, RangeComparable<DateResult>, 
 	 * than or equal to the supplied Date.
 	 *
 	 * @param date the date this expression must be compared to
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return a boolean expression representing the required comparison
 	 */
 	public BooleanExpression isGreaterThanOrEqual(Date date) {
@@ -1228,6 +1390,9 @@ public class DateExpression implements DateResult, RangeComparable<DateResult>, 
 	 * than or equal to the supplied DateResult.
 	 *
 	 * @param dateExpression the date this expression must be compared to
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return a boolean expression representing the required comparison
 	 */
 	@Override
@@ -1261,6 +1426,9 @@ public class DateExpression implements DateResult, RangeComparable<DateResult>, 
 	 * @param value the right side of the internal comparison
 	 * @param fallBackWhenEquals the comparison used when the two values are
 	 * equal.
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return a BooleanExpression
 	 */
 	public BooleanExpression isLessThan(Date value, BooleanExpression fallBackWhenEquals) {
@@ -1283,6 +1451,9 @@ public class DateExpression implements DateResult, RangeComparable<DateResult>, 
 	 * @param value the right side of the internal comparison
 	 * @param fallBackWhenEquals the comparison used when the two values are
 	 * equal.
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return a BooleanExpression
 	 */
 	public BooleanExpression isGreaterThan(Date value, BooleanExpression fallBackWhenEquals) {
@@ -1305,6 +1476,9 @@ public class DateExpression implements DateResult, RangeComparable<DateResult>, 
 	 * @param value the right side of the internal comparison
 	 * @param fallBackWhenEquals the comparison used when the two values are
 	 * equal.
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return a BooleanExpression
 	 */
 	@Override
@@ -1328,6 +1502,9 @@ public class DateExpression implements DateResult, RangeComparable<DateResult>, 
 	 * @param value the right side of the internal comparison
 	 * @param fallBackWhenEquals the comparison used when the two values are
 	 * equal.
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return a BooleanExpression
 	 */
 	@Override
@@ -1344,6 +1521,9 @@ public class DateExpression implements DateResult, RangeComparable<DateResult>, 
 	 * is easy to miss a similar date.
 	 *
 	 * @param possibleValues allowed values
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return a boolean expression representing the required comparison
 	 */
 	public BooleanExpression isIn(Date... possibleValues) {
@@ -1363,6 +1543,9 @@ public class DateExpression implements DateResult, RangeComparable<DateResult>, 
 	 * is easy to miss a similar date.
 	 *
 	 * @param possibleValues allowed values
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return a boolean expression representing the required comparison
 	 */
 	public BooleanExpression isIn(Collection<? extends Date> possibleValues) {
@@ -1382,6 +1565,9 @@ public class DateExpression implements DateResult, RangeComparable<DateResult>, 
 	 * is easy to miss a similar date.
 	 *
 	 * @param possibleValues allowed values
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return a boolean expression representing the required comparison
 	 */
 	@Override
@@ -1416,6 +1602,9 @@ public class DateExpression implements DateResult, RangeComparable<DateResult>, 
 	 * This is a way of handling dates that should have a value but don't.
 	 *
 	 * @param alternative use this value if the expression evaluates to NULL
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return a boolean expression representing the required comparison
 	 */
 	public DateExpression ifDBNull(Date alternative) {
@@ -1441,6 +1630,9 @@ public class DateExpression implements DateResult, RangeComparable<DateResult>, 
 	 * This is a way of handling dates that should have a value but don't.
 	 *
 	 * @param alternative use this value if the expression evaluates to NULL
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return a boolean expression representing the required comparison
 	 */
 	public DateExpression ifDBNull(DateResult alternative) {
@@ -1467,6 +1659,9 @@ public class DateExpression implements DateResult, RangeComparable<DateResult>, 
 	/**
 	 * Aggregates the dates found in a query as a count of items.
 	 *
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return a number expression.
 	 */
 	public NumberExpression count() {
@@ -1489,6 +1684,9 @@ public class DateExpression implements DateResult, RangeComparable<DateResult>, 
 	 *
 	 * <p>
 	 * For use in expression columns and {@link DBReport}.
+	 *
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
 	 *
 	 * @return a number expression.
 	 */
@@ -1517,6 +1715,9 @@ public class DateExpression implements DateResult, RangeComparable<DateResult>, 
 	 *
 	 * <p>
 	 * For use in expression columns and {@link DBReport}.
+	 *
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
 	 *
 	 * @return a number expression.
 	 */
@@ -1566,6 +1767,9 @@ public class DateExpression implements DateResult, RangeComparable<DateResult>, 
 	 * Negative seconds are supported.
 	 *
 	 * @param secondsToAdd seconds to offset by
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return a DateExpression
 	 */
 	public DateExpression addSeconds(int secondsToAdd) {
@@ -1579,6 +1783,9 @@ public class DateExpression implements DateResult, RangeComparable<DateResult>, 
 	 * Negative seconds are supported.
 	 *
 	 * @param secondsToAdd seconds to offset by
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return a DateExpression
 	 */
 	public DateExpression addSeconds(NumberExpression secondsToAdd) {
@@ -1627,6 +1834,9 @@ public class DateExpression implements DateResult, RangeComparable<DateResult>, 
 	 * Negative values are supported.
 	 *
 	 * @param minutesToAdd minutes to offset by
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return a DateExpression
 	 */
 	public DateExpression addMinutes(int minutesToAdd) {
@@ -1640,6 +1850,9 @@ public class DateExpression implements DateResult, RangeComparable<DateResult>, 
 	 * Negative values are supported.
 	 *
 	 * @param minutesToAdd minutes to offset by
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return a DateExpression
 	 */
 	public DateExpression addMinutes(NumberExpression minutesToAdd) {
@@ -1665,6 +1878,9 @@ public class DateExpression implements DateResult, RangeComparable<DateResult>, 
 	 * Negative values are supported.
 	 *
 	 * @param daysToAdd days to offset by
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return a DateExpression
 	 */
 	public DateExpression addDays(int daysToAdd) {
@@ -1678,6 +1894,9 @@ public class DateExpression implements DateResult, RangeComparable<DateResult>, 
 	 * Negative values are supported.
 	 *
 	 * @param daysToAdd days to offset by
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return a DateExpression
 	 */
 	public DateExpression addDays(NumberExpression daysToAdd) {
@@ -1703,6 +1922,9 @@ public class DateExpression implements DateResult, RangeComparable<DateResult>, 
 	 * Negative values are supported.
 	 *
 	 * @param hoursToAdd hours to offset by
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return a DateExpression
 	 */
 	public DateExpression addHours(int hoursToAdd) {
@@ -1716,6 +1938,9 @@ public class DateExpression implements DateResult, RangeComparable<DateResult>, 
 	 * Negative values are supported.
 	 *
 	 * @param hoursToAdd hours to offset by
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return a DateExpression
 	 */
 	public DateExpression addHours(NumberExpression hoursToAdd) {
@@ -1741,6 +1966,9 @@ public class DateExpression implements DateResult, RangeComparable<DateResult>, 
 	 * Negative values are supported.
 	 *
 	 * @param weeksToAdd weeks to offset by
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return a DateExpression
 	 */
 	public DateExpression addWeeks(int weeksToAdd) {
@@ -1754,6 +1982,9 @@ public class DateExpression implements DateResult, RangeComparable<DateResult>, 
 	 * Negative values are supported.
 	 *
 	 * @param weeksToAdd weeks to offset by
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return a DateExpression
 	 */
 	public DateExpression addWeeks(NumberExpression weeksToAdd) {
@@ -1779,6 +2010,9 @@ public class DateExpression implements DateResult, RangeComparable<DateResult>, 
 	 * Negative values are supported.
 	 *
 	 * @param monthsToAdd months to offset by
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return a DateExpression
 	 */
 	public DateExpression addMonths(int monthsToAdd) {
@@ -1792,6 +2026,9 @@ public class DateExpression implements DateResult, RangeComparable<DateResult>, 
 	 * Negative values are supported.
 	 *
 	 * @param monthsToAdd months to offset by
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return a DateExpression
 	 */
 	public DateExpression addMonths(NumberExpression monthsToAdd) {
@@ -1817,6 +2054,9 @@ public class DateExpression implements DateResult, RangeComparable<DateResult>, 
 	 * Negative values are supported.
 	 *
 	 * @param yearsToAdd years to offset by
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return a DateExpression
 	 */
 	public DateExpression addYears(int yearsToAdd) {
@@ -1830,6 +2070,9 @@ public class DateExpression implements DateResult, RangeComparable<DateResult>, 
 	 * Negative values are supported.
 	 *
 	 * @param yearsToAdd years to offset by
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return a DateExpression
 	 */
 	public DateExpression addYears(NumberExpression yearsToAdd) {
@@ -1856,6 +2099,9 @@ public class DateExpression implements DateResult, RangeComparable<DateResult>, 
 	 * Negative values are supported.
 	 *
 	 * @param dateToCompareTo date to compare
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return a NumberExpression
 	 */
 	public NumberExpression daysFrom(Date dateToCompareTo) {
@@ -1870,6 +2116,9 @@ public class DateExpression implements DateResult, RangeComparable<DateResult>, 
 	 * Negative values are supported.
 	 *
 	 * @param dateToCompareTo date to compare
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return a NumberExpression
 	 */
 	public NumberExpression daysFrom(DateResult dateToCompareTo) {
@@ -1896,6 +2145,9 @@ public class DateExpression implements DateResult, RangeComparable<DateResult>, 
 	 * Negative values are supported.
 	 *
 	 * @param dateToCompareTo date to compare
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return a NumberExpression
 	 */
 	public NumberExpression weeksFrom(Date dateToCompareTo) {
@@ -1910,6 +2162,9 @@ public class DateExpression implements DateResult, RangeComparable<DateResult>, 
 	 * Negative values are supported.
 	 *
 	 * @param dateToCompareTo date to compare
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return a NumberExpression
 	 */
 	public NumberExpression weeksFrom(DateExpression dateToCompareTo) {
@@ -1936,6 +2191,9 @@ public class DateExpression implements DateResult, RangeComparable<DateResult>, 
 	 * Negative values are supported.
 	 *
 	 * @param dateToCompareTo date to compare
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return a NumberExpression
 	 */
 	public NumberExpression monthsFrom(Date dateToCompareTo) {
@@ -1950,6 +2208,9 @@ public class DateExpression implements DateResult, RangeComparable<DateResult>, 
 	 * Negative values are supported.
 	 *
 	 * @param dateToCompareTo date to compare
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return a NumberExpression
 	 */
 	public NumberExpression monthsFrom(DateResult dateToCompareTo) {
@@ -1976,6 +2237,9 @@ public class DateExpression implements DateResult, RangeComparable<DateResult>, 
 	 * Negative values are supported.
 	 *
 	 * @param dateToCompareTo date to compare
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return a NumberExpression
 	 */
 	public NumberExpression yearsFrom(Date dateToCompareTo) {
@@ -1990,6 +2254,9 @@ public class DateExpression implements DateResult, RangeComparable<DateResult>, 
 	 * Negative values are supported.
 	 *
 	 * @param dateToCompareTo date to compare
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return a NumberExpression
 	 */
 	public NumberExpression yearsFrom(DateResult dateToCompareTo) {
@@ -2016,6 +2283,9 @@ public class DateExpression implements DateResult, RangeComparable<DateResult>, 
 	 * Negative values are supported.
 	 *
 	 * @param dateToCompareTo date to compare
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return a NumberExpression
 	 */
 	public NumberExpression hoursFrom(Date dateToCompareTo) {
@@ -2030,6 +2300,9 @@ public class DateExpression implements DateResult, RangeComparable<DateResult>, 
 	 * Negative values are supported.
 	 *
 	 * @param dateToCompareTo date to compare
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return a NumberExpression
 	 */
 	public NumberExpression hoursFrom(DateResult dateToCompareTo) {
@@ -2056,6 +2329,9 @@ public class DateExpression implements DateResult, RangeComparable<DateResult>, 
 	 * Negative values are supported.
 	 *
 	 * @param dateToCompareTo date to compare
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return a NumberExpression
 	 */
 	public NumberExpression minutesFrom(Date dateToCompareTo) {
@@ -2070,6 +2346,9 @@ public class DateExpression implements DateResult, RangeComparable<DateResult>, 
 	 * Negative values are supported.
 	 *
 	 * @param dateToCompareTo date to compare
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return a NumberExpression
 	 */
 	public NumberExpression minutesFrom(DateResult dateToCompareTo) {
@@ -2096,6 +2375,9 @@ public class DateExpression implements DateResult, RangeComparable<DateResult>, 
 	 * Negative values are supported.
 	 *
 	 * @param dateToCompareTo date to compare
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return a NumberExpression
 	 */
 	public NumberExpression secondsFrom(Date dateToCompareTo) {
@@ -2110,6 +2392,9 @@ public class DateExpression implements DateResult, RangeComparable<DateResult>, 
 	 * Negative values are supported.
 	 *
 	 * @param dateToCompareTo date to compare
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return a NumberExpression
 	 */
 	public NumberExpression secondsFrom(DateResult dateToCompareTo) {
@@ -2145,6 +2430,9 @@ public class DateExpression implements DateResult, RangeComparable<DateResult>, 
 	/**
 	 * Derive the first day of the month for this date expression
 	 *
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return a Date expression
 	 */
 	public DateExpression firstOfMonth() {
@@ -2153,6 +2441,9 @@ public class DateExpression implements DateResult, RangeComparable<DateResult>, 
 
 	/**
 	 * Derive the last day of the month for this date expression
+	 *
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
 	 *
 	 * @return a Date expression
 	 */
@@ -2178,6 +2469,9 @@ public class DateExpression implements DateResult, RangeComparable<DateResult>, 
 	 *
 	 * Refer to {@link #SUNDAY},  {@link #MONDAY}, etc
 	 *
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return an index of the day of the week.
 	 */
 	public NumberExpression dayOfWeek() {
@@ -2199,6 +2493,9 @@ public class DateExpression implements DateResult, RangeComparable<DateResult>, 
 	 * @param firstEndTime the end of the first interval
 	 * @param secondStartTime the beginning of the second interval
 	 * @param secondEndtime the end of the second interval
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return a boolean expression
 	 */
 	public static BooleanExpression overlaps(Date firstStartTime, Date firstEndTime, Date secondStartTime, Date secondEndtime) {
@@ -2217,6 +2514,9 @@ public class DateExpression implements DateResult, RangeComparable<DateResult>, 
 	 * @param firstEndTime the end of the first interval
 	 * @param secondStartTime the beginning of the second interval
 	 * @param secondEndtime the end of the second interval
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return a boolean expression
 	 */
 	public static BooleanExpression overlaps(DateResult firstStartTime, DateResult firstEndTime, DateResult secondStartTime, DateResult secondEndtime) {
@@ -2235,6 +2535,9 @@ public class DateExpression implements DateResult, RangeComparable<DateResult>, 
 	 * @param firstEndTime the end of the first interval
 	 * @param secondStartTime the beginning of the second interval
 	 * @param secondEndtime the end of the second interval
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return a Boolean expression
 	 */
 	public static BooleanExpression overlaps(DateExpression firstStartTime, DateExpression firstEndTime, DateResult secondStartTime, DateResult secondEndtime) {
@@ -2257,6 +2560,9 @@ public class DateExpression implements DateResult, RangeComparable<DateResult>, 
 	 * than aggregating a column.
 	 *
 	 * @param possibleValues needs to be the least of these
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return the least/smallest value from the list.
 	 */
 	public static DateExpression leastOf(Date... possibleValues) {
@@ -2275,6 +2581,9 @@ public class DateExpression implements DateResult, RangeComparable<DateResult>, 
 	 * than aggregating a column.
 	 *
 	 * @param possibleValues needs to be the least of these
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return the least/smallest value from the list.
 	 */
 	public static DateExpression leastOf(Collection<? extends DateResult> possibleValues) {
@@ -2293,6 +2602,9 @@ public class DateExpression implements DateResult, RangeComparable<DateResult>, 
 	 * than aggregating a column.
 	 *
 	 * @param possibleValues needs to be the least of these
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return the least/smallest value from the list.
 	 */
 	public static DateExpression leastOf(DateResult... possibleValues) {
@@ -2324,6 +2636,9 @@ public class DateExpression implements DateResult, RangeComparable<DateResult>, 
 	 * than aggregating a column.
 	 *
 	 * @param possibleValues needs to be the largest of these
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return the largest value from the list.
 	 */
 	public static DateExpression greatestOf(Date... possibleValues) {
@@ -2342,6 +2657,9 @@ public class DateExpression implements DateResult, RangeComparable<DateResult>, 
 	 * than aggregating a column.
 	 *
 	 * @param possibleValues needs to be the largest of these
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return the largest value from the list.
 	 */
 	public static DateExpression greatestOf(Collection<? extends DateResult> possibleValues) {
@@ -2360,6 +2678,9 @@ public class DateExpression implements DateResult, RangeComparable<DateResult>, 
 	 * than aggregating a column.
 	 *
 	 * @param possibleValues needs to be the largest of these
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return the largest value from the list.
 	 */
 	public static DateExpression greatestOf(DateResult... possibleValues) {
@@ -2392,6 +2713,9 @@ public class DateExpression implements DateResult, RangeComparable<DateResult>, 
 	 * so a native implementation is recommended.
 	 *
 	 * @param timeZone the desired time zone
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return a date expression that evaluates to the date value in the specified time zone.
 	 */
 	public DateExpression atTimeZone(TimeZone timeZone) {
@@ -2608,7 +2932,10 @@ public class DateExpression implements DateResult, RangeComparable<DateResult>, 
 		}
 
 		/**
-		 * @return the only
+		 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
+	 * @return the only
 		 */
 		public DateExpression getFirst() {
 			return only;
@@ -2731,14 +3058,20 @@ public class DateExpression implements DateResult, RangeComparable<DateResult>, 
 		}
 
 		/**
-		 * @return the first
+		 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
+	 * @return the first
 		 */
 		public DateExpression getFirst() {
 			return first;
 		}
 
 		/**
-		 * @return the second
+		 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
+	 * @return the second
 		 */
 		public DateResult getSecond() {
 			return second;
@@ -2797,14 +3130,20 @@ public class DateExpression implements DateResult, RangeComparable<DateResult>, 
 		}
 
 		/**
-		 * @return the first
+		 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
+	 * @return the first
 		 */
 		public DateExpression getFirst() {
 			return first;
 		}
 
 		/**
-		 * @return the second
+		 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
+	 * @return the second
 		 */
 		public TimeZone getSecond() {
 			return second;
@@ -2870,14 +3209,20 @@ public class DateExpression implements DateResult, RangeComparable<DateResult>, 
 		}
 
 		/**
-		 * @return the first
+		 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
+	 * @return the first
 		 */
 		public DateExpression getFirst() {
 			return first;
 		}
 
 		/**
-		 * @return the second
+		 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
+	 * @return the second
 		 */
 		public DateRepeatResult getSecond() {
 			return second;
@@ -3091,14 +3436,20 @@ public class DateExpression implements DateResult, RangeComparable<DateResult>, 
 		}
 
 		/**
-		 * @return the column
+		 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
+	 * @return the column
 		 */
 		protected DateExpression getColumn() {
 			return column;
 		}
 
 		/**
-		 * @return the values
+		 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
+	 * @return the values
 		 */
 		protected List<DateResult> getValues() {
 			return values;
@@ -3176,14 +3527,20 @@ public class DateExpression implements DateResult, RangeComparable<DateResult>, 
 		}
 
 		/**
-		 * @return the first
+		 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
+	 * @return the first
 		 */
 		protected DateExpression getFirst() {
 			return first;
 		}
 
 		/**
-		 * @return the second
+		 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
+	 * @return the second
 		 */
 		protected DateResult getSecond() {
 			return second;

@@ -23,6 +23,9 @@ import java.sql.Statement;
  * where each pair of numbers is a point and the entire string is less than 2000
  * characters
  *
+ * <p style="color: #F90;">Support DBvolution at
+ * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+ *
  * @author gregorygraham
  */
 public enum MultiPoint2DFunctions implements DBVFeature {
@@ -234,6 +237,9 @@ public enum MultiPoint2DFunctions implements DBVFeature {
 	}
 	
 	/**
+	 *
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
 	 *
 	 * @return the integer version number of the function to be used
 	 */

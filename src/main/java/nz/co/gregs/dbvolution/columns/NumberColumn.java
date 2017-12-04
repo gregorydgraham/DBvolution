@@ -39,6 +39,9 @@ import nz.co.gregs.dbvolution.query.RowDefinition;
  * Generally you get a NumberColummn using
  * {@link RowDefinition#column(nz.co.gregs.dbvolution.datatypes.DBNumber)  RowDefinition.column(DBNumber)}.
  *
+ * <p style="color: #F90;">Support DBvolution at
+ * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+ *
  * @author Gregory Graham
  * @see RowDefinition
  * @see AbstractColumn
@@ -115,6 +118,9 @@ public class NumberColumn extends NumberExpression implements ColumnProvider {
 	 * EQUALS.
 	 *
 	 * @param column the value to compare against
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return a BooleanExpression
 	 */
 	public BooleanExpression is(DBInteger column) {
@@ -126,6 +132,9 @@ public class NumberColumn extends NumberExpression implements ColumnProvider {
 	 * EQUALS.
 	 *
 	 * @param column the value to compare against
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return a BooleanExpression
 	 */
 	public BooleanExpression is(DBNumber column) {

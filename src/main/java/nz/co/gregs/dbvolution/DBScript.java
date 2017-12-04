@@ -35,6 +35,9 @@ import nz.co.gregs.dbvolution.actions.DBActionList;
  * {@link DBScript#implement(nz.co.gregs.dbvolution.DBDatabase) } to run the
  * script within a Committed Transaction.
  * 
+ * <p style="color: #F90;">Support DBvolution at
+ * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+ *
  * @author Gregory Graham
  */
 public abstract class DBScript {
@@ -49,6 +52,9 @@ public abstract class DBScript {
 	 * later use.
 	 *
 	 * @param db	db
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return DBActionList
 	 * @throws java.lang.Exception java.lang.Exception
 	 *
@@ -70,6 +76,9 @@ public abstract class DBScript {
 	 * and made permanent.
 	 *
 	 * @param db	db
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return a DBActionList of all the actions performed on the database
 	 * @throws java.lang.Exception java.lang.Exception
 	 *
@@ -93,6 +102,9 @@ public abstract class DBScript {
 	 * Any exceptions will cause the script to abort and rollback safely.
 	 *
 	 * @param db	db
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return a DBActionList of all the actions performed on the database
 	 * @throws java.lang.Exception java.lang.Exception
 	 *
@@ -105,6 +117,9 @@ public abstract class DBScript {
 
 	/**
 	 * Creates and returns a DBtransaction for this DBScript.
+	 *
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
 	 *
 	 * @return the transaction required to run the script.
 	 */

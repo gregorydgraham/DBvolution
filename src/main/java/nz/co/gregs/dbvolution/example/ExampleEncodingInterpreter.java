@@ -39,6 +39,9 @@ import nz.co.gregs.dbvolution.reflection.EncodingInterpreter;
  * A simple example implementation of {@link EncodingInterpreter} that uses
  * "&amp;", "-", and "=" to separate the encoded parts.
  *
+ * <p style="color: #F90;">Support DBvolution at
+ * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+ *
  * @author Gregory Graham
  */
 public class ExampleEncodingInterpreter implements EncodingInterpreter {
@@ -63,6 +66,9 @@ public class ExampleEncodingInterpreter implements EncodingInterpreter {
 	 * {@link QueryableDatatype#hasBeenSet() set properties}.
 	 *
 	 * @param rows all the defined rows to be encoded.
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return an encoded string of the rows.
 	 */
 	@Override
@@ -111,6 +117,9 @@ public class ExampleEncodingInterpreter implements EncodingInterpreter {
 	 * {@link QueryableDatatype#hasBeenSet() set properties}.
 	 *
 	 * @param rows all the defined rows to be encoded.
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return an encoded string of the rows.
 	 */
 	public String encode(Collection<DBRow> rows) {
@@ -122,6 +131,9 @@ public class ExampleEncodingInterpreter implements EncodingInterpreter {
 	 * {@link QueryableDatatype#hasBeenSet() set properties}.
 	 *
 	 * @param queryRow all the defined rows to be encoded.
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return an encoded string of the rows.
 	 */
 	public String encode(DBQueryRow queryRow) {
@@ -133,6 +145,9 @@ public class ExampleEncodingInterpreter implements EncodingInterpreter {
 	 * {@link QueryableDatatype#hasBeenSet() set properties}.
 	 *
 	 * @param queryRows all the defined rows to be encoded.
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return an encoded string of the rows.
 	 */
 	public String encode(List<DBQueryRow> queryRows) {
@@ -274,6 +289,9 @@ public class ExampleEncodingInterpreter implements EncodingInterpreter {
 	}
 
 	/**
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return the encodingSeparator
 	 */
 	public String getParameterSeparator() {
@@ -281,6 +299,9 @@ public class ExampleEncodingInterpreter implements EncodingInterpreter {
 	}
 
 	/**
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return the TABLE_AND_PROPERTY_SEPARATOR
 	 */
 	public String getTableAndPropertySeparator() {
@@ -288,6 +309,9 @@ public class ExampleEncodingInterpreter implements EncodingInterpreter {
 	}
 
 	/**
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return the PROPERTY_AND_VALUE_SEPARATOR
 	 */
 	public String getPropertyAndValueSeparator() {

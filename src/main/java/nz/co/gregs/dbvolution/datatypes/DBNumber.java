@@ -47,6 +47,9 @@ import nz.co.gregs.dbvolution.operators.DBPermittedValuesOperator;
  * Generally DBNumber is declared inside your DBRow sub-class as:
  * {@code @DBColumn public DBNumber myIntColumn = new DBNumber();}
  *
+ * <p style="color: #F90;">Support DBvolution at
+ * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+ *
  * @author Gregory Graham
  */
 public class DBNumber extends QueryableDatatype implements NumberResult {
@@ -164,6 +167,9 @@ public class DBNumber extends QueryableDatatype implements NumberResult {
 
 	/**
 	 *
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return the default database type as a string, may be gazumped by the
 	 * DBDefinition
 	 */
@@ -175,6 +181,9 @@ public class DBNumber extends QueryableDatatype implements NumberResult {
 	/**
 	 *
 	 * @param db	db
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return the underlying number formatted for a SQL statement
 	 */
 	@Override
@@ -193,6 +202,9 @@ public class DBNumber extends QueryableDatatype implements NumberResult {
 	 * The literal value is undefined (and {@code null}) if using an operator
 	 * other than {@code equals}.
 	 *
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return the literal value, if defined, which may be null
 	 */
 	@Override
@@ -202,6 +214,9 @@ public class DBNumber extends QueryableDatatype implements NumberResult {
 
 	/**
 	 * The current {@link #getValue()  literal value} of this DBNumber as a Number
+	 *
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
 	 *
 	 * @return the number as the original number class
 	 */
@@ -218,6 +233,9 @@ public class DBNumber extends QueryableDatatype implements NumberResult {
 	/**
 	 * The current {@link #getValue()  literal value} of this DBNumber as a Double
 	 *
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return the number as a Double
 	 */
 	@SuppressWarnings("deprecation")
@@ -233,6 +251,9 @@ public class DBNumber extends QueryableDatatype implements NumberResult {
 
 	/**
 	 * The current {@link #getValue()  literal value} of this DBNumber as a Long
+	 *
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
 	 *
 	 * @return the number as a Long
 	 */
@@ -252,6 +273,9 @@ public class DBNumber extends QueryableDatatype implements NumberResult {
 	/**
 	 * The current {@link #getValue()  literal value} of this DBNumber as an
 	 * Integer
+	 *
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
 	 *
 	 * @return the number as an Integer
 	 */

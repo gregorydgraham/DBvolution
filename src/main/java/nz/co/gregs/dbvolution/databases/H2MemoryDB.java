@@ -21,6 +21,9 @@ import javax.sql.DataSource;
 /**
  * Stores all the required functionality to use an H2 database in memory.
  *
+ * <p style="color: #F90;">Support DBvolution at
+ * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+ *
  * @author Gregory Graham
  */
 public class H2MemoryDB extends H2DB {

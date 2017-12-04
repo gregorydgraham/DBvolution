@@ -27,7 +27,10 @@ import nz.co.gregs.dbvolution.expressions.DBExpression;
 	 * Creates a virtual operator that provides access to the ISNULL, EQUALS, or
 	 * IN operator as required.
 	 *
-	 * @author Gregory Graham
+	 * <p style="color: #F90;">Support DBvolution at
+ * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+ *
+ * @author Gregory Graham
 	 */
 public class DBPermittedValuesOperator extends DBMetaOperator {
 

@@ -37,6 +37,9 @@ import nz.co.gregs.dbvolution.results.Spatial2DResult;
  * A subclass of OracleDB that contains definitions of standard Spatial
  * functions shared by Oracle databases with Spatial functions.
  *
+ * <p style="color: #F90;">Support DBvolution at
+ * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+ *
  * @author gregorygraham
  */
 public class OracleSpatialDBDefinition extends OracleDBDefinition {

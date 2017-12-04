@@ -27,6 +27,9 @@ import nz.co.gregs.dbvolution.DBRow;
  * Class to allow some functionality for data types that DBvolution does not yet
  * support
  *
+ * <p style="color: #F90;">Support DBvolution at
+ * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+ *
  * @author Gregory Graham
  */
 public class DBUnknownDatatype extends QueryableDatatype {

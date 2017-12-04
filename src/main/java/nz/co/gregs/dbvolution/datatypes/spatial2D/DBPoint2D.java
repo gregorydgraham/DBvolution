@@ -42,6 +42,9 @@ import nz.co.gregs.dbvolution.results.Point2DResult;
  * {@code @DBColumn public DBPoint2D myPointColumn = new DBPoint2D();}
  *
  *
+ * <p style="color: #F90;">Support DBvolution at
+ * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+ *
  * @author Gregory Graham
  */
 public class DBPoint2D extends QueryableDatatype implements Point2DResult {
@@ -83,6 +86,9 @@ public class DBPoint2D extends QueryableDatatype implements Point2DResult {
 	 *
 	 * <p>
 	 * NULL is valid result from this method.
+	 *
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
 	 *
 	 * @return the set value of this object as a JTS Point object.
 	 */

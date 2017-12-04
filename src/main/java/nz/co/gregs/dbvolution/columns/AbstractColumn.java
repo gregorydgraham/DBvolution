@@ -40,6 +40,9 @@ import nz.co.gregs.dbvolution.query.RowDefinition;
  * Also allows PropertyWrapper to be passed around without confusing the public
  * interface.
  *
+ * <p style="color: #F90;">Support DBvolution at
+ * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+ *
  * @author greg
  */
 public class AbstractColumn implements DBExpression {
@@ -117,6 +120,9 @@ public class AbstractColumn implements DBExpression {
 	}
 
 	/**
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return the propertyWrapperOfQDT
 	 */
 	public PropertyWrapper getPropertyWrapper() {
@@ -129,6 +135,9 @@ public class AbstractColumn implements DBExpression {
 	 * <p>
 	 * Probably this should be implemented as:<br>
 	 * public MyValue asExpression(){return new MyValue(this);}
+	 *
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
 	 *
 	 * @return this instance as a StringValue, NumberValue, DateValue, or
 	 * LargeObjectValue as appropriate
@@ -162,6 +171,9 @@ public class AbstractColumn implements DBExpression {
 	}
 
 	/**
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return the dbrow
 	 */
 	protected RowDefinition getRowDefinition() {
@@ -169,6 +181,9 @@ public class AbstractColumn implements DBExpression {
 	}
 
 	/**
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return the field
 	 */
 	protected Object getField() {
@@ -185,6 +200,9 @@ public class AbstractColumn implements DBExpression {
 	 *
 	 * @param row resolve the column for this row and provide the
 	 * QueryableDatatype that is appropriate
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return the QDT version of the field on the DBRow
 	 */
 	public QueryableDatatype getAppropriateQDTFromRow(RowDefinition row) {
@@ -201,6 +219,9 @@ public class AbstractColumn implements DBExpression {
 	 *
 	 * @param row resolve the column for this row and provide the appropriate Java
 	 * field (may be a QueryableDatatype)
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return the actual field on the DBRow object referenced by this column.
 	 */
 	public Object getAppropriateFieldFromRow(RowDefinition row) {
@@ -208,6 +229,9 @@ public class AbstractColumn implements DBExpression {
 	}
 
 	/**
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return the useTableAlias
 	 */
 	protected boolean isUseTableAlias() {
@@ -224,6 +248,9 @@ public class AbstractColumn implements DBExpression {
 	/**
 	 * Returns a new version of the DBRow from which this column has been made.
 	 *
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return an appropriate DBRow
 	 */
 	@SuppressWarnings("unchecked")
@@ -237,6 +264,9 @@ public class AbstractColumn implements DBExpression {
 	/**
 	 * Returns the class of the DBRow from which this column has been made.
 	 *
+	 *
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
 	 *
 	 * @return an appropriate DBRow class
 	 */

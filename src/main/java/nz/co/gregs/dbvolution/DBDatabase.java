@@ -53,6 +53,9 @@ import org.apache.commons.logging.LogFactory;
  * Very few programmers will need to construct an actual DBDatabase as the
  * subclasses provide most of the required details for connecting to databases.
  *
+ * <p style="color: #F90;">Support DBvolution at
+ * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+ *
  * @author Gregory Graham
  */
 public abstract class DBDatabase implements Cloneable {
@@ -82,6 +85,9 @@ public abstract class DBDatabase implements Cloneable {
 
 	/**
 	 * Clones the DBDatabase.
+	 *
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
 	 *
 	 * @return a clone of the DBDatabase.
 	 * @throws CloneNotSupportedException not likely
@@ -249,6 +255,9 @@ public abstract class DBDatabase implements Cloneable {
 	 * However you will not need a DBStatement to use DBvolution. Your path lies
 	 * elsewhere.
 	 *
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return the DBStatement to be used: either a new one, or the current
 	 * transaction statement.
 	 * @throws java.sql.SQLException interacts with the database layer.
@@ -288,6 +297,9 @@ public abstract class DBDatabase implements Cloneable {
 	 * <p>
 	 * However you will not need a Connection to use DBvolution. Your path lies
 	 * elsewhere.
+	 *
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
 	 *
 	 * @return the Connection to be used.
 	 * @throws java.sql.SQLException interacts with the database layer
@@ -384,6 +396,9 @@ public abstract class DBDatabase implements Cloneable {
 	 * Inserts DBRows into the correct tables automatically
 	 *
 	 * @param listOfRowsToInsert a list of DBRows
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return a DBActionList of all the actions performed
 	 * @throws SQLException database exceptions
 	 */
@@ -400,6 +415,9 @@ public abstract class DBDatabase implements Cloneable {
 	 * Inserts DBRows and Lists of DBRows into the correct tables automatically
 	 *
 	 * @param listOfRowsToInsert a List of DBRows
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return a DBActionList of all the actions performed
 	 * @throws SQLException database exceptions
 	 */
@@ -418,6 +436,9 @@ public abstract class DBDatabase implements Cloneable {
 	 * Deletes DBRows from the correct tables automatically
 	 *
 	 * @param rows a list of DBRows
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return a DBActionList of all the actions performed
 	 * @throws SQLException database exceptions
 	 */
@@ -434,6 +455,9 @@ public abstract class DBDatabase implements Cloneable {
 	 * Deletes Lists of DBRows from the correct tables automatically
 	 *
 	 * @param list a list of DBRows
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return a DBActionList of all the actions performed
 	 * @throws SQLException database exceptions
 	 */
@@ -455,6 +479,9 @@ public abstract class DBDatabase implements Cloneable {
 	 * been freshly retrieved from the database.
 	 *
 	 * @param rows a list of DBRows
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return a DBActionList of the actions performed on the database
 	 * @throws SQLException database exceptions
 	 */
@@ -474,6 +501,9 @@ public abstract class DBDatabase implements Cloneable {
 	 * been freshly retrieved from the database.
 	 *
 	 * @param listOfRowsToUpdate a List of DBRows
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return a DBActionList of the actions performed on the database
 	 * @throws SQLException database exceptions
 	 */
@@ -498,6 +528,9 @@ public abstract class DBDatabase implements Cloneable {
 	 *
 	 * @param <R> the row affected
 	 * @param exampleRow the example
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return a list of the selected rows
 	 * @throws SQLException database exceptions
 	 */
@@ -517,6 +550,9 @@ public abstract class DBDatabase implements Cloneable {
 	 *
 	 * @param <R> the table affected
 	 * @param exampleRow the example
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return a list of the selected rows
 	 * @throws SQLException database exceptions
 	 */
@@ -536,6 +572,9 @@ public abstract class DBDatabase implements Cloneable {
 	 * @param expectedNumberOfRows throw an exception and abort if this number is
 	 * not matched
 	 * @param exampleRow the example
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return a list of the selected rows
 	 * @throws SQLException database exceptions
 	 * @throws UnexpectedNumberOfRowsException the exception thrown if the number
@@ -560,6 +599,9 @@ public abstract class DBDatabase implements Cloneable {
 	 * @param <R> the table affected
 	 * @param expectedNumberOfRows the number of rows required
 	 * @param exampleRow the example
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return a list of the selected rows
 	 * @throws SQLException database exceptions
 	 * @throws UnexpectedNumberOfRowsException the exception thrown when the
@@ -574,6 +616,9 @@ public abstract class DBDatabase implements Cloneable {
 	 * given
 	 *
 	 * @param rows the examples of the rows required
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return a list of DBQueryRows relating to the selected rows
 	 * @throws SQLException database exceptions
 	 * @see DBQuery
@@ -589,6 +634,9 @@ public abstract class DBDatabase implements Cloneable {
 	 * given
 	 *
 	 * @param rows the example rows for the tables required
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return a list of DBQueryRows relating to the selected rows
 	 * @throws SQLException database exceptions
 	 * @see DBQuery
@@ -623,6 +671,9 @@ public abstract class DBDatabase implements Cloneable {
 	 *
 	 * @param expectedNumberOfRows the number of rows required
 	 * @param rows examples of the tables required
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return a list of DBQueryRows relating to the selected rows
 	 * @throws SQLException database exceptions
 	 * @throws UnexpectedNumberOfRowsException thrown when the retrieved row count
@@ -646,6 +697,9 @@ public abstract class DBDatabase implements Cloneable {
 	 * @param <V> the return type of the transaction, can be anything
 	 * @param dbTransaction the transaction to execute
 	 * @param commit commit=true or rollback=false.
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return the object returned by the transaction
 	 * @throws SQLException database exceptions
 	 * @throws Exception any exception thrown by the transactions code
@@ -715,6 +769,9 @@ public abstract class DBDatabase implements Cloneable {
 	 *
 	 * @param <V> the return type of the transaction
 	 * @param dbTransaction the transaction to execute
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return the object returned by the transaction
 	 * @throws SQLException database exceptions
 	 * @throws Exception any other exception thrown by the transaction
@@ -737,6 +794,9 @@ public abstract class DBDatabase implements Cloneable {
 	 *
 	 * @param <V> the return type of the transaction
 	 * @param dbTransaction the transaction to execute
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return the object returned by the transaction
 	 * @throws SQLException database exceptions
 	 * @throws Exception any other exception
@@ -752,6 +812,9 @@ public abstract class DBDatabase implements Cloneable {
 	 * equivalent to script.implement(this);
 	 *
 	 * @param script the script to execute and commit
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return a DBActionList provided by the script
 	 * @throws Exception any exception can be thrown by a DBScript
 	 */
@@ -765,6 +828,9 @@ public abstract class DBDatabase implements Cloneable {
 	 * equivalent to script.test(this);
 	 *
 	 * @param script the script to executed and rollback
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return a DBActionList provided by the script
 	 * @throws Exception DBScripts can throw any exception at any time
 	 */
@@ -774,6 +840,9 @@ public abstract class DBDatabase implements Cloneable {
 
 	/**
 	 * Returns the name of the JDBC driver class used by this DBDatabase instance.
+	 *
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
 	 *
 	 * @return the driverName
 	 */
@@ -793,6 +862,9 @@ public abstract class DBDatabase implements Cloneable {
 	/**
 	 * Returns the JDBC URL used by this instance, if one has been specified.
 	 *
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return the jdbcURL
 	 */
 	public String getJdbcURL() {
@@ -802,6 +874,9 @@ public abstract class DBDatabase implements Cloneable {
 	/**
 	 * Returns the username specified for this DBDatabase instance.
 	 *
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return the username
 	 */
 	public String getUsername() {
@@ -810,6 +885,9 @@ public abstract class DBDatabase implements Cloneable {
 
 	/**
 	 * Returns the password specified
+	 *
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
 	 *
 	 * @return the password
 	 */
@@ -831,6 +909,9 @@ public abstract class DBDatabase implements Cloneable {
 	 *
 	 * @param <R> the table affected
 	 * @param example the example row to use in the query
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return a DBTable instance for the example provided
 	 */
 	public <R extends DBRow> DBTable<R> getDBTable(R example) {
@@ -844,6 +925,9 @@ public abstract class DBDatabase implements Cloneable {
 	 * This is the easiest way to create DBQueries, and indeed queries.
 	 *
 	 * @param examples the example rows that are required in the query
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return a DBQuery with the examples as required tables
 	 */
 	public DBQuery getDBQuery(DBRow... examples) {
@@ -857,6 +941,9 @@ public abstract class DBDatabase implements Cloneable {
 	 * This is the easiest way to create DBQueries, and indeed queries.
 	 *
 	 * @param examples the example rows that are required in the query
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return a DBQuery with the examples as required tables
 	 */
 	public DBQuery getDBQuery(List<DBRow> examples) {
@@ -875,6 +962,9 @@ public abstract class DBDatabase implements Cloneable {
 
 	/**
 	 * Indicates whether SQL will be printed before it is executed.
+	 *
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
 	 *
 	 * @return the printSQLBeforeExecuting
 	 */
@@ -1248,6 +1338,9 @@ public abstract class DBDatabase implements Cloneable {
 	 * While DBDefinition is important, unless you are implementing support for a
 	 * new database you probably don't need this.
 	 *
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return the DBDefinition used by this DBDatabase instance
 	 */
 	public DBDefinition getDefinition() {
@@ -1281,6 +1374,9 @@ public abstract class DBDatabase implements Cloneable {
 	 * on DBRow.
 	 *
 	 * @param row row
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return TRUE if the specified row has no specified criteria, FALSE
 	 * otherwise
 	 */
@@ -1351,6 +1447,9 @@ public abstract class DBDatabase implements Cloneable {
 	/**
 	 * Returns the database name if one was supplied.
 	 *
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return the database name
 	 */
 	public String getDatabaseName() {
@@ -1377,6 +1476,9 @@ public abstract class DBDatabase implements Cloneable {
 	 * <p>
 	 * However sometimes this is inappropriate and this method can help with those
 	 * times.
+	 *
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
 	 *
 	 * @return TRUE if this instance will try to batch SQL statements, FALSE
 	 * otherwise
@@ -1442,6 +1544,9 @@ public abstract class DBDatabase implements Cloneable {
 	 * TRUE for all databases. Timing for this implementation is not yet
 	 * available.
 	 *
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return TRUE if this DBDatabase supports full outer joins , FALSE
 	 * otherwise.
 	 */
@@ -1460,6 +1565,9 @@ public abstract class DBDatabase implements Cloneable {
 	 * <p>
 	 * This method indicates whether or not this instance can perform full outer
 	 * joins.
+	 *
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
 	 *
 	 * @return TRUE if the underlying database supports full outer joins natively,
 	 * FALSE otherwise.
@@ -1481,6 +1589,9 @@ public abstract class DBDatabase implements Cloneable {
 	 * @param <A> DBReport type
 	 * @param report report
 	 * @param examples examples
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return A List of instances of the supplied report from the database 1
 	 * Database exceptions may be thrown
 	 * @throws java.sql.SQLException java.sql.SQLException
@@ -1505,6 +1616,9 @@ public abstract class DBDatabase implements Cloneable {
 	 * @param <A> the DBReport to be derived from the database data.
 	 * @param report the report to be produced
 	 * @param examples DBRow subclasses that provide extra criteria
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return A list of the DBreports generated
 	 * @throws SQLException database exceptions
 	 */
@@ -1525,6 +1639,9 @@ public abstract class DBDatabase implements Cloneable {
 	 * @param <A> DBReport type
 	 * @param report report
 	 * @param examples examples
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return A List of instances of the supplied report from the database 1
 	 * Database exceptions may be thrown
 	 * @throws java.sql.SQLException java.sql.SQLException
@@ -1569,6 +1686,9 @@ public abstract class DBDatabase implements Cloneable {
 	 *
 	 * <p>
 	 * Used by {@link SQLiteDB} in particular.
+	 *
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
 	 *
 	 * @return The connection configured ready to use. 1 Database exceptions may
 	 * be thrown
@@ -1638,6 +1758,9 @@ public abstract class DBDatabase implements Cloneable {
 	 * The default implementation returns TRUE, and so will probably every
 	 * implementation.
 	 *
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return TRUE if the DBDatabase supports connection pooling, FALSE
 	 * otherwise.
 	 */
@@ -1685,6 +1808,9 @@ public abstract class DBDatabase implements Cloneable {
 	/**
 	 * Oracle does not differentiate between NULL and an empty string.
 	 *
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return FALSE.
 	 */
 	public Boolean supportsDifferenceBetweenNullAndEmptyString() {
@@ -1703,6 +1829,9 @@ public abstract class DBDatabase implements Cloneable {
 	 * If the database does not support recursive queries natively then DBvolution
 	 * will emulate recursive queries. Native queries are faster and easier on the
 	 * network and application server, so emulation should be a last resort.
+	 *
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
 	 *
 	 * @return TRUE by default, but some DBDatabases may return FALSE.
 	 */
@@ -1755,12 +1884,15 @@ public abstract class DBDatabase implements Cloneable {
 	 * maintain their data.
 	 *
 	 * <p>
-	 * DBvolution is usually clever with its connections and does not require 
-	 * a persistent connection.
+	 * DBvolution is usually clever with its connections and does not require a
+	 * persistent connection.
 	 *
 	 * <p>
 	 * However if a continuous connection is required to maintain the data,
 	 * override this method to return TRUE.
+	 *
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
 	 *
 	 * @return TRUE if the database requires a continuous connection to maintain
 	 * data, FALSE otherwise.

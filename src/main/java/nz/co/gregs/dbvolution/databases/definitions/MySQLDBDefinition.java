@@ -39,6 +39,9 @@ import nz.co.gregs.dbvolution.internal.properties.PropertyWrapper;
  * This DBDefinition is automatically included in {@link MySQLDB} instances, and
  * you should not need to use it directly.
  *
+ * <p style="color: #F90;">Support DBvolution at
+ * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+ *
  * @author Gregory Graham
  */
 public class MySQLDBDefinition extends DBDefinition {
@@ -138,6 +141,9 @@ public class MySQLDBDefinition extends DBDefinition {
 	/**
 	 * Provides the function of the function that provides the standard deviation
 	 * of a selection.
+	 *
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
 	 *
 	 * @return "stddev"
 	 */

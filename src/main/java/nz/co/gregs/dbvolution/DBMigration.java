@@ -146,6 +146,9 @@ public class DBMigration<M extends DBRow> extends RowDefinition {
 	 * {@link DBReport#getAllRows(nz.co.gregs.dbvolution.DBDatabase, nz.co.gregs.dbvolution.DBReport, nz.co.gregs.dbvolution.DBRow...) getRows method}.
 	 *
 	 * @param database database
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return a list of DBReport instances representing the results of the report
 	 * query. 1 Database exceptions may be thrown
 	 * @throws java.sql.SQLException java.sql.SQLException
@@ -164,6 +167,9 @@ public class DBMigration<M extends DBRow> extends RowDefinition {
 	 *
 	 * @param database database
 	 * @param extraExamples
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return a list of DBReport instances representing the results of the report
 	 * query. 1 Database exceptions may be thrown
 	 * @throws java.sql.SQLException java.sql.SQLException
@@ -225,6 +231,9 @@ public class DBMigration<M extends DBRow> extends RowDefinition {
 	 *
 	 * @param database database
 	 * @param rows rows
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return a list of DBReport instances representing the results of the report
 	 * query. 1 Database exceptions may be thrown
 	 * @throws java.sql.SQLException java.sql.SQLException
@@ -262,6 +271,9 @@ public class DBMigration<M extends DBRow> extends RowDefinition {
 	 * @param rows rows example rows that provide extra criteria
 	 * @param postQueryConditions the post-query conditions that will be supplied
 	 * to the HAVING clause of the query
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return a list of DBReport instances representing the results of the report
 	 * query
 	 * @throws java.sql.SQLException Database exceptions may be thrown
@@ -301,6 +313,9 @@ public class DBMigration<M extends DBRow> extends RowDefinition {
 	 *
 	 * @param database the database the SQL will be run against.
 	 * @param rows additional conditions to apply to the report.
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return a String of the SQL that will be used by this DBQuery. 1 Database
 	 * exceptions may be thrown
 	 */
@@ -319,6 +334,9 @@ public class DBMigration<M extends DBRow> extends RowDefinition {
 	 *
 	 * @param database the database to format the query for.
 	 * @param rows additional conditions to be applied.
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return a String of the SQL query that will be used to count the rows
 	 * returned by this report 1 Database exceptions may be thrown
 	 * @throws java.sql.SQLException java.sql.SQLException
@@ -341,6 +359,9 @@ public class DBMigration<M extends DBRow> extends RowDefinition {
 	 *
 	 * @param database the database to format the query for.
 	 * @param rows additional conditions for the query.
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return the number of rows that have or will be retrieved. 1 Database
 	 * exceptions may be thrown
 	 * @throws java.sql.SQLException java.sql.SQLException
@@ -362,6 +383,9 @@ public class DBMigration<M extends DBRow> extends RowDefinition {
 	 * </pre>
 	 *
 	 * @param columns a list of columns to sort the query by.
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return this DBReport instance
 	 */
 	public DBMigration<M> setSortOrder(ColumnProvider... columns) {
@@ -385,6 +409,9 @@ public class DBMigration<M extends DBRow> extends RowDefinition {
 	 * </pre>
 	 *
 	 * @param columns a list of columns to sort the query by.
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return this DBReport instance
 	 */
 	public DBMigration<M> setSortOrder(QueryableDatatype... columns) {
@@ -418,6 +445,9 @@ public class DBMigration<M extends DBRow> extends RowDefinition {
 
 	/**
 	 * Returns the list of sort columns
+	 *
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
 	 *
 	 * @return the sortColumns
 	 */

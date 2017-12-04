@@ -44,6 +44,9 @@ import nz.co.gregs.dbvolution.datatypes.*;
  * create and modify. However with a complex existing database it can be easier
  * to use this class to generate the data model and then add the details.
  *
+ * <p style="color: #F90;">Support DBvolution at
+ * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+ *
  * @author Gregory Graham
  */
 public class DBTableClassGenerator {
@@ -220,7 +223,10 @@ public class DBTableClassGenerator {
      * @param packageName packageName
      * @param pkRecog pkRecog
      * @param fkRecog fkRecog
-     * @return a List of DBTableClass instances representing the tables found on
+     * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
+	 * @return a List of DBTableClass instances representing the tables found on
      * the database 1 Database exceptions may be thrown
      * @throws java.sql.SQLException java.sql.SQLException
      */
@@ -244,7 +250,10 @@ public class DBTableClassGenerator {
      * @param packageName packageName
      * @param pkRecog pkRecog
      * @param fkRecog fkRecog
-     * @return a List of DBTableClass instances representing the views found on
+     * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
+	 * @return a List of DBTableClass instances representing the views found on
      * the database 1 Database exceptions may be thrown
      * @throws java.sql.SQLException java.sql.SQLException
      */
@@ -265,7 +274,10 @@ public class DBTableClassGenerator {
      * the version number supplied and the supplied {@link PrimaryKeyRecognisor}
      * and {@link ForeignKeyRecognisor} will be used.
      *
-     * @return a List of DBTableClass instances representing the tables and
+     * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
+	 * @return a List of DBTableClass instances representing the tables and
      * views found on the database 1 Database exceptions may be thrown
      */
     private static List<DBTableClass> generateClassesOfObjectTypes(DBDatabase database, String packageName, PrimaryKeyRecognisor pkRecognisor, ForeignKeyRecognisor fkRecogisor, String... dbObjectTypes) throws SQLException {
@@ -440,7 +452,10 @@ public class DBTableClassGenerator {
      * SQLType
      *
      *
-     * @return a string of the appropriate QueryableDatatype for the specified
+     * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
+	 * @return a string of the appropriate QueryableDatatype for the specified
      * SQLType
      */
     private static Class<? extends Object> getQueryableDatatypeNameOfSQLType(DBDatabase database, DBTableField column) throws UnknownJavaSQLTypeException {
@@ -524,7 +539,10 @@ public class DBTableClassGenerator {
      * I.e. changes "_" into an uppercase letter.
      *
      * @param s	s
-     * @return camel case version of the String
+     * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
+	 * @return camel case version of the String
      */
     public static String toClassCase(String s) {
         String classCaseString = "";
@@ -549,7 +567,10 @@ public class DBTableClassGenerator {
      * I.e. changes "_" into an uppercase letter.
      *
      *
-     * @return Camel Case version of S
+     * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
+	 * @return Camel Case version of S
      */
     private static String toFieldCase(String s) {
         String classClass = toClassCase(s);
@@ -566,7 +587,10 @@ public class DBTableClassGenerator {
      * Capitalizes the first letter of the string
      *
      *
-     * @return Capitalizes the first letter of the string
+     * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
+	 * @return Capitalizes the first letter of the string
      */
     private static String toProperCase(String s) {
         if (s.length() == 0) {

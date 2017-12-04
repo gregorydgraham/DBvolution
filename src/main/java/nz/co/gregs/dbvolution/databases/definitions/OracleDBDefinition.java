@@ -39,6 +39,9 @@ import nz.co.gregs.dbvolution.query.QueryOptions;
  * Provides the base definitions used by all variants of the Oracle database
  * DBDefinition.
  *
+ * <p style="color: #F90;">Support DBvolution at
+ * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+ *
  * @author Gregory Graham
  */
 public class OracleDBDefinition extends DBDefinition {
@@ -342,6 +345,9 @@ public class OracleDBDefinition extends DBDefinition {
 	 * By default this method returns null as system tables are not a problem
 	 * for most databases.
 	 *
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return a regexp pattern
 	 */
 	@Override
@@ -369,6 +375,9 @@ public class OracleDBDefinition extends DBDefinition {
 	 * Transform a Java Boolean into the equivalent in an SQL snippet.
 	 *
 	 * @param boolValue	boolValue
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return an SQL snippet
 	 */
 	@Override
@@ -389,6 +398,9 @@ public class OracleDBDefinition extends DBDefinition {
 	 * <p>
 	 * The default method returns " TRUE ".
 	 *
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return " TRUE "
 	 */
 	@Override
@@ -402,6 +414,9 @@ public class OracleDBDefinition extends DBDefinition {
 	 * <p>
 	 * The default method returns " FALSE ".
 	 *
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return " FALSE "
 	 */
 	@Override
@@ -413,6 +428,9 @@ public class OracleDBDefinition extends DBDefinition {
 	/**
 	 * An SQL snippet that always evaluates to FALSE for this database.
 	 *
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return " 1=0 " or equivalent
 	 */
 	@Override
@@ -422,6 +440,9 @@ public class OracleDBDefinition extends DBDefinition {
 
 	/**
 	 * An SQL snippet that always evaluates to TRUE for this database.
+	 *
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
 	 *
 	 * @return " 1=1 " or equivalent
 	 */

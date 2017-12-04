@@ -62,6 +62,9 @@ import nz.co.gregs.dbvolution.query.QueryDetails;
  * Another alternative is to add CarSales as an optional table and ignore rows
  * with a non-null CarSales.
  *
+ * <p style="color: #F90;">Support DBvolution at
+ * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+ *
  * @author Gregory Graham
  */
 public class ExistsExpression extends BooleanExpression {

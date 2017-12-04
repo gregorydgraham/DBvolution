@@ -53,6 +53,9 @@ import nz.co.gregs.dbvolution.expressions.DBExpression;
  * DBRows returned by {@link DBExpression#getTablesInvolved() } will be used to
  * creates edges from expressions in the query.
  *
+ * <p style="color: #F90;">Support DBvolution at
+ * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+ *
  * @author Gregory Graham
  */
 public class QueryGraph {
@@ -74,6 +77,9 @@ public class QueryGraph {
 
 	/**
 	 * Removes all state and prepares the graph for re-initialization.
+	 *
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
 	 *
 	 * @return this QueryGraph.
 	 */
@@ -207,6 +213,9 @@ public class QueryGraph {
 	 * Scans the QueryGraph to detect disconnected DBRows/tables and returns TRUE
 	 * if a disconnection exists.
 	 *
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return TRUE if the current graph contains a discontinuity which will cause
 	 * a cartesian join to occur.
 	 */
@@ -225,6 +234,9 @@ public class QueryGraph {
 
 	/**
 	 * Scans the QueryGraph to detect full outer join.
+	 *
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
 	 *
 	 * @return TRUE contains only optional tables, FALSE otherwise.
 	 */
@@ -245,6 +257,9 @@ public class QueryGraph {
 	 * This method prefers to return a required (that is an "inner join") table
 	 * over an optional, or "outer join", table. It also prefers tables with
 	 * actual conditions to unaltered join or leaf tables.
+	 *
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
 	 *
 	 * @return the class of a DBRow from which to start a traversal.
 	 */
@@ -293,6 +308,9 @@ public class QueryGraph {
 	 * problem of a query that spans the intersection of 2 optional/outer tables,
 	 * creating mid-query cartesian join that could have been avoided by including
 	 * a related required/inner table first.
+	 *
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
 	 *
 	 * @return a list of all DBRows in this QueryGraph in a smart an order as
 	 * possible.
@@ -364,6 +382,9 @@ public class QueryGraph {
 	 * creating mid-query cartesian join that could have been avoided by including
 	 * a related required/inner table first.
 	 *
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return a list of all DBRows in this QueryGraph in a smart an order as
 	 * possible.
 	 */
@@ -392,6 +413,9 @@ public class QueryGraph {
 	 *
 	 * <p>
 	 * Other graphs are available but we use {@link edu.uci.ics.jung.graph.Graph}.
+	 *
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
 	 *
 	 * @return a Jung Graph.
 	 */

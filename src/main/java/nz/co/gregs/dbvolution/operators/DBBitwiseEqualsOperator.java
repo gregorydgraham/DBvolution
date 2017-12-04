@@ -25,6 +25,9 @@ import nz.co.gregs.dbvolution.results.NumberResult;
 /**
  * Creates a bitwise comparison for boolean or number expressions
  *
+ * <p style="color: #F90;">Support DBvolution at
+ * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+ *
  * @author gregorygraham
  */
 public class DBBitwiseEqualsOperator extends DBEqualsOperator {

@@ -26,6 +26,9 @@ import nz.co.gregs.dbvolution.expressions.DBExpression;
 
 /**
  *
+ * <p style="color: #F90;">Support DBvolution at
+ * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+ *
  * @author gregorygraham
  */
 public class QueryDetails {
@@ -44,6 +47,9 @@ public class QueryDetails {
 	private boolean groupByRequiredByAggregator = false;
 
 	/**
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return the allQueryTables
 	 */
 	public List<DBRow> getAllQueryTables() {
@@ -51,6 +57,9 @@ public class QueryDetails {
 	}
 
 	/**
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return the requiredQueryTables
 	 */
 	public List<DBRow> getRequiredQueryTables() {
@@ -58,6 +67,9 @@ public class QueryDetails {
 	}
 
 	/**
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return the optionalQueryTables
 	 */
 	public List<DBRow> getOptionalQueryTables() {
@@ -65,6 +77,9 @@ public class QueryDetails {
 	}
 
 	/**
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return the assumedQueryTables
 	 */
 	public List<DBRow> getAssumedQueryTables() {
@@ -72,6 +87,9 @@ public class QueryDetails {
 	}
 
 	/**
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return the options
 	 */
 	public QueryOptions getOptions() {
@@ -79,6 +97,9 @@ public class QueryDetails {
 	}
 
 	/**
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return the extraExamples
 	 */
 	public List<DBRow> getExtraExamples() {
@@ -86,6 +107,9 @@ public class QueryDetails {
 	}
 
 	/**
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return the conditions
 	 */
 	public List<BooleanExpression> getConditions() {
@@ -93,6 +117,9 @@ public class QueryDetails {
 	}
 
 	/**
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return the expressionColumns
 	 */
 	public Map<Object, DBExpression> getExpressionColumns() {
@@ -100,6 +127,9 @@ public class QueryDetails {
 	}
 
 	/**
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return the dbReportGroupByColumns
 	 */
 	public Map<Object, DBExpression> getDBReportGroupByColumns() {
@@ -107,6 +137,9 @@ public class QueryDetails {
 	}
 
 	/**
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return the existingInstances
 	 */
 	public Map<Class<?>, Map<String, DBRow>> getExistingInstances() {
@@ -128,6 +161,9 @@ public class QueryDetails {
 
 	/**
 	 * Return the requirement for a GROUP BY clause.
+	 *
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
 	 *
 	 * @return TRUE if the GROUP BY clause is required, otherwise FALSE.
 	 */

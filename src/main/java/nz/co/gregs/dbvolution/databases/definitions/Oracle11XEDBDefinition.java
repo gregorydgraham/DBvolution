@@ -35,6 +35,9 @@ import nz.co.gregs.dbvolution.query.QueryOptions;
  * This DBDefinition is automatically included in {@link Oracle11XEDB}
  * instances, and you should not need to use it directly.
  *
+ * <p style="color: #F90;">Support DBvolution at
+ * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+ *
  * @author Gregory Graham
  */
 public class Oracle11XEDBDefinition extends OracleSpatialDBDefinition {

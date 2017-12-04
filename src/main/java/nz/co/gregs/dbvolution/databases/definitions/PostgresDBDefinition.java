@@ -38,6 +38,9 @@ import nz.co.gregs.dbvolution.results.ExpressionHasStandardStringResult;
  * {@link PostgresDBOverSSL} instances, and you should not need to use it
  * directly.
  *
+ * <p style="color: #F90;">Support DBvolution at
+ * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+ *
  * @author Gregory Graham
  */
 public class PostgresDBDefinition extends DBDefinition {

@@ -21,6 +21,9 @@ import com.vividsolutions.jts.geom.Geometry;
  * Thrown when the database has returned a geometry that cannot be interpreted
  * as the geometry expected.
  *
+ * <p style="color: #F90;">Support DBvolution at
+ * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+ *
  * @author Gregory Graham
  */
 public class IncorrectGeometryReturnedForDatatype extends DBRuntimeException {

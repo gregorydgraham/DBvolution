@@ -39,6 +39,9 @@ import nz.co.gregs.dbvolution.DBRow;
  * }, and {@link DBInsert#getInserts(nz.co.gregs.dbvolution.DBRow...) },
  * allowing a series of changes to be created then executed in a single batch.
  *
+ * <p style="color: #F90;">Support DBvolution at
+ * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+ *
  * @author Gregory Graham
  */
 public abstract class DBAction {
@@ -71,6 +74,9 @@ public abstract class DBAction {
 	 * Revert actions are tricky to implement correctly, so be sure to check that
 	 * the revert will produce the desired result.
 	 *
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return a list of all the actions required to revert this action in the
 	 * order they need to enacted.
 	 */
@@ -82,6 +88,9 @@ public abstract class DBAction {
 	 * <p>
 	 * Actions are allowed to create sub-actions so all actions are returned as a
 	 * DBActionList.
+	 *
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
 	 *
 	 * @return a DBActionList of this DBAction.
 	 */
@@ -97,6 +106,9 @@ public abstract class DBAction {
 	 * required.
 	 *
 	 * @param db the database that the SQL must be appropriate for.
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return the list of SQL strings that equates to this action.
 	 */
 	public abstract List<String> getSQLStatements(DBDatabase db);
@@ -111,6 +123,9 @@ public abstract class DBAction {
 	 * row for internal use.
 	 *
 	 * @param db the target database.
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return The complete list of all actions performed to complete this action
 	 * on the database
 	 * @throws SQLException Database operations may throw SQLExceptions
@@ -119,6 +134,9 @@ public abstract class DBAction {
 
 	/**
 	 * Returns a copy of the row supplied during creation.
+	 *
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
 	 *
 	 * @return the row
 	 */

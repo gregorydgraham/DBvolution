@@ -30,6 +30,9 @@ import nz.co.gregs.dbvolution.internal.sqlite.*;
 /**
  * Creates a DBDatabase for an SQLite database.
  *
+ * <p style="color: #F90;">Support DBvolution at
+ * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+ *
  * @author Gregory Graham
  */
 public class SQLiteDB extends DBDatabase implements SupportsDateRepeatDatatypeFunctions, SupportsPolygonDatatype {

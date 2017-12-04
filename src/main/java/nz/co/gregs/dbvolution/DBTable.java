@@ -58,6 +58,9 @@ import nz.co.gregs.dbvolution.query.QueryOptions;
  * needs, use {@link DBQuery}.
  *
  *
+ * <p style="color: #F90;">Support DBvolution at
+ * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+ *
  * @author Gregory Graham
  * @param <E> DBRow type
  */
@@ -95,6 +98,9 @@ public class DBTable<E extends DBRow> {
 	 * @param <E> DBRow type
 	 * @param database database
 	 * @param example example
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return an instance of the supplied example
 	 */
 	public static <E extends DBRow> DBTable<E> getInstance(DBDatabase database, E example) {
@@ -119,6 +125,9 @@ public class DBTable<E extends DBRow> {
 	 * Throws AccidentalBlankQueryException if you haven't specifically allowed
 	 * blank queries with setBlankQueryAllowed(boolean)
 	 *
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return all the appropriate rows of the table from the database;
 	 * @throws SQLException database exceptions
 	 */
@@ -137,6 +146,9 @@ public class DBTable<E extends DBRow> {
 
 	/**
 	 * Synonym for {@link #getAllRows()}
+	 *
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
 	 *
 	 * @return all the appropriate rows 1 Database exceptions may be thrown
 	 * @throws java.sql.SQLException java.sql.SQLException
@@ -161,6 +173,9 @@ public class DBTable<E extends DBRow> {
 	 * {@code List<MyRow> myRows = myTable.toList();}
 	 *
 	 * @param example	example
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return All the rows that match the example 1 Database exceptions may be
 	 * thrown
 	 * @throws java.sql.SQLException java.sql.SQLException
@@ -183,6 +198,9 @@ public class DBTable<E extends DBRow> {
 	 * <p>
 	 * Functionally equivalent to {@link #getAllRows()}.get(0).
 	 *
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return the first appropriate row in this DBTable
 	 * @throws java.sql.SQLException java.sql.SQLException
 	 *
@@ -202,6 +220,9 @@ public class DBTable<E extends DBRow> {
 	 *
 	 * <p>
 	 * {@link #getAllRows() } with the initial exemplar will be run.
+	 *
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
 	 *
 	 * @return the first row in this DBTableOLD instance
 	 * @throws java.sql.SQLException java.sql.SQLException
@@ -235,6 +256,9 @@ public class DBTable<E extends DBRow> {
 	 * {@code MyRow myRow = (new DBTable<MyTableRow>()).getOnlyRowByExample(myExample);}
 	 *
 	 * @param example	example
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return A list containing the rows that match the example 1 Database
 	 * exceptions may be thrown
 	 * @throws java.sql.SQLException java.sql.SQLException
@@ -263,6 +287,9 @@ public class DBTable<E extends DBRow> {
 	 *
 	 * @param example example
 	 * @param expectedNumberOfRows expectedNumberOfRows
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return a DBTableOLD instance containing the rows that match the example 1
 	 * Database exceptions may be thrown
 	 * @throws java.sql.SQLException java.sql.SQLException
@@ -316,6 +343,9 @@ public class DBTable<E extends DBRow> {
 	 * This method is zero-based so the first page is getAllRows(0).
 	 *
 	 * @param pageNumber	pageNumber
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return a list of the DBRows for the selected page. 1 Database exceptions
 	 * may be thrown
 	 * @throws java.sql.SQLException java.sql.SQLException
@@ -340,6 +370,9 @@ public class DBTable<E extends DBRow> {
 	 * annotation in the TableRow subclass.
 	 *
 	 * @param pkValue	pkValue
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return a List containing the row(s) for the primary key 1 Database
 	 * exceptions may be thrown
 	 * @throws java.sql.SQLException java.sql.SQLException
@@ -359,6 +392,9 @@ public class DBTable<E extends DBRow> {
 	 * annotation in the TableRow subclass.
 	 *
 	 * @param pkValue	pkValue
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return a List containing the row(s) for the primary key 1 Database
 	 * exceptions may be thrown
 	 * @throws java.sql.SQLException java.sql.SQLException
@@ -378,6 +414,9 @@ public class DBTable<E extends DBRow> {
 	 * annotation in the TableRow subclass.
 	 *
 	 * @param pkValue	pkValue
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return a List containing the row(s) for the primary key 1 Database
 	 * exceptions may be thrown
 	 * @throws java.sql.SQLException java.sql.SQLException
@@ -403,6 +442,9 @@ public class DBTable<E extends DBRow> {
 	 * <p>
 	 * See also {@link #getSQLForCount() getSQLForCount}
 	 *
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return a String of the SQL that will be used by {@link #getAllRows() }. 1
 	 * Database exceptions may be thrown
 	 * @throws java.sql.SQLException java.sql.SQLException
@@ -417,6 +459,9 @@ public class DBTable<E extends DBRow> {
 	 * <p>
 	 * Use this method to check the SQL that will be executed during
 	 * {@link #count() the count() method}
+	 *
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
 	 *
 	 * @return a String of the SQL query that will be used to count the rows
 	 * returned by this query 1 Database exceptions may be thrown
@@ -434,6 +479,9 @@ public class DBTable<E extends DBRow> {
 	 * {@link #getSQLForCount() count query} for this instance and retrieves the
 	 * number of rows that would have been returned had
 	 * {@link #getAllRows() getAllRows()} been called.
+	 *
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
 	 *
 	 * @return the number of rows that have or will be retrieved. 1 Database
 	 * exceptions may be thrown
@@ -472,6 +520,9 @@ public class DBTable<E extends DBRow> {
 	 * Inserts DBRows into the database.
 	 *
 	 * @param newRows	newRows
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return a DBActionList of all the actions performed 1 Database exceptions
 	 * may be thrown
 	 * @throws java.sql.SQLException java.sql.SQLException
@@ -490,6 +541,9 @@ public class DBTable<E extends DBRow> {
 	 * Inserts DBRows into the database
 	 *
 	 * @param newRows	newRows
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return a DBActionList of all the actions performed 1 Database exceptions
 	 * may be thrown
 	 * @throws java.sql.SQLException java.sql.SQLException
@@ -507,6 +561,9 @@ public class DBTable<E extends DBRow> {
 	 * Deletes the rows from the database permanently.
 	 *
 	 * @param oldRows	oldRows
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return a {@link DBActionList} of the delete actions. 1 Database exceptions
 	 * may be thrown
 	 * @throws java.sql.SQLException java.sql.SQLException
@@ -525,6 +582,9 @@ public class DBTable<E extends DBRow> {
 	 * Deletes the rows from the database permanently.
 	 *
 	 * @param oldRows	oldRows
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return a {@link DBActionList} of the delete actions. 1 Database exceptions
 	 * may be thrown
 	 * @throws java.sql.SQLException java.sql.SQLException
@@ -546,6 +606,9 @@ public class DBTable<E extends DBRow> {
 	 * changes.
 	 *
 	 * @param oldRow	oldRow
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return a DBActionList of the actions performed on the database 1 Database
 	 * exceptions may be thrown
 	 * @throws java.sql.SQLException java.sql.SQLException
@@ -562,6 +625,9 @@ public class DBTable<E extends DBRow> {
 	 * Updates Lists of DBRows on the database
 	 *
 	 * @param oldRows	oldRows
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return a DBActionList of the actions performed on the database 1 Database
 	 * exceptions may be thrown
 	 * @throws java.sql.SQLException java.sql.SQLException
@@ -585,6 +651,9 @@ public class DBTable<E extends DBRow> {
 	 * <p>
 	 * Requires the primary key field to be a DBNumber of DBInteger
 	 *
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return a List of primary keys as Longs. 1 Database exceptions may be
 	 * thrown
 	 * @throws java.sql.SQLException java.sql.SQLException
@@ -607,6 +676,9 @@ public class DBTable<E extends DBRow> {
 	/**
 	 * Retrieves the rows for this table and returns the primary keys of the rows
 	 * as Strings.
+	 *
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
 	 *
 	 * @return a List of primary keys as Longs. 1 Database exceptions may be
 	 * thrown
@@ -660,6 +732,9 @@ public class DBTable<E extends DBRow> {
 	 * DBvolution.
 	 *
 	 * @param rowLimit	rowLimit
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return this DBTable instance
 	 */
 	public DBTable<E> setRowLimit(int rowLimit) {
@@ -681,6 +756,9 @@ public class DBTable<E extends DBRow> {
 	 *
 	 * <p>
 	 * Al the rows will be returned from the database and DBvolution.
+	 *
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
 	 *
 	 * @return this DBTable instance
 	 */
@@ -706,6 +784,9 @@ public class DBTable<E extends DBRow> {
 	 *
 	 *
 	 * @param sortColumns	sortColumns
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return this
 	 */
 	public DBTable<E> setSortOrder(ColumnProvider... sortColumns) {
@@ -716,6 +797,9 @@ public class DBTable<E extends DBRow> {
 	/**
 	 * Removes the sort order add with {@link #setSortOrder(nz.co.gregs.dbvolution.columns.ColumnProvider...)
 	 * }.
+	 *
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
 	 *
 	 * @return this DBTable instance
 	 */
@@ -752,6 +836,9 @@ public class DBTable<E extends DBRow> {
 	 *
 	 * @param allow - TRUE to allow blank queries, FALSE to return it to the
 	 * default setting.
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return this DBTable instance
 	 */
 	public DBTable<E> setBlankQueryAllowed(boolean allow) {
@@ -824,6 +911,9 @@ public class DBTable<E extends DBRow> {
 	 * {@code  table.setRawSQL("and lower(name) in ('peugeot','hummer')")}.
 	 *
 	 * @param rawQuery	rawQuery
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return this DBtable instance. 1 Database exceptions may be thrown
 	 * @throws java.sql.SQLException java.sql.SQLException
 	 */
@@ -847,6 +937,9 @@ public class DBTable<E extends DBRow> {
 	 * @param <A>	DBRow type
 	 * @param fieldOfProvidedRow - the field/column that you need data for. Must
 	 * be from the exemplar
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return a list of distinct values used in the column. 1 Database exceptions
 	 * may be thrown
 	 * @throws java.sql.SQLException java.sql.SQLException

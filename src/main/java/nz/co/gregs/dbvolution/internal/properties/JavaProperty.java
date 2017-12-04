@@ -9,6 +9,9 @@ import nz.co.gregs.dbvolution.exceptions.DBThrownByEndUserCodeException;
 /**
  * Low-level internal abstraction layer over java fields and bean-properties.
  *
+ * <p style="color: #F90;">Support DBvolution at
+ * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+ *
  * @author Malcolm Lett
  */
 interface JavaProperty {
@@ -47,6 +50,9 @@ interface JavaProperty {
 	/**
 	 * Indicates whether this java property is a field.
 	 *
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return {@code true} if a field, {@code false} if a bean-property.
 	 */
 	public boolean isField();
@@ -55,6 +61,9 @@ interface JavaProperty {
 	 * Gets the property name, without the declaring class. For fields this is the
 	 * same as the field name. For bean-properties it's the inferred name that
 	 * (usually) starts with a lower-case letter. eg: {@code "uid"}
+	 *
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
 	 *
 	 * @return the java property name
 	 */
@@ -66,6 +75,9 @@ interface JavaProperty {
 	 * and bean-properties are both formatted using the name of the property
 	 * without indication of field vs. method. eg: {@code "Customer.uid"}
 	 *
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return the qualified name of the java property
 	 */
 	public String shortQualifiedName();
@@ -76,6 +88,9 @@ interface JavaProperty {
 	 * bean-properties are both formatted using the name of the property without
 	 * indication of field vs. method. eg:
 	 * {@code "nz.co.mycompany.myproject.Customer.uid"}
+	 *
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
 	 *
 	 * @return the qualified name of the java property
 	 */
@@ -92,6 +107,9 @@ interface JavaProperty {
 	 * sub-type of the getter's type. In those other cases there is no one
 	 * reference type that can be used when calling both the getter and setter.
 	 *
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return the type if a single consistent type can be resolved
 	 * @throws DBPebkacException if the types are different and unable to be
 	 * resolved to a single type
@@ -101,6 +119,9 @@ interface JavaProperty {
 	/**
 	 * Gets a <tt>Type</tt> object that represents the formal type of the
 	 * property, including generic parameters, if any.
+	 *
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
 	 *
 	 * @return the generic type of the property.
 	 */
@@ -112,6 +133,9 @@ interface JavaProperty {
 	 * calling this method.
 	 *
 	 * @param target the object to get the property from
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return the property's value
 	 * @throws DBThrownByEndUserCodeException if the getter on the target object
 	 * throws any runtime or checked exceptions
@@ -137,6 +161,9 @@ interface JavaProperty {
 	 * properties which are missing a 'getter' can not be read, but may be able to
 	 * be set.
 	 *
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return {@code true} if readable
 	 */
 	public boolean isReadable();
@@ -145,6 +172,9 @@ interface JavaProperty {
 	 * Indicates whether the value of the property can be modified. Bean
 	 * properties which are missing a 'setter' can not be written to, but may be
 	 * able to be read.
+	 *
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
 	 *
 	 * @return {@code true} if writable
 	 */
@@ -167,6 +197,9 @@ interface JavaProperty {
 	 * if present more than once.
 	 *
 	 * @param annotationClass the annotation to check for
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return {@code true} if the annotation is present
 	 */
 	public boolean isAnnotationPresent(Class<? extends Annotation> annotationClass);
@@ -189,6 +222,9 @@ interface JavaProperty {
 	 *
 	 * A is the annotation type
 	 * @param annotationClass the annotation to check for
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return the annotation, or null if not found
 	 * @throws DBPebkacException if the annotation is duplicated and different
 	 */

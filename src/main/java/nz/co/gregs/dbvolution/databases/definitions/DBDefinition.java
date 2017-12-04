@@ -58,6 +58,9 @@ import org.joda.time.Period;
 
 /**
  *
+ * <p style="color: #F90;">Support DBvolution at
+ * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+ *
  * @author Gregory Graham
  */
 public abstract class DBDefinition {
@@ -71,6 +74,9 @@ public abstract class DBDefinition {
 	 * DATETIME('2013-03-23 00:00:00') "
 	 *
 	 * @param date	date
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return the date formatted as a string that the database will correctly
 	 * interpret as a date.
 	 */
@@ -80,6 +86,9 @@ public abstract class DBDefinition {
 	 * Transforms the Date instance into UTC time zone date.
 	 *
 	 * @param date the local date to be rolled to UTC.
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return SQL that creates this Date as a UTC date in the database.
 	 */
 	@SuppressWarnings("deprecation")
@@ -99,6 +108,9 @@ public abstract class DBDefinition {
 	 * The default implementation does not change the column name.
 	 *
 	 * @param columnName	columnName
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return the column name formatted for the database.
 	 */
 	public String formatColumnName(String columnName) {
@@ -110,6 +122,9 @@ public abstract class DBDefinition {
 	 *
 	 * <p>
 	 * The default method returns "'", that is a single quote.
+	 *
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
 	 *
 	 * @return the formatting required at the beginning of a string value.
 	 */
@@ -123,6 +138,9 @@ public abstract class DBDefinition {
 	 * <p>
 	 * The default method returns "'", that is a single quote.
 	 *
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return the formatting required at the end of a string value.
 	 */
 	public String endStringValue() {
@@ -135,6 +153,9 @@ public abstract class DBDefinition {
 	 * <p>
 	 * The default method returns "", that is an empty string.
 	 *
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return the formatting required at the beginning of a number value.
 	 */
 	public String beginNumberValue() {
@@ -146,6 +167,9 @@ public abstract class DBDefinition {
 	 *
 	 * <p>
 	 * The default method returns "", that is an empty string.
+	 *
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
 	 *
 	 * @return the formatting required at the end of a number value.
 	 */
@@ -165,6 +189,9 @@ public abstract class DBDefinition {
 	 *
 	 * @param table table
 	 * @param columnName columnName
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return a string of the table and column name for the select clause
 	 */
 	public String formatTableAndColumnName(DBRow table, String columnName) {
@@ -181,6 +208,9 @@ public abstract class DBDefinition {
 	 *
 	 * @param table table
 	 * @param columnName columnName
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return a string of the table and column name for the select clause
 	 */
 	public String formatTableAliasAndColumnName(RowDefinition table, String columnName) {
@@ -198,6 +228,9 @@ public abstract class DBDefinition {
 	 *
 	 * @param table table
 	 * @param columnName columnName
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return a string of the table and column name for the select clause
 	 */
 	public String formatTableAliasAndColumnNameForSelectClause(DBRow table, String columnName) {
@@ -213,6 +246,9 @@ public abstract class DBDefinition {
 	 * statements.
 	 *
 	 * @param table	table
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return a string of the table name formatted for this database definition
 	 */
 	public String formatTableName(DBRow table) {
@@ -228,6 +264,9 @@ public abstract class DBDefinition {
 	 *
 	 * @param table table
 	 * @param columnName columnName
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return the table alias and the column name formatted correctly for this
 	 * database.
 	 */
@@ -241,6 +280,9 @@ public abstract class DBDefinition {
 	 * database's column naming issues.
 	 *
 	 * @param actualName	actualName
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return the column alias formatted for this database.
 	 */
 	public String formatForColumnAlias(final String actualName) {
@@ -257,6 +299,9 @@ public abstract class DBDefinition {
 	 *
 	 * @param sqlObjectName the Java object name to be transformed into a database
 	 * object name.
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return the object name formatted for use with this database
 	 */
 	protected String formatNameForDatabase(final String sqlObjectName) {
@@ -268,6 +313,9 @@ public abstract class DBDefinition {
 	 * database's alias naming issues.
 	 *
 	 * @param key	key
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return the alias of the key formatted correctly.
 	 */
 	public String formatExpressionAlias(Object key) {
@@ -283,6 +331,9 @@ public abstract class DBDefinition {
 	 * ('').
 	 *
 	 * @param toString	toString
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return the string value safely escaped for use in an SQL query.
 	 */
 	public String safeString(String toString) {
@@ -295,6 +346,9 @@ public abstract class DBDefinition {
 	 * conditions.
 	 *
 	 * usually, but not always " and "
+	 *
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
 	 *
 	 * @return a string for the start of a where clause line
 	 */
@@ -310,6 +364,9 @@ public abstract class DBDefinition {
 	 * usually, but not always " and "
 	 *
 	 * @param options	options
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return a string for the start of a where clause line
 	 */
 	public String beginConditionClauseLine(QueryOptions options) {
@@ -328,6 +385,9 @@ public abstract class DBDefinition {
 	 * usually, but not always " and "
 	 *
 	 * @param options	options
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return a string for the start of a where clause line
 	 */
 	public String beginJoinClauseLine(QueryOptions options) {
@@ -342,6 +402,9 @@ public abstract class DBDefinition {
 	 * Indicates that the database does not accept named GROUP BY columns and the
 	 * query generator should create the GROUP BY clause using indexes instead.
 	 *
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return TRUE if the database needs indexes for the group by columns, FALSE
 	 * otherwise.
 	 */
@@ -352,6 +415,9 @@ public abstract class DBDefinition {
 	/**
 	 * Returns the start of an AND line for this database.
 	 *
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return " AND " or the equivalent for this database.
 	 */
 	public String beginAndLine() {
@@ -361,6 +427,9 @@ public abstract class DBDefinition {
 	/**
 	 * Returns the start of an OR line for this database.
 	 *
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return " OR " or the equivalent for this database.
 	 */
 	public String beginOrLine() {
@@ -369,6 +438,9 @@ public abstract class DBDefinition {
 
 	/**
 	 * Provides the start of the DROP TABLE expression for this database.
+	 *
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
 	 *
 	 * @return "DROP TABLE " or equivalent for the database.
 	 */
@@ -382,6 +454,9 @@ public abstract class DBDefinition {
 	 * <p>
 	 * This is the clause within the column definition clause after the columns
 	 * themselves, i.e. CREATE TABLE tab (col integer<b>, PRIMARY KEY(col)</b>)
+	 *
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
 	 *
 	 * @return ", PRIMARY KEY (" or the equivalent for this database.
 	 */
@@ -397,6 +472,9 @@ public abstract class DBDefinition {
 	 * This is the clause within the column definition clause after the columns
 	 * themselves, i.e. CREATE TABLE tab (col integer<b>, PRIMARY KEY(col)</b>)
 	 *
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return ", " or the equivalent for this database.
 	 */
 	public String getCreateTablePrimaryKeyClauseMiddle() {
@@ -411,6 +489,9 @@ public abstract class DBDefinition {
 	 * This is the clause within the column definition clause after the columns
 	 * themselves, i.e. CREATE TABLE tab (col integer<b>, PRIMARY KEY(col)</b>)
 	 *
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return ")" or the equivalent for this database.
 	 */
 	public String getCreateTablePrimaryKeyClauseEnd() {
@@ -419,6 +500,9 @@ public abstract class DBDefinition {
 
 	/**
 	 * Returns the start of the CREATE TABLE statement.
+	 *
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
 	 *
 	 * @return "CREATE TABLE " or the equivalent for this database.
 	 */
@@ -433,6 +517,9 @@ public abstract class DBDefinition {
 	 * This is the clause within the CREATE TABLE that defines the columns
 	 * themselves, i.e. CREATE TABLE tab <b>(col integer, PRIMARY KEY(col))</b>
 	 *
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return "(" or the equivalent for this database.
 	 */
 	public String getCreateTableColumnsStart() {
@@ -446,6 +533,9 @@ public abstract class DBDefinition {
 	 * <p>
 	 * This is the clause within the CREATE TABLE that defines the columns
 	 * themselves, i.e. CREATE TABLE tab <b>(col integer, PRIMARY KEY(col))</b>
+	 *
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
 	 *
 	 * @return ", " or the equivalent for this database.
 	 */
@@ -462,6 +552,9 @@ public abstract class DBDefinition {
 	 * This is the clause within the CREATE TABLE that defines the columns
 	 * themselves, i.e. CREATE TABLE tab <b>(col integer, PRIMARY KEY(col))</b>
 	 *
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return " " or the equivalent for this database.
 	 */
 	public String getCreateTableColumnsNameAndTypeSeparator() {
@@ -475,6 +568,9 @@ public abstract class DBDefinition {
 	 * This is the clause within the CREATE TABLE that defines the columns
 	 * themselves, i.e. CREATE TABLE tab <b>(col integer, PRIMARY KEY(col))</b>
 	 *
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return ")" or the equivalent for this database.
 	 */
 	public Object getCreateTableColumnsEnd() {
@@ -485,6 +581,9 @@ public abstract class DBDefinition {
 	 * Wraps the SQL snippet provided in the LOWER operator of the database.
 	 *
 	 * @param sql	sql
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return " lower("+string+")"
 	 */
 	public String toLowerCase(String sql) {
@@ -494,6 +593,9 @@ public abstract class DBDefinition {
 	/**
 	 * Returns the beginning of an INSERT statement for this database.
 	 *
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return "INSERT INTO " or equivalent.
 	 */
 	public String beginInsertLine() {
@@ -502,6 +604,9 @@ public abstract class DBDefinition {
 
 	/**
 	 * Returns the end of an INSERT statement for this database.
+	 *
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
 	 *
 	 * @return ";" or equivalent.
 	 */
@@ -513,6 +618,9 @@ public abstract class DBDefinition {
 	 * Returns the beginning of the column list of an INSERT statement for this
 	 * database.
 	 *
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return "(" or equivalent.
 	 */
 	public String beginInsertColumnList() {
@@ -523,6 +631,9 @@ public abstract class DBDefinition {
 	 * Returns the end of the column list of an INSERT statement for this
 	 * database.
 	 *
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return ") " or equivalent.
 	 */
 	public String endInsertColumnList() {
@@ -531,6 +642,9 @@ public abstract class DBDefinition {
 
 	/**
 	 * Returns the beginning of a DELETE statement for this database.
+	 *
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
 	 *
 	 * @return "DELETE FROM " or equivalent.
 	 */
@@ -541,6 +655,9 @@ public abstract class DBDefinition {
 	/**
 	 * Returns the end of a DELETE statement for this database.
 	 *
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return ";" or equivalent.
 	 */
 	public String endDeleteLine() {
@@ -549,6 +666,9 @@ public abstract class DBDefinition {
 
 	/**
 	 * The EQUALS operator for this database.
+	 *
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
 	 *
 	 * @return " = " or equivalent
 	 */
@@ -559,6 +679,9 @@ public abstract class DBDefinition {
 	/**
 	 * The NOT EQUALS operator for this database.
 	 *
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return " &lt;&gt; " or equivalent
 	 */
 	public String getNotEqualsComparator() {
@@ -568,6 +691,9 @@ public abstract class DBDefinition {
 	/**
 	 * Returns the beginning of a WHERE clause for this database.
 	 *
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return " WHERE " or equivalent.
 	 */
 	public String beginWhereClause() {
@@ -576,6 +702,9 @@ public abstract class DBDefinition {
 
 	/**
 	 * Returns the beginning of an UPDATE statement for this database.
+	 *
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
 	 *
 	 * @return "UPDATE " or equivalent.
 	 */
@@ -587,6 +716,9 @@ public abstract class DBDefinition {
 	 * Returns the beginning of a SET clause of an UPDATE statement for this
 	 * database.
 	 *
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return " SET " or equivalent.
 	 */
 	public String beginSetClause() {
@@ -596,6 +728,9 @@ public abstract class DBDefinition {
 	/**
 	 * Returns the initial separator of a SET sub-clause of an UPDATE statement
 	 * for this database.
+	 *
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
 	 *
 	 * @return "" or equivalent.
 	 */
@@ -607,6 +742,9 @@ public abstract class DBDefinition {
 	 * Returns the subsequent separator of a SET sub-clause of an UPDATE statement
 	 * for this database.
 	 *
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return "," or equivalent.
 	 */
 	public String getSubsequentSetSubClauseSeparator() {
@@ -617,6 +755,9 @@ public abstract class DBDefinition {
 	 * Returns the initial separator of a ORDER BY sub-clause of a SELECT
 	 * statement for this database.
 	 *
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return "" or equivalent.
 	 */
 	public String getStartingOrderByClauseSeparator() {
@@ -626,6 +767,9 @@ public abstract class DBDefinition {
 	/**
 	 * Returns the subsequent separator of a ORDER BY sub-clause of a SELECT
 	 * statement for this database.
+	 *
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
 	 *
 	 * @return "," or equivalent.
 	 */
@@ -641,6 +785,9 @@ public abstract class DBDefinition {
 	 * DBvolution inserts a constant operation to every WHERE clause to simplify
 	 * the production of the query. This method returns a condition that always
 	 * evaluates to true.
+	 *
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
 	 *
 	 * @return a SQL snippet representing a TRUE operation.
 	 * @see #getTrueOperation()
@@ -660,6 +807,9 @@ public abstract class DBDefinition {
 	 * requirements.
 	 *
 	 * @param options	options
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return the required initial condition.
 	 * @see #getTrueOperation()
 	 * @see #getFalseOperation()
@@ -675,6 +825,9 @@ public abstract class DBDefinition {
 	/**
 	 * An SQL snippet that always evaluates to FALSE for this database.
 	 *
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return " 1=0 " or equivalent
 	 */
 	public String getFalseOperation() {
@@ -683,6 +836,9 @@ public abstract class DBDefinition {
 
 	/**
 	 * An SQL snippet that always evaluates to TRUE for this database.
+	 *
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
 	 *
 	 * @return " 1=1 " or equivalent
 	 */
@@ -693,6 +849,9 @@ public abstract class DBDefinition {
 	/**
 	 * An SQL snippet that represents NULL for this database.
 	 *
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return " NULL " or equivalent
 	 */
 	public String getNull() {
@@ -701,6 +860,9 @@ public abstract class DBDefinition {
 
 	/**
 	 * Returns the beginning of a SELECT statement for this database.
+	 *
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
 	 *
 	 * @return "SELECT " or equivalent.
 	 */
@@ -712,6 +874,9 @@ public abstract class DBDefinition {
 	 * Returns the beginning of the FROM clause of a SELECT statement for this
 	 * database.
 	 *
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return "FROM " or equivalent.
 	 */
 	public String beginFromClause() {
@@ -720,6 +885,9 @@ public abstract class DBDefinition {
 
 	/**
 	 * Returns the default ending of an SQL statement for this database.
+	 *
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
 	 *
 	 * @return ";" or equivalent.
 	 */
@@ -731,6 +899,9 @@ public abstract class DBDefinition {
 	 * Returns the initial separator of the column list sub-clause of a SELECT
 	 * statement for this database.
 	 *
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return "" or equivalent.
 	 */
 	public String getStartingSelectSubClauseSeparator() {
@@ -741,6 +912,9 @@ public abstract class DBDefinition {
 	 * Returns the subsequent separator of the column list sub-clause of a SELECT
 	 * statement for this database.
 	 *
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return "," or equivalent.
 	 */
 	public String getSubsequentSelectSubClauseSeparator() {
@@ -749,6 +923,9 @@ public abstract class DBDefinition {
 
 	/**
 	 * The COUNT(*) clause for this database.
+	 *
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
 	 *
 	 * @return "COUNT(*)" or equivalent.
 	 */
@@ -770,6 +947,9 @@ public abstract class DBDefinition {
 	 * The default implementation returns "".
 	 *
 	 * @param options	options
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return a string for the row limit sub-clause or ""
 	 */
 	public Object getLimitRowsSubClauseDuringSelectClause(QueryOptions options) {
@@ -780,6 +960,9 @@ public abstract class DBDefinition {
 	 * Returns the beginning of the ORDER BY clause of a SELECT statement for this
 	 * database.
 	 *
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return " ORDER BY " or equivalent.
 	 */
 	public String beginOrderByClause() {
@@ -789,6 +972,9 @@ public abstract class DBDefinition {
 	/**
 	 * Returns the end of the ORDER BY clause of a SELECT statement for this
 	 * database.
+	 *
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
 	 *
 	 * @return " " or equivalent.
 	 */
@@ -801,6 +987,9 @@ public abstract class DBDefinition {
 	 * given the sort order.
 	 *
 	 * @param sortOrder	sortOrder
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return " ASC " for TRUE, " DESC " for false or equivalent
 	 */
 	public Object getOrderByDirectionClause(Boolean sortOrder) {
@@ -817,6 +1006,9 @@ public abstract class DBDefinition {
 	 * Used during the creation of an ANSI join to add a table with a normal, or
 	 * "required" join.
 	 *
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return the default implementation returns " INNER JOIN ".
 	 */
 	public String beginInnerJoin() {
@@ -826,6 +1018,9 @@ public abstract class DBDefinition {
 	/**
 	 * Used during the creation of an ANSI join to add an optional table using a
 	 * Left Outer Join.
+	 *
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
 	 *
 	 * @return the default implementation returns " LEFT OUTER JOIN "
 	 */
@@ -837,6 +1032,9 @@ public abstract class DBDefinition {
 	 * Used during the creation of an ANSI join to add an optional table using a
 	 * Full Outer Join.
 	 *
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return the default implementation returns " FULL OUTER JOIN ".
 	 */
 	public String beginFullOuterJoin() {
@@ -847,6 +1045,9 @@ public abstract class DBDefinition {
 	 * Used during the creation of an ANSI join to add the criteria of an optional
 	 * table using an ON clause.
 	 *
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return the default implementation returns " ON( ".
 	 */
 	public String beginOnClause() {
@@ -856,6 +1057,9 @@ public abstract class DBDefinition {
 	/**
 	 * Used during the creation of an ANSI join to complete the criteria of an
 	 * optional table by closing the ON clause.
+	 *
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
 	 *
 	 * @return the default implementation returns " ) ".
 	 */
@@ -874,6 +1078,9 @@ public abstract class DBDefinition {
 	 * When the
 	 *
 	 * @param qdt	qdt
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return the databases type for the QDT as a string
 	 */
 	protected String getDatabaseDataTypeOfQueryableDatatype(QueryableDatatype qdt) {
@@ -896,6 +1103,9 @@ public abstract class DBDefinition {
 	 * should return ""
 	 *
 	 * @param options	options
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return the row limiting sub-clause or ""
 	 */
 	public Object getLimitRowsSubClauseAfterWhereClause(QueryOptions options) {
@@ -914,6 +1124,9 @@ public abstract class DBDefinition {
 	 * The place holder for variables inserted into a prepared statement, usually
 	 * " ? "
 	 *
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return the place holder for variables as a string
 	 */
 	public String getPreparedVariableSymbol() {
@@ -923,6 +1136,9 @@ public abstract class DBDefinition {
 	/**
 	 * Indicates whether this database distinguishes between upper and lowercase
 	 * letters in column names.
+	 *
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
 	 *
 	 * @return the default implementation returns FALSE.
 	 */
@@ -934,6 +1150,9 @@ public abstract class DBDefinition {
 	 * Used during output of BLOB columns to avoid complications in some
 	 * scenarios.
 	 *
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return the default implementation returns "/*"
 	 */
 	public String startMultilineComment() {
@@ -944,6 +1163,9 @@ public abstract class DBDefinition {
 	 * Used during output of BLOB columns to avoid complications in some
 	 * scenarios.
 	 *
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return the default implementation returns "*\/"
 	 */
 	public String endMultilineComment() {
@@ -953,6 +1175,9 @@ public abstract class DBDefinition {
 	/**
 	 * Used within DBInsert to start the VALUES clause of the INSERT statement.
 	 *
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return the default implementation returns " VALUES( ".
 	 */
 	public String beginValueClause() {
@@ -961,6 +1186,9 @@ public abstract class DBDefinition {
 
 	/**
 	 * Used within DBInsert to end the VALUES clause of the INSERT statement.
+	 *
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
 	 *
 	 * @return the default implementation returns " ) ".
 	 */
@@ -972,6 +1200,9 @@ public abstract class DBDefinition {
 	 * Used within DBInsert to separate the values within the VALUES clause of the
 	 * INSERT statement.
 	 *
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return the default implementation returns ",".
 	 */
 	public String getValuesClauseValueSeparator() {
@@ -981,6 +1212,9 @@ public abstract class DBDefinition {
 	/**
 	 * Used within DBInsert to separate the columns within the INSERT clause of
 	 * the INSERT statement.
+	 *
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
 	 *
 	 * @return the default implementation returns ",".
 	 */
@@ -992,6 +1226,9 @@ public abstract class DBDefinition {
 	 * Used during the creation of ANSI queries to separate the table and its
 	 * alias.
 	 *
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return the default implementation returns " AS ".
 	 */
 	public String beginTableAlias() {
@@ -1000,6 +1237,9 @@ public abstract class DBDefinition {
 
 	/**
 	 * Used during the creation of ANSI queries to conclude the table alias.
+	 *
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
 	 *
 	 * @return the default implementation returns " ".
 	 */
@@ -1011,6 +1251,9 @@ public abstract class DBDefinition {
 	 * Transforms the table name into the unique and deterministic table alias.
 	 *
 	 * @param tabRow	tabRow
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return the table alias.
 	 */
 	public String getTableAlias(RowDefinition tabRow) {
@@ -1022,6 +1265,9 @@ public abstract class DBDefinition {
 	 * database..
 	 *
 	 * @param suggestedTableAlias	suggestedTableAlias
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return the table alias.
 	 */
 	public String formatTableAlias(String suggestedTableAlias) {
@@ -1032,6 +1278,9 @@ public abstract class DBDefinition {
 	 * Defines the function used to get the current date (excluding time) from the
 	 * database.
 	 *
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return the default implementation returns " CURRENT_DATE "
 	 */
 	protected String getCurrentDateOnlyFunctionName() {
@@ -1040,6 +1289,9 @@ public abstract class DBDefinition {
 
 	/**
 	 * Defines the function used to get the current timestamp from the database.
+	 *
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
 	 *
 	 * @return the default implementation returns " CURRENT_TIMESTAMP "
 	 */
@@ -1050,6 +1302,9 @@ public abstract class DBDefinition {
 	/**
 	 * Creates the CURRENTTIMESTAMP function for this database.
 	 *
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return a String of the SQL required to get the CurrentDateTime value.
 	 */
 	public String doCurrentDateTimeTransform() {
@@ -1059,6 +1314,9 @@ public abstract class DBDefinition {
 	/**
 	 * Defines the function used to get the current time from the database.
 	 *
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return the default implementation returns " CURRENT_TIMESTAMP "
 	 */
 	protected String getCurrentTimeFunction() {
@@ -1067,6 +1325,9 @@ public abstract class DBDefinition {
 
 	/**
 	 * Creates the CURRENTTIME function for this database.
+	 *
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
 	 *
 	 * @return a String of the SQL required to get the CurrentTime value.
 	 */
@@ -1078,6 +1339,9 @@ public abstract class DBDefinition {
 	 * Provides the SQL statement required to drop the named database.
 	 *
 	 * @param databaseName	databaseName
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return the default implementation does not support dropping databases.
 	 *
 	 */
@@ -1090,6 +1354,9 @@ public abstract class DBDefinition {
 	 * spaces from the left of the value of the snippet.
 	 *
 	 * @param enclosedValue	enclosedValue
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return SQL snippet
 	 */
 	public String doLeftTrimTransform(String enclosedValue) {
@@ -1101,6 +1368,9 @@ public abstract class DBDefinition {
 	 * snippet to lowercase characters.
 	 *
 	 * @param enclosedValue	enclosedValue
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return SQL snippet
 	 */
 	public String doLowercaseTransform(String enclosedValue) {
@@ -1112,6 +1382,9 @@ public abstract class DBDefinition {
 	 * the right of the value of the snippet.
 	 *
 	 * @param enclosedValue	enclosedValue
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return SQL snippet
 	 */
 	public String doRightTrimTransform(String enclosedValue) {
@@ -1123,6 +1396,9 @@ public abstract class DBDefinition {
 	 * of the snippet.
 	 *
 	 * @param enclosedValue	enclosedValue
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return SQL snippet
 	 */
 	public String doStringLengthTransform(String enclosedValue) {
@@ -1134,6 +1410,9 @@ public abstract class DBDefinition {
 	 * spaces from the left and right of the value of the snippet.
 	 *
 	 * @param enclosedValue	enclosedValue
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return SQL snippet
 	 */
 	public String doTrimFunction(String enclosedValue) {
@@ -1145,6 +1424,9 @@ public abstract class DBDefinition {
 	 * of the value of the snippet to their uppercase equivalent.
 	 *
 	 * @param enclosedValue	enclosedValue
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return SQL snippet
 	 */
 	public String doUppercaseTransform(String enclosedValue) {
@@ -1157,6 +1439,9 @@ public abstract class DBDefinition {
 	 *
 	 * @param firstString firstString
 	 * @param secondString secondString
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return SQL snippet
 	 * @see StringExpression#append(java.lang.String)
 	 * @see StringExpression#append(java.lang.Number)
@@ -1171,6 +1456,9 @@ public abstract class DBDefinition {
 	 * Returns the function name of the function used to return the next value of
 	 * a sequence.
 	 *
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return "NEXTVAL"
 	 * @see NumberExpression#getNextSequenceValue(java.lang.String)
 	 * @see NumberExpression#getNextSequenceValue(java.lang.String,
@@ -1183,6 +1471,9 @@ public abstract class DBDefinition {
 	/**
 	 * Returns the function name of the function used to remove all the spaces
 	 * padding the end of the value.
+	 *
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
 	 *
 	 * @return "RTRIM"
 	 */
@@ -1199,6 +1490,9 @@ public abstract class DBDefinition {
 	 * characters. Support for change the case of unicode characters is dependent
 	 * on the underlying database.
 	 *
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return "LOWER"
 	 */
 	public String getLowercaseFunctionName() {
@@ -1213,6 +1507,9 @@ public abstract class DBDefinition {
 	 * Usually databases only support lower and upper case functions for ASCII
 	 * characters. Support for change the case of unicode characters is dependent
 	 * on the underlying database.
+	 *
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
 	 *
 	 * @return "UPPER"
 	 */
@@ -1231,6 +1528,9 @@ public abstract class DBDefinition {
 	 * <p>
 	 * That is to say: DBV.charlength() === java.lang.String.length()
 	 *
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return "LOWER"
 	 */
 	public String getStringLengthFunctionName() {
@@ -1245,6 +1545,9 @@ public abstract class DBDefinition {
 	 * Usually this is the same username supplied when you created the DBDatabase
 	 * instance.
 	 *
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return "CURRENT_USER'
 	 */
 	public String getCurrentUserFunctionName() {
@@ -1256,6 +1559,9 @@ public abstract class DBDefinition {
 	 * that provides the year part of the date.
 	 *
 	 * @param dateExpression	dateExpression
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return a SQL snippet that will produce the year of the supplied date.
 	 */
 	public String doYearTransform(String dateExpression) {
@@ -1267,6 +1573,9 @@ public abstract class DBDefinition {
 	 * that provides the month part of the date.
 	 *
 	 * @param dateExpression	dateExpression
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return a SQL snippet that will produce the month of the supplied date.
 	 */
 	public String doMonthTransform(String dateExpression) {
@@ -1282,6 +1591,9 @@ public abstract class DBDefinition {
 	 * part of Monday 25th of August 2014
 	 *
 	 * @param dateExpression	dateExpression
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return a SQL snippet that will produce the day of the supplied date.
 	 */
 	public String doDayTransform(String dateExpression) {
@@ -1293,6 +1605,9 @@ public abstract class DBDefinition {
 	 * that provides the hour part of the date.
 	 *
 	 * @param dateExpression	dateExpression
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return a SQL snippet that will produce the hour of the supplied date.
 	 */
 	public String doHourTransform(String dateExpression) {
@@ -1304,6 +1619,9 @@ public abstract class DBDefinition {
 	 * that provides the minute part of the date.
 	 *
 	 * @param dateExpression	dateExpression
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return a SQL snippet that will produce the minute of the supplied date.
 	 */
 	public String doMinuteTransform(String dateExpression) {
@@ -1315,6 +1633,9 @@ public abstract class DBDefinition {
 	 * that provides the second part of the date.
 	 *
 	 * @param dateExpression	dateExpression
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return a SQL snippet that will produce the second of the supplied date.
 	 */
 	public String doSecondTransform(String dateExpression) {
@@ -1329,6 +1650,9 @@ public abstract class DBDefinition {
 	 * the date expression provided. It should always return a value less than 1s.
 	 *
 	 * @param dateExpression the date from which to get the subsecond part of.
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return SQL
 	 */
 	public String doSubsecondTransform(String dateExpression) {
@@ -1341,6 +1665,9 @@ public abstract class DBDefinition {
 	 *
 	 * @param originalString originalString
 	 * @param stringToFind stringToFind
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return a SQL snippet that will produce the index of the find string.
 	 */
 	public String doPositionInStringTransform(String originalString, String stringToFind) {
@@ -1353,6 +1680,9 @@ public abstract class DBDefinition {
 	 * <p>
 	 * This provides the function name for this database that transforms a NULL
 	 * into another value.
+	 *
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
 	 *
 	 * @return "COALESCE"
 	 */
@@ -1373,6 +1703,9 @@ public abstract class DBDefinition {
 	 * SQLServer so that DBBoolean columns can be compared like with other
 	 * databases.
 	 *
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return TRUE if this database can compare boolean values, FALSE otherwise.
 	 */
 	public boolean supportsComparingBooleanResults() {
@@ -1381,6 +1714,9 @@ public abstract class DBDefinition {
 
 	/**
 	 * Returns the function name of the function that negates boolean values.
+	 *
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
 	 *
 	 * @return "NOT"
 	 */
@@ -1391,6 +1727,9 @@ public abstract class DBDefinition {
 	/**
 	 * Provides the separator between GROUP BY clause items.
 	 *
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return ", "
 	 */
 	public String getSubsequentGroupBySubClauseSeparator() {
@@ -1399,6 +1738,9 @@ public abstract class DBDefinition {
 
 	/**
 	 * Provides the key words and syntax that start the GROUP BY clause.
+	 *
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
 	 *
 	 * @return " GROUP BY "
 	 */
@@ -1410,6 +1752,9 @@ public abstract class DBDefinition {
 	 * Provides the function of the function that provides the average of a
 	 * selection.
 	 *
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return "AVG"
 	 */
 	public String getAverageFunctionName() {
@@ -1419,6 +1764,9 @@ public abstract class DBDefinition {
 	/**
 	 * Provides the function of the function that provides the count of items in a
 	 * selection.
+	 *
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
 	 *
 	 * @return "COUNT"
 	 */
@@ -1430,6 +1778,9 @@ public abstract class DBDefinition {
 	 * Provides the function of the function that provides the maximum value in a
 	 * selection.
 	 *
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return "MAX"
 	 */
 	public String getMaxFunctionName() {
@@ -1440,6 +1791,9 @@ public abstract class DBDefinition {
 	 * Provides the function of the function that provides the minimum value in a
 	 * selection.
 	 *
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return "MIN"
 	 */
 	public String getMinFunctionName() {
@@ -1448,6 +1802,9 @@ public abstract class DBDefinition {
 
 	/**
 	 * Provides the function of the function that provides the sum of a selection.
+	 *
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
 	 *
 	 * @return "SUM"
 	 */
@@ -1459,6 +1816,9 @@ public abstract class DBDefinition {
 	 * Provides the function of the function that provides the standard deviation
 	 * of a selection.
 	 *
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return "stddev"
 	 */
 	public String getStandardDeviationFunctionName() {
@@ -1468,6 +1828,9 @@ public abstract class DBDefinition {
 	/**
 	 * Indicates whether the database prefers (probably exclusively) the ORDER BY
 	 * clause to use column indexes rather than column names.
+	 *
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
 	 *
 	 * @return the default implementation returns FALSE.
 	 */
@@ -1486,6 +1849,9 @@ public abstract class DBDefinition {
 	 * help your developers.
 	 *
 	 * @param options	options
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return the default implementation returns TRUE.
 	 */
 	public boolean supportsPagingNatively(QueryOptions options) {
@@ -1508,6 +1874,9 @@ public abstract class DBDefinition {
 	 * } and {@link #supportsRetrievingLastInsertedRowViaSQL() } return false
 	 * DBvolution will not retrieve auto-incremented primary keys.
 	 *
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return TRUE if this database supports the generated keys API, FLASE
 	 * otherwise.
 	 */
@@ -1518,6 +1887,9 @@ public abstract class DBDefinition {
 	/**
 	 * Provides the name of the function that removes the decimal part of a real
 	 * number.
+	 *
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
 	 *
 	 * @return "trunc"
 	 */
@@ -1534,6 +1906,9 @@ public abstract class DBDefinition {
 	 *
 	 * @param realNumberExpression realNumberExpression
 	 * @param numberOfDecimalPlacesExpression numberOfDecimalPlacesExpression
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return an expression that reduces the realNumberExpression to only the
 	 * number of decimal places in numberOfDecimalPlacesExpression.
 	 */
@@ -1546,6 +1921,9 @@ public abstract class DBDefinition {
 	 *
 	 * @param firstSQLExpression firstSQLExpression
 	 * @param secondSQLExpression secondSQLExpression
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return SQL snippet comparing the 2 strings
 	 */
 	public String doStringEqualsTransform(String firstSQLExpression, String secondSQLExpression) {
@@ -1559,6 +1937,9 @@ public abstract class DBDefinition {
 	 * Used to allow comparison of bit columns in some databases.
 	 *
 	 * @param booleanExpression	bitExpression
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return the transformation necessary to transform bitExpression into an
 	 * integer expression in the SQL.
 	 */
@@ -1573,6 +1954,9 @@ public abstract class DBDefinition {
 	 * Used to allow comparison of integer columns in some databases.
 	 *
 	 * @param bitExpression	bitExpression
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return the transformation necessary to transform bitExpression into an
 	 * integer expression in the SQL.
 	 */
@@ -1584,6 +1968,9 @@ public abstract class DBDefinition {
 	 * Returns the suffix added to a column definition to support
 	 * auto-incrementing a column.
 	 *
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return " GENERATED BY DEFAULT AS IDENTITY "
 	 */
 	public String getColumnAutoIncrementSuffix() {
@@ -1593,6 +1980,9 @@ public abstract class DBDefinition {
 	/**
 	 * Indicates whether the database prefers to use triggers and sequences to
 	 * maintain auto-incrementing identities.
+	 *
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
 	 *
 	 * @return the default implementation returns FALSE.
 	 * @see Oracle11XEDBDefinition#prefersTriggerBasedIdentities()
@@ -1608,6 +1998,9 @@ public abstract class DBDefinition {
 	 * @param db db
 	 * @param table table
 	 * @param column column
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return the default implementation returns an empty list.
 	 * @see
 	 * Oracle11XEDBDefinition#getTriggerBasedIdentitySQL(nz.co.gregs.dbvolution.DBDatabase,
@@ -1622,6 +2015,9 @@ public abstract class DBDefinition {
 	 * associated with the provided field.
 	 *
 	 * @param field the field of the column being created.
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return the datatype and appropriate modifiers.
 	 * @see PropertyWrapper#isAutoIncrement()
 	 * @see
@@ -1664,6 +2060,9 @@ public abstract class DBDefinition {
 	 *
 	 * @param table table
 	 * @param column column
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return the name of the primary key sequence to be created.
 	 */
 	public String getPrimaryKeySequenceName(String table, String column) {
@@ -1676,6 +2075,9 @@ public abstract class DBDefinition {
 	 *
 	 * @param table table
 	 * @param column column
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return the name of the trigger to be created.
 	 */
 	public String getPrimaryKeyTriggerName(String table, String column) {
@@ -1685,6 +2087,9 @@ public abstract class DBDefinition {
 	/**
 	 * Indicates whether the database uses a special type for it's auto-increment
 	 * columns.
+	 *
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
 	 *
 	 * @return the default implementation returns FALSE.
 	 */
@@ -1696,6 +2101,9 @@ public abstract class DBDefinition {
 	 * Indicates whether field provided can be used as a auto-incrementing column
 	 * in this database
 	 *
+	 *
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
 	 *
 	 * @return true if the QDT field can be used with this database's
 	 * autoincrement feature.
@@ -1710,6 +2118,9 @@ public abstract class DBDefinition {
 	 * auto-incrementing column in this database
 	 *
 	 * @param qdt	qdt
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return the default implementation returns TRUE for DBNumber or DBString,
 	 * FALSE otherwise.
 	 */
@@ -1721,6 +2132,9 @@ public abstract class DBDefinition {
 	 * Provides the special auto-increment type used by this database if it has
 	 * one.
 	 *
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return the default implementation returns ""
 	 */
 	protected String getSpecialAutoIncrementType() {
@@ -1730,6 +2144,9 @@ public abstract class DBDefinition {
 	/**
 	 * Indicates whether the database prefers the primary key to be defined at the
 	 * end of the CREATE TABLE statement.
+	 *
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
 	 *
 	 * @return the default implementation returns TRUE.
 	 */
@@ -1741,6 +2158,9 @@ public abstract class DBDefinition {
 	 * Indicates whether the database requires LargeObjects to be encoded as
 	 * Base64 CLOBS using the CharacterStream method to read the value.
 	 *
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return the default implementation returns FALSE.
 	 */
 	public boolean prefersLargeObjectsReadAsBase64CharacterStream() {
@@ -1750,6 +2170,9 @@ public abstract class DBDefinition {
 	/**
 	 * Indicates whether the database prefers reading BLOBs using the getBytes()
 	 * method.
+	 *
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
 	 *
 	 * @return the default implementation returns FALSE
 	 */
@@ -1761,6 +2184,9 @@ public abstract class DBDefinition {
 	 * Indicates whether the database prefers reading BLOBs using the getClob()
 	 * method.
 	 *
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return the default implementation returns FALSE
 	 */
 	public boolean prefersLargeObjectsReadAsCLOB() {
@@ -1770,6 +2196,9 @@ public abstract class DBDefinition {
 	/**
 	 * Indicates whether the database prefers reading BLOBs using the getBlob()
 	 * method.
+	 *
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
 	 *
 	 * @return the default implementation returns FALSE
 	 */
@@ -1784,6 +2213,9 @@ public abstract class DBDefinition {
 	 * @param originalString originalString
 	 * @param start start
 	 * @param length length
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return an expression that will produce an appropriate substring of the
 	 * originalString.
 	 */
@@ -1805,6 +2237,9 @@ public abstract class DBDefinition {
 	 * {@link #prefersLargeObjectsSetAsBase64String()} return FALSE, DBvolution
 	 * will use the setBinaryStream method to set the value.
 	 *
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return the default implementation returns FALSE.
 	 */
 	public boolean prefersLargeObjectsSetAsCharacterStream() {
@@ -1819,6 +2254,9 @@ public abstract class DBDefinition {
 	 * If both {@link #prefersLargeObjectsSetAsCharacterStream() } and
 	 * {@link #prefersLargeObjectsSetAsBase64String()} return FALSE, DBvolution
 	 * will use the setBinaryStream method to set the value.
+	 *
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
 	 *
 	 * @return the default implementation returns FALSE.
 	 */
@@ -1835,6 +2273,9 @@ public abstract class DBDefinition {
 	 * {@link #prefersLargeObjectsSetAsBase64String()} return FALSE, DBvolution
 	 * will use the setBinaryStream method to set the value.
 	 *
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return the default implementation returns FALSE.
 	 */
 	public boolean prefersLargeObjectsSetAsBase64String() {
@@ -1844,6 +2285,9 @@ public abstract class DBDefinition {
 	/**
 	 * Provides the name of the function that will choose the largest value from a
 	 * list of options.
+	 *
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
 	 *
 	 * @return " GREATEST "
 	 */
@@ -1855,6 +2299,9 @@ public abstract class DBDefinition {
 	 * Provides the name of the function that will choose the smallest value from
 	 * a list of options.
 	 *
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return " LEAST "
 	 */
 	public String getLeastOfFunctionName() {
@@ -1863,6 +2310,9 @@ public abstract class DBDefinition {
 
 	/**
 	 * Provides Cheeseburger.
+	 *
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
 	 *
 	 * @return a cheeseburger.
 	 */
@@ -1876,6 +2326,9 @@ public abstract class DBDefinition {
 	 * <p>
 	 * Normally dates are read as dates but this method switches DBvolution to
 	 * using a text mode.
+	 *
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
 	 *
 	 * @return the default implementation returns false.
 	 * @see #parseDateFromGetString(java.lang.String)
@@ -1893,6 +2346,9 @@ public abstract class DBDefinition {
 	 *
 	 * @param getStringDate a date retrieved with {@link ResultSet#getString(java.lang.String)
 	 * }
+	 *
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
 	 *
 	 * @return return the date format required to interpret strings as dates.
 	 * @throws java.text.ParseException SimpleDateFormat may throw a parse
@@ -1937,6 +2393,9 @@ public abstract class DBDefinition {
 	 * <p>
 	 * Originally provided for the SQLite-JDBC driver.
 	 *
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return TRUE if the database supports retrieving the last generated key
 	 * using a SQL script, FALSE otherwise.
 	 */
@@ -1948,6 +2407,9 @@ public abstract class DBDefinition {
 	 * Provides the SQL required to retrieve that last inserted row if {@link #supportsRetrievingLastInsertedRowViaSQL()
 	 * } returns TRUE.
 	 *
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return the default implementation returns "".
 	 */
 	public String getRetrieveLastInsertedRowSQL() {
@@ -1956,6 +2418,9 @@ public abstract class DBDefinition {
 
 	/**
 	 * Provides the database's version of an empty string.
+	 *
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
 	 *
 	 * @return '' or the database's equivalent.
 	 */
@@ -1973,6 +2438,9 @@ public abstract class DBDefinition {
 	 * If the database does not support the standard function then the definition
 	 * may override {@link #doDegreesTransform(java.lang.String) } to implement
 	 * the required functionality.
+	 *
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
 	 *
 	 * @return TRUE if the database supports the standard DEGREES function,
 	 * otherwise FALSE.
@@ -1992,6 +2460,9 @@ public abstract class DBDefinition {
 	 * may override {@link #doRadiansTransform(java.lang.String) } to implement
 	 * the required functionality.
 	 *
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return TRUE if the database supports the standard RADIANS function,
 	 * otherwise FALSE.
 	 */
@@ -2007,6 +2478,9 @@ public abstract class DBDefinition {
 	 * provides another method of providing the function.
 	 *
 	 * @param degreesSQL	degreesSQL
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return the degrees expression transformed into a radians expression
 	 */
 	public String doRadiansTransform(String degreesSQL) {
@@ -2021,6 +2495,9 @@ public abstract class DBDefinition {
 	 * provides another method of providing the function.
 	 *
 	 * @param radiansSQL	radiansSQL
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return the radians expression transformed into a degrees expression
 	 */
 	public String doDegreesTransform(String radiansSQL) {
@@ -2030,6 +2507,9 @@ public abstract class DBDefinition {
 	/**
 	 * Provides the name of the function that raises e to the power of the
 	 * provided value.
+	 *
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
 	 *
 	 * @return "EXP"
 	 */
@@ -2043,6 +2523,9 @@ public abstract class DBDefinition {
 	 * <p>
 	 * If the database does not support EXP, then DBvolution will use an
 	 * expression to calculate the value.
+	 *
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
 	 *
 	 * @return the default implementation returns TRUE.
 	 */
@@ -2058,6 +2541,9 @@ public abstract class DBDefinition {
 	 * database neither has a built-in function nor supports another method of
 	 * implementing it.
 	 *
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return the default implementation returns TRUE.
 	 */
 	public boolean supportsStandardDeviationFunction() {
@@ -2066,6 +2552,9 @@ public abstract class DBDefinition {
 
 	/**
 	 * Indicates whether the database supports the modulus function.
+	 *
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
 	 *
 	 * @return the default implementation returns TRUE.
 	 */
@@ -2078,6 +2567,9 @@ public abstract class DBDefinition {
 	 *
 	 * @param firstNumber firstNumber
 	 * @param secondNumber secondNumber
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return the SQL required to get the integer division remainder.
 	 */
 	public String doModulusTransform(String firstNumber, String secondNumber) {
@@ -2090,6 +2582,9 @@ public abstract class DBDefinition {
 	 *
 	 * @param dateValue dateValue
 	 * @param numberOfSeconds numberOfSeconds
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return an SQL snippet
 	 */
 	public String doAddSecondsTransform(String dateValue, String numberOfSeconds) {
@@ -2102,6 +2597,9 @@ public abstract class DBDefinition {
 	 *
 	 * @param dateValue dateValue
 	 * @param numberOfMinutes numberOfMinutes
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return an SQL snippet
 	 */
 	public String doAddMinutesTransform(String dateValue, String numberOfMinutes) {
@@ -2114,6 +2612,9 @@ public abstract class DBDefinition {
 	 *
 	 * @param dateValue dateValue
 	 * @param numberOfDays numberOfDays
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return an SQL snippet
 	 */
 	public String doAddDaysTransform(String dateValue, String numberOfDays) {
@@ -2126,6 +2627,9 @@ public abstract class DBDefinition {
 	 *
 	 * @param dateValue dateValue
 	 * @param numberOfHours numberOfHours
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return an SQL snippet
 	 */
 	public String doAddHoursTransform(String dateValue, String numberOfHours) {
@@ -2138,6 +2642,9 @@ public abstract class DBDefinition {
 	 *
 	 * @param dateValue dateValue
 	 * @param numberOfWeeks numberOfWeeks
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return an SQL snippet
 	 */
 	public String doAddWeeksTransform(String dateValue, String numberOfWeeks) {
@@ -2150,6 +2657,9 @@ public abstract class DBDefinition {
 	 *
 	 * @param dateValue dateValue
 	 * @param numberOfMonths numberOfMonths
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return an SQL snippet
 	 */
 	public String doAddMonthsTransform(String dateValue, String numberOfMonths) {
@@ -2162,6 +2672,9 @@ public abstract class DBDefinition {
 	 *
 	 * @param dateValue dateValue
 	 * @param numberOfYears numberOfYears
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return an SQL snippet
 	 */
 	public String doAddYearsTransform(String dateValue, String numberOfYears) {
@@ -2172,6 +2685,9 @@ public abstract class DBDefinition {
 	 * Transform a Java Boolean into the equivalent in an SQL snippet.
 	 *
 	 * @param boolValue	boolValue
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return an SQL snippet
 	 */
 	public String doBooleanValueTransform(Boolean boolValue) {
@@ -2188,6 +2704,9 @@ public abstract class DBDefinition {
 	/**
 	 * Indicates whether the database supports use of the "^" operator to perform
 	 * boolean XOR.
+	 *
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
 	 *
 	 * @return TRUE if the database supports "^" as XOR, FALSE otherwise.
 	 */
@@ -2206,6 +2725,9 @@ public abstract class DBDefinition {
 	 * Not to be confused with the MIN aggregate function.
 	 *
 	 * @param strs	strs
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return a String of the SQL required to find the smallest value in the list
 	 * provided.
 	 */
@@ -2250,6 +2772,9 @@ public abstract class DBDefinition {
 	 * Not to be confused with the MAX aggregate function.
 	 *
 	 * @param strs	strs
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return a String of the SQL required to get the largest value in the
 	 * supplied list.
 	 */
@@ -2290,6 +2815,9 @@ public abstract class DBDefinition {
 	 * @param withinString search within this value
 	 * @param findString search for this value
 	 * @param replaceString replace with this value
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return "REPLACE(withinString, findString, replaceString)"
 	 * @see StringExpression#replace(java.lang.String, java.lang.String)
 	 * @see StringExpression#replace(java.lang.String,
@@ -2308,6 +2836,9 @@ public abstract class DBDefinition {
 	 * for this database.
 	 *
 	 * @param numberExpression	numberExpression
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return a String of the SQL required to transform the number supplied into
 	 * a character or String type.
 	 */
@@ -2317,6 +2848,9 @@ public abstract class DBDefinition {
 
 	/**
 	 * Creates the CURRENTDATE function for this database.
+	 *
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
 	 *
 	 * @return a String of the SQL required to get the CurrentDateOnly value.
 	 */
@@ -2328,6 +2862,9 @@ public abstract class DBDefinition {
 	 * Convert the boolean array of bit values into the SQL equivalent.
 	 *
 	 * @param booleanArray	booleanArray
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return SQL snippet.
 	 */
 	public String doBitsValueTransform(boolean[] booleanArray) {
@@ -2352,6 +2889,9 @@ public abstract class DBDefinition {
 	 *
 	 * @param dateValue dateValue
 	 * @param otherDateValue otherDateValue
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return SQL
 	 */
 	public String doDayDifferenceTransform(String dateValue, String otherDateValue) {
@@ -2363,6 +2903,9 @@ public abstract class DBDefinition {
 	 *
 	 * @param dateValue dateValue
 	 * @param otherDateValue otherDateValue
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return SQL
 	 */
 	public String doWeekDifferenceTransform(String dateValue, String otherDateValue) {
@@ -2374,6 +2917,9 @@ public abstract class DBDefinition {
 	 *
 	 * @param dateValue dateValue
 	 * @param otherDateValue otherDateValue
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return SQL
 	 */
 	public String doMonthDifferenceTransform(String dateValue, String otherDateValue) {
@@ -2385,6 +2931,9 @@ public abstract class DBDefinition {
 	 *
 	 * @param dateValue dateValue
 	 * @param otherDateValue otherDateValue
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return SQL
 	 */
 	public String doYearDifferenceTransform(String dateValue, String otherDateValue) {
@@ -2396,6 +2945,9 @@ public abstract class DBDefinition {
 	 *
 	 * @param dateValue dateValue
 	 * @param otherDateValue otherDateValue
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return SQL
 	 */
 	public String doHourDifferenceTransform(String dateValue, String otherDateValue) {
@@ -2407,6 +2959,9 @@ public abstract class DBDefinition {
 	 *
 	 * @param dateValue dateValue
 	 * @param otherDateValue otherDateValue
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return SQL
 	 */
 	public String doMinuteDifferenceTransform(String dateValue, String otherDateValue) {
@@ -2418,6 +2973,9 @@ public abstract class DBDefinition {
 	 *
 	 * @param dateValue dateValue
 	 * @param otherDateValue otherDateValue
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return SQL
 	 */
 	public String doSecondDifferenceTransform(String dateValue, String otherDateValue) {
@@ -2429,6 +2987,9 @@ public abstract class DBDefinition {
 	 *
 	 * @param dateValue dateValue
 	 * @param otherDateValue otherDateValue
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return SQL
 	 */
 //	public String doMillisecondDifferenceTransform(String dateValue, String otherDateValue) {
@@ -2439,6 +3000,9 @@ public abstract class DBDefinition {
 	 * {@link PropertyWrapper} provided.
 	 *
 	 * @param field	field
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return The default implementation returns something like " FOREIGN KEY
 	 * (column) REFERENCES table(reference_column) "
 	 */
@@ -2454,6 +3018,9 @@ public abstract class DBDefinition {
 	 *
 	 * @param possiblyNullValue possiblyNullValue
 	 * @param alternativeIfNull alternativeIfNull
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return SQL
 	 */
 	public String doStringIfNullTransform(String possiblyNullValue, String alternativeIfNull) {
@@ -2468,6 +3035,9 @@ public abstract class DBDefinition {
 	 *
 	 * @param possiblyNullValue possiblyNullValue
 	 * @param alternativeIfNull alternativeIfNull
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return SQL
 	 */
 	public String doNumberIfNullTransform(String possiblyNullValue, String alternativeIfNull) {
@@ -2479,6 +3049,9 @@ public abstract class DBDefinition {
 	 *
 	 * @param possiblyNullValue possiblyNullValue
 	 * @param alternativeIfNull alternativeIfNull
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return SQL
 	 */
 	public String doDateIfNullTransform(String possiblyNullValue, String alternativeIfNull) {
@@ -2491,6 +3064,9 @@ public abstract class DBDefinition {
 	 *
 	 * @param comparableValue comparableValue
 	 * @param values values
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return SQL similar to "comparableValue IN (value, value, value)"
 	 */
 	public String doInTransform(String comparableValue, List<String> values) {
@@ -2513,6 +3089,9 @@ public abstract class DBDefinition {
 	 * Returns FROM clause to be used for this table.
 	 *
 	 * @param table the table to transform into a FROM clause.
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return a SQL snippet for a FROM clause.
 	 */
 	public String getFromClause(DBRow table) {
@@ -2527,6 +3106,9 @@ public abstract class DBDefinition {
 	/**
 	 * The beginning of the WITH variant supported by this database.
 	 *
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return "WITH RECURSIVE" by default.
 	 */
 	public String beginWithClause() {
@@ -2539,6 +3121,9 @@ public abstract class DBDefinition {
 	 * @param recursiveTableAlias the table alias used during the recursive query.
 	 * @param recursiveColumnNames all the columns in the recursive part of the
 	 * query.
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return by default something like: ALIAS(COL1, COL2, ... )
 	 */
 	public String formatWithClauseTableDefinition(String recursiveTableAlias, String recursiveColumnNames) {
@@ -2548,6 +3133,9 @@ public abstract class DBDefinition {
 	/**
 	 * Return the default preamble to the priming query of a
 	 * {@link DBRecursiveQuery}.
+	 *
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
 	 *
 	 * @return " AS ("
 	 */
@@ -2559,6 +3147,9 @@ public abstract class DBDefinition {
 	 * Return the necessary connector between the priming query and the recursive
 	 * query used in a {@link DBRecursiveQuery}.
 	 *
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return " \n UNION ALL "
 	 */
 	public String endWithClausePrimingQuery() {
@@ -2569,6 +3160,9 @@ public abstract class DBDefinition {
 	 * Return the default preamble to the recursive query of a
 	 * {@link DBRecursiveQuery}.
 	 *
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return ""
 	 */
 	public String beginWithClauseRecursiveQuery() {
@@ -2578,6 +3172,9 @@ public abstract class DBDefinition {
 	/**
 	 * Return the default preamble to the recursive query of a
 	 * {@link DBRecursiveQuery}.
+	 *
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
 	 *
 	 * @return " \n ) \n"
 	 */
@@ -2591,6 +3188,9 @@ public abstract class DBDefinition {
 	 *
 	 * @param recursiveTableAlias the table alias used in the recursive query.
 	 * @param recursiveAliases all the column aliases used in the recursive query.
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return " SELECT ... FROM ... ORDER BY ... ASC; ";
 	 */
 	public String doSelectFromRecursiveTable(String recursiveTableAlias, String recursiveAliases) {
@@ -2601,6 +3201,9 @@ public abstract class DBDefinition {
 	 * Indicates whether this database needs the recursive query to use table
 	 * aliases.
 	 *
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return TRUE
 	 */
 	public boolean requiresRecursiveTableAlias() {
@@ -2610,6 +3213,9 @@ public abstract class DBDefinition {
 	/**
 	 * Return the default name for the depth column generated during a
 	 * {@link DBRecursiveQuery}.
+	 *
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
 	 *
 	 * @return " DBDEPTHCOLUMN "
 	 */
@@ -2622,6 +3228,9 @@ public abstract class DBDefinition {
 	 * columns.
 	 *
 	 * @param field the property to check
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return FALSE by default
 	 */
 	protected boolean hasSpecialPrimaryKeyTypeForDBDatatype(PropertyWrapper field) {
@@ -2633,6 +3242,9 @@ public abstract class DBDefinition {
 	 * this database.
 	 *
 	 * @param field the property to check
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return by default DBvolution returns the standard datatype for this field.
 	 */
 	protected String getSpecialPrimaryKeyTypeOfDBDatatype(PropertyWrapper field) {
@@ -2642,6 +3254,9 @@ public abstract class DBDefinition {
 	/**
 	 * Indicates whether the LEASTOF operator is supported by the database or
 	 * needs to be emulated.
+	 *
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
 	 *
 	 * @return TRUE by default.
 	 */
@@ -2653,6 +3268,9 @@ public abstract class DBDefinition {
 	 * Indicates whether the GREATESTOF operator is supported by the database or
 	 * needs to be emulated.
 	 *
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return TRUE by default.
 	 */
 	protected boolean supportsGreatestOfNatively() {
@@ -2662,6 +3280,9 @@ public abstract class DBDefinition {
 	/**
 	 * Indicates whether the database supports grouping by columns that don't
 	 * involve any tables.
+	 *
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
 	 *
 	 * @return TRUE by default.
 	 */
@@ -2676,6 +3297,9 @@ public abstract class DBDefinition {
 	 * <p>
 	 * By default this method returns ".*" as system tables are not a problem for
 	 * most databases.
+	 *
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
 	 *
 	 * @return default is ".*" so all tables are included.
 	 */
@@ -2693,6 +3317,9 @@ public abstract class DBDefinition {
 	 *
 	 * @param primaryKeyColumnName the name of the primary key column formatted
 	 * for this database
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return the Primary Key formatted for this database.
 	 */
 	public String formatPrimaryKeyForRetrievingGeneratedKeys(String primaryKeyColumnName) {
@@ -2710,6 +3337,9 @@ public abstract class DBDefinition {
 	 *
 	 * @param numberToChooseWith the index to use
 	 * @param strs the options to choose from.
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return SQL
 	 */
 	public String doChooseTransformation(String numberToChooseWith, List<String> strs) {
@@ -2752,6 +3382,9 @@ public abstract class DBDefinition {
 	 * Used by {@link #doChooseTransformation(java.lang.String, java.util.List)
 	 * } to connect to the correct database function.
 	 *
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return SQL
 	 */
 	public String getChooseFunctionName() {
@@ -2770,6 +3403,9 @@ public abstract class DBDefinition {
 	 * <p>
 	 * You will also need to implement {@link #getChooseFunctionName() }.
 	 *
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return TRUE if the database has a CHOOSE equivalent, otherwise FALSE
 	 */
 	protected boolean supportsChooseNatively() {
@@ -2786,6 +3422,9 @@ public abstract class DBDefinition {
 	 * @param booleanTest the true/false test
 	 * @param thenResult the result to return if the test returns TRUE
 	 * @param elseResult the result to return if the test returns FALSE
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return IF the booleanTest is TRUE returns the thenResult, otherwise
 	 * returns elseResult.
 	 */
@@ -2801,6 +3440,9 @@ public abstract class DBDefinition {
 	 * for Saturday.
 	 *
 	 * @param dateSQL the date to get the day of the week for.
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return a number between 1 and 7 for the weekday.
 	 */
 	abstract public String doDayOfWeekTransform(String dateSQL);
@@ -2813,6 +3455,9 @@ public abstract class DBDefinition {
 	 * } to create indexes for the fields of the table.
 	 *
 	 * @param field the field to generate an index for
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return SQL
 	 */
 	public String getIndexClauseForCreateTable(PropertyWrapper field) {
@@ -2826,6 +3471,9 @@ public abstract class DBDefinition {
 	 * The default implementation changes the array into a string of 0s and 1s.
 	 *
 	 * @param bools all the true/false values
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return a string of 1s and 0s representing the boolean array.
 	 */
 	public String doBooleanArrayTransform(Boolean[] bools) {
@@ -2845,6 +3493,9 @@ public abstract class DBDefinition {
 	 * of Booleans.
 	 *
 	 * @param stringOfBools all the true/false values
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return an array of Booleans.
 	 */
 	public Boolean[] doBooleanArrayResultInterpretation(String stringOfBools) {
@@ -2863,6 +3514,9 @@ public abstract class DBDefinition {
 	 * Indicates if the database supports ARRAYs natively and the functionality
 	 * has been implemented.
 	 *
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return TRUE by default.
 	 */
 	public boolean supportsArraysNatively() {
@@ -2873,6 +3527,9 @@ public abstract class DBDefinition {
 	 * Implement this method if the database implements ARRAYs but not BOOLEAN.
 	 *
 	 * @param objRepresentingABoolean an object to be used in the boolean array
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return a boolean derived from objRepresentingABoolean.
 	 */
 	public Boolean doBooleanArrayElementTransform(Object objRepresentingABoolean) {
@@ -2887,6 +3544,9 @@ public abstract class DBDefinition {
 	 *
 	 * @param leftHandSide the first value to compare
 	 * @param rightHandSide the second value to compare
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return the SQL required to compare the two numbers.
 	 */
 	public String doNumberEqualsTransform(String leftHandSide, String rightHandSide) {
@@ -2901,6 +3561,9 @@ public abstract class DBDefinition {
 	 *
 	 * @param newTableRow the table to be altered.
 	 * @param field the field to add a foreign key from
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return the SQL to add a foreign key.
 	 */
 	public String getAlterTableAddForeignKeyStatement(DBRow newTableRow, PropertyWrapper field) {
@@ -2919,6 +3582,9 @@ public abstract class DBDefinition {
 	 *
 	 * @param newTableRow the table to be altered.
 	 * @param field the field to remove the foreign key from.
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return the SQL to remove a foreign key.
 	 */
 	public String getAlterTableDropForeignKeyStatement(DBRow newTableRow, PropertyWrapper field) {
@@ -2939,6 +3605,9 @@ public abstract class DBDefinition {
 	 *
 	 * @param qdt the DBV value to be stored
 	 * @param selectableName the selectable value
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return SQL
 	 */
 	public String doColumnTransformForSelect(QueryableDatatype qdt, String selectableName) {
@@ -2949,6 +3618,9 @@ public abstract class DBDefinition {
 	 * Creates a string representation of a DateRepeat from the Period
 	 *
 	 * @param interval the interval to be transformed into a DateRepeat.
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return a DateRpeat as an SQL string
 	 */
 	public String transformPeriodIntoDateRepeat(Period interval) {
@@ -2969,6 +3641,9 @@ public abstract class DBDefinition {
 	 *
 	 * @param leftHandSide the first date
 	 * @param rightHandSide the second date to subtract from the first
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return the SQL required to create a DateRepeat from the dates
 	 */
 	public String doDateMinusToDateRepeatTransformation(String leftHandSide, String rightHandSide) {
@@ -2980,6 +3655,9 @@ public abstract class DBDefinition {
 	 *
 	 * @param leftHandSide the first value to compare
 	 * @param rightHandSide the second value to compare
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return the SQL required to create to compare DateRepeats
 	 */
 	public String doDateRepeatEqualsTransform(String leftHandSide, String rightHandSide) {
@@ -2991,6 +3669,9 @@ public abstract class DBDefinition {
 	 *
 	 * @param leftHandSide the first DateRepeat value to compare
 	 * @param rightHandSide the second DateRepeat value to compare
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return the SQL required to create to compare DateRepeats
 	 */
 	public String doDateRepeatNotEqualsTransform(String leftHandSide, String rightHandSide) {
@@ -3002,6 +3683,9 @@ public abstract class DBDefinition {
 	 *
 	 * @param leftHandSide the first DateRepeat value to compare
 	 * @param rightHandSide the second DateRepeat value to compare
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return the SQL required to create to compare DateRepeats
 	 */
 	public String doDateRepeatLessThanTransform(String leftHandSide, String rightHandSide) {
@@ -3013,6 +3697,9 @@ public abstract class DBDefinition {
 	 *
 	 * @param leftHandSide the first DateRepeat value to compare
 	 * @param rightHandSide the second DateRepeat value to compare
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return the SQL required to create to compare DateRepeats
 	 */
 	public String doDateRepeatLessThanEqualsTransform(String leftHandSide, String rightHandSide) {
@@ -3024,6 +3711,9 @@ public abstract class DBDefinition {
 	 *
 	 * @param leftHandSide the first DateRepeat value to compare
 	 * @param rightHandSide the second DateRepeat value to compare
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return the SQL required to create to compare DateRepeats
 	 */
 	public String doDateRepeatGreaterThanTransform(String leftHandSide, String rightHandSide) {
@@ -3035,6 +3725,9 @@ public abstract class DBDefinition {
 	 *
 	 * @param leftHandSide the first DateRepeat value to compare
 	 * @param rightHandSide the second DateRepeat value to compare
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return the SQL required to create to compare DateRepeats
 	 */
 	public String doDateRepeatGreaterThanEqualsTransform(String leftHandSide, String rightHandSide) {
@@ -3046,6 +3739,9 @@ public abstract class DBDefinition {
 	 *
 	 * @param leftHandSide the first DateRepeat value to compare
 	 * @param rightHandSide the second DateRepeat value to compare
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return the SQL required to change the date by the required amount.
 	 */
 	public String doDatePlusDateRepeatTransform(String leftHandSide, String rightHandSide) {
@@ -3057,6 +3753,9 @@ public abstract class DBDefinition {
 	 *
 	 * @param leftHandSide the first DateRepeat value to compare
 	 * @param rightHandSide the second DateRepeat value to compare
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return the SQL required to change the date by the required amount.
 	 */
 	public String doDateMinusDateRepeatTransform(String leftHandSide, String rightHandSide) {
@@ -3067,6 +3766,9 @@ public abstract class DBDefinition {
 	 * Create a Period from the database version of the DateRepeat.
 	 *
 	 * @param intervalStr the DateRepeat value to convert into a Jodatime Period
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return a Period.
 	 */
 	public Period parseDateRepeatFromGetString(String intervalStr) {
@@ -3078,6 +3780,9 @@ public abstract class DBDefinition {
 	 *
 	 * @param firstGeometry the first polygon2d value to compare
 	 * @param secondGeometry the second polygon2d value to compare
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return SQL
 	 */
 	public String doPolygon2DEqualsTransform(String firstGeometry, String secondGeometry) {
@@ -3089,6 +3794,9 @@ public abstract class DBDefinition {
 	 *
 	 * @param firstGeometry the first polygon2d value to compare
 	 * @param secondGeometry the second polygon2d value to compare
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return SQL that represents a polygon of the intersection, null if there is
 	 * no intersection.
 	 */
@@ -3101,6 +3809,9 @@ public abstract class DBDefinition {
 	 *
 	 * @param firstGeometry the first polygon2d value to compare
 	 * @param secondGeometry the second polygon2d value to compare
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return SQL that returns TRUE if they intersect.
 	 */
 	public String doPolygon2DIntersectsTransform(String firstGeometry, String secondGeometry) {
@@ -3112,6 +3823,9 @@ public abstract class DBDefinition {
 	 *
 	 * @param firstGeometry the first polygon2d value to compare
 	 * @param secondGeometry the second polygon2d value to compare
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return SQL that is TRUE if the first polygon contains the second.
 	 */
 	public String doPolygon2DContainsPolygon2DTransform(String firstGeometry, String secondGeometry) {
@@ -3124,6 +3838,9 @@ public abstract class DBDefinition {
 	 *
 	 * @param firstGeometry the first polygon2d value to compare
 	 * @param secondGeometry the second polygon2d value to compare
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return SQL that is FALSE if the polygons intersect.
 	 */
 	public String doPolygon2DDoesNotIntersectTransform(String firstGeometry, String secondGeometry) {
@@ -3135,6 +3852,9 @@ public abstract class DBDefinition {
 	 *
 	 * @param firstGeometry the first polygon2d value to compare
 	 * @param secondGeometry the second polygon2d value to compare
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return SQL that is TRUE if the polygons have intersecting and
 	 * non-intersecting parts.
 	 */
@@ -3151,6 +3871,9 @@ public abstract class DBDefinition {
 	 *
 	 * @param firstGeometry the first polygon2d value to compare
 	 * @param secondGeometry the second polygon2d value to compare
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return SQL snippet
 	 */
 	public String doPolygon2DTouchesTransform(String firstGeometry, String secondGeometry) {
@@ -3166,6 +3889,9 @@ public abstract class DBDefinition {
 	 *
 	 * @param firstGeometry the first polygon2d value to compare
 	 * @param secondGeometry the second polygon2d value to compare
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return SQL that is TRUE if the first polygon is within the second.
 	 */
 	public String doPolygon2DWithinTransform(String firstGeometry, String secondGeometry) {
@@ -3181,6 +3907,9 @@ public abstract class DBDefinition {
 	 * This will be "2"
 	 *
 	 * @param polygon2DSQL a polygon2d value
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return "2" unless something has gone horribly wrong.
 	 */
 	public String doPolygon2DMeasurableDimensionsTransform(String polygon2DSQL) {
@@ -3191,6 +3920,9 @@ public abstract class DBDefinition {
 	 * Create a simple four sided bounding for the polygon.
 	 *
 	 * @param polygon2DSQL a polygon2D value
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return the SQL required to create a bounding box for the polygon.
 	 */
 	public String doPolygon2DGetBoundingBoxTransform(String polygon2DSQL) {
@@ -3201,6 +3933,9 @@ public abstract class DBDefinition {
 	 * Retrieve the area of the polygon.
 	 *
 	 * @param polygon2DSQL a polygon2D value
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return SQL that will return the area of the Polygon2D
 	 */
 	public String doPolygon2DGetAreaTransform(String polygon2DSQL) {
@@ -3212,6 +3947,9 @@ public abstract class DBDefinition {
 	 * linestring representing the exterior ring of the polygon.
 	 *
 	 * @param polygon2DSQL a polygon2D value
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return SQL
 	 */
 	public String doPolygon2DGetExteriorRingTransform(String polygon2DSQL) {
@@ -3221,6 +3959,9 @@ public abstract class DBDefinition {
 	/**
 	 * Indicates that this database supports hyperbolic functions natively.
 	 *
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return TRUE by default.
 	 */
 	public boolean supportsHyperbolicFunctionsNatively() {
@@ -3229,6 +3970,9 @@ public abstract class DBDefinition {
 
 	/**
 	 * Provides the ARCTAN2 function name for this database.
+	 *
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
 	 *
 	 * @return "atan2" by default.
 	 */
@@ -3240,6 +3984,9 @@ public abstract class DBDefinition {
 	 * Get the year part of the DateRepeat, an integer
 	 *
 	 * @param dateRepeatSQL a date repeat value
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return SQL
 	 */
 	public String doDateRepeatGetYearsTransform(String dateRepeatSQL) {
@@ -3250,6 +3997,9 @@ public abstract class DBDefinition {
 	 * Get the month part of the DateRepeat, an integer
 	 *
 	 * @param dateRepeatSQL a date repeat value
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return SQL
 	 */
 	public String doDateRepeatGetMonthsTransform(String dateRepeatSQL) {
@@ -3260,6 +4010,9 @@ public abstract class DBDefinition {
 	 * Get the Days part of the DateRepeat, an integer
 	 *
 	 * @param dateRepeatSQL a date repeat value
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return SQL
 	 */
 	public String doDateRepeatGetDaysTransform(String dateRepeatSQL) {
@@ -3270,6 +4023,9 @@ public abstract class DBDefinition {
 	 * Get the hour part of the DateRepeat, an integer
 	 *
 	 * @param dateRepeatSQL a date repeat value
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return SQL
 	 */
 	public String doDateRepeatGetHoursTransform(String dateRepeatSQL) {
@@ -3280,6 +4036,9 @@ public abstract class DBDefinition {
 	 * Get the minute part of the DateRepeat, an integer
 	 *
 	 * @param dateRepeatSQL a date repeat value
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return SQL
 	 */
 	public String doDateRepeatGetMinutesTransform(String dateRepeatSQL) {
@@ -3290,6 +4049,9 @@ public abstract class DBDefinition {
 	 * Get the seconds part of the DateRepeat, a decimal number
 	 *
 	 * @param dateRepeatSQL a date repeat value
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return SQL
 	 */
 	public String doDateRepeatGetSecondsTransform(String dateRepeatSQL) {
@@ -3300,6 +4062,9 @@ public abstract class DBDefinition {
 	 * Transform the DateRepeat into it's character based equivalent.
 	 *
 	 * @param dateRepeatSQL a date repeat value
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return SQL
 	 */
 	public String doDateRepeatToStringTransform(String dateRepeatSQL) {
@@ -3313,6 +4078,9 @@ public abstract class DBDefinition {
 	 * Full of ways to fail this is.
 	 *
 	 * @param stringResultContainingANumber a number value to be coerced to string
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return SQL that converts the string value into number.
 	 */
 	public String doStringToNumberTransform(String stringResultContainingANumber) {
@@ -3322,6 +4090,9 @@ public abstract class DBDefinition {
 	/**
 	 * Indicates that the database supports the ARCSINE function.
 	 *
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return true by default.
 	 */
 	public boolean supportsArcSineFunction() {
@@ -3330,6 +4101,9 @@ public abstract class DBDefinition {
 
 	/**
 	 * Indicates that the database supports the COTANGENT function.
+	 *
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
 	 *
 	 * @return true by default.
 	 */
@@ -3349,6 +4123,9 @@ public abstract class DBDefinition {
 	 *
 	 * @param columnExpression a column expression that might need to change type
 	 * for this database
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return The DBExpression as a DBExpression supported by the database.
 	 */
 	public DBExpression transformToStorableType(DBExpression columnExpression) {
@@ -3360,6 +4137,9 @@ public abstract class DBDefinition {
 	 *
 	 * @param firstPoint a point2d value to compare
 	 * @param secondPoint a point2d value to compare
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return SQL
 	 */
 	public String doPoint2DEqualsTransform(String firstPoint, String secondPoint) {
@@ -3370,6 +4150,9 @@ public abstract class DBDefinition {
 	 * Provide the SQL to return the X coordinate of the Point2D
 	 *
 	 * @param pont2DSQL a point2d value
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return SQL
 	 */
 	public String doPoint2DGetXTransform(String pont2DSQL) {
@@ -3380,6 +4163,9 @@ public abstract class DBDefinition {
 	 * Provide the SQL to return the Y coordinate of the Point2D
 	 *
 	 * @param point2DSQL a point2d value
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return SQL
 	 */
 	public String doPoint2DGetYTransform(String point2DSQL) {
@@ -3393,6 +4179,9 @@ public abstract class DBDefinition {
 	 * Point is a 0-dimensional objects for this purpose.
 	 *
 	 * @param point2DSQL a point2d value
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return SQL
 	 */
 	public String doPoint2DMeasurableDimensionsTransform(String point2DSQL) {
@@ -3404,6 +4193,9 @@ public abstract class DBDefinition {
 	 * the Point2D.
 	 *
 	 * @param point2DSQL a point2d value
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return SQL
 	 */
 	public String doPoint2DGetBoundingBoxTransform(String point2DSQL) {
@@ -3414,6 +4206,9 @@ public abstract class DBDefinition {
 	 * Provide the SQL to derive the WKT version of the Point2D.
 	 *
 	 * @param point2DSQL a point2d value
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return SQL
 	 */
 	public String doPoint2DAsTextTransform(String point2DSQL) {
@@ -3424,6 +4219,9 @@ public abstract class DBDefinition {
 	 * Provide the SQL that correctly represents this Point2D in this database.
 	 *
 	 * @param point a point to be turned into an SQL point2d value.
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return SQL
 	 */
 	public String transformPoint2DIntoDatabaseFormat(Point point) {
@@ -3442,6 +4240,9 @@ public abstract class DBDefinition {
 	 *
 	 * @param xValue a number value
 	 * @param yValue a number value
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return SQL
 	 */
 	public String transformCoordinatesIntoDatabasePoint2DFormat(String xValue, String yValue) {
@@ -3456,6 +4257,9 @@ public abstract class DBDefinition {
 	 * }.
 	 *
 	 * @param pointAsString a point2d value
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return a point created from the point2d value
 	 * @throws com.vividsolutions.jts.io.ParseException if the database result is
 	 * not a valid WKT
@@ -3480,6 +4284,9 @@ public abstract class DBDefinition {
 	 * {@link #transformPolygonIntoDatabasePolygon2DFormat(com.vividsolutions.jts.geom.Polygon)}.
 	 *
 	 * @param polygon2DSQL a polygon2d value
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return a polygon created from the polygon2d value
 	 * @throws com.vividsolutions.jts.io.ParseException if the database result is
 	 * not a valid WKT
@@ -3512,6 +4319,9 @@ public abstract class DBDefinition {
 	 * {@link #transformPolygonIntoDatabasePolygon2DFormat(com.vividsolutions.jts.geom.Polygon)}.
 	 *
 	 * @param lineStringAsSQL a line2d value
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return a linestring created from the line2d
 	 * @throws com.vividsolutions.jts.io.ParseException if the database result is
 	 * not a valid WKT
@@ -3532,6 +4342,9 @@ public abstract class DBDefinition {
 	 * Provide the SQL that correctly represents this LineString in this database.
 	 *
 	 * @param lineString a linestring to transform in to a Line2D value
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return SQL
 	 */
 	public String transformLineStringIntoDatabaseLine2DFormat(LineString lineString) {
@@ -3543,6 +4356,9 @@ public abstract class DBDefinition {
 	 * Provide the SQL to derive the WKT version of the Line2D.
 	 *
 	 * @param line2DSQL a line2d value
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return SQL
 	 */
 	public String doLine2DAsTextTransform(String line2DSQL) {
@@ -3554,6 +4370,9 @@ public abstract class DBDefinition {
 	 *
 	 * @param line2DSQL the first line2d value to compare
 	 * @param otherLine2DSQL the second line2d value to compare
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return SQL
 	 */
 	public String doLine2DEqualsTransform(String line2DSQL, String otherLine2DSQL) {
@@ -3565,6 +4384,9 @@ public abstract class DBDefinition {
 	 *
 	 * @param line2DSQL the first line2d value to compare
 	 * @param otherLine2DSQL the second line2d value to compare
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return SQL
 	 */
 	public String doLine2DNotEqualsTransform(String line2DSQL, String otherLine2DSQL) {
@@ -3575,6 +4397,9 @@ public abstract class DBDefinition {
 	 * Create the SQL required to get the dimension of this Line2D SQL.
 	 *
 	 * @param line2DSQL the line2d value
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return the dimension (probably 1)
 	 */
 	public String doLine2DMeasurableDimensionsTransform(String line2DSQL) {
@@ -3585,6 +4410,9 @@ public abstract class DBDefinition {
 	 * Create the SQL to derive the bounding box of this Line2D SQL
 	 *
 	 * @param line2DSQL the line2d value
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return SQL
 	 */
 	public String doLine2DGetBoundingBoxTransform(String line2DSQL) {
@@ -3595,6 +4423,9 @@ public abstract class DBDefinition {
 	 * Create the SQL to transform a Point2DArray SQL into a Polygon2D
 	 *
 	 * @param pointSQL the point2d value
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return SQL
 	 */
 	public String transformPoint2DArrayToDatabasePolygon2DFormat(List<String> pointSQL) {
@@ -3606,6 +4437,9 @@ public abstract class DBDefinition {
 	 * expression.
 	 *
 	 * @param line2DSQL the line2d value
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return SQL
 	 */
 	public String doLine2DGetMaxXTransform(String line2DSQL) {
@@ -3617,6 +4451,9 @@ public abstract class DBDefinition {
 	 * expression.
 	 *
 	 * @param line2DSQL the line2d value
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return SQL
 	 */
 	public String doLine2DGetMinXTransform(String line2DSQL) {
@@ -3628,6 +4465,9 @@ public abstract class DBDefinition {
 	 * expression.
 	 *
 	 * @param line2DSQL the line2 value
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return SQL
 	 */
 	public String doLine2DGetMaxYTransform(String line2DSQL) {
@@ -3639,6 +4479,9 @@ public abstract class DBDefinition {
 	 * expression.
 	 *
 	 * @param line2DSQL the line2d value
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return SQL
 	 */
 	public String doLine2DGetMinYTransform(String line2DSQL) {
@@ -3650,6 +4493,9 @@ public abstract class DBDefinition {
 	 * expression.
 	 *
 	 * @param polygon2DSQL the polygon2d value
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return SQL
 	 */
 	public String doPolygon2DGetMaxXTransform(String polygon2DSQL) {
@@ -3661,6 +4507,9 @@ public abstract class DBDefinition {
 	 * expression.
 	 *
 	 * @param polygon2DSQL the polygon2d value
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return SQL
 	 */
 	public String doPolygon2DGetMinXTransform(String polygon2DSQL) {
@@ -3672,6 +4521,9 @@ public abstract class DBDefinition {
 	 * expression.
 	 *
 	 * @param polygon2DSQL the polygon2d value
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return SQL
 	 */
 	public String doPolygon2DGetMaxYTransform(String polygon2DSQL) {
@@ -3683,6 +4535,9 @@ public abstract class DBDefinition {
 	 * expression.
 	 *
 	 * @param polygon2DSQL the polygon2d value
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return SQL
 	 */
 	public String doPolygon2DGetMinYTransform(String polygon2DSQL) {
@@ -3694,6 +4549,9 @@ public abstract class DBDefinition {
 	 * database's version of a Polygon2D.
 	 *
 	 * @param polygon2D the polygon2d value
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return SQL
 	 */
 	public String transformPolygonIntoDatabasePolygon2DFormat(Polygon polygon2D) {
@@ -3705,6 +4563,9 @@ public abstract class DBDefinition {
 	 *
 	 * @param polygon2DSQL the first polygon2d value to compare
 	 * @param otherPolygon2DSQL the second polygon2d value to compare
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return SQL:
 	 */
 	public String doPoint2DDistanceBetweenTransform(String polygon2DSQL, String otherPolygon2DSQL) {
@@ -3715,6 +4576,9 @@ public abstract class DBDefinition {
 	 * Generate the SQL to apply rounding to the Number expressions
 	 *
 	 * @param numberSQL the number value
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return SQL
 	 */
 	public String doRoundTransform(String numberSQL) {
@@ -3727,6 +4591,9 @@ public abstract class DBDefinition {
 	 *
 	 * @param number the number value
 	 * @param decimalPlaces the number value of the decimal places required.
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return SQL
 	 */
 	public String doRoundWithDecimalPlacesTransform(String number, String decimalPlaces) {
@@ -3740,6 +4607,9 @@ public abstract class DBDefinition {
 	 * @param fromThis the string value to be dissected
 	 * @param beforeThis the string value that indicates the end of the required
 	 * text. Not included in the returned value
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return SQL
 	 */
 	public String doSubstringBeforeTransform(String fromThis, String beforeThis) {
@@ -3753,6 +4623,9 @@ public abstract class DBDefinition {
 	 * @param fromThis the string value to be dissected
 	 * @param afterThis the string value that indicates the beginning of the
 	 * required text. Not included in the returned value.
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return SQL
 	 */
 	public String doSubstringAfterTransform(String fromThis, String afterThis) {
@@ -3767,6 +4640,9 @@ public abstract class DBDefinition {
 	 * Override this method and return FALSE if the database closes connections
 	 * when closing statements
 	 *
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return TRUE if closing a statement does NOT effect the connection,
 	 * otherwise FALSE.
 	 */
@@ -3777,6 +4653,9 @@ public abstract class DBDefinition {
 	/**
 	 * Indicates that the database driver does not provide the
 	 * Statement.isClosed() method.
+	 *
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
 	 *
 	 * @return TRUE by default.
 	 */
@@ -3790,6 +4669,9 @@ public abstract class DBDefinition {
 	 *
 	 * @param polygon2DSQL the polygon2d to compare with
 	 * @param point2DSQL the point2d value that might be inside the polygon2d
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return SQL
 	 */
 	public String doPolygon2DContainsPoint2DTransform(String polygon2DSQL, String point2DSQL) {
@@ -3801,6 +4683,9 @@ public abstract class DBDefinition {
 	 * polygon.
 	 *
 	 * @param polygonSQL the polygon2d value
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return SQL
 	 */
 	public String doPolygon2DAsTextTransform(String polygonSQL) {
@@ -3812,6 +4697,9 @@ public abstract class DBDefinition {
 	 *
 	 * @param firstLine the first line2d value to compare
 	 * @param secondLine the second line2d value to compare
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return an SQL expression that will evaluate to TRUE FALSE or NULL,
 	 * depending on whether the lines cross at any point.
 	 */
@@ -3825,6 +4713,9 @@ public abstract class DBDefinition {
 	 *
 	 * @param firstLine the first line2d to compare
 	 * @param secondLine the second line2d to compare
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return an SQL expression that will evaluate to the intersection point of
 	 * the 2 line segments or NULL.
 	 */
@@ -3838,6 +4729,9 @@ public abstract class DBDefinition {
 	 *
 	 * @param firstLine the first line2d to compare
 	 * @param secondLine the second line2d to compare
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return an SQL expression that will evaluate to the intersection point of
 	 * the 2 line segments or NULL.
 	 */
@@ -3851,6 +4745,9 @@ public abstract class DBDefinition {
 	 *
 	 * @param lineSegmentAsSQL the database linesegment2d value to create a
 	 * {@link com.vividsolutions.jts.geom.LineSegment JTS LineSegment} with
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return a JTS LineSegment derived from the database's response, may be
 	 * null.
 	 * @throws com.vividsolutions.jts.io.ParseException malformed WKT will throw
@@ -3880,6 +4777,9 @@ public abstract class DBDefinition {
 	 * By default, creates a WKT representation
 	 *
 	 * @param lineSegment the LineSegment to convert to database format.
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return an SQL expression that can be interpreted by the database as a line
 	 * segment.
 	 */
@@ -3895,6 +4795,9 @@ public abstract class DBDefinition {
 	 *
 	 * @param firstSQL the first Line2D value to compare
 	 * @param secondSQL the second Line2D value to compare
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return an SQL expression that will report whether the 2 line segments
 	 * intersect.
 	 * @see
@@ -3910,6 +4813,9 @@ public abstract class DBDefinition {
 	 * SQL expression.
 	 *
 	 * @param lineSegment the LineSegment2D value
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return SQL
 	 */
 	public String doLineSegment2DGetMaxXTransform(String lineSegment) {
@@ -3921,6 +4827,9 @@ public abstract class DBDefinition {
 	 * SQL expression.
 	 *
 	 * @param lineSegment the LineSegment2D value
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return SQL
 	 */
 	public String doLineSegment2DGetMinXTransform(String lineSegment) {
@@ -3932,6 +4841,9 @@ public abstract class DBDefinition {
 	 * SQL expression.
 	 *
 	 * @param lineSegment the LineSegment2D value
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return SQL
 	 */
 	public String doLineSegment2DGetMaxYTransform(String lineSegment) {
@@ -3943,6 +4855,9 @@ public abstract class DBDefinition {
 	 * SQL expression.
 	 *
 	 * @param lineSegment the LineSegment2D value
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return SQL
 	 */
 	public String doLineSegment2DGetMinYTransform(String lineSegment) {
@@ -3954,6 +4869,9 @@ public abstract class DBDefinition {
 	 * the line segment SQL expression.
 	 *
 	 * @param lineSegment the LineSegment2D value
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return SQL
 	 */
 	public String doLineSegment2DGetBoundingBoxTransform(String lineSegment) {
@@ -3965,6 +4883,9 @@ public abstract class DBDefinition {
 	 * expression.
 	 *
 	 * @param lineSegment the LineSegment2D value
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return SQL
 	 */
 	public String doLineSegment2DDimensionTransform(String lineSegment) {
@@ -3977,6 +4898,9 @@ public abstract class DBDefinition {
 	 *
 	 * @param firstLineSegment the first LineSegment2D value
 	 * @param secondLineSegment the second LineSegment2D value
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return SQL
 	 */
 	public String doLineSegment2DNotEqualsTransform(String firstLineSegment, String secondLineSegment) {
@@ -3989,6 +4913,9 @@ public abstract class DBDefinition {
 	 *
 	 * @param firstLineSegment the first LineSegment2D value
 	 * @param secondLineSegment the second LineSegment2D value
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return SQL
 	 */
 	public String doLineSegment2DEqualsTransform(String firstLineSegment, String secondLineSegment) {
@@ -4000,6 +4927,9 @@ public abstract class DBDefinition {
 	 * the WKT string format.
 	 *
 	 * @param lineSegment the LineSegment2D value
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return SQL
 	 */
 	public String doLineSegment2DAsTextTransform(String lineSegment) {
@@ -4012,6 +4942,9 @@ public abstract class DBDefinition {
 	 *
 	 * @param firstLineSegment the first LineSegment2D value
 	 * @param secondLineSegment the second LineSegment2D value
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return an SQL expression that will evaluate to the intersection point of
 	 * the 2 line segments or NULL.
 	 */
@@ -4024,6 +4957,9 @@ public abstract class DBDefinition {
 	 * LineSegment2D expression.
 	 *
 	 * @param lineSegmentSQL the LineSegment2D value
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return SQL
 	 */
 	public String doLineSegment2DStartPointTransform(String lineSegmentSQL) {
@@ -4035,6 +4971,9 @@ public abstract class DBDefinition {
 	 * LineSegment2D expression.
 	 *
 	 * @param lineSegmentSQL the LineSegment2D value
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return SQL
 	 */
 	public String doLineSegment2DEndPointTransform(String lineSegmentSQL) {
@@ -4046,6 +4985,9 @@ public abstract class DBDefinition {
 	 * database.
 	 *
 	 * @param points the MultiPoint2D value
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return SQL
 	 */
 	public String transformMultiPoint2DToDatabaseMultiPoint2DValue(MultiPoint points) {
@@ -4059,6 +5001,9 @@ public abstract class DBDefinition {
 	 *
 	 * @param pointsAsString the MultiPoint2D value to create a
 	 * {@link com.vividsolutions.jts.geom.MultiPoint JTS MultiPoint} with.
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return the MultiPoint2D as a
 	 * {@link com.vividsolutions.jts.geom.MultiPoint JTS MultiPoint} instance
 	 * @throws com.vividsolutions.jts.io.ParseException malformed WKT values will
@@ -4083,6 +5028,9 @@ public abstract class DBDefinition {
 	 *
 	 * @param firstMultiPointValue the first MultiPoint2D value to compare
 	 * @param secondMultiPointValue the second MultiPoint2D value to compare
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return SQL
 	 */
 	public String doMultiPoint2DEqualsTransform(String firstMultiPointValue, String secondMultiPointValue) {
@@ -4095,6 +5043,9 @@ public abstract class DBDefinition {
 	 *
 	 * @param first the first MultiPoint2D value to compare
 	 * @param second the second MultiPoint2D value to compare
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return SQL
 	 */
 	public String doMultiPoint2DNotEqualsTransform(String first, String second) {
@@ -4106,6 +5057,9 @@ public abstract class DBDefinition {
 	 *
 	 * @param first the first MultiPoint2D value to retrieve a point from.
 	 * @param index the index at which the required point is at.
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return SQL
 	 */
 	public String doMultiPoint2DGetPointAtIndexTransform(String first, String index) {
@@ -4116,6 +5070,9 @@ public abstract class DBDefinition {
 	 * Provides the SQL the derive the number of points in the multipoint2d value.
 	 *
 	 * @param multiPoint2D the MultiPoint2D value
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return SQL
 	 */
 	public String doMultiPoint2DGetNumberOfPointsTransform(String multiPoint2D) {
@@ -4127,6 +5084,9 @@ public abstract class DBDefinition {
 	 * value.
 	 *
 	 * @param multipoint2D the MultiPoint2D value
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return SQL
 	 */
 	public String doMultiPoint2DMeasurableDimensionsTransform(String multipoint2D) {
@@ -4138,6 +5098,9 @@ public abstract class DBDefinition {
 	 * the MultiPoint2D value.
 	 *
 	 * @param multiPoint2D the MultiPoint2D value
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return SQL
 	 */
 	public String doMultiPoint2DGetBoundingBoxTransform(String multiPoint2D) {
@@ -4148,6 +5111,9 @@ public abstract class DBDefinition {
 	 * Provides the SQL the transform the MultiPoint2D value into a WKT value.
 	 *
 	 * @param multiPoint2D the MultiPoint2D value
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return SQL
 	 */
 	public String doMultiPoint2DAsTextTransform(String multiPoint2D) {
@@ -4159,6 +5125,9 @@ public abstract class DBDefinition {
 	 * {@link Line2DResult} value.
 	 *
 	 * @param multiPoint2D the MultiPoint2D value
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return SQL
 	 */
 	public String doMultiPoint2DToLine2DTransform(String multiPoint2D) {
@@ -4173,6 +5142,9 @@ public abstract class DBDefinition {
 	 * the MultiPoint2D value
 	 *
 	 * @param multiPoint2D the MultiPoint2D value
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return SQL
 	 */
 	public String doMultiPoint2DGetMinYTransform(String multiPoint2D) {
@@ -4184,6 +5156,9 @@ public abstract class DBDefinition {
 	 * the MultiPoint2D value
 	 *
 	 * @param multiPoint2D the MultiPoint2D value
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return SQL
 	 */
 	public String doMultiPoint2DGetMinXTransform(String multiPoint2D) {
@@ -4195,6 +5170,9 @@ public abstract class DBDefinition {
 	 * the MultiPoint2D value
 	 *
 	 * @param multiPoint2D the MultiPoint2D value
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return SQL
 	 */
 	public String doMultiPoint2DGetMaxYTransform(String multiPoint2D) {
@@ -4206,6 +5184,9 @@ public abstract class DBDefinition {
 	 * the MultiPoint2D value
 	 *
 	 * @param multiPoint2D the MultiPoint2D value
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return SQL
 	 */
 	public String doMultiPoint2DGetMaxXTransform(String multiPoint2D) {
@@ -4217,6 +5198,9 @@ public abstract class DBDefinition {
 	 * number of rows returned by a query.
 	 *
 	 * @param options the query options used for this query.
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return TRUE if there is an SQL way of limiting rows numbers, otherwise
 	 * FALSE
 	 */
@@ -4227,6 +5211,9 @@ public abstract class DBDefinition {
 	/**
 	 * Return if, like Oracle, the database requires Spatial indexes to perform
 	 * standard spatial operations.
+	 *
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
 	 *
 	 * @return FALSE by default
 	 */
@@ -4241,6 +5228,9 @@ public abstract class DBDefinition {
 	 * @param database the database for which we require spatial indexes.
 	 * @param formatTableName the table for which the index should apply.
 	 * @param formatColumnName the column which the index will index.
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return an ordered list of SQL.
 	 */
 	public List<String> getSpatial2DIndexSQL(DBDatabase database, String formatTableName, String formatColumnName) {
@@ -4258,6 +5248,9 @@ public abstract class DBDefinition {
 	 *
 	 * @param sqlQuery the SQL query to add paging functionality
 	 * @param options the options that apply to the query.
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return SQL
 	 */
 	public String doWrapQueryForPaging(String sqlQuery, QueryOptions options) {
@@ -4271,6 +5264,9 @@ public abstract class DBDefinition {
 	 * Effectively indicates whether the geometry is 2D, 3D, etc.
 	 *
 	 * @param line2DSQL the Line2D value
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return the number of spatial dimensions that this geometry is defined in.
 	 */
 	public String doLine2DSpatialDimensionsTransform(String line2DSQL) {
@@ -4282,6 +5278,9 @@ public abstract class DBDefinition {
 	 * Y, etc.
 	 *
 	 * @param line2DSQL the Line2D value
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return TRUE or FALSE
 	 */
 	public String doLine2DHasMagnitudeTransform(String line2DSQL) {
@@ -4295,6 +5294,9 @@ public abstract class DBDefinition {
 	 * Effectively indicates whether the geometry is 2D or 3D.
 	 *
 	 * @param line2DSQL the Line2D value
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return the value for the magnitude, or NULL if there is no magnitude.
 	 */
 	public String doLine2DGetMagnitudeTransform(String line2DSQL) {
@@ -4308,6 +5310,9 @@ public abstract class DBDefinition {
 	 * Effectively indicates whether the geometry is 2D, 3D, etc.
 	 *
 	 * @param point2DSQL the Point2D value
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return the number of spatial dimensions that this geometry is defined in.
 	 */
 	public String doPoint2DSpatialDimensionsTransform(String point2DSQL) {
@@ -4319,6 +5324,9 @@ public abstract class DBDefinition {
 	 * Y, etc.
 	 *
 	 * @param point2DSQL the Point2D value
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return TRUE or FALSE
 	 */
 	public String doPoint2DHasMagnitudeTransform(String point2DSQL) {
@@ -4332,6 +5340,9 @@ public abstract class DBDefinition {
 	 * Effectively indicates whether the geometry is 2D or 3D.
 	 *
 	 * @param point2DSQL the Point2D value
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return the value for the magnitude, or NULL if there is no magnitude.
 	 */
 	public String doPoint2DGetMagnitudeTransform(String point2DSQL) {
@@ -4345,6 +5356,9 @@ public abstract class DBDefinition {
 	 * Effectively indicates whether the geometry is 2D, 3D, etc.
 	 *
 	 * @param multipoint2DSQL the MultiPoint2D value
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return the number of spatial dimensions that this geometry is defined in.
 	 */
 	public String doMultiPoint2DSpatialDimensionsTransform(String multipoint2DSQL) {
@@ -4356,6 +5370,9 @@ public abstract class DBDefinition {
 	 * Y, etc.
 	 *
 	 * @param multipoint2DSQL the MultiPoint2D value
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return TRUE or FALSE
 	 */
 	public String doMultiPoint2DHasMagnitudeTransform(String multipoint2DSQL) {
@@ -4369,6 +5386,9 @@ public abstract class DBDefinition {
 	 * Effectively indicates whether the geometry is 2D or 3D.
 	 *
 	 * @param multipoint2DSQL the MultiPoint2D value
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return the value for the magnitude, or NULL if there is no magnitude.
 	 */
 	public String doMultiPoint2DGetMagnitudeTransform(String multipoint2DSQL) {
@@ -4382,6 +5402,9 @@ public abstract class DBDefinition {
 	 * Effectively indicates whether the geometry is 2D, 3D, etc.
 	 *
 	 * @param polygon2DSQL the Polygon2D value
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return the number of spatial dimensions that this geometry is defined in.
 	 */
 	public String doPolygon2DSpatialDimensionsTransform(String polygon2DSQL) {
@@ -4393,6 +5416,9 @@ public abstract class DBDefinition {
 	 * Y, etc.
 	 *
 	 * @param polygon2DSQL the Polygon2D value
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return TRUE or FALSE
 	 */
 	public String doPolygon2DHasMagnitudeTransform(String polygon2DSQL) {
@@ -4406,6 +5432,9 @@ public abstract class DBDefinition {
 	 * Effectively indicates whether the geometry is 2D or 3D.
 	 *
 	 * @param polygon2DSQL the Polygon2D value
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return the value for the magnitude, or NULL if there is no magnitude.
 	 */
 	public String doPolygon2DGetMagnitudeTransform(String polygon2DSQL) {
@@ -4419,6 +5448,9 @@ public abstract class DBDefinition {
 	 * Effectively indicates whether the geometry is 2D, 3D, etc.
 	 *
 	 * @param lineSegment2DSQL the LineSegment2D value
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return the number of spatial dimensions that this geometry is defined in.
 	 */
 	public String doLineSegment2DSpatialDimensionsTransform(String lineSegment2DSQL) {
@@ -4430,6 +5462,9 @@ public abstract class DBDefinition {
 	 * Y, etc.
 	 *
 	 * @param lineSegment2DSQL the LineSegment2D value
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return TRUE or FALSE
 	 */
 	public String doLineSegment2DHasMagnitudeTransform(String lineSegment2DSQL) {
@@ -4443,6 +5478,9 @@ public abstract class DBDefinition {
 	 * Effectively indicates whether the geometry is 2D or 3D.
 	 *
 	 * @param lineSegment2DSQL the LineSegment2D value
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return the value for the magnitude, or NULL if there is no magnitude.
 	 */
 	public String doLineSegment2DGetMagnitudeTransform(String lineSegment2DSQL) {
@@ -4459,6 +5497,9 @@ public abstract class DBDefinition {
 	 * formatting other than that required to express the values as numbers.
 	 *
 	 * @param coordinateSQL lots of numbers
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return a polygon2d value
 	 */
 	public String transformCoordinateArrayToDatabasePolygon2DFormat(List<String> coordinateSQL) {
@@ -4474,6 +5515,9 @@ public abstract class DBDefinition {
 	 * used instead.
 	 *
 	 * @param dateSQL the date value
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return the last day of the month that the date is in.
 	 */
 	public String doEndOfMonthTransform(String dateSQL) {
@@ -4496,6 +5540,9 @@ public abstract class DBDefinition {
 	 *
 	 * @param dateSQL the date to be move to another time.
 	 * @param timeZone the required time zone
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return SQL representing the date value in the requested time zone.
 	 */
 	public String doDateAtTimeZoneTransform(String dateSQL, TimeZone timeZone) throws UnsupportedOperationException {
@@ -4517,6 +5564,9 @@ public abstract class DBDefinition {
 	 * DBJavaObject.
 	 *
 	 * @param typeName
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return the class of the QDT that can be used with this columns of this
 	 * type name.
 	 */
@@ -4540,6 +5590,9 @@ public abstract class DBDefinition {
 	 * <p>
 	 * Default implementation returns "HAVING ".
 	 *
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return "HAVING "
 	 */
 	public String getHavingClauseStart() {
@@ -4560,6 +5613,9 @@ public abstract class DBDefinition {
 	 *
 	 * @param querySQL
 	 * @param options
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return a fake full outer join query for databases that don't support FULL
 	 * OUTER joins
 	 */
@@ -4575,6 +5631,9 @@ public abstract class DBDefinition {
 	 * <p>
 	 * The default method returns " TRUE ".
 	 *
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return " TRUE "
 	 */
 	public String getTrueValue() {
@@ -4586,6 +5645,9 @@ public abstract class DBDefinition {
 	 *
 	 * <p>
 	 * The default method returns " FALSE ".
+	 *
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
 	 *
 	 * @return " FALSE "
 	 */
@@ -4602,6 +5664,9 @@ public abstract class DBDefinition {
 	 * }) just return the input.
 	 *
 	 * @param booleanStatement
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return the statement transformed so that the value can be compared using
 	 * the standard operators, by default the method returns the input unchanged.
 	 */
@@ -4622,6 +5687,9 @@ public abstract class DBDefinition {
 	 * }) just return the input.
 	 *
 	 * @param booleanValue
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return the statement transformed so that the value can be compared using
 	 * the standard operators, by default the method returns the input unchanged.
 	 */

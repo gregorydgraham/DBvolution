@@ -44,6 +44,9 @@ import nz.co.gregs.dbvolution.operators.DBOperator;
 
 /**
  *
+ * <p style="color: #F90;">Support DBvolution at
+ * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+ *
  * @author Gregory Graham
  */
 public abstract class QueryableDatatype extends Object implements Serializable, DBExpression {
@@ -145,6 +148,9 @@ public abstract class QueryableDatatype extends Object implements Serializable, 
 	 *
 	 * @param <T> the QDT type
 	 * @param requiredQueryableDatatype requiredQueryableDatatype
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return a new instance of the supplied QDT class
 	 */
 	public static <T extends QueryableDatatype> T getQueryableDatatypeInstance(Class<T> requiredQueryableDatatype) {
@@ -174,6 +180,9 @@ public abstract class QueryableDatatype extends Object implements Serializable, 
 	 * and defaults everything else to DBJavaObject.
 	 *
 	 * @param o	o
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return a QDT that will provide good results for the provided object.
 	 */
 	static public QueryableDatatype getQueryableDatatypeForObject(Object o) {
@@ -228,6 +237,9 @@ public abstract class QueryableDatatype extends Object implements Serializable, 
 	 *
 	 * Always use the super.copy() method first when overriding this method.
 	 *
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return a complete copy of the QDT with all values set.
 	 */
 	@Override
@@ -269,6 +281,9 @@ public abstract class QueryableDatatype extends Object implements Serializable, 
 	 * A database NULL is treated as an empty string, use {@link #isNull() } to
 	 * handle NULLs separately.
 	 *
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return the literal value as a String
 	 */
 	public String stringValue() {
@@ -281,6 +296,9 @@ public abstract class QueryableDatatype extends Object implements Serializable, 
 	 * <p>
 	 * After calling this method, this object will not cause a where clause to be
 	 * generated in any subsequent queries.
+	 *
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
 	 *
 	 * @return this instance.
 	 */
@@ -323,6 +341,9 @@ public abstract class QueryableDatatype extends Object implements Serializable, 
 	 * <p>
 	 * Undefined QDTs represents a QDT that is not a field from the database.
 	 * Undefined QDTs are similar to {@link DBRow#isDefined undefined DBRows}
+	 *
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
 	 *
 	 * @return the literal value, if defined, which may be null
 	 */
@@ -394,6 +415,9 @@ public abstract class QueryableDatatype extends Object implements Serializable, 
 	 * Sets the value of this column to DBNull Also changes the operator to
 	 * DBIsNullOperator for comparisons
 	 *
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return the DBOperator that will be used with this QDT
 	 */
 	protected DBOperator setToNull() {
@@ -425,6 +449,9 @@ public abstract class QueryableDatatype extends Object implements Serializable, 
 	 *
 	 * Example return value: "VARCHAR(1000)"
 	 *
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return the standard SQL datatype that corresponds to this QDT as a String
 	 */
 	public abstract String getSQLDatatype();
@@ -436,6 +463,9 @@ public abstract class QueryableDatatype extends Object implements Serializable, 
 	 * This is used internally to transform the Java object in to SQL format. You
 	 * won't need to use it.
 	 *
+	 *
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
 	 *
 	 * @return the literal value as it would appear in an SQL statement i.e.
 	 * {yada} =&gt; 'yada', {1} =&gt; 1 and {} =&gt; NULL
@@ -471,12 +501,18 @@ public abstract class QueryableDatatype extends Object implements Serializable, 
 	 * DBDate{1/March/2013} =&gt; TO_DATE('20130301', 'YYYYMMDD')
 	 *
 	 * @param db	db
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return the literal value translated to a String ready to insert into an
 	 * SQL statement
 	 */
 	protected abstract String formatValueForSQLStatement(DBDatabase db);
 
 	/**
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return the operator
 	 */
 	public DBOperator getOperator() {
@@ -499,6 +535,9 @@ public abstract class QueryableDatatype extends Object implements Serializable, 
 	/**
 	 * Indicates that the value of this QDT has been changed from its defined
 	 * value.
+	 *
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
 	 *
 	 * @return TRUE if the set value of this QDT has been changed since it was
 	 * retrieved or updated, otherwise FALSE.
@@ -560,6 +599,9 @@ public abstract class QueryableDatatype extends Object implements Serializable, 
 	 * @param database database
 	 * @param resultSet resultSet
 	 * @param fullColumnName fullColumnName
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return the expected object from the ResultSet. 1 Database exceptions may
 	 * be thrown
 	 * @throws java.sql.SQLException java.sql.SQLException
@@ -591,6 +633,9 @@ public abstract class QueryableDatatype extends Object implements Serializable, 
 	 * This method indicates whether the field represented by this object is NULL
 	 * in the database sense.
 	 *
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return TRUE if this object represents a NULL database value, otherwise
 	 * FALSE
 	 */
@@ -609,6 +654,9 @@ public abstract class QueryableDatatype extends Object implements Serializable, 
 	 * This method indicates whether the field represented by this object is NULL
 	 * in the database sense.
 	 *
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return TRUE if this object represents a NULL database value, otherwise
 	 * FALSE
 	 */
@@ -624,6 +672,9 @@ public abstract class QueryableDatatype extends Object implements Serializable, 
 	 * {@link DBActionList#getRevertActionList() revert action lists}.
 	 *
 	 * @param db	db
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return the previous value of this field as an SQL formatted String
 	 */
 	public String getPreviousSQLValue(DBDatabase db) {
@@ -641,6 +692,9 @@ public abstract class QueryableDatatype extends Object implements Serializable, 
 	 * Use Boolean.TRUE for Ascending Use Boolean.FALSE for Descending
 	 *
 	 *
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return this object
 	 */
 	private QueryableDatatype setSortOrder(Boolean order) {
@@ -651,6 +705,9 @@ public abstract class QueryableDatatype extends Object implements Serializable, 
 	/**
 	 * Used to switch the direction of the column's sort order
 	 *
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return this object
 	 */
 	public QueryableDatatype setSortOrderAscending() {
@@ -660,6 +717,9 @@ public abstract class QueryableDatatype extends Object implements Serializable, 
 	/**
 	 * Used to switch the direction of the column's sort order
 	 *
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return this object
 	 */
 	public QueryableDatatype setSortOrderDescending() {
@@ -668,6 +728,9 @@ public abstract class QueryableDatatype extends Object implements Serializable, 
 
 	/**
 	 * Return the order in which this QDT will be sorted.
+	 *
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
 	 *
 	 * @return {@link #SORT_ASCENDING} if the column is to be sorted ascending,
 	 * {@link #SORT_DESCENDING} otherwise.
@@ -685,6 +748,9 @@ public abstract class QueryableDatatype extends Object implements Serializable, 
 	 *
 	 * <p>
 	 * Synonym for {@link #removeConstraints() }.
+	 *
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
 	 *
 	 * @return this instance
 	 */
@@ -717,6 +783,9 @@ public abstract class QueryableDatatype extends Object implements Serializable, 
 	}
 
 	/**
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return the undefined
 	 */
 	public boolean isDefined() {
@@ -771,6 +840,9 @@ public abstract class QueryableDatatype extends Object implements Serializable, 
 	 * When the QDT is created using an expression , this method makes the
 	 * expression accessible.
 	 *
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return the underlying expression if there is one, or NULL otherwise.
 	 */
 	public final DBExpression[] getColumnExpression() {
@@ -783,6 +855,9 @@ public abstract class QueryableDatatype extends Object implements Serializable, 
 	 * <p>
 	 * When the QDT is created using an expression , this method makes the
 	 * expression accessible.
+	 *
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
 	 *
 	 * @return TRUE if there is a underlying expression, or FALSE otherwise.
 	 */
@@ -802,6 +877,9 @@ public abstract class QueryableDatatype extends Object implements Serializable, 
 	}
 
 	/**
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return the setValueHasBeenCalled
 	 */
 	public boolean hasBeenSet() {
@@ -816,6 +894,9 @@ public abstract class QueryableDatatype extends Object implements Serializable, 
 	}
 
 	/**
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return the literalValue
 	 */
 	protected Object getLiteralValue() {
@@ -837,6 +918,9 @@ public abstract class QueryableDatatype extends Object implements Serializable, 
 	 * The default implementation just calls {@link #setToNull() }
 	 *
 	 * @param database	database
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return the DBOperator that will be used with this QDT
 	 */
 	protected DBOperator setToNull(DBDatabase database) {
@@ -859,6 +943,9 @@ public abstract class QueryableDatatype extends Object implements Serializable, 
 	/**
 	 * Used internally.
 	 *
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return the previous value of this QDT.
 	 */
 	protected QueryableDatatype getPreviousValue() {
@@ -876,6 +963,9 @@ public abstract class QueryableDatatype extends Object implements Serializable, 
 
 	/**
 	 * Used internally.
+	 *
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
 	 *
 	 * @return the PropertyWrapperDefinition
 	 */

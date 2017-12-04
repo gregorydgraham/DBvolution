@@ -31,6 +31,9 @@ import nz.co.gregs.dbvolution.results.LargeObjectResult;
  * specific classes eventually. There is also {@link DBJavaObject} for storing
  * Java objects directly in the database.
  *
+ * <p style="color: #F90;">Support DBvolution at
+ * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+ *
  * @author Gregory Graham
  */
 public abstract class DBLargeObject extends QueryableDatatype implements LargeObjectResult {
@@ -63,11 +66,17 @@ public abstract class DBLargeObject extends QueryableDatatype implements LargeOb
 	/**
 	 * Returns the internal InputStream.
 	 *
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return an InputStream to read the bytes.
 	 */
 	public abstract InputStream getInputStream();
 
 	/**
+	 *
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
 	 *
 	 * @return the size of the Large Object as an int
 	 */

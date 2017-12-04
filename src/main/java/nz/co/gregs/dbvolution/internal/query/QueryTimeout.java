@@ -22,6 +22,9 @@ import nz.co.gregs.dbvolution.databases.DBStatement;
 
 /**
  *
+ * <p style="color: #F90;">Support DBvolution at
+ * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+ *
  * @author gregory.graham
  */
 public class QueryTimeout extends Timer {
@@ -37,6 +40,9 @@ public class QueryTimeout extends Timer {
 	 *
 	 * @param statement
 	 * @param timeoutInMilliseconds
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return this timer
 	 */
 	public static QueryTimeout scheduleTimeout(DBStatement statement, Integer timeoutInMilliseconds) {

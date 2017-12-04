@@ -40,6 +40,9 @@ import org.joda.time.Period;
  * This DBDefinition is automatically included in {@link SQLiteDB} instances,
  * and you should not need to use it directly.
  *
+ * <p style="color: #F90;">Support DBvolution at
+ * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+ *
  * @author Gregory Graham
  */
 public class SQLiteDefinition extends DBDefinition {
@@ -235,6 +238,9 @@ public class SQLiteDefinition extends DBDefinition {
 
 	/**
 	 * Indicates whether the database supports the modulus function.
+	 *
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
 	 *
 	 * @return the default implementation returns TRUE.
 	 */

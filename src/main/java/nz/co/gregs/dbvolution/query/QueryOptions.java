@@ -21,6 +21,9 @@ import nz.co.gregs.dbvolution.expressions.BooleanExpression;
 
 /**
  *
+ * <p style="color: #F90;">Support DBvolution at
+ * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+ *
  * @author greg
  */
 public class QueryOptions {
@@ -39,6 +42,9 @@ public class QueryOptions {
 	 * Indicates whether this query will use AND rather than OR to add the
 	 * conditions.
 	 *
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return TRUE if criteria should be collected using AND
 	 */
 	public boolean isMatchAllConditions() {
@@ -48,6 +54,9 @@ public class QueryOptions {
 	/**
 	 * Indicates whether this query will use OR rather than AND to add the
 	 * conditions.
+	 *
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
 	 *
 	 * @return TRUE if criteria should be collected using OR
 	 */
@@ -77,6 +86,9 @@ public class QueryOptions {
 	 * <p>
 	 * The value will be -1 if no row limit is set.
 	 *
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return the rowLimit
 	 */
 	public int getRowLimit() {
@@ -91,6 +103,9 @@ public class QueryOptions {
 	}
 
 	/**
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return the sortColumns
 	 */
 	public ColumnProvider[] getSortColumns() {
@@ -105,6 +120,9 @@ public class QueryOptions {
 	}
 
 	/**
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return the blankQueryAllowed
 	 */
 	public boolean isBlankQueryAllowed() {
@@ -119,6 +137,9 @@ public class QueryOptions {
 	}
 
 	/**
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return the useANSISyntax
 	 */
 	public boolean isUseANSISyntax() {
@@ -133,6 +154,9 @@ public class QueryOptions {
 	}
 
 	/**
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return the cartesianJoinAllowed
 	 */
 	public boolean isCartesianJoinAllowed() {
@@ -159,6 +183,9 @@ public class QueryOptions {
 	 * The first item on the page will be (pageindex*rowlimit) , and the first item on the next page will be ((pageindex+1)*rowlimit). 
 	 * 
 	 * 
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return the pageIndex
 	 */
 	public int getPageIndex() {
@@ -201,6 +228,9 @@ public class QueryOptions {
 	}
 
 	/**
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return the matchAllRelationship
 	 */
 	public boolean isMatchAllRelationships() {
@@ -209,6 +239,9 @@ public class QueryOptions {
 
 	/**
 	 * Clones this QueryOptions
+	 *
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
 	 *
 	 * @return very similar QueryOptions
 	 */
@@ -231,6 +264,9 @@ public class QueryOptions {
 	}
 
 	/**
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return the havingColumns
 	 */
 	public BooleanExpression[] getHavingColumns() {

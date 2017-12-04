@@ -33,6 +33,9 @@ import org.apache.commons.logging.LogFactory;
  * Provides support for the abstract concept of migrating rows from one or more tables to another table.
  *
  *
+ * <p style="color: #F90;">Support DBvolution at
+ * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+ *
  * @author Gregory Graham
  * @param <R>
  */

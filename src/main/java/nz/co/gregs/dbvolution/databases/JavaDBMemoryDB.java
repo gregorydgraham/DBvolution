@@ -22,6 +22,9 @@ import nz.co.gregs.dbvolution.exceptions.UnableToFindJDBCDriver;
 /**
  * Use this class to work with an in-memory JavaDB.
  *
+ * <p style="color: #F90;">Support DBvolution at
+ * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+ *
  * @author gregory.graham
  */
 public class JavaDBMemoryDB extends JavaDB {

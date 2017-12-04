@@ -36,7 +36,13 @@ import nz.co.gregs.dbvolution.operators.DBPermittedValuesOperator;
  *
  * @param <E> type of enumeration class
  *
+ * <p style="color: #F90;">Support DBvolution at
+ * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+ *
  * @author Gregory Graham
+ * <p style="color: #F90;">Support DBvolution at
+ * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+ *
  * @author Malcolm Lett
  */
 public class DBIntegerEnum<E extends Enum<E> & DBEnumValue<? extends Number>> extends DBEnum<E> implements NumberResult {
@@ -636,6 +642,9 @@ public class DBIntegerEnum<E extends Enum<E> & DBEnumValue<? extends Number>> ex
 	/**
 	 * Returns the set value of this DBInteger as a Number, if possible.
 	 *
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return the value as a Number.
 	 */
 	public Number numberValue() {
@@ -651,6 +660,9 @@ public class DBIntegerEnum<E extends Enum<E> & DBEnumValue<? extends Number>> ex
 	/**
 	 * Returns the set value of this DBInteger as a Long, if possible.
 	 *
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return the value as a Long.
 	 */
 	public Long longValue() {
@@ -665,6 +677,9 @@ public class DBIntegerEnum<E extends Enum<E> & DBEnumValue<? extends Number>> ex
 
 	/**
 	 * Returns the set value of this DBInteger as a Integer, if possible.
+	 *
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
 	 *
 	 * @return the value as a Integer.
 	 */

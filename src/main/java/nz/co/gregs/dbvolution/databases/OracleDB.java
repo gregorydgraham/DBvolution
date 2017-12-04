@@ -30,6 +30,9 @@ import nz.co.gregs.dbvolution.databases.supports.SupportsPolygonDatatype;
  * <p>
  * You should probably use {@link Oracle11XEDB} or {@link Oracle12DB} instead.
  *
+ * <p style="color: #F90;">Support DBvolution at
+ * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+ *
  * @author Gregory Graham
  * @see Oracle11XEDB
  * @see Oracle12DB
@@ -100,6 +103,9 @@ public abstract class OracleDB extends DBDatabase implements SupportsPolygonData
 
 	/**
 	 * Oracle does not differentiate between NULL and an empty string.
+	 *
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
 	 *
 	 * @return FALSE.
 	 */

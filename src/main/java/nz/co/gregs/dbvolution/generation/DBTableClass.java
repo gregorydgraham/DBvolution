@@ -23,6 +23,9 @@ import nz.co.gregs.dbvolution.datatypes.DBUnknownDatatype;
 
 /**
  *
+ * <p style="color: #F90;">Support DBvolution at
+ * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+ *
  * @author Gregory Graham
  */
 public class DBTableClass {
@@ -62,7 +65,10 @@ public class DBTableClass {
      * For a class named AClass in the package com.acme.database {@link #getFullyQualifiedName()
      * } will return "com.acme.database.AClass".
      *
-     * @return a String of the fully qualified class name.
+     * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
+	 * @return a String of the fully qualified class name.
      */
     public String getFullyQualifiedName() {
         return this.getPackageName() + "." + getClassName();
@@ -76,7 +82,10 @@ public class DBTableClass {
      * After all available information has been set for this DBTableClass, this
      * method is called to generate the required Java source.
      *
-     * @return a String of the source code of the new DBRow class.
+     * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
+	 * @return a String of the source code of the new DBRow class.
      */
     public String generateJavaSource() {
         StringBuilder javaSrc = new StringBuilder();
@@ -150,7 +159,10 @@ public class DBTableClass {
     }
 
     /**
-     * @return the packageName
+     * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
+	 * @return the packageName
      */
     public String getPackageName() {
         return packageName;
@@ -164,21 +176,30 @@ public class DBTableClass {
     }
 
     /**
-     * @return the fields
+     * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
+	 * @return the fields
      */
     public List<DBTableField> getFields() {
         return fields;
     }
 
     /**
-     * @return the javaSource
+     * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
+	 * @return the javaSource
      */
     public String getJavaSource() {
         return javaSource;
     }
 
     /**
-     * @return the tableName
+     * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
+	 * @return the tableName
      */
     public String getTableName() {
         return tableName;
@@ -192,7 +213,10 @@ public class DBTableClass {
     }
 
     /**
-     * @return the className
+     * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
+	 * @return the className
      */
     public String getClassName() {
         return className;

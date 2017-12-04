@@ -72,6 +72,9 @@ import nz.co.gregs.dbvolution.datatypes.QueryableDatatype;
  * There are also comparisons with NULL, negations, and static true and false
  * expressions.
  *
+ * <p style="color: #F90;">Support DBvolution at
+ * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+ *
  * @author Gregory Graham
  */
 public class BooleanExpression implements BooleanResult, EqualComparable<BooleanResult>, ExpressionColumn<DBBoolean> {
@@ -158,6 +161,9 @@ public class BooleanExpression implements BooleanResult, EqualComparable<Boolean
 	 * </ul>
 	 *
 	 * @param bool the boolean value to be tested
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return a DBExpression instance that is appropriate to the subclass and the
 	 * value supplied.
 	 */
@@ -188,6 +194,9 @@ public class BooleanExpression implements BooleanResult, EqualComparable<Boolean
 	 * </ul>
 	 *
 	 * @param bool the boolean value to be tested
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return a DBExpression instance that is appropriate to the subclass and the
 	 * value supplied.
 	 */
@@ -200,6 +209,9 @@ public class BooleanExpression implements BooleanResult, EqualComparable<Boolean
 	 * operator, that is "=" or similar.
 	 *
 	 * @param bool the boolean value to be tested
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return a BooleanExpression that compares the previous BooleanExpression to
 	 * the Boolean supplied.
 	 */
@@ -223,6 +235,9 @@ public class BooleanExpression implements BooleanResult, EqualComparable<Boolean
 	 * BooleanResult includes {@link BooleanExpression} and {@link DBBoolean}.
 	 *
 	 * @param bool the boolean value to be tested
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return a BooleanExpression that compares the previous BooleanExpression to
 	 * the Boolean supplied.
 	 */
@@ -238,6 +253,9 @@ public class BooleanExpression implements BooleanResult, EqualComparable<Boolean
 	 * BooleanResult includes {@link BooleanExpression} and {@link DBBoolean}.
 	 *
 	 * @param bool the boolean value to be tested
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return a BooleanExpression that compares the previous BooleanExpression to
 	 * the Boolean supplied.
 	 */
@@ -287,6 +305,9 @@ public class BooleanExpression implements BooleanResult, EqualComparable<Boolean
 	 * BooleanResult includes {@link BooleanExpression} and {@link DBBoolean}.
 	 *
 	 * @param bool the boolean value to be tested
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return a BooleanExpression that compares the previous BooleanExpression to
 	 * the Boolean supplied.
 	 */
@@ -365,6 +386,9 @@ public class BooleanExpression implements BooleanResult, EqualComparable<Boolean
 	 * BooleanResult includes {@link BooleanExpression} and {@link DBBoolean}.
 	 *
 	 * @param bool the boolean value to be tested
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return a BooleanExpression that compares the previous BooleanExpression to
 	 * the Boolean supplied.
 	 */
@@ -388,6 +412,9 @@ public class BooleanExpression implements BooleanResult, EqualComparable<Boolean
 	 * BooleanResult includes {@link BooleanExpression} and {@link DBBoolean}.
 	 *
 	 * @param bool the boolean value to be tested
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return a BooleanExpression of an XOR operation.
 	 */
 	public BooleanExpression xor(BooleanResult bool) {
@@ -427,6 +454,9 @@ public class BooleanExpression implements BooleanResult, EqualComparable<Boolean
 	 * are true.
 	 *
 	 * @param booleanExpressions the boolean expressions to be tested
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return a boolean expression that returns true IFF all the
 	 * booleanExpressions are true.
 	 * @see #anyOf(BooleanExpression...)
@@ -458,6 +488,9 @@ public class BooleanExpression implements BooleanResult, EqualComparable<Boolean
 	 * expressions are false.
 	 *
 	 * @param booleanExpressions the boolean expressions to be tested
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return a boolean expression that returns true IFF some of the
 	 * booleanExpressions are false.
 	 * @see #anyOf(BooleanExpression...)
@@ -488,6 +521,9 @@ public class BooleanExpression implements BooleanResult, EqualComparable<Boolean
 	 * expressions are false and some are true.
 	 *
 	 * @param booleanExpressions the boolean expressions to be tested
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return a boolean expression that returns true IFF some of the
 	 * booleanExpressions are false AND some of the booleanExpressions are true
 	 * @see #anyOf(BooleanExpression...)
@@ -511,6 +547,9 @@ public class BooleanExpression implements BooleanResult, EqualComparable<Boolean
 	 * This expression returns true if any of the component expressions is true
 	 *
 	 * @param booleanExpressions the boolean expressions to be tested
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return a boolean expression that returns true if any of the
 	 * booleanExpressions is true.
 	 * @see #allOf(BooleanExpression...)
@@ -528,6 +567,9 @@ public class BooleanExpression implements BooleanResult, EqualComparable<Boolean
 	 * Returns true only if all of the conditions are FALSE.
 	 *
 	 * @param booleanExpressions the boolean expressions to be tested
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return a boolean expression that returns true if all of the
 	 * booleanExpressions evaluate to FALSE.
 	 * @see #allOf(BooleanExpression...)
@@ -555,6 +597,9 @@ public class BooleanExpression implements BooleanResult, EqualComparable<Boolean
 	 * so {@link QueryableDatatype#isDBNull NULL} is also a valid result of this
 	 * expression
 	 *
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return a Boolean expression representing the negation of the current
 	 * expression.
 	 */
@@ -572,6 +617,9 @@ public class BooleanExpression implements BooleanResult, EqualComparable<Boolean
 	 *
 	 * <p>
 	 * TRUE values will become 1 and FALSE values will become 0.
+	 *
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
 	 *
 	 * @return a 0 or 1 depending on the expression
 	 */
@@ -636,6 +684,9 @@ public class BooleanExpression implements BooleanResult, EqualComparable<Boolean
 	 * so {@link QueryableDatatype#isDBNull NULL} is also a valid result of this
 	 * expression
 	 *
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return a Boolean expression representing the negation of the current
 	 * expression.
 	 */
@@ -646,6 +697,9 @@ public class BooleanExpression implements BooleanResult, EqualComparable<Boolean
 	/**
 	 * Returns FALSE if the given {@link DBExpression} evaluates to NULL,
 	 * otherwise TRUE.
+	 *
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
 	 *
 	 * @return a BooleanExpression
 	 */
@@ -665,6 +719,9 @@ public class BooleanExpression implements BooleanResult, EqualComparable<Boolean
 	 * and {@link LargeObjectExpression}.
 	 *
 	 * @param possibleNullExpression the expression to be tested
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return a BooleanExpression
 	 */
 	public static BooleanExpression isNotNull(DBExpression possibleNullExpression) {
@@ -691,6 +748,9 @@ public class BooleanExpression implements BooleanResult, EqualComparable<Boolean
 	 * {@link DBRow}.
 	 *
 	 * @param possibleNullExpression the expression to be tested
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return a BooleanExpression
 	 */
 	public static BooleanExpression isNotNull(ColumnProvider possibleNullExpression) {
@@ -706,6 +766,9 @@ public class BooleanExpression implements BooleanResult, EqualComparable<Boolean
 	 * {@link DBRow}.
 	 *
 	 * @param possibleNullExpression the expression to be tested
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return a BooleanExpression
 	 */
 	public static BooleanExpression isNull(ColumnProvider possibleNullExpression) {
@@ -724,6 +787,9 @@ public class BooleanExpression implements BooleanResult, EqualComparable<Boolean
 	 * and {@link LargeObjectExpression}.
 	 *
 	 * @param possibleNullExpression the expression to be tested
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return a BooleanExpression
 	 */
 	public static BooleanExpression isNull(DBExpression possibleNullExpression) {
@@ -745,6 +811,9 @@ public class BooleanExpression implements BooleanResult, EqualComparable<Boolean
 	/**
 	 * Returns TRUE if this expression evaluates to NULL, otherwise FALSE.
 	 *
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return a BooleanExpression
 	 */
 	public BooleanExpression isNull() {
@@ -761,6 +830,9 @@ public class BooleanExpression implements BooleanResult, EqualComparable<Boolean
 	 *
 	 * @param thenExpr expression to use when this expression is TRUE
 	 * @param elseExpr expression to use when this expression is FALSE
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return an expression that will generate a SQL clause conceptually similar
 	 * to "if (this) then thenExpr else elseExpr".
 	 */
@@ -778,6 +850,9 @@ public class BooleanExpression implements BooleanResult, EqualComparable<Boolean
 	 *
 	 * @param thenExpr expression to use when this expression is TRUE
 	 * @param elseExpr expression to use when this expression is FALSE
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return an expression that will generate a SQL clause conceptually similar
 	 * to "if (this) then thenExpr else elseExpr".
 	 */
@@ -812,6 +887,9 @@ public class BooleanExpression implements BooleanResult, EqualComparable<Boolean
 	 *
 	 * @param thenExpr expression to use when this expression is TRUE
 	 * @param elseExpr expression to use when this expression is FALSE
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return an expression that will generate a SQL clause conceptually similar
 	 * to "if (this) then thenExpr else elseExpr".
 	 */
@@ -829,6 +907,9 @@ public class BooleanExpression implements BooleanResult, EqualComparable<Boolean
 	 *
 	 * @param thenExpr expression to use when this expression is TRUE
 	 * @param elseExpr expression to use when this expression is FALSE
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return an expression that will generate a SQL clause conceptually similar
 	 * to "if (this) then thenExpr else elseExpr".
 	 */
@@ -862,6 +943,9 @@ public class BooleanExpression implements BooleanResult, EqualComparable<Boolean
 	 *
 	 * @param thenExpr expression to use when this expression is TRUE
 	 * @param elseExpr expression to use when this expression is FALSE
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return an expression that will generate a SQL clause conceptually similar
 	 * to "if (this) then thenExpr else elseExpr".
 	 */
@@ -879,6 +963,9 @@ public class BooleanExpression implements BooleanResult, EqualComparable<Boolean
 	 *
 	 * @param thenExpr expression to use when this expression is TRUE
 	 * @param elseExpr expression to use when this expression is FALSE
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return an expression that will generate a SQL clause conceptually similar
 	 * to "if (this) then thenExpr else elseExpr".
 	 */
@@ -913,6 +1000,9 @@ public class BooleanExpression implements BooleanResult, EqualComparable<Boolean
 	 *
 	 * @param thenExpr expression to use when this expression is TRUE
 	 * @param elseExpr expression to use when this expression is FALSE
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return an expression that will generate a SQL clause conceptually similar
 	 * to "if (this) then thenExpr else elseExpr".
 	 */
@@ -930,6 +1020,9 @@ public class BooleanExpression implements BooleanResult, EqualComparable<Boolean
 	 *
 	 * @param thenExpr expression to use when this expression is TRUE
 	 * @param elseExpr expression to use when this expression is FALSE
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return an expression that will generate a SQL clause conceptually similar
 	 * to "if (this) then thenExpr else elseExpr".
 	 */
@@ -955,6 +1048,9 @@ public class BooleanExpression implements BooleanResult, EqualComparable<Boolean
 	 * <p>
 	 * For use within a {@link DBReport}
 	 *
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return a NumberExpression to add to a DBReport field.
 	 */
 	public NumberExpression count() {
@@ -969,6 +1065,9 @@ public class BooleanExpression implements BooleanResult, EqualComparable<Boolean
 
 	/**
 	 * Creates an expression that will always return FALSE.
+	 *
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
 	 *
 	 * @return an expression that will always evaluate to FALSE.
 	 */
@@ -988,6 +1087,9 @@ public class BooleanExpression implements BooleanResult, EqualComparable<Boolean
 
 	/**
 	 * Creates an expression that will always return TRUE.
+	 *
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
 	 *
 	 * @return an expression that will always evaluate to TRUE.
 	 */
@@ -1015,6 +1117,9 @@ public class BooleanExpression implements BooleanResult, EqualComparable<Boolean
 	 *
 	 * @param anotherBooleanExpr if this expression does not evaluate to TRUE,
 	 * return the value of anotherBooleanExpression.
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return a expression that will evaluate to TRUE if either of the
 	 * expressions are TRUE.
 	 */
@@ -1034,6 +1139,9 @@ public class BooleanExpression implements BooleanResult, EqualComparable<Boolean
 	 *
 	 * @param anotherBooleanExpr only return TRUE if both this expression and
 	 * anotherBooleanExpr evaluate to TRUE.
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return a expression that will evaluate to TRUE only if both of the
 	 * expressions are TRUE.
 	 */
@@ -1068,6 +1176,9 @@ public class BooleanExpression implements BooleanResult, EqualComparable<Boolean
 	 * @param valueA the right side of the internal comparison
 	 * @param whenEqualsFallbackComparison the comparison used when the ColumnA
 	 * and ValueA are equal.
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return a BooleanExpression
 	 */
 	public static <A extends DBExpression, Z extends RangeComparable<? super A>>
@@ -1100,6 +1211,9 @@ public class BooleanExpression implements BooleanResult, EqualComparable<Boolean
 	 * @param valueA the right side of the internal comparison
 	 * @param whenEqualsFallbackComparison the comparison used when the ColumnA
 	 * and ValueA are equal.
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return a BooleanExpression
 	 */
 	public static <A extends DBExpression, Z extends RangeComparable<? super A>>
@@ -1133,6 +1247,9 @@ public class BooleanExpression implements BooleanResult, EqualComparable<Boolean
 	 * @param columnB the left side of the internal comparison
 	 * @param valueB the right side of the internal comparison and ValueA are
 	 * equal.
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return a BooleanExpression
 	 */
 	public static
@@ -1175,6 +1292,9 @@ public class BooleanExpression implements BooleanResult, EqualComparable<Boolean
 	 * DateExpression or a column type of the same.
 	 * @param columnB the left side of the internal comparison
 	 * @param valueB the right side of the internal comparison
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return a BooleanExpression
 	 */
 	public static
@@ -1222,6 +1342,9 @@ public class BooleanExpression implements BooleanResult, EqualComparable<Boolean
 	 * DateExpression or a column type of the same.
 	 * @param columnC the left side of the internal comparison
 	 * @param valueC the right side of the internal comparison
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return a BooleanExpression
 	 */
 	public static
@@ -1274,6 +1397,9 @@ public class BooleanExpression implements BooleanResult, EqualComparable<Boolean
 	 * DateExpression or a column type of the same.
 	 * @param columnD the left side of the internal comparison
 	 * @param valueD the right side of the internal comparison
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return a BooleanExpression
 	 */
 	public static
@@ -1321,6 +1447,9 @@ public class BooleanExpression implements BooleanResult, EqualComparable<Boolean
 	 * DateExpression or a column type of the same.
 	 * @param columnC the left side of the internal comparison
 	 * @param valueC the right side of the internal comparison
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return a BooleanExpression
 	 */
 	public static
@@ -1373,6 +1502,9 @@ public class BooleanExpression implements BooleanResult, EqualComparable<Boolean
 	 * DateExpression or a column type of the same.
 	 * @param columnD the left side of the internal comparison
 	 * @param valueD the right side of the internal comparison
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return a BooleanExpression
 	 */
 	public static
@@ -1414,6 +1546,9 @@ public class BooleanExpression implements BooleanResult, EqualComparable<Boolean
 
 	/**
 	 * Indicates if this expression is a relationship between 2, or more, tables.
+	 *
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
 	 *
 	 * @return the relationship
 	 */
@@ -1785,14 +1920,20 @@ public class BooleanExpression implements BooleanResult, EqualComparable<Boolean
 //			;
 //		}
 		/**
-		 * @return the first
+		 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
+	 * @return the first
 		 */
 		protected BooleanExpression getFirst() {
 			return first;
 		}
 
 		/**
-		 * @return the second
+		 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
+	 * @return the second
 		 */
 		protected BooleanExpression getSecond() {
 			return second;

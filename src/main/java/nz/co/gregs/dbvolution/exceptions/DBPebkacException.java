@@ -5,6 +5,9 @@ package nz.co.gregs.dbvolution.exceptions;
  * name that should not be kept. This exception needs to be re-named when it's
  * better understood under what scenarios it will be used.
  *
+ * <p style="color: #F90;">Support DBvolution at
+ * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+ *
  * @author Malcolm Lett
  */
 public class DBPebkacException extends RuntimeException {

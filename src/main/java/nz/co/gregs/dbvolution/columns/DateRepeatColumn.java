@@ -27,6 +27,9 @@ import org.joda.time.Period;
 /**
  * Represents a column of DateRepeat type.
  *
+ * <p style="color: #F90;">Support DBvolution at
+ * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+ *
  * @author Gregory Graham
  */
 public class DateRepeatColumn extends DateRepeatExpression implements ColumnProvider {
@@ -100,6 +103,9 @@ public class DateRepeatColumn extends DateRepeatExpression implements ColumnProv
 	 * EQUALS.
 	 *
 	 * @param intervalColumn return TRUE if this expression and intervalColumn are the same value.
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
 	 * @return a BooleanExpression
 	 */
 	public BooleanExpression is(DBDateRepeat intervalColumn) {

@@ -21,6 +21,9 @@ import nz.co.gregs.dbvolution.expressions.StringExpression;
 
 /**
  *
+ * <p style="color: #F90;">Support DBvolution at
+ * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+ *
  * @author gregorygraham
  */
 public interface ExpressionHasStandardStringResult {
@@ -41,6 +44,9 @@ public interface ExpressionHasStandardStringResult {
 	 * <p>
 	 * To get the string value use the
 	 * {@link QueryableDatatype#stringValue() stringValue method} of the appropriate QDT.
+	 *
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
 	 *
 	 * @return a StringExpression of the expression.
 	 */
