@@ -49,7 +49,7 @@ import org.apache.commons.codec.binary.Base64;
 public class DBByteArray extends DBLargeObject {
 
 	private static final long serialVersionUID = 1;
-	transient InputStream byteStream = null;
+	transient BufferedInputStream byteStream = null;
 
 	/**
 	 * The Default constructor for a DBByteArray.
@@ -59,8 +59,6 @@ public class DBByteArray extends DBLargeObject {
 		super();
 	}
 
-
-
 	/**
 	 * Creates a column expression with a large object result from the expression
 	 * provided.
@@ -69,7 +67,7 @@ public class DBByteArray extends DBLargeObject {
 	 * Used in {@link DBReport}, and some {@link DBRow}, sub-classes to derive
 	 * data from the database prior to retrieval.
 	 *
-	 * @param aThis 	an expression that will result in a large object value
+	 * @param aThis an expression that will result in a large object value
 	 */
 	public DBByteArray(LargeObjectExpression aThis) {
 		super(aThis);
@@ -344,7 +342,6 @@ public class DBByteArray extends DBLargeObject {
 //		}
 //		return bytes;
 //	}
-
 	@Override
 	public String formatValueForSQLStatement(DBDatabase db) {
 		throw new UnsupportedOperationException("Binary datatypes like " + this.getClass().getSimpleName() + " do not have a simple SQL representation. Do not call getSQLValue(), use the getInputStream() method instead.");
@@ -524,7 +521,12 @@ public class DBByteArray extends DBLargeObject {
 	 * @return the byte[] value of this DBByteArray.
 	 */
 	public byte[] getBytes() {
-		return (byte[]) this.getLiteralValue();
+		final Object maybeByte = getLiteralValue();
+		if (maybeByte instanceof InputStream) {
+			return getBytesFromInputStream((InputStream) maybeByte);
+		} else {
+			return (byte[])maybeByte;
+		}
 	}
 
 	@Override
