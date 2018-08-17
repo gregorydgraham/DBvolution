@@ -206,13 +206,11 @@ public class DBByteArray extends DBLargeObject {
 			System.arraycopy(someBytes, 0, bytes, bytesAdded, Math.min(someBytes.length, bytes.length - bytesAdded));
 			bytesAdded += someBytes.length;
 		}
-//			this.setValue(bytes);
 		return bytes;
 	}
 
 	private byte[] getFromGetBytes(ResultSet resultSet, String fullColumnName) throws SQLException {
 		byte[] bytes = resultSet.getBytes(fullColumnName);
-//		this.setValue(bytes);
 		return bytes;
 	}
 
@@ -254,7 +252,6 @@ public class DBByteArray extends DBLargeObject {
 					bytesAdded += someBytes.length;
 				}
 				decodeBuffer = Base64.decodeBase64(bytes);
-//				this.setValue(decodeBuffer);
 			}
 		}
 		return decodeBuffer;
@@ -302,46 +299,10 @@ public class DBByteArray extends DBLargeObject {
 					Logger.getLogger(DBByteArray.class.getName()).log(Level.SEVERE, null, ex);
 				}
 			}
-//			this.setValue(bytes);
 		}
 		return bytes;
 	}
 
-//	private byte[] getBytesFromBinaryStream(ResultSet resultSet, InputStream inputStream) throws SQLException {
-//		byte[] bytes = new byte[]{};
-//		if (resultSet.wasNull()) {
-//			inputStream = null;
-//		}
-//		if (inputStream == null) {
-//			this.setToNull();
-//		} else {
-//			InputStream input = new BufferedInputStream(inputStream);
-//			List<byte[]> byteArrays = new ArrayList<byte[]>();
-//
-//			int totalBytesRead = 0;
-//			try {
-//				byte[] resultSetBytes;
-//				resultSetBytes = new byte[100000];
-//				int bytesRead = input.read(resultSetBytes);
-//				while (bytesRead > 0) {
-//					totalBytesRead += bytesRead;
-//					byteArrays.add(resultSetBytes);
-//					resultSetBytes = new byte[100000];
-//					bytesRead = input.read(resultSetBytes);
-//				}
-//			} catch (IOException ex) {
-//				Logger.getLogger(DBByteArray.class.getName()).log(Level.SEVERE, null, ex);
-//			}
-//			bytes = new byte[totalBytesRead];
-//			int bytesAdded = 0;
-//			for (byte[] someBytes : byteArrays) {
-//				System.arraycopy(someBytes, 0, bytes, bytesAdded, Math.min(someBytes.length, bytes.length - bytesAdded));
-//				bytesAdded += someBytes.length;
-//			}
-////			this.setValue(bytes);
-//		}
-//		return bytes;
-//	}
 	@Override
 	public String formatValueForSQLStatement(DBDatabase db) {
 		throw new UnsupportedOperationException("Binary datatypes like " + this.getClass().getSimpleName() + " do not have a simple SQL representation. Do not call getSQLValue(), use the getInputStream() method instead.");
@@ -403,7 +364,6 @@ public class DBByteArray extends DBLargeObject {
 	 *
 	 */
 	public byte[] setFromFileSystem(File originalFile) throws FileNotFoundException, IOException {
-//		System.out.println("FILE: " + originalFile.getAbsolutePath());
 		byte[] bytes = new byte[(int) originalFile.length()];
 		InputStream input = null;
 		try {
@@ -473,7 +433,6 @@ public class DBByteArray extends DBLargeObject {
 	public void writeToFileSystem(File originalFile) throws FileNotFoundException, IOException {
 		boolean createdNewFile = false;
 		if (getLiteralValue() != null && originalFile != null) {
-//			System.out.println("FILE: " + originalFile.getAbsolutePath());
 			if (!originalFile.exists()) {
 				createdNewFile = originalFile.createNewFile();
 			}
