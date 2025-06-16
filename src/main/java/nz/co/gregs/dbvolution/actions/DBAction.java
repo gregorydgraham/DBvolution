@@ -15,10 +15,19 @@
  */
 package nz.co.gregs.dbvolution.actions;
 
+import java.io.Serializable;
 import java.sql.SQLException;
 import java.util.List;
-import nz.co.gregs.dbvolution.DBDatabase;
 import nz.co.gregs.dbvolution.DBRow;
+import nz.co.gregs.dbvolution.databases.DBDatabase;
+import nz.co.gregs.dbvolution.databases.DBStatement;
+import nz.co.gregs.dbvolution.databases.QueryIntention;
+import nz.co.gregs.dbvolution.databases.definitions.DBDefinition;
+import nz.co.gregs.dbvolution.datatypes.QueryableDatatype;
+import nz.co.gregs.dbvolution.exceptions.DBRuntimeException;
+import nz.co.gregs.dbvolution.internal.properties.PropertyWrapper;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 
 /**
  * DBAction encapsulates the concept of permanent changes to the database.
@@ -35,18 +44,21 @@ import nz.co.gregs.dbvolution.DBRow;
  *
  * <p>
  * However DBAction and it's subclasses provide more features for scripting
- * particularly {@link DBDelete#getDeletes(nz.co.gregs.dbvolution.DBDatabase, nz.co.gregs.dbvolution.DBRow...)  }, {@link DBUpdate#getUpdates(nz.co.gregs.dbvolution.DBRow...)
+ * particularly {@link DBDelete#getDeletes(nz.co.gregs.dbvolution.databases.DBDatabase, nz.co.gregs.dbvolution.DBRow...)  }, {@link DBUpdate#getUpdates(nz.co.gregs.dbvolution.DBRow...)
  * }, and {@link DBInsert#getInserts(nz.co.gregs.dbvolution.DBRow...) },
  * allowing a series of changes to be created then executed in a single batch.
  *
- * <p style="color: #F90;">Support DBvolution at
- * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
- *
  * @author Gregory Graham
  */
-public abstract class DBAction {
+public abstract class DBAction implements Serializable {
 
-	private final DBRow row;
+	private static final long serialVersionUID = 1L;
+	private static final Log LOG = LogFactory.getLog(DBAction.class);
+
+	final DBRow row;
+	private RefetchRequirement refetchStatus = RefetchRequirement.REFETCH;
+
+	protected final QueryIntention intention;
 
 	/**
 	 * Standard action constructor.
@@ -56,10 +68,21 @@ public abstract class DBAction {
 	 *
 	 * @param <R> the table that this action applies to.
 	 * @param row the row or example that this action applies to.
+	 * @param intent the specific intention of this action, a description of what
+	 * is expected to occur
 	 */
-	public <R extends DBRow> DBAction(R row) {
+	public <R extends DBRow> DBAction(R row, QueryIntention intent) {
 		super();
-		this.row = DBRow.copyDBRow(row);
+		if (row != null) {
+			this.row = DBRow.copyDBRow(row);
+		} else {
+			this.row = row;
+		}
+		this.intention = intent;
+	}
+
+	public QueryIntention getIntent() {
+		return intention;
 	}
 
 	/**
@@ -74,27 +97,48 @@ public abstract class DBAction {
 	 * Revert actions are tricky to implement correctly, so be sure to check that
 	 * the revert will produce the desired result.
 	 *
-	 * <p style="color: #F90;">Support DBvolution at
-	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
-	 *
 	 * @return a list of all the actions required to revert this action in the
 	 * order they need to enacted.
 	 */
 	protected abstract DBActionList getRevertDBActionList();
 
 	/**
-	 * Returns a DBActionList of the actions required to perform this DBAction.
+	 * Returns a copy of the row supplied during creation.
+	 *
+	 * @return the row
+	 */
+	public DBRow getRow() {
+		return DBRow.copyDBRow(row);
+	}
+
+	/**
+	 * Returns a string that can be used in the WHERE clause to identify the rows
+	 * affected by this DBAction.
 	 *
 	 * <p>
-	 * Actions are allowed to create sub-actions so all actions are returned as a
-	 * DBActionList.
+	 * Used internally during UPDATE and INSERT.</p>
 	 *
-	 * <p style="color: #F90;">Support DBvolution at
-	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 * @param row the row that will be used in the method
+	 * @param db the database to execute the DBAction on
 	 *
-	 * @return a DBActionList of this DBAction.
+	 * @return a string representing the
 	 */
-	protected abstract DBActionList getActions();
+	protected String getPrimaryKeySQL(DBDatabase db, DBRow row) {
+		final DBDefinition definition = db.getDefinition();
+		StringBuilder sqlString = new StringBuilder();
+		List<QueryableDatatype<?>> primaryKeys = row.getPrimaryKeys();
+		String separator = "(";
+		for (QueryableDatatype<?> pk : primaryKeys) {
+			var wrapper = row.getPropertyWrapperOf(pk);
+			String pkValue = (pk.hasChanged() ? pk.getPreviousSQLValue(definition) : pk.toSQLString(definition));
+			sqlString.append(separator)
+					.append(definition.formatColumnName(wrapper.columnName()))
+					.append(definition.getEqualsComparator())
+					.append(pkValue);
+			separator = definition.beginAndLine();
+		}
+		return sqlString.append(")").toString();
+	}
 
 	/**
 	 * Returns a list of the SQL statements that this DBAction will produce for
@@ -106,15 +150,12 @@ public abstract class DBAction {
 	 * required.
 	 *
 	 * @param db the database that the SQL must be appropriate for.
-	 * <p style="color: #F90;">Support DBvolution at
-	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
-	 *
 	 * @return the list of SQL strings that equates to this action.
 	 */
 	public abstract List<String> getSQLStatements(DBDatabase db);
 
 	/**
-	 * Performs the DB action and returns a list of all actions performed in the
+	 * Performs the DB execute and returns a list of all actions performed in the
 	 * process.
 	 *
 	 * <p>
@@ -123,25 +164,90 @@ public abstract class DBAction {
 	 * row for internal use.
 	 *
 	 * @param db the target database.
-	 * <p style="color: #F90;">Support DBvolution at
-	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
-	 *
 	 * @return The complete list of all actions performed to complete this action
 	 * on the database
 	 * @throws SQLException Database operations may throw SQLExceptions
 	 */
-	protected abstract DBActionList execute(DBDatabase db) throws SQLException;
+	public abstract DBActionList execute(DBDatabase db) throws SQLException;
 
-	/**
-	 * Returns a copy of the row supplied during creation.
-	 *
-	 * <p style="color: #F90;">Support DBvolution at
-	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
-	 *
-	 * @return the row
-	 */
-	protected DBRow getRow() {
-		return DBRow.copyDBRow(row);
+	public boolean requiresRunOnIndividualDatabaseBeforeCluster() {
+		// this was FALSE to allow for effeciency
+		// but maintaining the cluster is more important
+		// so every type of DBAction must run successfully 
+		// at least once
+		return true;
 	}
 
+	public boolean runOnDatabaseDuringCluster(DBDatabase initialDatabase, DBDatabase next) {
+		return true;
+	}
+
+	protected void refetchIfClusterRequires(DBDatabase db, DBRow originalRow) {
+		try {
+			if (refetchNeeded()) {
+				if (originalRow.hasAutomaticValueFields()) {
+					if (originalRow.getPrimaryKeys().size() > 0) {
+						updateRefetchRequirementForOtherDatabases();
+						DBRow example = DBRow.getPrimaryKeyExample(originalRow);
+						DBRow newRow = db
+								.getDBTable(example)
+								.setQueryLabel("AUTOMATIC REFETCH")
+								.getOnlyRow();
+						List<PropertyWrapper<?, ?, ?>> props = originalRow.getColumnPropertyWrappers();
+						props.stream().filter(p -> p != null).forEach(p -> p.copyFromRowToOtherRow(newRow, originalRow));
+					}
+				}
+			}
+		} catch (SQLException | DBRuntimeException ex) {
+			LOG.fatal(null, ex);
+		}
+	}
+
+	private boolean refetchNeeded() {
+		return RefetchRequirement.REFETCH.equals(refetchStatus);
+	}
+
+	protected void updateRefetchRequirementForOtherDatabases() {
+		setRefetchStatus(RefetchRequirement.REFETCH);
+	}
+
+	protected void setRefetchStatus(RefetchRequirement refetchStatus) {
+		this.refetchStatus = refetchStatus;
+	}
+
+	protected void executeOnStatement(DBDatabase db) throws SQLException {
+		try (final DBStatement statement = db.getDBStatement()) {
+			for (String sql : getSQLStatements(db)) {
+				statement.execute(getIntent(), sql);
+			}
+		}
+	}
+
+	protected void executeOnStatement(DBDatabase db, DBActionList actions) throws SQLException {
+		try (final DBStatement statement = db.getDBStatement()) {
+			for (String sql : actions.getSQL(db)) {
+				statement.execute(getIntent(), sql);
+			}
+		}
+	}
+
+	public DBActionList execute2(DBDatabase db) throws SQLException {
+		DBActionList actions = prepareActionList(db);
+		prepareRollbackData(db, actions);
+		executeOnStatement(db,actions);
+		return actions;
+	}
+
+	protected DBActionList prepareActionList(DBDatabase db) throws SQLException, DBRuntimeException {
+		throw new UnsupportedOperationException("Not supported yet.");
+	}
+
+	protected void prepareRollbackData(DBDatabase db, DBActionList actions) throws SQLException, DBRuntimeException {
+		throw new UnsupportedOperationException("Not supported yet.");
+	}
+
+	public static enum RefetchRequirement {
+		REFETCH,
+		DO_NOT_REFETCH
+	}
 }

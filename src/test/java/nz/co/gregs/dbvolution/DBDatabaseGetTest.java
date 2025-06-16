@@ -29,20 +29,19 @@ import nz.co.gregs.dbvolution.example.CarCompany;
 import nz.co.gregs.dbvolution.example.Marque;
 import nz.co.gregs.dbvolution.generic.AbstractTest;
 import static org.hamcrest.Matchers.*;
+import static org.hamcrest.MatcherAssert.assertThat;
 import org.junit.Assert;
+
 import org.junit.Test;
 
 /**
- *
- * <p style="color: #F90;">Support DBvolution at
- * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
  *
  * @author Gregory Graham
  */
 public class DBDatabaseGetTest extends AbstractTest {
 
-	Marque myTableRow = new Marque();
-	List<Marque> myTableRows = new ArrayList<Marque>();
+//	Marque myTableRow = new Marque();
+//	List<Marque> myTableRows = new ArrayList<>();
 
 	public DBDatabaseGetTest(Object testIterationName, Object db) {
 		super(testIterationName, db);
@@ -54,16 +53,16 @@ public class DBDatabaseGetTest extends AbstractTest {
 				.getDBTable(new Marque())
 				.setBlankQueryAllowed(true)
 				.getAllRows();
-		Assert.assertTrue("Incorrect number of marques retreived", allMarques.size() == marqueRows.size());
+		Assert.assertTrue("Incorrect number of marques retrieved", allMarques.size() == marqueRows.size());
 	}
 
 	@Test
 	public void testGetFirstAndPrimaryKey() throws SQLException {
-		List<Marque> singleMarque = new ArrayList<Marque>();
+		List<Marque> singleMarque = new ArrayList<>();
 		DBRow row = marqueRows.get(0);
 		Object primaryKey;
 		if (row != null) {
-			primaryKey = row.getPrimaryKey().getValue();
+			primaryKey = row.getPrimaryKeys().get(0).getValue();
 			Marque marque = new Marque();
 			if (primaryKey instanceof Long) {
 				marque.uidMarque.permittedValues((Long) primaryKey);
@@ -80,14 +79,14 @@ public class DBDatabaseGetTest extends AbstractTest {
 	@Test
 	public void newDBRowWillCauseBlankQuery() {
 		Marque marque = new Marque();
-		Assert.assertThat(database.willCreateBlankQuery(marque), is(true));
+		assertThat(database.willCreateBlankQuery(marque), is(true));
 	}
 
 	@Test
 	public void newAlteredDBRowWillCauseBlankQuery() {
 		Marque marque = new Marque();
 		marque.name.permittedValues("HOLDEN");
-		Assert.assertThat(database.willCreateBlankQuery(marque), is(false));
+		assertThat(database.willCreateBlankQuery(marque), is(false));
 	}
 
 	@Test
@@ -111,7 +110,7 @@ public class DBDatabaseGetTest extends AbstractTest {
 		Marque marqueQuery = new Marque();
 		marqueQuery.getUidMarque().permittedRangeExclusive(2, null);
 		List<Marque> gotMarques = database.get(marqueQuery);
-		Assert.assertThat(gotMarques.size(), is(20));
+		assertThat(gotMarques.size(), is(20));
 	}
 
 	@Test
@@ -119,7 +118,7 @@ public class DBDatabaseGetTest extends AbstractTest {
 		Marque marqueQuery = new Marque();
 		marqueQuery.getUidMarque().permittedRangeExclusive(null, 2);
 		List<Marque> gotMarques = database.get(marqueQuery);
-		Assert.assertThat(gotMarques.size(), is(1));
+		assertThat(gotMarques.size(), is(1));
 	}
 
 	@Test
@@ -127,8 +126,8 @@ public class DBDatabaseGetTest extends AbstractTest {
 		Marque marqueQuery = new Marque();
 		marqueQuery.name.permittedRangeExclusive("FORD", "TOYOTA");
 		List<Marque> gotMarques = database.get(marqueQuery);
-		database.print(gotMarques);
-		Assert.assertThat(gotMarques.size(), is(14));
+
+		assertThat(gotMarques.size(), is(14));
 	}
 
 	@Test
@@ -137,7 +136,7 @@ public class DBDatabaseGetTest extends AbstractTest {
 		literalQuery.getUidMarque().permittedValues(4893059);
 		List<Marque> gotMarques = database.get(literalQuery);
 		Assert.assertEquals(1, gotMarques.size());
-		Assert.assertEquals("" + 4893059, gotMarques.get(0).getPrimaryKey().toSQLString(database));
+		Assert.assertEquals("" + 4893059, gotMarques.get(0).getPrimaryKeys().get(0).toSQLString(database.getDefinition()));
 	}
 
 	@Test
@@ -145,25 +144,35 @@ public class DBDatabaseGetTest extends AbstractTest {
 		Marque literalQuery = new Marque();
 		literalQuery.individualAllocationsAllowed.permittedValues((Object) null);
 		List<Marque> gotMarques = database.get(literalQuery);
-		if (database.supportsDifferenceBetweenNullAndEmptyString()) {
-			Assert.assertEquals(gotMarques.size(), 2);
+
+		final boolean notOracle = database.supportsDifferenceBetweenNullAndEmptyString();
+		if (notOracle) {
+			Assert.assertEquals(2, gotMarques.size());
+			Assert.assertEquals(true, gotMarques.get(0).individualAllocationsAllowed.isNull());
 		} else {
-			database.print(gotMarques);
 			Assert.assertEquals(gotMarques.size(), database.getDBTable(new Marque()).count() - 1);
+			Assert.assertEquals(false, gotMarques.get(0).individualAllocationsAllowed.isNull());
+			Assert.assertEquals(true, gotMarques.get(0).individualAllocationsAllowed.isEmptyOrNullString());
+			Assert.assertEquals(true, gotMarques.get(0).individualAllocationsAllowed.isEmptyString());
 		}
-		Assert.assertEquals(true, gotMarques.get(0).individualAllocationsAllowed.isNull());
+
 	}
 
 	@Test
 	public void testIsNotNull() throws SQLException {
 		Marque literalQuery = new Marque();
+
 		literalQuery.individualAllocationsAllowed.excludedValues((String) null);
 		List<Marque> gotMarques = database.get(literalQuery);
-		if (database.supportsDifferenceBetweenNullAndEmptyString()) {
-			Assert.assertEquals(gotMarques.size(), database.getDBTable(new Marque()).count() - 2);
+
+ 		final Long fullTableCount = database.getDBTable(new Marque()).count();
+
+		final boolean notOracle = database.supportsDifferenceBetweenNullAndEmptyString();
+
+		if (notOracle) {
+			Assert.assertEquals(gotMarques.size(), fullTableCount - 2);
 		} else {
-			database.print(gotMarques);
-			Assert.assertEquals(gotMarques.size(), 1);
+			Assert.assertEquals(1, gotMarques.size());
 		}
 		Assert.assertEquals(true, gotMarques.get(0).individualAllocationsAllowed.isNotNull());
 	}
@@ -173,9 +182,9 @@ public class DBDatabaseGetTest extends AbstractTest {
 		Marque literalQuery = new Marque();
 		literalQuery.getUidMarque().permittedValues(4893059, 4893090);
 		List<Marque> gotMarques = database.get(literalQuery);
-		Assert.assertThat(gotMarques.size(), is(2));
-		Assert.assertThat(gotMarques.get(0).getPrimaryKey().toSQLString(database), is("" + 4893059));
-		Assert.assertThat(gotMarques.get(1).getPrimaryKey().toSQLString(database), is("" + 4893090));
+		assertThat(gotMarques.size(), is(2));
+		assertThat(gotMarques.get(0).getPrimaryKeys().get(0).toSQLString(database.getDefinition()), is("" + 4893059));
+		assertThat(gotMarques.get(1).getPrimaryKeys().get(0).toSQLString(database.getDefinition()), is("" + 4893090));
 	}
 
 	@Test
@@ -183,22 +192,20 @@ public class DBDatabaseGetTest extends AbstractTest {
 		Marque hummerQuery = new Marque();
 		hummerQuery.getName().permittedValues("PEUGEOT", "HUMMER");
 		List<Marque> gotMarques = database.get(hummerQuery);
-		for (Marque row : gotMarques) {
-			System.out.println(row);
-		}
-		Assert.assertThat(gotMarques.size(), is(2));
+
+		assertThat(gotMarques.size(), is(2));
 	}
 
 	@Test
 	@SuppressWarnings("unchecked")
 	public void testIsInWithList() throws SQLException {
 		Marque hummerQuery = new Marque();
-		List<String> permittedMarques = new ArrayList<String>();
+		List<String> permittedMarques = new ArrayList<>();
 		permittedMarques.add("PEUGEOT");
 		permittedMarques.add("HUMMER");
 		hummerQuery.getName().permittedValues(permittedMarques);
 		List<Marque> gotMarques = database.get(hummerQuery);
-		Assert.assertThat(gotMarques.size(), is(2));
+		assertThat(gotMarques.size(), is(2));
 	}
 
 	@Test
@@ -206,13 +213,13 @@ public class DBDatabaseGetTest extends AbstractTest {
 	public void testIsExcludedWithList() throws SQLException {
 		Marque hummerQuery = new Marque();
 		List<Marque> allMarques = database.getDBTable(hummerQuery).setBlankQueryAllowed(true).getAllRows();
-		List<String> permittedMarques = new ArrayList<String>();
+		List<String> permittedMarques = new ArrayList<>();
 		permittedMarques.add("PEUGEOT");
 		permittedMarques.add("HUMMER");
 		hummerQuery.getName().excludedValues(permittedMarques);
 		List<Marque> gotMarques = database.get(hummerQuery);
-		database.print(gotMarques);
-		Assert.assertThat(gotMarques.size(), is(allMarques.size() - 2));
+
+		assertThat(gotMarques.size(), is(allMarques.size() - 2));
 	}
 
 	@Test
@@ -230,7 +237,7 @@ public class DBDatabaseGetTest extends AbstractTest {
 
 		oldQuery.getCreationDate().permittedRange(coversFirstDate.getStart(), coversFirstDate.getEnd());
 		gotMarques = database.get(oldQuery);
-		Assert.assertThat(gotMarques.size(), is(18));
+		assertThat(gotMarques.size(), is(18));
 	}
 
 	@Test
@@ -244,42 +251,30 @@ public class DBDatabaseGetTest extends AbstractTest {
 		Assert.assertTrue("Wrong number of rows selected, should be all but one of them", gotMarques.size() == marqueRows.size() - 1);
 		oldQuery.getCreationDate().permittedRange(future, null);
 		gotMarques = database.get(oldQuery);
-		for (Marque row : gotMarques) {
-			System.out.println(row);
-		}
+
 		Assert.assertTrue("Wrong number of rows selected, should be NONE of them", gotMarques.isEmpty());
 		oldQuery = new Marque();
 		oldQuery.getCreationDate().permittedRangeInclusive(null, future);
 		gotMarques = database.get(oldQuery);
-		for (Marque row : gotMarques) {
-			System.out.println(row);
-		}
+
 		Assert.assertTrue("Wrong number of rows selected, should be all but one of them", gotMarques.size() == marqueRows.size() - 1);
 		oldQuery = new Marque();
 		oldQuery.getCreationDate().permittedRangeExclusive(null, future);
 		gotMarques = database.get(oldQuery);
-		for (Marque row : gotMarques) {
-			System.out.println(row);
-		}
+
 		Assert.assertTrue("Wrong number of rows selected, should be all but one of them", gotMarques.size() == marqueRows.size() - 1);
 		oldQuery.getCreationDate().permittedRange(new Date(0L), null);
 		gotMarques = database.get(oldQuery);
-		for (Marque row : gotMarques) {
-			System.out.println(row);
-		}
+
 		Assert.assertTrue("Wrong number of rows selected, should be all but one of them", gotMarques.size() == marqueRows.size() - 1);
 		oldQuery.getCreationDate().permittedRange(null, new Date(0L));
 		gotMarques = database.get(oldQuery);
-		for (Marque row : gotMarques) {
-			System.out.println(row);
-		}
+
 		Assert.assertTrue("Wrong number of rows selected, should be NONE of them", gotMarques.isEmpty());
 		oldQuery = new Marque();
 		oldQuery.getCreationDate().permittedRangeInclusive(new Date(0L), null);
 		gotMarques = database.get(oldQuery);
-		for (Marque row : gotMarques) {
-			System.out.println(row);
-		}
+
 		Assert.assertTrue("Wrong number of rows selected, should be all but one of them", gotMarques.size() == marqueRows.size() - 1);
 	}
 
@@ -289,19 +284,18 @@ public class DBDatabaseGetTest extends AbstractTest {
 		myMarqueRow.setReturnFields(myMarqueRow.name, myMarqueRow.uidMarque, myMarqueRow.carCompany);
 		List<Marque> rowsByExample = database.getDBTable(myMarqueRow).setBlankQueryAllowed(true).getAllRows();
 		for (Marque marq : rowsByExample) {
-			System.out.println("" + marq);
-			Assert.assertThat(marq.auto_created.isNull(), is(true));
-			Assert.assertThat(marq.creationDate.isNull(), is(true));
-			Assert.assertThat(marq.enabled.isNull(), is(true));
-			Assert.assertThat(marq.individualAllocationsAllowed.isNull(), is(true));
-			Assert.assertThat(marq.isUsedForTAFROs.isNull(), is(true));
-			Assert.assertThat(marq.numericCode.isNull(), is(true));
-			Assert.assertThat(marq.pricingCodePrefix.isNull(), is(true));
-			Assert.assertThat(marq.reservationsAllowed.isNull(), is(true));
-			Assert.assertThat(marq.statusClassID.isNull(), is(true));
+			assertThat(marq.auto_created.isNull(), is(true));
+			assertThat(marq.creationDate.isNull(), is(true));
+			assertThat(marq.enabled.isNull(), is(true));
+			assertThat(marq.individualAllocationsAllowed.isNull(), is(true));
+			assertThat(marq.isUsedForTAFROs.isNull(), is(true));
+			assertThat(marq.numericCode.isNull(), is(true));
+			assertThat(marq.pricingCodePrefix.isNull(), is(true));
+			assertThat(marq.reservationsAllowed.isNull(), is(true));
+			assertThat(marq.statusClassID.isNull(), is(true));
 
-			Assert.assertThat(marq.name.isNull(), is(false));
-			Assert.assertThat(marq.uidMarque.isNull(), is(false));
+			assertThat(marq.name.isNull(), is(false));
+			assertThat(marq.uidMarque.isNull(), is(false));
 		}
 	}
 
@@ -320,13 +314,12 @@ public class DBDatabaseGetTest extends AbstractTest {
 
 		List<Marque> rowsByExample = database.getDBTable(myMarqueRow).getAllRows();
 		for (Marque marq : rowsByExample) {
-			System.out.println("" + marq);
-			Assert.assertThat(marq.auto_created.isNull(), is(false));
-			Assert.assertThat(marq.isUsedForTAFROs.isNull(), is(false));
-			Assert.assertThat(marq.reservationsAllowed.isNull(), is(false));
-			Assert.assertThat(marq.statusClassID.isNull(), is(false));
-			Assert.assertThat(marq.name.isNull(), is(false));
-			Assert.assertThat(marq.uidMarque.isNull(), is(false));
+			assertThat(marq.auto_created.isNull(), is(false));
+			assertThat(marq.isUsedForTAFROs.isNull(), is(false));
+			assertThat(marq.reservationsAllowed.isNull(), is(false));
+			assertThat(marq.statusClassID.isNull(), is(false));
+			assertThat(marq.name.isNull(), is(false));
+			assertThat(marq.uidMarque.isNull(), is(false));
 		}
 	}
 
@@ -339,19 +332,18 @@ public class DBDatabaseGetTest extends AbstractTest {
 		List<DBQueryRow> rowsByExample = dbQuery.getAllRows();
 		for (DBQueryRow row : rowsByExample) {
 			Marque marq = row.get(new Marque());
-			System.out.println("" + marq);
-			Assert.assertThat(marq.auto_created.isNull(), is(true));
-			Assert.assertThat(marq.creationDate.isNull(), is(true));
-			Assert.assertThat(marq.enabled.isNull(), is(true));
-			Assert.assertThat(marq.individualAllocationsAllowed.isNull(), is(true));
-			Assert.assertThat(marq.isUsedForTAFROs.isNull(), is(true));
-			Assert.assertThat(marq.numericCode.isNull(), is(true));
-			Assert.assertThat(marq.pricingCodePrefix.isNull(), is(true));
-			Assert.assertThat(marq.reservationsAllowed.isNull(), is(true));
-			Assert.assertThat(marq.statusClassID.isNull(), is(true));
+			assertThat(marq.auto_created.isNull(), is(true));
+			assertThat(marq.creationDate.isNull(), is(true));
+			assertThat(marq.enabled.isNull(), is(true));
+			assertThat(marq.individualAllocationsAllowed.isNull(), is(true));
+			assertThat(marq.isUsedForTAFROs.isNull(), is(true));
+			assertThat(marq.numericCode.isNull(), is(true));
+			assertThat(marq.pricingCodePrefix.isNull(), is(true));
+			assertThat(marq.reservationsAllowed.isNull(), is(true));
+			assertThat(marq.statusClassID.isNull(), is(true));
 
-			Assert.assertThat(marq.name.isNull(), is(false));
-			Assert.assertThat(marq.uidMarque.isNull(), is(false));
+			assertThat(marq.name.isNull(), is(false));
+			assertThat(marq.uidMarque.isNull(), is(false));
 		}
 
 	}
@@ -374,13 +366,12 @@ public class DBDatabaseGetTest extends AbstractTest {
 		List<DBQueryRow> rowsByExample = dbQuery.getAllRows();
 		for (DBQueryRow row : rowsByExample) {
 			Marque marq = row.get(new Marque());
-			System.out.println("" + marq);
-			Assert.assertThat(marq.auto_created.isNull(), is(false));
-			Assert.assertThat(marq.isUsedForTAFROs.isNull(), is(false));
-			Assert.assertThat(marq.reservationsAllowed.isNull(), is(false));
-			Assert.assertThat(marq.statusClassID.isNull(), is(false));
-			Assert.assertThat(marq.name.isNull(), is(false));
-			Assert.assertThat(marq.uidMarque.isNull(), is(false));
+			assertThat(marq.auto_created.isNull(), is(false));
+			assertThat(marq.isUsedForTAFROs.isNull(), is(false));
+			assertThat(marq.reservationsAllowed.isNull(), is(false));
+			assertThat(marq.statusClassID.isNull(), is(false));
+			assertThat(marq.name.isNull(), is(false));
+			assertThat(marq.uidMarque.isNull(), is(false));
 		}
 	}
 }

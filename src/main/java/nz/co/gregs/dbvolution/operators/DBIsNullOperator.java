@@ -15,15 +15,13 @@
  */
 package nz.co.gregs.dbvolution.operators;
 
-import nz.co.gregs.dbvolution.DBDatabase;
+import nz.co.gregs.dbvolution.databases.definitions.DBDefinition;
 import nz.co.gregs.dbvolution.datatypes.QueryableDatatypeSyncer.DBSafeInternalQDTAdaptor;
 import nz.co.gregs.dbvolution.expressions.BooleanExpression;
 import nz.co.gregs.dbvolution.expressions.DBExpression;
 
 /**
  *
- * <p style="color: #F90;">Support DBvolution at
- * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
  *
  * @author Gregory Graham
  */
@@ -37,8 +35,12 @@ public class DBIsNullOperator extends DBOperator {
 	}
 
 	@Override
-	public BooleanExpression generateWhereExpression(DBDatabase db, DBExpression column) {
+	public BooleanExpression generateWhereExpression(DBDefinition db, DBExpression column) {
 		DBExpression genericExpression = column;
-		return this.invertOperator ? BooleanExpression.isNotNull(genericExpression) : BooleanExpression.isNull(genericExpression);
+		if (this.invertOperator) {
+			return BooleanExpression.isNotNull(genericExpression);
+		} else {
+			return BooleanExpression.isNull(genericExpression);
+		}
 	}
 }

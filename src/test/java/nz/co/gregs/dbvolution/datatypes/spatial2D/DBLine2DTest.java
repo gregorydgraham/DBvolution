@@ -21,14 +21,11 @@ import com.vividsolutions.jts.geom.LineString;
 import com.vividsolutions.jts.geom.Point;
 import nz.co.gregs.dbvolution.generic.AbstractTest;
 import org.hamcrest.Matchers;
-import org.junit.Assert;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.Assert.assertEquals;
 import org.junit.Test;
-import static org.junit.Assert.*;
 
 /**
- *
- * <p style="color: #F90;">Support DBvolution at
- * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
  *
  * @author gregorygraham
  */
@@ -40,7 +37,6 @@ public class DBLine2DTest extends AbstractTest {
 
 	@Test
 	public void testSetValueLineString() {
-		System.out.println("setValue");
 		Coordinate coordinate1 = new Coordinate(2, 3);
 		Coordinate coordinate2 = new Coordinate(3, 4);
 		Coordinate coordinate3 = new Coordinate(4, 5);
@@ -49,26 +45,24 @@ public class DBLine2DTest extends AbstractTest {
 		DBLine2D instance = new DBLine2D();
 		instance.setValue(line);
 		LineString value = instance.getValue();
-		Assert.assertThat(value.getCoordinates()[0].x, Matchers.is(2.0));
-		Assert.assertThat(value.getCoordinates()[0].y, Matchers.is(3.0));
+		assertThat(value.getCoordinates()[0].x, Matchers.is(2.0));
+		assertThat(value.getCoordinates()[0].y, Matchers.is(3.0));
 	}
 
 	@Test
 	public void testSetValueCoorrdinates() {
-		System.out.println("setValue");
 		Coordinate coordinate1 = new Coordinate(2, 3);
 		Coordinate coordinate2 = new Coordinate(3, 4);
 		Coordinate coordinate3 = new Coordinate(4, 5);
 		DBLine2D instance = new DBLine2D();
 		instance.setValue(coordinate1, coordinate2, coordinate3);
 		LineString value = instance.getValue();
-		Assert.assertThat(value.getCoordinates()[0].x, Matchers.is(2.0));
-		Assert.assertThat(value.getCoordinates()[0].y, Matchers.is(3.0));
+		assertThat(value.getCoordinates()[0].x, Matchers.is(2.0));
+		assertThat(value.getCoordinates()[0].y, Matchers.is(3.0));
 	}
 
 	@Test
 	public void testSetValuePoints() {
-		System.out.println("setValue");
 		GeometryFactory geomFactory = new GeometryFactory();
 		Coordinate coordinate1 = new Coordinate(2, 3);
 		Coordinate coordinate2 = new Coordinate(3, 4);
@@ -79,13 +73,12 @@ public class DBLine2DTest extends AbstractTest {
 		DBLine2D instance = new DBLine2D();
 		instance.setValue(point1, point2, point3);
 		LineString value = instance.getValue();
-		Assert.assertThat(value.getCoordinates()[0].x, Matchers.is(2.0));
-		Assert.assertThat(value.getCoordinates()[0].y, Matchers.is(3.0));
+		assertThat(value.getCoordinates()[0].x, Matchers.is(2.0));
+		assertThat(value.getCoordinates()[0].y, Matchers.is(3.0));
 	}
 
 	@Test
 	public void testGetSQLDatatype() {
-		System.out.println("getSQLDatatype");
 		DBLine2D instance = new DBLine2D();
 		String expResult = " LINESTRING ";
 		String result = instance.getSQLDatatype();
@@ -94,7 +87,6 @@ public class DBLine2DTest extends AbstractTest {
 
 	@Test
 	public void testIsAggregator() {
-		System.out.println("isAggregator");
 		DBLine2D instance = new DBLine2D();
 		boolean expResult = false;
 		boolean result = instance.isAggregator();
@@ -103,7 +95,6 @@ public class DBLine2DTest extends AbstractTest {
 
 	@Test
 	public void testGetIncludesNull() {
-		System.out.println("getIncludesNull");
 		DBLine2D instance = new DBLine2D();
 		boolean expResult = false;
 		boolean result = instance.getIncludesNull();

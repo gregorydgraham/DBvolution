@@ -15,15 +15,20 @@
  */
 package nz.co.gregs.dbvolution.databases.definitions;
 
+import nz.co.gregs.dbvolution.internal.query.LargeObjectHandlerType;
 import com.vividsolutions.jts.geom.Polygon;
 import java.text.SimpleDateFormat;
 import java.util.Date;
+import java.util.TimeZone;
 import nz.co.gregs.dbvolution.DBRow;
 import nz.co.gregs.dbvolution.databases.H2DB;
-import nz.co.gregs.dbvolution.datatypes.DBDateRepeat;
-import nz.co.gregs.dbvolution.datatypes.QueryableDatatype;
+import nz.co.gregs.dbvolution.databases.supports.SupportsPolygonDatatype;
+import nz.co.gregs.dbvolution.datatypes.*;
 import nz.co.gregs.dbvolution.datatypes.spatial2D.*;
 import nz.co.gregs.dbvolution.internal.h2.*;
+import nz.co.gregs.regexi.Regex;
+import nz.co.gregs.separatedstring.Builder;
+import nz.co.gregs.separatedstring.Encoder;
 
 /**
  * Defines the features of the H2 database that differ from the standard
@@ -33,23 +38,58 @@ import nz.co.gregs.dbvolution.internal.h2.*;
  * This DBDefinition is automatically included in {@link H2DB} instances, and
  * you should not need to use it directly.
  *
- * <p style="color: #F90;">Support DBvolution at
- * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
- *
  * @author Gregory Graham
  */
-public class H2DBDefinition extends DBDefinition {
+public class H2DBDefinition extends DBDefinition implements SupportsPolygonDatatype {
 
-	private final String dateFormatStr = "yyyy-M-d HH:mm:ss.SSS Z";
-	private final String h2DateFormatStr = "yyyy-M-d HH:mm:ss.SSS Z";
-	private final SimpleDateFormat strToDateFormat = new SimpleDateFormat(dateFormatStr);
+	public static final long serialVersionUID = 1L;
+
+	private static final String DATE_FORMAT_STR = "yyyy-M-d HH:mm:ss.SSS Z";
+
+	private static SimpleDateFormat getStringToDateFormat() {
+		return new SimpleDateFormat(DATE_FORMAT_STR);
+	}
 
 	@Override
 	public String getDateFormattedForQuery(Date date) {
 		if (date == null) {
 			return getNull();
 		}
-		return "PARSEDATETIME('" + strToDateFormat.format(date) + "','" + h2DateFormatStr + "')";
+		return "PARSEDATETIME('" + getStringToDateFormat().format(date) + "','" + DATE_FORMAT_STR + "')";
+	}
+
+	@Override
+	public String getDatePartsFormattedForQuery(String years, String months, String days, String hours, String minutes, String seconds, String subsecond, String timeZoneSign, String timeZoneHourOffset, String timeZoneMinuteOffSet) {
+		String result = "PARSEDATETIME("
+				+ "''||" + years
+				+ "||'-'||" + doLeftPadTransform(months, "'0'", "2")
+				+ "||'-'||" + doLeftPadTransform(days, "'0'", "2")
+				+ "||' '||" + doLeftPadTransform(hours, "'0'", "2")
+				+ "||':'||" + doLeftPadTransform(minutes, "'0'", "2")
+				+ "||':'||" + doIfThenElseTransform(doIntegerEqualsTransform(doStringLengthTransform("''||" + seconds), "1"), "'0'", "''")
+				+ "||" + seconds + "||' '||'" + timeZoneSign + "'"
+				+ "||" + doLeftPadTransform(timeZoneHourOffset, "'0'", "2")
+				+ "||" + doLeftPadTransform(timeZoneMinuteOffSet, "'0'", "2")
+				+ ", '" + "yyyy-M-d HH:mm:ss Z" + "'"
+				+ ")";
+		result = "TIMESTAMPADD('NANOSECOND', (" + subsecond + "*1000000000), " + result + ")";
+		return result;
+	}
+
+	@Override
+	public String getLocalDatePartsFormattedForQuery(String years, String months, String days, String hours, String minutes, String seconds, String subsecond, String timeZoneSign, String timeZoneHourOffset, String timeZoneMinuteOffSet) {
+		String result = "PARSEDATETIME("
+				+ "''||" + years
+				+ "||'-'||" + doLeftPadTransform(months, "'0'", "2")
+				+ "||'-'||" + doLeftPadTransform(days, "'0'", "2")
+				+ "||' '||" + doLeftPadTransform(hours, "'0'", "2")
+				+ "||':'||" + doLeftPadTransform(minutes, "'0'", "2")
+				+ "||':'||" + doIfThenElseTransform(doIntegerEqualsTransform(doStringLengthTransform("''||" + seconds), "1"), "'0'", "''")
+				+ "||" + seconds
+				+ ", '" + "yyyy-M-d HH:mm:ss" + "'"
+				+ ")";
+		result = "TIMESTAMPADD('NANOSECOND', (" + subsecond + "*1000000000), " + result + ")";
+		return result;
 	}
 
 	@Override
@@ -59,12 +99,22 @@ public class H2DBDefinition extends DBDefinition {
 
 	@Override
 	public String formatColumnName(String columnName) {
-		return columnName.toUpperCase();
+		return "\"" + columnName.toUpperCase().replaceAll("\"", "\"\"") + "\"";
 	}
 
 	@Override
-	protected String getDatabaseDataTypeOfQueryableDatatype(QueryableDatatype qdt) {
-		if (qdt instanceof DBDateRepeat) {
+	protected String getDatabaseDataTypeOfQueryableDatatype(QueryableDatatype<?> qdt) {
+		if (qdt instanceof DBInteger) {
+			return " BIGINT ";
+		} else if (qdt instanceof DBInstant) {
+			return "TIMESTAMP(9) WITH TIME ZONE";
+		} else if (qdt instanceof DBLocalDateTime) {
+			return "TIMESTAMP(9)";
+		} else if (qdt instanceof DBBoolean) {
+			return "BIT";
+		} else if (qdt instanceof DBBooleanArray) {
+			return "BOOLEAN ARRAY";
+		} else if (qdt instanceof DBDateRepeat) {
 			return DataTypes.DATEREPEAT.datatype();
 		} else if (qdt instanceof DBPoint2D) {
 			return DataTypes.POINT2D.datatype();
@@ -83,46 +133,82 @@ public class H2DBDefinition extends DBDefinition {
 
 	@Override
 	public String doStringLengthTransform(String enclosedValue) {
-		return " CAST(" + getStringLengthFunctionName() + "( " + enclosedValue + " ) as NUMERIC(15,10))";
+		return " CAST(" + getStringLengthFunctionName() + "( " + enclosedValue + " ) as NUMERIC(" + getNumericPrecision() + "," + getNumericScale() + "))";
 	}
 
 	@Override
-	public String doAddDaysTransform(String dayValue, String numberOfDays) {
+	public String doDateAtTimeZoneTransform(String dateSQL, TimeZone timeZone) throws UnsupportedOperationException {
+		throw new UnsupportedOperationException("H2DBDefinition does not support doDateAtTimeZoneTransform(String, TimeZone) yet.");
+	}
+
+	@Override
+	public String doDateAddDaysTransform(String dayValue, String numberOfDays) {
 		return "DATEADD('day'," + numberOfDays + ", " + dayValue + ")";
 	}
 
-//	@Override
-//	public String doAddMillisecondsTransform(String secondValue, String numberOfSeconds) {
-//		return "DATEADD('millisecond'," + numberOfSeconds + "," + secondValue + ")";
-//	}
 	@Override
-	public String doAddSecondsTransform(String secondValue, String numberOfSeconds) {
+	public String doDateAddSecondsTransform(String secondValue, String numberOfSeconds) {
 		return "DATEADD('second'," + numberOfSeconds + "," + secondValue + ")";
 	}
 
 	@Override
-	public String doAddMinutesTransform(String secondValue, String numberOfMinutes) {
+	public String doDateAddMinutesTransform(String secondValue, String numberOfMinutes) {
 		return "DATEADD('minute'," + numberOfMinutes + "," + secondValue + ")";
 	}
 
 	@Override
-	public String doAddHoursTransform(String hourValue, String numberOfSeconds) {
-		return "DATEADD('hour'," + numberOfSeconds + "," + hourValue + ")";
+	public String doDateAddHoursTransform(String dateValue, String numberOfHours) {
+		return "DATEADD('hour'," + numberOfHours + "," + dateValue + ")";
 	}
 
 	@Override
-	public String doAddWeeksTransform(String dateValue, String numberOfWeeks) {
+	public String doDateAddWeeksTransform(String dateValue, String numberOfWeeks) {
 		return "DATEADD('WEEK'," + numberOfWeeks + "," + dateValue + ")";
 	}
 
 	@Override
-	public String doAddMonthsTransform(String dateValue, String numberOfMonths) {
+	public String doDateAddMonthsTransform(String dateValue, String numberOfMonths) {
 		return "DATEADD('month'," + numberOfMonths + "," + dateValue + ")";
 	}
 
 	@Override
-	public String doAddYearsTransform(String dateValue, String numberOfYears) {
+	public String doDateAddYearsTransform(String dateValue, String numberOfYears) {
 		return "DATEADD('year'," + numberOfYears + "," + dateValue + ")";
+	}
+
+	@Override
+	public String doInstantAddDaysTransform(String instantValue, String numberOfDays) {
+		return doInsertInstantTimeZoneTransform(instantValue, "DATEADD('day'," + numberOfDays + ", " + doRemoveInstantTimeZoneTransform(instantValue) + ")");
+	}
+
+	@Override
+	public String doInstantAddSecondsTransform(String instantValue, String numberOfSeconds) {
+		return doInsertInstantTimeZoneTransform(instantValue, "DATEADD('second'," + numberOfSeconds + "," + doRemoveInstantTimeZoneTransform(instantValue) + ")");
+	}
+
+	@Override
+	public String doInstantAddMinutesTransform(String instantValue, String numberOfMinutes) {
+		return doInsertInstantTimeZoneTransform(instantValue, "DATEADD('minute'," + numberOfMinutes + "," + doRemoveInstantTimeZoneTransform(instantValue) + ")");
+	}
+
+	@Override
+	public String doInstantAddHoursTransform(String instantValue, String numberOfHours) {
+		return doInsertInstantTimeZoneTransform(instantValue, "DATEADD('hour'," + numberOfHours + "," + doRemoveInstantTimeZoneTransform(instantValue) + ")");
+	}
+
+	@Override
+	public String doInstantAddWeeksTransform(String instantValue, String numberOfWeeks) {
+		return doInsertInstantTimeZoneTransform(instantValue, "DATEADD('WEEK'," + numberOfWeeks + "," + doRemoveInstantTimeZoneTransform(instantValue) + ")");
+	}
+
+	@Override
+	public String doInstantAddMonthsTransform(String instantValue, String numberOfMonths) {
+		return doInsertInstantTimeZoneTransform(instantValue, "DATEADD('month'," + numberOfMonths + "," + doRemoveInstantTimeZoneTransform(instantValue) + ")");
+	}
+
+	@Override
+	public String doInstantAddYearsTransform(String instantValue, String numberOfYears) {
+		return doInsertInstantTimeZoneTransform(instantValue, "DATEADD('year'," + numberOfYears + "," + doRemoveInstantTimeZoneTransform(instantValue) + ")");
 	}
 
 	/**
@@ -136,45 +222,59 @@ public class H2DBDefinition extends DBDefinition {
 	 */
 	@Override
 	protected String getCurrentDateTimeFunction() {
-//		SimpleDateFormat format = new SimpleDateFormat("Z");
-//		long rawTimezone = Long.parseLong(format.format(new Date()).replaceAll("\\+", ""));
-//		long timezone = rawTimezone/100+((rawTimezone%100)*(100/60));
-//		return " DATEADD('hour',-1* "+timezone+",CURRENT_TIMESTAMP )";
-		return " CURRENT_TIMESTAMP ";
+		return " CURRENT_TIMESTAMP(9) ";
 	}
 
+//	@Override
+//	public String getDefaultTimeZoneSign() {
+//		return "case when extract(timezone_hour from current_timestamp(9))>=0 then '+' else '-' end";
+//	}
+//
+//	@Override
+//	public String getDefaultTimeZoneHour() {
+//		return "extract(timezone_hour from current_timestamp(9))";
+//	}
+//
+//	@Override
+//	public String getDefaultTimeZoneMinute() {
+//		return "extract(timezone_minute from current_timestamp(9))";
+//	}
 	@Override
 	public String doDayOfWeekTransform(String dateSQL) {
 		return " DAY_OF_WEEK(" + dateSQL + ")";
 	}
 
 	@Override
-	public String doBooleanArrayTransform(Boolean[] bools) {
-		StringBuilder str = new StringBuilder();
-		str.append("(");
-		String separator = "";
-		if (bools.length == 0) {
-			return "()";
-		} else if (bools.length == 1) {
-			return "(" + bools[0] + ",)";
-		} else {
-			for (Boolean bool : bools) {
-				str.append(separator).append(bool.toString().toUpperCase());
-				separator = ",";
-			}
-			str.append(")");
-			return str.toString();
-		}
+	public String doInstantDayOfWeekTransform(String dateSQL) {
+		return " DAY_OF_WEEK(" + doComparableInstantTransform(dateSQL) + ")";
 	}
 
-//	@Override
-//	public String transformPeriodIntoDateRepeat(Period interval) {
-//		return "'"+DateRepeatImpl.getIntervalString(interval)+"'";
-//	}
-//	@Override
-//	public Period parseDateRepeatFromGetString(String intervalStr) {
-//		return DateRepeatImpl.parseDateRepeatFromGetString(intervalStr);
-//	}
+	/**
+	 * Returns the instant expression in the standard format that can be used to
+	 * have consistent comparisons.
+	 *
+	 * <p>
+	 * This generally adds the timezone back into the instant to convert it into a
+	 * local datetime for databases, like H2, which have only partial support for
+	 * Timestamp With Time Zone.</p>
+	 *
+	 * @param instantExpression the instant datatype expression to make comparable
+	 * @return string the instantexpression converted into a comparable expression
+	 */
+	@Override
+	public String doComparableInstantTransform(String instantExpression) {
+		return doRemoveInstantTimeZoneTransform(instantExpression);
+	}
+
+	@Override
+	public String doBooleanArrayTransform(Boolean[] bools) {
+		Encoder result = Builder.byCommaSpace().withPrefix("ARRAY[").withSuffix("]").encoder();
+		for (Boolean c : bools) {
+			result.add(c.toString().toUpperCase());
+		}
+		return result.encode();
+	}
+
 	@Override
 	public String doDateMinusToDateRepeatTransformation(String leftHandSide, String rightHandSide) {
 		return " " + DateRepeatFunctions.CREATE + "(" + leftHandSide + ", " + rightHandSide + ")";
@@ -193,6 +293,11 @@ public class H2DBDefinition extends DBDefinition {
 	@Override
 	public String doDateRepeatEqualsTransform(String leftHandSide, String rightHandSide) {
 		return " " + DateRepeatFunctions.EQUALS + "(" + leftHandSide + ", " + rightHandSide + ")";
+	}
+
+	@Override
+	public String doDateRepeatNotEqualsTransform(String leftHandSide, String rightHandSide) {
+		return " " + DateRepeatFunctions.NOTEQUALS + "(" + leftHandSide + ", " + rightHandSide + ")";
 	}
 
 	@Override
@@ -287,17 +392,17 @@ public class H2DBDefinition extends DBDefinition {
 
 	@Override
 	public String doLine2DIntersectsLine2DTransform(String toSQLString, String toSQLString0) {
-		return Line2DFunctions.INTERSECTS_LINE2D + "((" + toSQLString +"), ("+toSQLString0+ "))";
+		return Line2DFunctions.INTERSECTS_LINE2D + "((" + toSQLString + "), (" + toSQLString0 + "))";
 	}
 
 	@Override
 	public String doLine2DIntersectionPointWithLine2DTransform(String toSQLString, String toSQLString0) {
-		return Line2DFunctions.INTERSECTIONWITH_LINE2D + "((" + toSQLString +"), ("+toSQLString0+ "))";
+		return Line2DFunctions.INTERSECTIONWITH_LINE2D + "((" + toSQLString + "), (" + toSQLString0 + "))";
 	}
 
 	@Override
 	public String doLine2DAllIntersectionPointsWithLine2DTransform(String toSQLString, String toSQLString0) {
-		return Line2DFunctions.ALLINTERSECTIONSWITH_LINE2D + "((" + toSQLString +"), ("+toSQLString0+ "))";
+		return Line2DFunctions.ALLINTERSECTIONSWITH_LINE2D + "((" + toSQLString + "), (" + toSQLString0 + "))";
 	}
 
 	@Override
@@ -340,7 +445,7 @@ public class H2DBDefinition extends DBDefinition {
 		String wktValue = geom.toText();
 		return Polygon2DFunctions.CREATE_FROM_WKTPOLYGON2D.alias() + "('" + wktValue + "')";
 	}
-	
+
 	@Override
 	public String doPolygon2DAsTextTransform(String polygonSQL) {
 		return polygonSQL;
@@ -349,6 +454,16 @@ public class H2DBDefinition extends DBDefinition {
 	@Override
 	public String doPolygon2DEqualsTransform(String firstGeometry, String secondGeometry) {
 		return Polygon2DFunctions.EQUALS.alias() + "(" + firstGeometry + ", " + secondGeometry + ") ";
+	}
+
+	@Override
+	public String doPolygon2DUnionTransform(String firstGeometry, String secondGeometry) {
+		return Polygon2DFunctions.INTERSECTION.alias() + "(" + firstGeometry + ", " + secondGeometry + ")";
+	}
+
+	@Override
+	public String doPolygon2DIntersectionTransform(String firstGeometry, String secondGeometry) {
+		return Polygon2DFunctions.INTERSECTION.alias() + "(" + firstGeometry + ", " + secondGeometry + ")";
 	}
 
 	@Override
@@ -430,116 +545,218 @@ public class H2DBDefinition extends DBDefinition {
 
 	@Override
 	public String doLineSegment2DIntersectsLineSegment2DTransform(String toSQLString, String toSQLString0) {
-		return LineSegment2DFunctions.INTERSECTS_LINESEGMENT2D+"(("+toSQLString+"), ("+toSQLString0+"))";
+		return LineSegment2DFunctions.INTERSECTS_LINESEGMENT2D + "((" + toSQLString + "), (" + toSQLString0 + "))";
 	}
 
 	@Override
 	public String doLineSegment2DGetMaxXTransform(String toSQLString) {
-		return LineSegment2DFunctions.MAXX+"("+toSQLString+")";
+		return LineSegment2DFunctions.MAXX + "(" + toSQLString + ")";
 	}
 
 	@Override
 	public String doLineSegment2DGetMinXTransform(String toSQLString) {
-		return LineSegment2DFunctions.MINX+"("+toSQLString+")";
+		return LineSegment2DFunctions.MINX + "(" + toSQLString + ")";
 	}
 
 	@Override
 	public String doLineSegment2DGetMaxYTransform(String toSQLString) {
-		return LineSegment2DFunctions.MAXY+"("+toSQLString+")";
+		return LineSegment2DFunctions.MAXY + "(" + toSQLString + ")";
 	}
 
 	@Override
 	public String doLineSegment2DGetMinYTransform(String toSQLString) {
-		return LineSegment2DFunctions.MINY+"("+toSQLString+")";
+		return LineSegment2DFunctions.MINY + "(" + toSQLString + ")";
 	}
 
 	@Override
 	public String doLineSegment2DGetBoundingBoxTransform(String toSQLString) {
-		return LineSegment2DFunctions.BOUNDINGBOX+"("+toSQLString+")";
+		return LineSegment2DFunctions.BOUNDINGBOX + "(" + toSQLString + ")";
 	}
 
 	@Override
 	public String doLineSegment2DDimensionTransform(String toSQLString) {
-		return LineSegment2DFunctions.DIMENSION+"("+toSQLString+")";
+		return LineSegment2DFunctions.DIMENSION + "(" + toSQLString + ")";
 	}
 
 	@Override
 	public String doLineSegment2DNotEqualsTransform(String toSQLString, String toSQLString0) {
-		return "!"+LineSegment2DFunctions.EQUALS+"(("+toSQLString+"), ("+toSQLString0+"))";
+		return "!" + LineSegment2DFunctions.EQUALS + "((" + toSQLString + "), (" + toSQLString0 + "))";
 	}
 
 	@Override
 	public String doLineSegment2DEqualsTransform(String toSQLString, String toSQLString0) {
-		return LineSegment2DFunctions.EQUALS+"(("+toSQLString+"), ("+toSQLString0+"))";
+		return LineSegment2DFunctions.EQUALS + "((" + toSQLString + "), (" + toSQLString0 + "))";
 	}
 
 	@Override
 	public String doLineSegment2DAsTextTransform(String toSQLString) {
-		return LineSegment2DFunctions.ASTEXT+"("+toSQLString+")";
+		return LineSegment2DFunctions.ASTEXT + "(" + toSQLString + ")";
 	}
-	
+
 	@Override
 	public String doLineSegment2DIntersectionPointWithLineSegment2DTransform(String toSQLString, String toSQLString0) {
-		return LineSegment2DFunctions.INTERSECTIONPOINT_LINESEGMENT2D+"(("+toSQLString+"), ("+toSQLString0+"))";
+		return LineSegment2DFunctions.INTERSECTIONPOINT_LINESEGMENT2D + "((" + toSQLString + "), (" + toSQLString0 + "))";
 	}
 
 	@Override
 	public String doMultiPoint2DEqualsTransform(String first, String second) {
-		return MultiPoint2DFunctions.EQUALS+"(("+first+"), ("+second+"), "+MultiPoint2DFunctions.getCurrentVersion()+")";
+		return MultiPoint2DFunctions.EQUALS + "((" + first + "), (" + second + "), " + MultiPoint2DFunctions.getCurrentVersion() + ")";
 	}
 
 	@Override
 	public String doMultiPoint2DGetPointAtIndexTransform(String first, String index) {
-		return MultiPoint2DFunctions.GETPOINTATINDEX_FUNCTION+"(("+first+"), ("+index+"), "+MultiPoint2DFunctions.getCurrentVersion()+")";
+		return MultiPoint2DFunctions.GETPOINTATINDEX_FUNCTION + "((" + first + "), (" + index + "), " + MultiPoint2DFunctions.getCurrentVersion() + ")";
 	}
 
 	@Override
 	public String doMultiPoint2DGetNumberOfPointsTransform(String first) {
-		return MultiPoint2DFunctions.GETNUMBEROFPOINTS_FUNCTION+"("+first+", "+MultiPoint2DFunctions.getCurrentVersion()+")";
+		return MultiPoint2DFunctions.GETNUMBEROFPOINTS_FUNCTION + "(" + first + ", " + MultiPoint2DFunctions.getCurrentVersion() + ")";
 	}
 
 	@Override
 	public String doMultiPoint2DMeasurableDimensionsTransform(String first) {
-		return MultiPoint2DFunctions.DIMENSION+"("+first+", "+MultiPoint2DFunctions.getCurrentVersion()+")";
+		return MultiPoint2DFunctions.DIMENSION + "(" + first + ", " + MultiPoint2DFunctions.getCurrentVersion() + ")";
 	}
 
 	@Override
 	public String doMultiPoint2DGetBoundingBoxTransform(String first) {
-		return MultiPoint2DFunctions.BOUNDINGBOX+"("+first+", "+MultiPoint2DFunctions.getCurrentVersion()+")";
+		return MultiPoint2DFunctions.BOUNDINGBOX + "(" + first + ", " + MultiPoint2DFunctions.getCurrentVersion() + ")";
 	}
 
 	@Override
 	public String doMultiPoint2DAsTextTransform(String first) {
-		return MultiPoint2DFunctions.ASTEXT+"("+first+", "+MultiPoint2DFunctions.getCurrentVersion()+")";
+		return MultiPoint2DFunctions.ASTEXT + "(" + first + ", " + MultiPoint2DFunctions.getCurrentVersion() + ")";
 	}
 
 	@Override
 	public String doMultiPoint2DToLine2DTransform(String first) {
-		return MultiPoint2DFunctions.ASLINE2D+"("+first+", "+MultiPoint2DFunctions.getCurrentVersion()+")";
+		return MultiPoint2DFunctions.ASLINE2D + "(" + first + ", " + MultiPoint2DFunctions.getCurrentVersion() + ")";
 	}
-
-//	@Override
-//	public String doMultiPoint2DToPolygon2DTransform(String first) {
-//		return MultiPoint2DFunctions.ASPOLYGON2D+"("+first+", "+MultiPoint2DFunctions.getCurrentVersion()+")";
-//	}
 
 	@Override
 	public String doMultiPoint2DGetMinYTransform(String first) {
-		return MultiPoint2DFunctions.MINY+"("+first+", "+MultiPoint2DFunctions.getCurrentVersion()+")";
+		return MultiPoint2DFunctions.MINY + "(" + first + ", " + MultiPoint2DFunctions.getCurrentVersion() + ")";
 	}
 
 	@Override
 	public String doMultiPoint2DGetMinXTransform(String first) {
-		return MultiPoint2DFunctions.MINX+"("+first+", "+MultiPoint2DFunctions.getCurrentVersion()+")";
+		return MultiPoint2DFunctions.MINX + "(" + first + ", " + MultiPoint2DFunctions.getCurrentVersion() + ")";
 	}
 
 	@Override
 	public String doMultiPoint2DGetMaxYTransform(String first) {
-		return MultiPoint2DFunctions.MAXY+"("+first+", "+MultiPoint2DFunctions.getCurrentVersion()+")";
+		return MultiPoint2DFunctions.MAXY + "(" + first + ", " + MultiPoint2DFunctions.getCurrentVersion() + ")";
 	}
 
 	@Override
 	public String doMultiPoint2DGetMaxXTransform(String first) {
-		return MultiPoint2DFunctions.MAXX+"("+first+", "+MultiPoint2DFunctions.getCurrentVersion()+")";
+		return MultiPoint2DFunctions.MAXX + "(" + first + ", " + MultiPoint2DFunctions.getCurrentVersion() + ")";
+	}
+
+	@Override
+	public LargeObjectHandlerType preferredLargeObjectWriter(DBLargeObject<?> lob) {
+		if (lob instanceof DBLargeText) {
+			return LargeObjectHandlerType.CLOB;
+		} else if (lob instanceof DBJavaObject) {
+			return LargeObjectHandlerType.BINARYSTREAM;
+		} else {
+			return super.preferredLargeObjectWriter(lob);
+		}
+	}
+
+	@Override
+	public LargeObjectHandlerType preferredLargeObjectReader(DBLargeObject<?> lob) {
+		if (lob instanceof DBLargeText) {
+			return LargeObjectHandlerType.BLOB;
+		} else if (lob instanceof DBJavaObject) {
+			return LargeObjectHandlerType.BINARYSTREAM;
+		} else {
+			return super.preferredLargeObjectReader(lob);
+		}
+	}
+
+	@Override
+	public boolean supportsFullOuterJoinNatively() {
+		return false;
+	}
+
+	@Override
+	public String doStringAccumulateTransform(String accumulateColumn, String separator, String referencedTable) {
+		return "GROUP_CONCAT(" + accumulateColumn + " SEPARATOR " + doStringLiteralWrapping(separator) + ")";
+	}
+
+	@Override
+	public String doStringAccumulateTransform(String accumulateColumn, String separator, String orderByColumnName, String referencedTable) {
+		return "GROUP_CONCAT(" + accumulateColumn + " ORDER BY " + orderByColumnName + " SEPARATOR " + doStringLiteralWrapping(separator) + ")";
+	}
+
+	/**
+	 * Creates the CURRENTTIME function for this database.
+	 *
+	 * @return the default implementation returns " CURRENT_TIMESTAMP "
+	 */
+	@Override
+	public String doCurrentUTCTimeTransform() {
+		return "dateadd(timezone_minute, -1*extract(timezone_minute from current_timestamp(9)), dateadd(timezone_hour, -1*extract(timezone_hour from current_timestamp(9)), dateadd(minute, -1*extract(timezone_minute from current_timestamp(9)), dateadd(hour, -1*extract(timezone_hour from current_timestamp(9)), current_timestamp(9)))))";
+	}
+
+	@Override
+	public String doCurrentUTCDateTimeTransform() {
+		return "dateadd(timezone_minute, -1*extract(timezone_minute from current_timestamp(9)), dateadd(timezone_hour, -1*extract(timezone_hour from current_timestamp(9)), dateadd(minute, -1*extract(timezone_minute from current_timestamp(9)), dateadd(hour, -1*extract(timezone_hour from current_timestamp(9)), current_timestamp(9)))))";
+	}
+
+	public String doRemoveInstantTimeZoneTransform(String instantValue) {
+		return "dateadd(minute, -1*extract(timezone_minute from " + instantValue + "), dateadd(hour, -1*extract(timezone_hour from " + instantValue + "), " + instantValue + "))/*!remove timezone*/";
+	}
+
+	public String doInsertInstantTimeZoneTransform(String instantValueWithCorrectTZ, String dateValue) {
+		return "dateadd(minute, extract(timezone_minute from " + instantValueWithCorrectTZ + "), dateadd(hour, extract(timezone_hour from " + instantValueWithCorrectTZ + "), " + dateValue + "))/*!insert timezone*/";
+	}
+
+	@Override
+	public boolean supportsDateRepeatDatatypeFunctions() {
+		return true;
+	}
+
+	@Override
+	public GroupByClauseMethod[] preferredGroupByClauseMethod() {
+		return new GroupByClauseMethod[]{GroupByClauseMethod.GROUPBYEXPRESSION, GroupByClauseMethod.SELECTEXPRESSION, GroupByClauseMethod.ALIAS, GroupByClauseMethod.INDEX};
+	}
+
+	private static final Regex DUPLICATE_COLUMN_EXCEPTION
+			= Regex
+					.startingAnywhere()
+					.literalCaseInsensitive("Duplicate column name \"")
+					.anyCharacterExcept("\"").atLeastOnce()
+					.literal("\";")
+					.toRegex();
+
+	@Override
+	public boolean isDuplicateColumnException(Exception exc) {
+		return DUPLICATE_COLUMN_EXCEPTION.matchesWithinString(exc.getMessage());
+	}
+
+	private static final Regex PRIMARY_KEY_ALREADY_EXISTS = Regex
+			.empty()
+			.literalCaseInsensitive("Unique index or primary key violation:")
+			.toRegex();
+
+	@Override
+	public boolean isPrimaryKeyAlreadyExistsException(Exception alreadyExists) {
+		Throwable exc = alreadyExists;
+		while (exc != null) {
+			if ((exc instanceof org.h2.jdbc.JdbcSQLIntegrityConstraintViolationException)
+					|| PRIMARY_KEY_ALREADY_EXISTS.matchesWithinString(exc.getMessage())) {
+				return true;
+			}
+			exc = exc.getCause();
+		}
+		return super.isPrimaryKeyAlreadyExistsException(alreadyExists);
+	}
+
+	@Override
+	public String getSequenceUpdateSQL(String tableName, String columnName, long primaryKeyGenerated) {
+		return "ALTER TABLE IF EXISTS " + tableName + " ON COLUMN IF EXISTS " + columnName + " RESTART WITH " + (primaryKeyGenerated + 1);
+		
 	}
 }

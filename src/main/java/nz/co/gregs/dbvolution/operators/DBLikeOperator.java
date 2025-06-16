@@ -15,17 +15,16 @@
  */
 package nz.co.gregs.dbvolution.operators;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import nz.co.gregs.dbvolution.datatypes.QueryableDatatypeSyncer.DBSafeInternalQDTAdaptor;
-import nz.co.gregs.dbvolution.DBDatabase;
+import nz.co.gregs.dbvolution.databases.definitions.DBDefinition;
+import static nz.co.gregs.dbvolution.expressions.AnyExpression.value;
 import nz.co.gregs.dbvolution.expressions.BooleanExpression;
 import nz.co.gregs.dbvolution.expressions.DBExpression;
 import nz.co.gregs.dbvolution.expressions.StringExpression;
 
 /**
  * Implements LIKE for all types that support it.
- *
- * <p style="color: #F90;">Support DBvolution at
- * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
  *
  * @author Gregory Graham
  */
@@ -36,17 +35,20 @@ public class DBLikeOperator extends DBOperator {
 	/**
 	 * Implements LIKE for all types that support it.
 	 *
-	 * @param likeableValue
+	 * @param likeableValue the value to compare the database entries with
 	 */
 	public DBLikeOperator(String likeableValue) {
-		super(likeableValue == null ? null : new StringExpression(likeableValue));
+		super(likeableValue == null ? null : value(likeableValue));
 	}
 
 	/**
 	 * Implements LIKE for all types that support it.
 	 *
-	 * @param likeableValue
+	 * @param likeableValue the value to compare the database entries with
 	 */
+	@SuppressFBWarnings(
+			value = "NP_LOAD_OF_KNOWN_NULL_VALUE",
+			justification = "Null is a valid value in databases")
 	public DBLikeOperator(StringExpression likeableValue) {
 		super(likeableValue == null ? likeableValue : likeableValue.copy());
 	}
@@ -60,7 +62,7 @@ public class DBLikeOperator extends DBOperator {
 	}
 
 	@Override
-	public BooleanExpression generateWhereExpression(DBDatabase db, DBExpression column) {
+	public BooleanExpression generateWhereExpression(DBDefinition db, DBExpression column) {
 		DBExpression genericExpression = column;
 		BooleanExpression returnExpression = BooleanExpression.trueExpression();
 		if (genericExpression instanceof StringExpression) {
@@ -84,9 +86,6 @@ public class DBLikeOperator extends DBOperator {
 	}
 
 	/**
-	 * <p style="color: #F90;">Support DBvolution at
-	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
-	 *
 	 * @return the likeableValue
 	 */
 	protected StringExpression getLikeableValue() {

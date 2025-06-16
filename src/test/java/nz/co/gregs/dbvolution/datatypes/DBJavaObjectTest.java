@@ -15,24 +15,23 @@
  */
 package nz.co.gregs.dbvolution.datatypes;
 
+import java.io.Serializable;
 import java.sql.SQLException;
 import java.util.List;
 import nz.co.gregs.dbvolution.DBRow;
+import nz.co.gregs.dbvolution.DBTable;
 import nz.co.gregs.dbvolution.actions.DBActionList;
 import nz.co.gregs.dbvolution.annotations.DBAutoIncrement;
 import nz.co.gregs.dbvolution.annotations.DBColumn;
 import nz.co.gregs.dbvolution.annotations.DBPrimaryKey;
 import nz.co.gregs.dbvolution.generic.AbstractTest;
 import static org.hamcrest.Matchers.*;
+import static org.hamcrest.MatcherAssert.assertThat;
 import org.junit.AfterClass;
-import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
 /**
- *
- * <p style="color: #F90;">Support DBvolution at
- * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
  *
  * @author Gregory Graham
  */
@@ -62,18 +61,21 @@ public class DBJavaObjectTest extends AbstractTest {
 		row.colInt.setValue(3);
 		row.javaInteger.setValue(3);
 		row.javaString.setValue("Thisland");
+		row.someRandomClass.setValue(new SomeClass(3, "Thisland"));
 		DBActionList insert = database.insert(row);
 
-		List<DBJavaObjectTable> allRows = database.getDBTable(new DBJavaObjectTable()).setBlankQueryAllowed(true).getAllRows();
-		Assert.assertThat(allRows.size(), is(1));
+		final DBTable<DBJavaObjectTable> tableQuery = database.getDBTable(new DBJavaObjectTable()).setBlankQueryAllowed(true);
+
+		List<DBJavaObjectTable> allRows = tableQuery.getAllRows();
+		assertThat(allRows.size(), is(1));
 		final DBJavaObjectTable foundRow = allRows.get(0);
-		Assert.assertThat(foundRow.javaInteger.getSize(), is(81));
-		Assert.assertThat(foundRow.javaInteger.getValue(), is(3));
-		Assert.assertThat(foundRow.javaInteger.stringValue(), is("3"));
-		Assert.assertThat(foundRow.javaString.getSize(), is(15));
-		Assert.assertThat(foundRow.javaString.getValue(), is("Thisland"));
-		Assert.assertThat(foundRow.javaString.stringValue(), is("Thisland"));
-		System.out.println(foundRow);
+		assertThat(foundRow.javaInteger.getSize(), is(81));
+		assertThat(foundRow.javaInteger.getValue(), is(3));
+		assertThat(foundRow.javaInteger.stringValue(), is("3"));
+		assertThat(foundRow.javaString.getSize(), is(15));
+		assertThat(foundRow.javaString.getValue(), is("Thisland"));
+		assertThat(foundRow.someRandomClass.getValue().str, is("Thisland"));
+		assertThat(foundRow.someRandomClass.getValue().integer, is(3));
 
 		database.preventDroppingOfTables(false);
 		database.dropTableNoExceptions(foundRow);
@@ -95,6 +97,21 @@ public class DBJavaObjectTest extends AbstractTest {
 
 		@DBColumn
 		DBJavaObject<String> javaString = new DBJavaObject<String>();
+
+		@DBColumn
+		DBJavaObject<SomeClass> someRandomClass = new DBJavaObject<SomeClass>();
+	}
+
+	public static class SomeClass implements Serializable {
+
+		private static final long serialVersionUID = 1L;
+		public String str;
+		public int integer;
+
+		public SomeClass(int integer, String str) {
+			this.str = str;
+			this.integer = integer;
+		}
 	}
 
 }

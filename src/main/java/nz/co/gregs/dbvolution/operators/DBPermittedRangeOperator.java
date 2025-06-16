@@ -18,7 +18,8 @@ package nz.co.gregs.dbvolution.operators;
 import nz.co.gregs.dbvolution.datatypes.QueryableDatatype;
 
 /**
- * Implements a BETWEEN operator that includes the beginning of the range but excludes the end.
+ * Implements a BETWEEN operator that includes the beginning of the range but
+ * excludes the end.
  *
  * <p>
  * Given a set of 1,2,3,4,5, using DBPermittedRangeExclusiveOperator(1,5) will
@@ -33,30 +34,32 @@ import nz.co.gregs.dbvolution.datatypes.QueryableDatatype;
  * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
  *
  * @author Gregory Graham
+ * @param <T> the type of the values to be included in the collection of values
  */
-public class DBPermittedRangeOperator extends DBMetaOperator {
+public class DBPermittedRangeOperator<T> extends DBMetaOperator {
 
 	private static final long serialVersionUID = 1L;
 
 	/**
-	 * Implements a BETWEEN operator that includes the  beginning of the range but excludes the end.
-	 * 
+	 * Implements a BETWEEN operator that includes the beginning of the range but
+	 * excludes the end.
+	 *
 	 * <p>
 	 * Use a null value to create open or unbounded ranges.
-	 * 
+	 *
 	 * @param lowerBound the smallest value of the desired range
 	 * @param upperBound the smallest value larger than the desired range
-	 */	
-	public DBPermittedRangeOperator(Object lowerBound, Object upperBound) {
+	 */
+	public DBPermittedRangeOperator(T lowerBound, T upperBound) {
 		if (lowerBound != null && upperBound != null) {
 			operator = new DBBetweenInclusiveExclusiveOperator(
 					QueryableDatatype.getQueryableDatatypeForObject(lowerBound),
 					QueryableDatatype.getQueryableDatatypeForObject(upperBound));
 		} else if (lowerBound == null && upperBound != null) {
-			QueryableDatatype qdt = QueryableDatatype.getQueryableDatatypeForObject(upperBound);
+			QueryableDatatype<?> qdt = QueryableDatatype.getQueryableDatatypeForObject(upperBound);
 			operator = new DBLessThanOperator(qdt);
 		} else if (lowerBound != null && upperBound == null) {
-			final QueryableDatatype qdt = QueryableDatatype.getQueryableDatatypeForObject(lowerBound);
+			final QueryableDatatype<?> qdt = QueryableDatatype.getQueryableDatatypeForObject(lowerBound);
 			operator = new DBGreaterThanOrEqualsOperator(qdt);
 		}
 	}

@@ -15,11 +15,14 @@
  */
 package nz.co.gregs.dbvolution.columns;
 
+import com.vividsolutions.jts.geom.LineString;
+import java.util.Objects;
 import java.util.Set;
-import nz.co.gregs.dbvolution.DBDatabase;
 import nz.co.gregs.dbvolution.DBRow;
+import nz.co.gregs.dbvolution.databases.definitions.DBDefinition;
 import nz.co.gregs.dbvolution.datatypes.spatial2D.DBLine2D;
-import nz.co.gregs.dbvolution.expressions.Line2DExpression;
+import nz.co.gregs.dbvolution.expressions.SortProvider;
+import nz.co.gregs.dbvolution.expressions.spatial2D.Line2DExpression;
 import nz.co.gregs.dbvolution.query.RowDefinition;
 
 /**
@@ -31,6 +34,8 @@ import nz.co.gregs.dbvolution.query.RowDefinition;
  * @author Gregory Graham
  */
 public class Line2DColumn extends Line2DExpression implements ColumnProvider {
+
+	private final static long serialVersionUID = 1l;
 
 	private final AbstractColumn column;
 
@@ -45,6 +50,17 @@ public class Line2DColumn extends Line2DExpression implements ColumnProvider {
 		this.column = new AbstractColumn(row, field);
 	}
 
+	/**
+	 * Creates a portable reference to the column represented by the field of the
+	 * row.
+	 *
+	 * @param row the table defining object that the field is a component of.
+	 * @param field a component of the row.
+	 */
+	public Line2DColumn(RowDefinition row, LineString field) {
+		this.column = new AbstractColumn(row, field);
+	}
+
 	@Override
 	public AbstractColumn getColumn() {
 		return column;
@@ -56,7 +72,7 @@ public class Line2DColumn extends Line2DExpression implements ColumnProvider {
 	}
 
 	@Override
-	public String toSQLString(DBDatabase db) {
+	public String toSQLString(DBDefinition db) {
 		return column.toSQLString(db);
 	}
 
@@ -68,5 +84,39 @@ public class Line2DColumn extends Line2DExpression implements ColumnProvider {
 	@Override
 	public boolean isPurelyFunctional() {
 		return column.isPurelyFunctional();
+	}
+
+	@Override
+	public boolean isAggregator() {
+		return column.isAggregator();
+	}
+
+	@Override
+	public boolean equals(Object other) {
+		if (other instanceof Line2DColumn) {
+			return column.equals(((Line2DColumn) other).column);
+		} else {
+			return false;
+		}
+	}
+
+	@Override
+	public int hashCode() {
+		int hash = 7;
+		hash = 89 * hash + Objects.hashCode(this.column);
+		return hash;
+	}
+
+	@Override
+	public synchronized Line2DColumn copy() {
+		final AbstractColumn col = getColumn();
+		final DBRow row = col.getInstanceOfRow();
+		Line2DColumn newInstance = new Line2DColumn(row, (DBLine2D) col.getAppropriateQDTFromRow(row));
+		return newInstance;
+	}
+
+	@Override
+	public SortProvider.Column getSortProvider() {
+		return column.getSortProvider();
 	}
 }

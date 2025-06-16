@@ -23,14 +23,12 @@ import nz.co.gregs.dbvolution.actions.DBActionList;
 import nz.co.gregs.dbvolution.example.CarCompany;
 import nz.co.gregs.dbvolution.example.Marque;
 import nz.co.gregs.dbvolution.generic.AbstractTest;
-import org.junit.Assert;
+import static org.hamcrest.MatcherAssert.assertThat;
 import org.junit.Test;
 import static org.hamcrest.Matchers.*;
 
 /**
- *
- * <p style="color: #F90;">Support DBvolution at
- * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+ * a test for the DBDatabase.insert(DBRow...) method.
  *
  * @author Gregory Graham
  */
@@ -42,7 +40,8 @@ public class DBDatabaseInsertTest extends AbstractTest {
 
 	@Test
 	public void testInsertRows() throws SQLException {
-		int originalNumberOfMarques = marquesTable.setBlankQueryAllowed(true).getAllRows().size();
+    final DBTable<Marque> marques = database.getDBTable(new Marque());
+		int originalNumberOfMarques = marques.setBlankQueryAllowed(true).getAllRows().size();
 		final DBTable<CarCompany> allCarCompanies = database.getDBTable(new CarCompany()).setBlankQueryAllowed(true);
 		int originalNumberOfCarCos = allCarCompanies.getAllRows().size();
 
@@ -59,13 +58,12 @@ public class DBDatabaseInsertTest extends AbstractTest {
 		CarCompany carCompany = new CarCompany("TATA", 569);
 		DBActionList changes = database.insert(myTableRows);
 		changes.addAll(database.insert(carCompany));
-		marquesTable.getAllRows();
-		marquesTable.print();
-		database.print(allCarCompanies.getAllRows());
+    marques.getAllRows();
+
 		final int updatedNumberOfCarCompanies = allCarCompanies.getAllRows().size();
-		Assert.assertThat(changes.size(), is(3));
-		Assert.assertThat(marquesTable.getAllRows().size(), is(originalNumberOfMarques + 2));
-		Assert.assertThat(
+		assertThat(changes.size(), is(3));
+		assertThat(marques.getAllRows().size(), is(originalNumberOfMarques + 2));
+		assertThat(
 				updatedNumberOfCarCompanies,
 				is(originalNumberOfCarCos + 1));
 	}

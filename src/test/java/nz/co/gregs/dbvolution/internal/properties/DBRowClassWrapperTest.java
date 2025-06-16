@@ -1,19 +1,17 @@
 package nz.co.gregs.dbvolution.internal.properties;
 
 import java.sql.SQLException;
-import nz.co.gregs.dbvolution.internal.properties.RowDefinitionClassWrapper;
 import static org.hamcrest.Matchers.*;
-import static org.junit.Assert.*;
-import nz.co.gregs.dbvolution.DBDatabase;
+
 import nz.co.gregs.dbvolution.DBRow;
 import nz.co.gregs.dbvolution.annotations.DBColumn;
 import nz.co.gregs.dbvolution.annotations.DBForeignKey;
 import nz.co.gregs.dbvolution.annotations.DBPrimaryKey;
 import nz.co.gregs.dbvolution.annotations.DBTableName;
-import nz.co.gregs.dbvolution.databases.H2MemoryDB;
 import nz.co.gregs.dbvolution.datatypes.DBInteger;
 import nz.co.gregs.dbvolution.datatypes.DBString;
-import org.junit.Assert;
+import static org.hamcrest.MatcherAssert.assertThat;
+
 
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -21,25 +19,24 @@ import org.junit.Test;
 @SuppressWarnings("warnings")
 public class DBRowClassWrapperTest {
 
-	private static DBDatabase database;
-
+//	private static DBDatabase database;
 	@BeforeClass
 	public static void setup() throws SQLException {
-		database = new H2MemoryDB("dbvolutionTest", "", "", false);
+//		database = new H2MemoryDB("dbvolutionTest", "", "", false);
 	}
 
 	@Test
 	public void getsPrimaryKeyPropertiesGivenOnePrimaryKeyColumn() {
-		RowDefinitionClassWrapper classWrapper = new RowDefinitionClassWrapper(MyTable1.class);
-		assertThat(classWrapper.primaryKeyDefinition(), is(not(nullValue())));
-		assertThat(classWrapper.primaryKeyDefinition().getColumnName(), is("uid"));
+		var classWrapper = new RowDefinitionClassWrapper<>(MyTable1.class);
+		assertThat(classWrapper.primaryKeyDefinitions()[0], is(not(nullValue())));
+		assertThat(classWrapper.primaryKeyDefinitions()[0].getColumnName(), is("uid"));
 	}
 
-	@SuppressWarnings("serial")
-	@Test//(expected = UnsupportedOperationException.class)
 	public void errorsWhenConstructingGivenTwoPrimaryKeyColumns() {
 		@DBTableName("table1")
 		class TestClass extends DBRow {
+
+			private static final long serialVersionUID = 1L;
 
 			@DBPrimaryKey
 			@DBColumn
@@ -52,8 +49,8 @@ public class DBRowClassWrapperTest {
 			public DBInteger fkTable2 = new DBInteger();
 		}
 
-            RowDefinitionClassWrapper rowDefinitionClassWrapper = new RowDefinitionClassWrapper(TestClass.class);
-                Assert.assertThat(rowDefinitionClassWrapper, notNullValue());
+		var rowDefinitionClassWrapper = new RowDefinitionClassWrapper<>(TestClass.class);
+		assertThat(rowDefinitionClassWrapper, notNullValue());
 	}
 
 //	@Test
@@ -77,19 +74,19 @@ public class DBRowClassWrapperTest {
 //	}
 	@Test
 	public void getsProperties() {
-		RowDefinitionClassWrapper classAdaptor = new RowDefinitionClassWrapper(MyTable1.class);
+		var classAdaptor = new RowDefinitionClassWrapper<>(MyTable1.class);
 		assertThat(classAdaptor.getColumnPropertyDefinitions().size(), is(3));
 	}
 
 	@Test
 	public void getsForeignKeyReferencedTableName() {
-		RowDefinitionClassWrapper classWrapper = new RowDefinitionClassWrapper(MyTable1.class);
+		var classWrapper = new RowDefinitionClassWrapper<>(MyTable1.class);
 		assertThat(classWrapper.getPropertyDefinitionByName("fkTable2").referencedTableName(), is("table2"));
 	}
 
 	@Test
 	public void getsForeignKeyReferencedColumnName() {
-		RowDefinitionClassWrapper classWrapper = new RowDefinitionClassWrapper(MyTable1.class);
+		var classWrapper = new RowDefinitionClassWrapper<>(MyTable1.class);
 		assertThat(classWrapper.getPropertyDefinitionByName("fkTable2").referencedColumnName(), is("uid_2"));
 	}
 

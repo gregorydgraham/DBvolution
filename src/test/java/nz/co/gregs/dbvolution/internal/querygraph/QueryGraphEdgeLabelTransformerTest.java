@@ -20,9 +20,9 @@ import nz.co.gregs.dbvolution.example.Marque;
 import nz.co.gregs.dbvolution.expressions.DBExpression;
 import nz.co.gregs.dbvolution.generic.AbstractTest;
 import static org.hamcrest.Matchers.*;
+import static org.hamcrest.MatcherAssert.assertThat;
 import org.junit.After;
 import org.junit.AfterClass;
-import org.junit.Assert;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -61,14 +61,20 @@ public class QueryGraphEdgeLabelTransformerTest extends AbstractTest {
 	 */
 	@Test
 	public void testTransform() {
-		System.out.println("transform");
 		Marque marque = new Marque();
 		DBExpression v = marque.column(marque.carCompany).is(2);
 		DBQuery dbQuery = database.getDBQuery(marque);
 		QueryGraphEdgeLabelTransformer instance = new QueryGraphEdgeLabelTransformer(dbQuery);
-		String expResult = "fk_carcompany = 2";
 		String result = instance.transform(v);
-		Assert.assertThat(result.toLowerCase(), containsString(expResult));
+		String unquotedVersion = "fk_carcompany = 2";
+		String doubleQuotedVersion = "\"fk_carcompany\" = 2";
+		String mysqlVersion = "`fk_carcompany` = 2";
+		assertThat(result.toLowerCase(),
+				anyOf(containsString(unquotedVersion),
+						containsString(doubleQuotedVersion),
+						containsString(mysqlVersion)
+				)
+		);
 	}
 
 }

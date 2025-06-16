@@ -21,7 +21,7 @@ import nz.co.gregs.dbvolution.datatypes.DBInteger;
 import nz.co.gregs.dbvolution.exceptions.UndefinedPrimaryKeyException;
 import nz.co.gregs.dbvolution.generic.AbstractTest;
 import static org.hamcrest.Matchers.*;
-import org.junit.Assert;
+import static org.hamcrest.MatcherAssert.assertThat;
 import org.junit.Test;
 
 /**
@@ -40,36 +40,36 @@ public class DBRowMiscTests extends AbstractTest {
 	@Test
 	public void testPrimaryKeyColumnNameForUnspecifiedColumnName() {
 		UnspecifiedColumnName unchangedPK = new UnspecifiedColumnName();
-		String primaryKeyColumnName = unchangedPK.getPrimaryKeyColumnName();
-		Assert.assertThat(primaryKeyColumnName, is("pkuid"));
+		String primaryKeyColumnName = unchangedPK.getPrimaryKeyColumnNames().get(0);
+		assertThat(primaryKeyColumnName, is("pkuid"));
 	}
 
 	@Test
 	public void testPrimaryKeyColumnNameForSpecifiedColumnName() {
 		SpecifiedColumnName changedPK = new SpecifiedColumnName();
-		String primaryKeyColumnName = changedPK.getPrimaryKeyColumnName();
-		Assert.assertThat(primaryKeyColumnName, is("pk_unique_id"));
+		String primaryKeyColumnName = changedPK.getPrimaryKeyColumnNames().get(0);
+		assertThat(primaryKeyColumnName, is("pk_unique_id"));
 	}
 
 	@Test
 	public void testPrimaryKeyFieldNameForUnspecifiedColumnName() {
 		UnspecifiedColumnName unchangedPK = new UnspecifiedColumnName();
-		String primaryKeyColumnName = unchangedPK.getPrimaryKeyFieldName();
-		Assert.assertThat(primaryKeyColumnName, is("pkuid"));
+		String primaryKeyColumnName = unchangedPK.getPrimaryKeyFieldName().get(0);
+		assertThat(primaryKeyColumnName, is("pkuid"));
 	}
 
 	@Test
 	public void testPrimaryKeyFieldNameForSpecifiedColumnName() {
 		SpecifiedColumnName changedPK = new SpecifiedColumnName();
-		String primaryKeyColumnName = changedPK.getPrimaryKeyFieldName();
-		Assert.assertThat(primaryKeyColumnName, is("pkuid"));
+		String primaryKeyColumnName = changedPK.getPrimaryKeyFieldName().get(0);
+		assertThat(primaryKeyColumnName, is("pkuid"));
 	}
 
 	@Test
 	public void testSetPrimaryKey() {
 		SpecifiedColumnName changedPK = new SpecifiedColumnName();
 		changedPK.setPrimaryKey(2);
-		Assert.assertThat(changedPK.pkuid.intValue(), is(2));
+		assertThat(changedPK.pkuid.intValue(), is(2));
 	}
 
 	@Test(expected = UndefinedPrimaryKeyException.class)

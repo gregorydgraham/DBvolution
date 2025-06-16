@@ -16,16 +16,12 @@
 package nz.co.gregs.dbvolution.datatypes;
 
 import static org.hamcrest.Matchers.*;
+import static org.hamcrest.MatcherAssert.assertThat;
 import org.junit.After;
-import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
-import static org.junit.Assert.*;
 
 /**
- *
- * <p style="color: #F90;">Support DBvolution at
- * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
  *
  * @author Gregory Graham
  */
@@ -47,11 +43,9 @@ public class DBBooleanEditorTest {
 	 */
 	@Test
 	public void testSetFormat() {
-		System.out.println("setFormat");
 		String format = "";
 		DBBooleanEditor instance = new DBBooleanEditor();
 		instance.setFormat(format);
-		// TODO review the generated test code and remove the default call to fail.
 	}
 
 	/**
@@ -59,18 +53,15 @@ public class DBBooleanEditorTest {
 	 */
 	@Test
 	public void testSetAsText() {
-		System.out.println("setAsText");
 		String text = "true";
 		DBBooleanEditor instance = new DBBooleanEditor();
 		instance.setAsText(text);
-		// TODO review the generated test code and remove the default call to fail.
-		Assert.assertThat((Boolean) ((QueryableDatatype) instance.getValue()).literalValue, is(true));
+		assertThat((Boolean) ((QueryableDatatype) instance.getValue()).getLiteralValue(), is(true));
 
 		text = "";
 		instance = new DBBooleanEditor();
 		instance.setAsText(text);
-		// TODO review the generated test code and remove the default call to fail.
-		Assert.assertThat((Boolean) ((QueryableDatatype) instance.getValue()).literalValue, nullValue());
+		assertThat((Boolean) ((QueryableDatatype) instance.getValue()).getLiteralValue(), nullValue());
 	}
 
 }

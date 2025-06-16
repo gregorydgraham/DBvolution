@@ -4,16 +4,18 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.Date;
 
-import nz.co.gregs.dbvolution.DBDatabase;
 import nz.co.gregs.dbvolution.DBRow;
 import nz.co.gregs.dbvolution.annotations.DBAdaptType;
 import nz.co.gregs.dbvolution.annotations.DBColumn;
 import nz.co.gregs.dbvolution.annotations.DBTableName;
+import nz.co.gregs.dbvolution.columns.ColumnProvider;
+import nz.co.gregs.dbvolution.databases.definitions.DBDefinition;
 import nz.co.gregs.dbvolution.datatypes.DBDate;
 import nz.co.gregs.dbvolution.datatypes.DBInteger;
 import nz.co.gregs.dbvolution.datatypes.DBString;
 import nz.co.gregs.dbvolution.datatypes.DBTypeAdaptor;
 import nz.co.gregs.dbvolution.datatypes.QueryableDatatype;
+import nz.co.gregs.dbvolution.query.RowDefinition;
 
 import org.junit.Test;
 
@@ -236,7 +238,7 @@ public class TypeAdaptorUsabilityTest {
 	@Test
 	public void stringFieldAdaptedAsCustomQDT_whenAdaptingOnSimpleTypes() {
 
-		class MyQDT extends QueryableDatatype {
+		class MyQDT extends QueryableDatatype<Object> {
 
 			@SuppressWarnings("unused")
 			public MyQDT() {
@@ -249,7 +251,7 @@ public class TypeAdaptorUsabilityTest {
 			}
 
 			@Override
-			protected String formatValueForSQLStatement(DBDatabase db) {
+			protected String formatValueForSQLStatement(DBDefinition db) {
 				return "unknown";
 			}
 
@@ -259,8 +261,18 @@ public class TypeAdaptorUsabilityTest {
 			}
 
 			@Override
-			protected Object getFromResultSet(DBDatabase database, ResultSet resultSet, String fullColumnName) throws SQLException {
+			protected Object getFromResultSet(DBDefinition database, ResultSet resultSet, String fullColumnName) throws SQLException {
 				return resultSet.getString(fullColumnName);
+			}
+
+			@Override
+			protected void setValueFromStandardStringEncoding(String encodedValue) {
+				throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+			}
+
+			@Override
+			public ColumnProvider getColumn(RowDefinition row) throws nz.co.gregs.dbvolution.exceptions.IncorrectRowProviderInstanceSuppliedException {
+				throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
 			}
 		}
 
@@ -286,11 +298,7 @@ public class TypeAdaptorUsabilityTest {
 		}
 	}
 
-// not trying to support just yet
-//    @Ignore
-//    @Test
-	public
-			void stringFieldAdaptedAsCustomQDT_whenAdaptingOnComplexPOJOTypes() {
+	public void stringFieldAdaptedAsCustomQDT_whenAdaptingOnComplexPOJOTypes() {
 		class MyDataType {
 
 			public MyDataType parse(String str) {
@@ -303,7 +311,7 @@ public class TypeAdaptorUsabilityTest {
 			}
 		}
 
-		class MyQDT extends QueryableDatatype {
+		class MyQDT extends QueryableDatatype<Object> {
 
 			@SuppressWarnings("unused")
 			public MyQDT() {
@@ -316,7 +324,7 @@ public class TypeAdaptorUsabilityTest {
 			}
 
 			@Override
-			protected String formatValueForSQLStatement(DBDatabase db) {
+			protected String formatValueForSQLStatement(DBDefinition db) {
 				return "unknown";
 			}
 
@@ -326,8 +334,18 @@ public class TypeAdaptorUsabilityTest {
 			}
 
 			@Override
-			protected Object getFromResultSet(DBDatabase database, ResultSet resultSet, String fullColumnName) throws SQLException {
+			protected Object getFromResultSet(DBDefinition database, ResultSet resultSet, String fullColumnName) throws SQLException {
 				return resultSet.getString(fullColumnName);
+			}
+
+			@Override
+			protected void setValueFromStandardStringEncoding(String encodedValue) {
+				throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+			}
+
+			@Override
+			public ColumnProvider getColumn(RowDefinition row) throws nz.co.gregs.dbvolution.exceptions.IncorrectRowProviderInstanceSuppliedException {
+				throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
 			}
 		}
 

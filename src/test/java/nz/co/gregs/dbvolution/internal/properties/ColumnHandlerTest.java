@@ -2,9 +2,7 @@ package nz.co.gregs.dbvolution.internal.properties;
 
 import static nz.co.gregs.dbvolution.internal.properties.PropertyMatchers.*;
 import static org.hamcrest.Matchers.*;
-import static org.junit.Assert.*;
-
-import java.util.List;
+import static org.hamcrest.MatcherAssert.assertThat;
 
 import nz.co.gregs.dbvolution.annotations.DBColumn;
 import nz.co.gregs.dbvolution.annotations.DBPrimaryKey;
@@ -27,7 +25,7 @@ public class ColumnHandlerTest {
 			public int field;
 		}
 
-		ColumnHandler handler = columnHandlerOf(TestClass.class, "field");
+		ColumnHandler<?> handler = columnHandlerOf(TestClass.class, "field");
 		assertThat(handler.isColumn(), is(true));
 	}
 
@@ -41,7 +39,7 @@ public class ColumnHandlerTest {
 			}
 		}
 
-		ColumnHandler handler = columnHandlerOf(TestClass.class, "property");
+		ColumnHandler<?> handler = columnHandlerOf(TestClass.class, "property");
 		assertThat(handler.isColumn(), is(true));
 	}
 
@@ -53,7 +51,7 @@ public class ColumnHandlerTest {
 			public int field;
 		}
 
-		ColumnHandler handler = columnHandlerOf(TestClass.class, "field");
+		ColumnHandler<?> handler = columnHandlerOf(TestClass.class, "field");
 		assertThat(handler.isColumn(), is(true));
 	}
 
@@ -64,7 +62,7 @@ public class ColumnHandlerTest {
 			public DBInteger field;
 		}
 
-		ColumnHandler handler = columnHandlerOf(TestClass.class, "field");
+		ColumnHandler<?> handler = columnHandlerOf(TestClass.class, "field");
 		assertThat(handler.isColumn(), is(false));
 	}
 
@@ -77,7 +75,7 @@ public class ColumnHandlerTest {
 			public DBInteger field;
 		}
 
-		ColumnHandler handler = columnHandlerOf(TestClass.class, "field");
+		ColumnHandler<?> handler = columnHandlerOf(TestClass.class, "field");
 		assertThat(handler.isPrimaryKey(), is(true));
 	}
 
@@ -89,17 +87,17 @@ public class ColumnHandlerTest {
 			public DBInteger field;
 		}
 
-		ColumnHandler handler = columnHandlerOf(TestClass.class, "field");
+		ColumnHandler<?> handler = columnHandlerOf(TestClass.class, "field");
 		assertThat(handler.isPrimaryKey(), is(false));
 	}
 
-	private ColumnHandler columnHandlerOf(Class<?> clazz, String javaPropertyName) {
-		return new ColumnHandler(propertyOf(clazz, javaPropertyName));
+	private ColumnHandler<?> columnHandlerOf(Class<?> clazz, String javaPropertyName) {
+		return new ColumnHandler<>(propertyOf(clazz, javaPropertyName));
 	}
 
-	private JavaProperty propertyOf(Class<?> clazz, String javaPropertyName) {
-		List<JavaProperty> properties = privateFieldPublicBeanFinder.getPropertiesOf(clazz);
-		JavaProperty property = itemOf(properties, that(hasJavaPropertyName(javaPropertyName)));
+	private JavaProperty<?> propertyOf(Class<?> clazz, String javaPropertyName) {
+		var properties = privateFieldPublicBeanFinder.getPropertiesOf(clazz);
+		var property = itemOf(properties, that(hasJavaPropertyName(javaPropertyName)));
 		if (property == null) {
 			throw new IllegalArgumentException("No property found with java name '" + javaPropertyName + "'");
 		}

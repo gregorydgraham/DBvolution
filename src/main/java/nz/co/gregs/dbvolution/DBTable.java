@@ -15,24 +15,20 @@
  */
 package nz.co.gregs.dbvolution;
 
+import nz.co.gregs.dbvolution.databases.DBDatabase;
 import java.io.PrintStream;
 import java.sql.SQLException;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 import nz.co.gregs.dbvolution.actions.*;
 import nz.co.gregs.dbvolution.columns.ColumnProvider;
 import nz.co.gregs.dbvolution.datatypes.*;
 import nz.co.gregs.dbvolution.exceptions.AccidentalBlankQueryException;
+import nz.co.gregs.dbvolution.exceptions.AccidentalCartesianJoinException;
 import nz.co.gregs.dbvolution.exceptions.IncorrectRowProviderInstanceSuppliedException;
 import nz.co.gregs.dbvolution.exceptions.UnexpectedNumberOfRowsException;
-import nz.co.gregs.dbvolution.internal.properties.PropertyWrapper;
-import nz.co.gregs.dbvolution.internal.properties.PropertyWrapperDefinition;
-import nz.co.gregs.dbvolution.query.QueryOptions;
+import nz.co.gregs.dbvolution.expressions.SortProvider;
+import nz.co.gregs.dbvolution.internal.query.QueryOptions;
+import nz.co.gregs.separatedstring.util.MapList;
 
 /**
  * DBTable provides features for making simple queries on the database.
@@ -57,10 +53,6 @@ import nz.co.gregs.dbvolution.query.QueryOptions;
  * DBTable is a quick and easy API for targeted data retrieval; for more complex
  * needs, use {@link DBQuery}.
  *
- *
- * <p style="color: #F90;">Support DBvolution at
- * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
- *
  * @author Gregory Graham
  * @param <E> DBRow type
  */
@@ -69,7 +61,6 @@ public class DBTable<E extends DBRow> {
 	private E exemplar = null;
 	private E original = null;
 	private final DBDatabase database;
-	private DBQuery query = null;
 	private final QueryOptions options = new QueryOptions();
 
 	/**
@@ -82,7 +73,41 @@ public class DBTable<E extends DBRow> {
 		this.original = exampleRow;
 		exemplar = DBRow.copyDBRow(exampleRow);
 		this.database = database;
-		this.query = database.getDBQuery(exemplar);
+		if (!database.supportsDifferenceBetweenNullAndEmptyString()) {
+			options.setRequireEmptyStringForNullString(true);
+		}
+	}
+
+	private synchronized DBQuery getQuery(DBDatabase db, E example) {
+		DBQuery query = db.getDBQuery(example);
+		if (!db.supportsDifferenceBetweenNullAndEmptyString()) {
+			options.setRequireEmptyStringForNullString(true);
+		}
+		if (options.getRequireEmptyStringForNullString()) {
+			query.setReturnEmptyStringForNullString(true);
+		}
+		if (options.getRowLimit() > 0) {
+			query.setRowLimit(options.getRowLimit());
+		}
+		if (options.getSortColumns().length > 0) {
+			query.setSortOrder(options.getSortColumns());
+		}
+		query.setBlankQueryAllowed(options.isBlankQueryAllowed());
+		if (options.isMatchAny()) {
+			query.setToMatchAnyCondition();
+		} else if (options.isMatchAllConditions()) {
+			query.setToMatchAllConditions();
+		}
+		if (options.getTimeoutInMilliseconds() > 0) {
+			query.setTimeoutInMilliseconds(options.getTimeoutInMilliseconds());
+		} else {
+			query.setTimeoutToForever();
+		}
+		query.setQueryLabel(options.getQueryLabel());
+		query.setRawSQL(options.getRawSQL());
+		query.setPrintSQLBeforeExecution(options.getPrintSQLBeforeExecution());
+
+		return query;
 	}
 
 	/**
@@ -98,13 +123,10 @@ public class DBTable<E extends DBRow> {
 	 * @param <E> DBRow type
 	 * @param database database
 	 * @param example example
-	 * <p style="color: #F90;">Support DBvolution at
-	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
-	 *
 	 * @return an instance of the supplied example
 	 */
 	public static <E extends DBRow> DBTable<E> getInstance(DBDatabase database, E example) {
-		DBTable<E> dbTable = new DBTable<E>(database, example);
+		DBTable<E> dbTable = new DBTable<>(database, example);
 		return dbTable;
 	}
 
@@ -125,15 +147,16 @@ public class DBTable<E extends DBRow> {
 	 * Throws AccidentalBlankQueryException if you haven't specifically allowed
 	 * blank queries with setBlankQueryAllowed(boolean)
 	 *
-	 * <p style="color: #F90;">Support DBvolution at
-	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
-	 *
 	 * @return all the appropriate rows of the table from the database;
 	 * @throws SQLException database exceptions
+	 * @throws nz.co.gregs.dbvolution.exceptions.AccidentalBlankQueryException
+	 * Thrown when no conditions are detectable within the query and blank queries
+	 * have not been explicitly set with {@link DBQuery#setBlankQueryAllowed(boolean)
+	 * } or similar.
 	 */
-	public List<E> getAllRows() throws SQLException {
-		query.refreshQuery();
-		applyConfigs();
+	public List<E> getAllRows() throws SQLException, AccidentalCartesianJoinException, AccidentalBlankQueryException {
+		DBQuery query = getQuery(database, exemplar);
+
 		List<E> allInstancesOf = query.getAllInstancesOf(exemplar);
 		if (options.getRowLimit() > 0 && allInstancesOf.size() > options.getRowLimit()) {
 			final int firstItemOfPage = options.getPageIndex() * options.getRowLimit();
@@ -147,13 +170,10 @@ public class DBTable<E extends DBRow> {
 	/**
 	 * Synonym for {@link #getAllRows()}
 	 *
-	 * <p style="color: #F90;">Support DBvolution at
-	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
-	 *
 	 * @return all the appropriate rows 1 Database exceptions may be thrown
 	 * @throws java.sql.SQLException java.sql.SQLException
 	 */
-	public List<E> toList() throws SQLException {
+	public List<E> toList() throws SQLException, AccidentalCartesianJoinException, AccidentalBlankQueryException {
 		return getAllRows();
 	}
 
@@ -173,8 +193,6 @@ public class DBTable<E extends DBRow> {
 	 * {@code List<MyRow> myRows = myTable.toList();}
 	 *
 	 * @param example	example
-	 * <p style="color: #F90;">Support DBvolution at
-	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
 	 *
 	 * @return All the rows that match the example 1 Database exceptions may be
 	 * thrown
@@ -182,9 +200,8 @@ public class DBTable<E extends DBRow> {
 	 * @see QueryableDatatype
 	 * @see DBRow
 	 */
-	public List<E> getRowsByExample(E example) throws SQLException {
+	public List<E> getRowsByExample(E example) throws SQLException, AccidentalCartesianJoinException, AccidentalBlankQueryException {
 		this.exemplar = DBRow.copyDBRow(example);
-		this.query = database.getDBQuery(exemplar);
 		return getAllRows();
 	}
 
@@ -198,14 +215,11 @@ public class DBTable<E extends DBRow> {
 	 * <p>
 	 * Functionally equivalent to {@link #getAllRows()}.get(0).
 	 *
-	 * <p style="color: #F90;">Support DBvolution at
-	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
-	 *
 	 * @return the first appropriate row in this DBTable
 	 * @throws java.sql.SQLException java.sql.SQLException
 	 *
 	 */
-	public E getFirstRow() throws SQLException {
+	public E getFirstRow() throws SQLException, AccidentalCartesianJoinException, AccidentalBlankQueryException {
 		List<E> allRows = getAllRows();
 		return allRows.get(0);
 	}
@@ -221,9 +235,6 @@ public class DBTable<E extends DBRow> {
 	 * <p>
 	 * {@link #getAllRows() } with the initial exemplar will be run.
 	 *
-	 * <p style="color: #F90;">Support DBvolution at
-	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
-	 *
 	 * @return the first row in this DBTableOLD instance
 	 * @throws java.sql.SQLException java.sql.SQLException
 	 * @throws nz.co.gregs.dbvolution.exceptions.UnexpectedNumberOfRowsException
@@ -231,7 +242,7 @@ public class DBTable<E extends DBRow> {
 	 *
 	 *
 	 */
-	public E getOnlyRow() throws SQLException, UnexpectedNumberOfRowsException {
+	public E getOnlyRow() throws SQLException, UnexpectedNumberOfRowsException, AccidentalCartesianJoinException, AccidentalBlankQueryException {
 		List<E> allRows = getAllRows();
 		if (allRows.size() != 1) {
 			throw new UnexpectedNumberOfRowsException(1, allRows.size());
@@ -256,8 +267,6 @@ public class DBTable<E extends DBRow> {
 	 * {@code MyRow myRow = (new DBTable<MyTableRow>()).getOnlyRowByExample(myExample);}
 	 *
 	 * @param example	example
-	 * <p style="color: #F90;">Support DBvolution at
-	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
 	 *
 	 * @return A list containing the rows that match the example 1 Database
 	 * exceptions may be thrown
@@ -287,8 +296,6 @@ public class DBTable<E extends DBRow> {
 	 *
 	 * @param example example
 	 * @param expectedNumberOfRows expectedNumberOfRows
-	 * <p style="color: #F90;">Support DBvolution at
-	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
 	 *
 	 * @return a DBTableOLD instance containing the rows that match the example 1
 	 * Database exceptions may be thrown
@@ -309,26 +316,30 @@ public class DBTable<E extends DBRow> {
 		}
 	}
 
-	private List<E> getRowsByPrimaryKeyObject(Object pkValue) throws SQLException, ClassNotFoundException {
-		DBRow newInstance = DBRow.getDBRow(exemplar.getClass());
-		final QueryableDatatype primaryKey = newInstance.getPrimaryKey();
-		if ((primaryKey instanceof DBString) && (pkValue instanceof String)) {
-			((DBString) primaryKey).permittedValues((String) pkValue);
-		} else if ((primaryKey instanceof DBInteger) && (pkValue instanceof Long)) {
-			((DBInteger) primaryKey).permittedValues((Long) pkValue);
-		} else if ((primaryKey instanceof DBInteger) && (pkValue instanceof Integer)) {
-			((DBInteger) primaryKey).permittedValues((Integer) pkValue);
-		} else if ((primaryKey instanceof DBNumber) && (pkValue instanceof Number)) {
-			((DBNumber) primaryKey).permittedValues((Number) pkValue);
-		} else if ((primaryKey instanceof DBDate) && (pkValue instanceof Date)) {
-			((DBDate) primaryKey).permittedValues((Date) pkValue);
-		} else if ((primaryKey instanceof DBBoolean) && (pkValue instanceof Boolean)) {
-			((DBBoolean) primaryKey).permittedValues((Boolean) pkValue);
-		} else {
-			throw new ClassNotFoundException("The value supplied is not in a supported class or it does not match the primary key class.");
+	private List<E> getRowsByPrimaryKeyObject(Object pkValue) throws SQLException, ClassNotFoundException, AccidentalCartesianJoinException, AccidentalBlankQueryException {
+		@SuppressWarnings("unchecked")
+		E newInstance = DBRow.getDBRow((Class<E>) exemplar.getClass());
+		final List<QueryableDatatype<?>> primaryKeys = newInstance.getPrimaryKeys();
+		for (QueryableDatatype<?> primaryKey : primaryKeys) {
+			if ((primaryKey instanceof DBString) && (pkValue instanceof String)) {
+				((DBString) primaryKey).permittedValues((String) pkValue);
+			} else if ((primaryKey instanceof DBInteger) && (pkValue instanceof Long)) {
+				((DBInteger) primaryKey).permittedValues((Long) pkValue);
+			} else if ((primaryKey instanceof DBInteger) && (pkValue instanceof Integer)) {
+				((DBInteger) primaryKey).permittedValues((Integer) pkValue);
+			} else if ((primaryKey instanceof DBNumber) && (pkValue instanceof Number)) {
+				((DBNumber) primaryKey).permittedValues((Number) pkValue);
+			} else if ((primaryKey instanceof DBDate) && (pkValue instanceof Date)) {
+				((DBDate) primaryKey).permittedValues((Date) pkValue);
+			} else if ((primaryKey instanceof DBBoolean) && (pkValue instanceof Boolean)) {
+				((DBBoolean) primaryKey).permittedValues((Boolean) pkValue);
+			} else {
+				throw new ClassNotFoundException("The value supplied is not in a supported class or it does not match the primary key class.");
+			}
 		}
-		this.query = database.getDBQuery(newInstance);
-		return getAllRows();
+		newInstance.setPrimaryKey(pkValue);
+		exemplar = newInstance;
+		return getQuery(database, newInstance).getAllInstancesOf(exemplar);
 	}
 
 	/**
@@ -340,25 +351,43 @@ public class DBTable<E extends DBRow> {
 	 * number.
 	 *
 	 * <p>
-	 * This method is zero-based so the first page is getAllRows(0).
+	 * This method is zero-based so the first page is getRowsForPage(0).
 	 *
 	 * @param pageNumber	pageNumber
-	 * <p style="color: #F90;">Support DBvolution at
-	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
 	 *
 	 * @return a list of the DBRows for the selected page. 1 Database exceptions
 	 * may be thrown
 	 * @throws java.sql.SQLException java.sql.SQLException
 	 */
-	public List<E> getRowsForPage(Integer pageNumber) throws SQLException {
-		query.refreshQuery();
-		applyConfigs();
+	public List<E> getRowsForPage(Integer pageNumber) throws SQLException, AccidentalCartesianJoinException, AccidentalBlankQueryException {
+		DBQuery query = getQuery(database, exemplar);
 		List<DBQueryRow> allRowsForPage = query.getAllRowsForPage(pageNumber);
-		Set<E> set = new HashSet<E>();
+		Set<E> set = new HashSet<>();
 		for (DBQueryRow row : allRowsForPage) {
 			set.add(row.get(exemplar));
 		}
-		return new ArrayList<E>(set);
+		return new ArrayList<>(set);
+	}
+
+	/**
+	 * Retrieves that DBRows for the page supplied.
+	 *
+	 * <p>
+	 * DBvolution supports paging through this method. Use {@link #setRowLimit(int)
+	 * } to set the page size and then call this method with the desired page
+	 * number.
+	 *
+	 * <p>
+	 * This method is zero-based so the first page is getPage(0).
+	 *
+	 * @param pageNumber	pageNumber
+	 *
+	 * @return a list of the DBRows for the selected page. 1 Database exceptions
+	 * may be thrown
+	 * @throws java.sql.SQLException java.sql.SQLException
+	 */
+	public List<E> getPage(Integer pageNumber) throws SQLException, AccidentalCartesianJoinException, AccidentalBlankQueryException {
+		return getRowsForPage(pageNumber);
 	}
 
 	/**
@@ -370,8 +399,6 @@ public class DBTable<E extends DBRow> {
 	 * annotation in the TableRow subclass.
 	 *
 	 * @param pkValue	pkValue
-	 * <p style="color: #F90;">Support DBvolution at
-	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
 	 *
 	 * @return a List containing the row(s) for the primary key 1 Database
 	 * exceptions may be thrown
@@ -379,7 +406,7 @@ public class DBTable<E extends DBRow> {
 	 * @throws java.lang.ClassNotFoundException java.lang.ClassNotFoundException
 	 *
 	 */
-	public List<E> getRowsByPrimaryKey(Number pkValue) throws SQLException, ClassNotFoundException {
+	public List<E> getRowsByPrimaryKey(Number pkValue) throws SQLException, ClassNotFoundException, AccidentalCartesianJoinException, AccidentalBlankQueryException {
 		return getRowsByPrimaryKeyObject(pkValue);
 	}
 
@@ -392,8 +419,6 @@ public class DBTable<E extends DBRow> {
 	 * annotation in the TableRow subclass.
 	 *
 	 * @param pkValue	pkValue
-	 * <p style="color: #F90;">Support DBvolution at
-	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
 	 *
 	 * @return a List containing the row(s) for the primary key 1 Database
 	 * exceptions may be thrown
@@ -401,7 +426,7 @@ public class DBTable<E extends DBRow> {
 	 * @throws java.lang.ClassNotFoundException java.lang.ClassNotFoundException
 	 *
 	 */
-	public List<E> getRowsByPrimaryKey(String pkValue) throws SQLException, ClassNotFoundException {
+	public List<E> getRowsByPrimaryKey(String pkValue) throws SQLException, ClassNotFoundException, AccidentalCartesianJoinException, AccidentalBlankQueryException {
 		return getRowsByPrimaryKeyObject(pkValue);
 	}
 
@@ -414,8 +439,6 @@ public class DBTable<E extends DBRow> {
 	 * annotation in the TableRow subclass.
 	 *
 	 * @param pkValue	pkValue
-	 * <p style="color: #F90;">Support DBvolution at
-	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
 	 *
 	 * @return a List containing the row(s) for the primary key 1 Database
 	 * exceptions may be thrown
@@ -423,7 +446,7 @@ public class DBTable<E extends DBRow> {
 	 * @throws java.lang.ClassNotFoundException java.lang.ClassNotFoundException
 	 *
 	 */
-	public List<E> getRowsByPrimaryKey(Date pkValue) throws SQLException, ClassNotFoundException {
+	public List<E> getRowsByPrimaryKey(Date pkValue) throws SQLException, ClassNotFoundException, AccidentalCartesianJoinException, AccidentalBlankQueryException {
 		return getRowsByPrimaryKeyObject(pkValue);
 	}
 
@@ -442,15 +465,38 @@ public class DBTable<E extends DBRow> {
 	 * <p>
 	 * See also {@link #getSQLForCount() getSQLForCount}
 	 *
-	 * <p style="color: #F90;">Support DBvolution at
-	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
-	 *
 	 * @return a String of the SQL that will be used by {@link #getAllRows() }. 1
 	 * Database exceptions may be thrown
+	 */
+	public String getSQLForQuery() {
+		return getQuery(database, exemplar).getSQLForQuery();
+	}
+
+	/**
+	 * Generates and returns the actual SQL that will be used by {@link #getRowsByExample(nz.co.gregs.dbvolution.DBRow)
+	 * } now.
+	 *
+	 * <p>
+	 * Good for debugging and great for DBAs, this is how you find out what
+	 * DBvolution is really doing.
+	 *
+	 * <p>
+	 * Generates the SQL query for retrieving the objects but does not execute the
+	 * SQL. Use
+	 * {@link #getRowsByExample(nz.co.gregs.dbvolution.DBRow) the get* methods} to
+	 * retrieve the rows.
+	 *
+	 * <p>
+	 * See also {@link #getSQLForCount() getSQLForCount} and {@link #getSQLForQuery()
+	 * }
+	 *
+	 * @param exemplar an example DBRow to base the query on
+	 * @return a String of the SQL that will be used by {@link #getRowsByExample(nz.co.gregs.dbvolution.DBRow)
+	 * }. 1 Database exceptions may be thrown
 	 * @throws java.sql.SQLException java.sql.SQLException
 	 */
-	public String getSQLForQuery() throws SQLException {
-		return query.getSQLForQuery();
+	public String getSQLForQuery(E exemplar) throws SQLException {
+		return getQuery(database, exemplar).getSQLForQuery();
 	}
 
 	/**
@@ -460,15 +506,12 @@ public class DBTable<E extends DBRow> {
 	 * Use this method to check the SQL that will be executed during
 	 * {@link #count() the count() method}
 	 *
-	 * <p style="color: #F90;">Support DBvolution at
-	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
-	 *
 	 * @return a String of the SQL query that will be used to count the rows
 	 * returned by this query 1 Database exceptions may be thrown
 	 * @throws java.sql.SQLException java.sql.SQLException
 	 */
 	public String getSQLForCount() throws SQLException {
-		return query.getSQLForCount();
+		return getQuery(database, exemplar).getSQLForCount();
 	}
 
 	/**
@@ -480,15 +523,12 @@ public class DBTable<E extends DBRow> {
 	 * number of rows that would have been returned had
 	 * {@link #getAllRows() getAllRows()} been called.
 	 *
-	 * <p style="color: #F90;">Support DBvolution at
-	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
-	 *
 	 * @return the number of rows that have or will be retrieved. 1 Database
 	 * exceptions may be thrown
 	 * @throws java.sql.SQLException java.sql.SQLException
 	 */
-	public Long count() throws SQLException {
-		return query.count();
+	public Long count() throws SQLException, AccidentalCartesianJoinException, AccidentalBlankQueryException {
+		return getQuery(database, exemplar).count();
 	}
 
 	/**
@@ -497,43 +537,47 @@ public class DBTable<E extends DBRow> {
 	 *
 	 * @throws java.sql.SQLException SQLException
 	 */
-	public void print() throws SQLException {
+	public void print() throws SQLException, AccidentalCartesianJoinException, AccidentalBlankQueryException {
 		print(System.out);
 	}
 
 	/**
-	 * the same as print() but allows you to specify the PrintStream required
+	 * The same as {@link #print()} but allows you to specify the PrintStream
+	 * required.
 	 *
-	 * myTable.printAllRows(System.err);
+	 * For example: myTable.printAllRows(System.err);
 	 *
 	 * @param stream stream
 	 * @throws java.sql.SQLException java.sql.SQLException
 	 */
-	public void print(PrintStream stream) throws SQLException {
+	public void print(PrintStream stream) throws SQLException, AccidentalCartesianJoinException, AccidentalBlankQueryException {
 		List<E> allRows = getAllRows();
-		for (E row : allRows) {
-			stream.println(row);
-		}
+		allRows.forEach(row -> stream.println(row));
+	}
+
+	/**
+	 * Inserts DBRow into the database.
+	 *
+	 * @param row the row to insert
+	 * @return a DBActionList of all the actions performed 1 Database exceptions
+	 * may be thrown
+	 * @throws java.sql.SQLException java.sql.SQLException
+	 */
+	public DBActionList insert(E row) throws SQLException {
+		return DBInsert.save(database, row);
 	}
 
 	/**
 	 * Inserts DBRows into the database.
 	 *
 	 * @param newRows	newRows
-	 * <p style="color: #F90;">Support DBvolution at
-	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
-	 *
 	 * @return a DBActionList of all the actions performed 1 Database exceptions
 	 * may be thrown
 	 * @throws java.sql.SQLException java.sql.SQLException
 	 */
+	@SafeVarargs
 	public final DBActionList insert(E... newRows) throws SQLException {
-		DBActionList actions = new DBActionList();
-		for (E row : newRows) {
-			actions.addAll(DBInsert.save(database, row));
-		}
-		query.refreshQuery();
-		return actions;
+		return insert(Arrays.asList(newRows));
 	}
 
 	/**
@@ -541,40 +585,169 @@ public class DBTable<E extends DBRow> {
 	 * Inserts DBRows into the database
 	 *
 	 * @param newRows	newRows
-	 * <p style="color: #F90;">Support DBvolution at
-	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
-	 *
 	 * @return a DBActionList of all the actions performed 1 Database exceptions
 	 * may be thrown
 	 * @throws java.sql.SQLException java.sql.SQLException
 	 */
 	public DBActionList insert(Collection<E> newRows) throws SQLException {
 		DBActionList changes = new DBActionList();
-		for (DBRow row : newRows) {
-			changes.addAll(DBInsert.save(database, row));
+		for (E row : newRows) {
+			changes.addAll(insert(row));
 		}
-		query.refreshQuery();
 		return changes;
 	}
 
 	/**
-	 * Deletes the rows from the database permanently.
 	 *
-	 * @param oldRows	oldRows
-	 * <p style="color: #F90;">Support DBvolution at
-	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 * Inserts DBRows into the database
 	 *
-	 * @return a {@link DBActionList} of the delete actions. 1 Database exceptions
+	 * @param row the row to insert
+	 * @return a DBActionList of all the actions performed 1 Database exceptions
 	 * may be thrown
 	 * @throws java.sql.SQLException java.sql.SQLException
 	 */
-	//@SafeVarargs
-	public final DBActionList delete(E... oldRows) throws SQLException {
-		DBActionList actions = new DBActionList();
-		for (E row : oldRows) {
-			actions.addAll(DBDelete.delete(database, row));
+	public DBActionList insertOrUpdate(E row) throws SQLException {
+		DBActionList changes = new DBActionList();
+		try {
+			changes.addAll(insert(row));
+		} catch (SQLException exc1) {
+			try {
+				changes.addAll(update(row));
+			} catch (SQLException exc2) {
+				throw exc1;
+			}
 		}
-		query.refreshQuery();
+		return changes;
+	}
+
+	/**
+	 *
+	 * Inserts DBRows into the database.
+	 *
+	 * @param rows the rows to insert
+	 * @return a DBActionList of all the actions performed 1 Database exceptions
+	 * may be thrown
+	 * @throws java.sql.SQLException java.sql.SQLException
+	 */
+	@SafeVarargs
+	public final DBActionList insertOrUpdate(E... rows) throws SQLException {
+		return this.insertOrUpdate(Arrays.asList(rows));
+	}
+
+	/**
+	 *
+	 * Inserts DBRows into the database
+	 *
+	 * @param newRows	newRows
+	 * @return a DBActionList of all the actions performed 1 Database exceptions
+	 * may be thrown
+	 * @throws java.sql.SQLException java.sql.SQLException
+	 */
+	public DBActionList insertOrUpdate(Collection<E> newRows) throws SQLException {
+		DBActionList changes = new DBActionList();
+		for (E row : newRows) {
+			try {
+				changes.addAll(insert(row));
+			} catch (SQLException exc1) {
+				try {
+					changes.addAll(update(row));
+				} catch (SQLException exc2) {
+					throw exc1;
+				}
+			}
+		}
+		return changes;
+	}
+
+	protected DBActionList updateAnyway(E row) throws SQLException {
+		DBActionList actions = new DBActionList();
+		actions.addAll(DBUpdateForcedOnSimpleTypesUsingPrimaryKey.updateAnyway(database, row));
+		return actions;
+	}
+
+	protected DBActionList updateAnyway(List<E> rows) throws SQLException {
+		DBActionList actions = new DBActionList();
+		for (E row : rows) {
+			actions.addAll(updateAnyway(row));
+		}
+		return actions;
+	}
+
+	@SafeVarargs
+	public final DBActionList updateAnyway(E... rows) throws SQLException {
+		return updateAnyway(Arrays.asList(rows));
+	}
+
+	/**
+	 *
+	 * Inserts or updates DBRows into the correct tables automatically
+	 *
+	 * <p>
+	 * If the row is already defined an update is attempted, and an insert if the
+	 * update fails.</p>
+	 *
+	 * <p>
+	 * Otherwise the row is inserted, and an updated is attempted if the insert
+	 * fails</p>
+	 *
+	 * @param row a DBRow
+	 * @return a DBActionList of all the actions performed
+	 * @throws SQLException database exceptions
+	 */
+	public final DBActionList save(E row) throws SQLException {
+		DBActionList changes = new DBActionList();
+		DBActionList action;
+		if (row.getDefined()) {
+			try {
+				action = update(row);
+			} catch (SQLException sqlException) {
+				try {
+					action = insert(row);
+				} catch (SQLException exception2) {
+					throw sqlException;
+				}
+			}
+		} else {
+			try {
+				action = insert(row);
+			} catch (SQLException sqlException) {
+				try {
+					action = update(row);
+				} catch (SQLException exception2) {
+					throw sqlException;
+				}
+			}
+		}
+		changes.addAll(action);
+		return changes;
+	}
+
+	/**
+	 *
+	 * Inserts or updates DBRows into the correct tables automatically
+	 *
+	 * @param rows a DBRow
+	 * @return a DBActionList of all the actions performed
+	 * @throws SQLException database exceptions
+	 */
+	@SafeVarargs
+	public final DBActionList save(E... rows) throws SQLException {
+		return save(Arrays.asList(rows));
+	}
+
+	/**
+	 *
+	 * Inserts or updates DBRows into the correct tables automatically
+	 *
+	 * @param row a DBRow
+	 * @return a DBActionList of all the actions performed
+	 * @throws SQLException database exceptions
+	 */
+	public final DBActionList save(Collection<E> row) throws SQLException {
+		DBActionList actions = new DBActionList();
+		for (E e : row) {
+			actions.addAll(save(e));
+		}
 		return actions;
 	}
 
@@ -582,19 +755,29 @@ public class DBTable<E extends DBRow> {
 	 * Deletes the rows from the database permanently.
 	 *
 	 * @param oldRows	oldRows
-	 * <p style="color: #F90;">Support DBvolution at
-	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 * @return a {@link DBActionList} of the delete actions. 1 Database exceptions
+	 * may be thrown
+	 * @throws java.sql.SQLException java.sql.SQLException
+	 */
+	@SafeVarargs
+	public final DBActionList delete(E... oldRows) throws SQLException {
+		DBActionList actions = new DBActionList();
+		List<E> asList = Arrays.asList(oldRows);
+		actions.addAll(DBDelete.delete(database, asList));
+		return actions;
+	}
+
+	/**
+	 * Deletes the rows from the database permanently.
 	 *
+	 * @param oldRows	oldRows
 	 * @return a {@link DBActionList} of the delete actions. 1 Database exceptions
 	 * may be thrown
 	 * @throws java.sql.SQLException java.sql.SQLException
 	 */
 	public DBActionList delete(Collection<E> oldRows) throws SQLException {
 		DBActionList actions = new DBActionList();
-		for (E row : oldRows) {
-			actions.addAll(DBDelete.delete(database, row));
-		}
-		query.refreshQuery();
+		actions.addAll(DBDelete.delete(database, oldRows));
 		return actions;
 	}
 
@@ -606,17 +789,12 @@ public class DBTable<E extends DBRow> {
 	 * changes.
 	 *
 	 * @param oldRow	oldRow
-	 * <p style="color: #F90;">Support DBvolution at
-	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
-	 *
 	 * @return a DBActionList of the actions performed on the database 1 Database
 	 * exceptions may be thrown
 	 * @throws java.sql.SQLException java.sql.SQLException
 	 */
 	public DBActionList update(E oldRow) throws SQLException {
-		query.refreshQuery();
 		DBActionList updates = DBUpdate.update(database, oldRow);
-		oldRow.setSimpleTypesToUnchanged();
 		return updates;
 	}
 
@@ -625,9 +803,6 @@ public class DBTable<E extends DBRow> {
 	 * Updates Lists of DBRows on the database
 	 *
 	 * @param oldRows	oldRows
-	 * <p style="color: #F90;">Support DBvolution at
-	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
-	 *
 	 * @return a DBActionList of the actions performed on the database 1 Database
 	 * exceptions may be thrown
 	 * @throws java.sql.SQLException java.sql.SQLException
@@ -637,10 +812,8 @@ public class DBTable<E extends DBRow> {
 		for (E row : oldRows) {
 			if (row.hasChangedSimpleTypes()) {
 				changes.addAll(DBUpdate.update(database, row));
-				row.setSimpleTypesToUnchanged();
 			}
 		}
-		query.refreshQuery();
 		return changes;
 	}
 
@@ -651,8 +824,6 @@ public class DBTable<E extends DBRow> {
 	 * <p>
 	 * Requires the primary key field to be a DBNumber of DBInteger
 	 *
-	 * <p style="color: #F90;">Support DBvolution at
-	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
 	 *
 	 * @return a List of primary keys as Longs. 1 Database exceptions may be
 	 * thrown
@@ -660,14 +831,16 @@ public class DBTable<E extends DBRow> {
 	 * @see #getPrimaryKeysAsString()
 	 * @see #getAllRows()
 	 */
-	public List<Long> getPrimaryKeysAsLong() throws SQLException {
+	public List<Long> getPrimaryKeysAsLong() throws SQLException, AccidentalCartesianJoinException, AccidentalBlankQueryException {
 		List<E> allRows = getAllRows();
-		List<Long> longPKs = new ArrayList<Long>();
+		List<Long> longPKs = new ArrayList<>();
 		for (E row : allRows) {
-			QueryableDatatype primaryKey = row.getPrimaryKey();
-			if (DBNumber.class.isAssignableFrom(primaryKey.getClass())) {
-				DBNumber num = (DBNumber) primaryKey;
-				longPKs.add(num.longValue());
+			List<QueryableDatatype<?>> primaryKeys = row.getPrimaryKeys();
+			for (QueryableDatatype<?> primaryKey : primaryKeys) {
+				if (DBNumber.class.isAssignableFrom(primaryKey.getClass())) {
+					DBNumber num = (DBNumber) primaryKey;
+					longPKs.add(num.longValue());
+				}
 			}
 		}
 		return longPKs;
@@ -677,20 +850,20 @@ public class DBTable<E extends DBRow> {
 	 * Retrieves the rows for this table and returns the primary keys of the rows
 	 * as Strings.
 	 *
-	 * <p style="color: #F90;">Support DBvolution at
-	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
-	 *
 	 * @return a List of primary keys as Longs. 1 Database exceptions may be
 	 * thrown
 	 * @throws java.sql.SQLException java.sql.SQLException
 	 * @see #getPrimaryKeysAsString()
 	 * @see #getAllRows()
 	 */
-	public List<String> getPrimaryKeysAsString() throws SQLException {
+	public List<String> getPrimaryKeysAsString() throws SQLException, AccidentalCartesianJoinException, AccidentalBlankQueryException {
 		List<E> allRows = getAllRows();
-		List<String> stringPKs = new ArrayList<String>();
+		List<String> stringPKs = new ArrayList<>();
 		for (E row : allRows) {
-			stringPKs.add(row.getPrimaryKey().stringValue());
+			final List<QueryableDatatype<?>> primaryKeys = row.getPrimaryKeys();
+			for (QueryableDatatype<?> primaryKey : primaryKeys) {
+				stringPKs.add(primaryKey.stringValue());
+			}
 		}
 		return stringPKs;
 	}
@@ -699,25 +872,47 @@ public class DBTable<E extends DBRow> {
 	 * Compares 2 tables, presumably from different criteria or databases prints
 	 * the differences to System.out
 	 *
-	 * Should be updated to return the varying rows somehow
-	 *
 	 * @param secondTable : a comparable table
+	 * @return a collection of not found, and differing rows
 	 * @throws java.sql.SQLException java.sql.SQLException
 	 *
 	 */
-	public void compare(DBTable<E> secondTable) throws SQLException {
-		HashMap<String, E> secondMap = new HashMap<String, E>();
+	public DifferingRows<E> compare(DBTable<E> secondTable) throws SQLException, AccidentalCartesianJoinException, AccidentalBlankQueryException {
+		HashMap<String, E> secondMap = new HashMap<>();
 		for (E row : secondTable.getAllRows()) {
-			secondMap.put(row.getPrimaryKey().toString(), row);
+			secondMap.put(row.getPrimaryKeys().toString(), row);
 		}
+		DifferingRows<E> result = new DifferingRows<E>();
 		for (E row : this.getAllRows()) {
-			E foundRow = secondMap.get(row.getPrimaryKey().toString());
+			E foundRow = secondMap.get(row.getPrimaryKeys().toString());
 			if (foundRow == null) {
-				System.out.println("NOT FOUND: " + row);
+				result.addNotFoundRow(row);
 			} else if (!row.toString().equals(foundRow.toString())) {
-				System.out.println("DIFFERENT: " + row);
-				System.out.println("         : " + foundRow);
+				result.addDifferingRow(row, foundRow);
 			}
+		}
+		return result;
+	}
+
+	public static class DifferingRows<E> {
+
+		List<E> notFound = new ArrayList<>(0);
+		MapList<E, E> differing = new MapList<E, E>(0);
+
+		public void addNotFoundRow(E row) {
+			notFound.add(row);
+		}
+
+		public void addDifferingRow(E originalRow, E differingRow) {
+			differing.add(originalRow, differingRow);
+		}
+
+		public List<E> getNotFoundRows() {
+			return notFound;
+		}
+
+		public MapList<E, E> getDifferingRows() {
+			return differing;
 		}
 	}
 
@@ -732,9 +927,6 @@ public class DBTable<E extends DBRow> {
 	 * DBvolution.
 	 *
 	 * @param rowLimit	rowLimit
-	 * <p style="color: #F90;">Support DBvolution at
-	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
-	 *
 	 * @return this DBTable instance
 	 */
 	public DBTable<E> setRowLimit(int rowLimit) {
@@ -742,13 +934,21 @@ public class DBTable<E extends DBRow> {
 		return this;
 	}
 
-	private DBTable<E> applyRowLimit() {
-		if (options.getRowLimit() > 0) {
-			query.setRowLimit(options.getRowLimit());
-		} else {
-			query.clearRowLimit();
-		}
-		return this;
+	/**
+	 * Limit the query to only returning a certain number of rows
+	 *
+	 * <p>
+	 * Implements support of the LIMIT and TOP operators of many databases.
+	 *
+	 * <p>
+	 * Only the specified number of rows will be returned from the database and
+	 * DBvolution.
+	 *
+	 * @param rowLimit	rowLimit
+	 * @return this DBTable instance
+	 */
+	public DBTable<E> setPageSize(int rowLimit) {
+		return setRowLimit(rowLimit);
 	}
 
 	/**
@@ -757,13 +957,34 @@ public class DBTable<E extends DBRow> {
 	 * <p>
 	 * Al the rows will be returned from the database and DBvolution.
 	 *
-	 * <p style="color: #F90;">Support DBvolution at
-	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
-	 *
 	 * @return this DBTable instance
 	 */
 	public DBTable<E> clearRowLimit() {
 		this.options.setRowLimit(-1);
+		return this;
+	}
+
+	/**
+	 * Sets the sort order of properties (field and/or method) by the given
+	 * property object references.
+	 *
+	 * <p>
+	 * For example the following code snippet will sort by just the name column:
+	 * <pre>
+	 * Customer customer = ...;
+	 * customer.setSortOrder(customer.column(customer.name).ascending());
+	 * </pre>
+	 *
+	 * <p>
+	 * Requires that all {@literal orderColumns} be from the {@code baseRow}
+	 * instance to work.
+	 *
+	 *
+	 * @param sortColumns	sortColumns
+	 * @return this
+	 */
+	public DBTable<E> setSortOrder(SortProvider... sortColumns) {
+		this.options.setSortColumns(sortColumns);
 		return this;
 	}
 
@@ -784,13 +1005,14 @@ public class DBTable<E extends DBRow> {
 	 *
 	 *
 	 * @param sortColumns	sortColumns
-	 * <p style="color: #F90;">Support DBvolution at
-	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
-	 *
 	 * @return this
 	 */
 	public DBTable<E> setSortOrder(ColumnProvider... sortColumns) {
-		this.options.setSortColumns(sortColumns);
+		List<SortProvider> cols = new ArrayList<SortProvider>();
+		for (ColumnProvider sortColumn : sortColumns) {
+			cols.add(sortColumn.getSortProvider());
+		}
+		this.options.setSortColumns(cols.toArray(new SortProvider[]{}));
 		return this;
 	}
 
@@ -798,24 +1020,13 @@ public class DBTable<E extends DBRow> {
 	 * Removes the sort order add with {@link #setSortOrder(nz.co.gregs.dbvolution.columns.ColumnProvider...)
 	 * }.
 	 *
-	 * <p style="color: #F90;">Support DBvolution at
-	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
-	 *
 	 * @return this DBTable instance
 	 */
 	public DBTable<E> clearSortOrder() {
 		if (this.options.getSortColumns().length > 0) {
-			this.options.setSortColumns(new ColumnProvider[]{});
+			this.options.setSortColumns(new SortProvider[]{});
 		}
 		return this;
-	}
-
-	private void applySortOrder() {
-		if (options.getSortColumns().length > 0) {
-			this.query.setSortOrder(options.getSortColumns());
-		} else {
-			query.clearSortOrder();
-		}
 	}
 
 	/**
@@ -836,25 +1047,11 @@ public class DBTable<E extends DBRow> {
 	 *
 	 * @param allow - TRUE to allow blank queries, FALSE to return it to the
 	 * default setting.
-	 * <p style="color: #F90;">Support DBvolution at
-	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
-	 *
 	 * @return this DBTable instance
 	 */
 	public DBTable<E> setBlankQueryAllowed(boolean allow) {
 		this.options.setBlankQueryAllowed(allow);
 		return this;
-	}
-
-	private void applyBlankQueryAllowed() {
-		this.query.setBlankQueryAllowed(options.isBlankQueryAllowed());
-	}
-
-	private void applyConfigs() {
-		applyBlankQueryAllowed();
-		applyRowLimit();
-		applySortOrder();
-		applyMatchAny();
 	}
 
 	/**
@@ -885,14 +1082,6 @@ public class DBTable<E extends DBRow> {
 		options.setMatchAllConditions();
 	}
 
-	private void applyMatchAny() {
-		if (options.isMatchAny()) {
-			query.setToMatchAnyCondition();
-		} else if (options.isMatchAllConditions()) {
-			query.setToMatchAllConditions();
-		}
-	}
-
 	/**
 	 * Adds the specified raw SQL to the DBTable query.
 	 *
@@ -911,14 +1100,11 @@ public class DBTable<E extends DBRow> {
 	 * {@code  table.setRawSQL("and lower(name) in ('peugeot','hummer')")}.
 	 *
 	 * @param rawQuery	rawQuery
-	 * <p style="color: #F90;">Support DBvolution at
-	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
-	 *
 	 * @return this DBtable instance. 1 Database exceptions may be thrown
 	 * @throws java.sql.SQLException java.sql.SQLException
 	 */
 	public DBTable<E> setRawSQL(String rawQuery) throws SQLException {
-		query.setRawSQL(rawQuery);
+		options.setRawSQL(rawQuery);
 		return this;
 	}
 
@@ -937,27 +1123,24 @@ public class DBTable<E extends DBRow> {
 	 * @param <A>	DBRow type
 	 * @param fieldOfProvidedRow - the field/column that you need data for. Must
 	 * be from the exemplar
-	 * <p style="color: #F90;">Support DBvolution at
-	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
-	 *
 	 * @return a list of distinct values used in the column. 1 Database exceptions
 	 * may be thrown
 	 * @throws java.sql.SQLException java.sql.SQLException
 	 */
 	@SuppressWarnings("unchecked")
-	public <A> List<A> getDistinctValuesOfColumn(A fieldOfProvidedRow) throws AccidentalBlankQueryException, IncorrectRowProviderInstanceSuppliedException, SQLException {
-		ArrayList<A> returnList = new ArrayList<A>();
-		final PropertyWrapper fieldProp = original.getPropertyWrapperOf(fieldOfProvidedRow);
+	public <A> List<A> getDistinctValuesOfColumn(A fieldOfProvidedRow) throws IncorrectRowProviderInstanceSuppliedException, SQLException, AccidentalCartesianJoinException, AccidentalBlankQueryException {
+		List<A> returnList = new ArrayList<>();
+		final var fieldProp = original.getPropertyWrapperOf(fieldOfProvidedRow);
 		if (fieldProp == null) {
 			throw new IncorrectRowProviderInstanceSuppliedException();
 		}
-		final PropertyWrapperDefinition fieldDefn = fieldProp.getDefinition();
-		QueryableDatatype thisQDT = fieldDefn.getQueryableDatatype(exemplar);
+		final var fieldDefn = fieldProp.getPropertyWrapperDefinition();
+		QueryableDatatype<?> thisQDT = fieldDefn.getQueryableDatatype(exemplar);
 		exemplar.setReturnFields(thisQDT);
-		DBQuery distinctQuery = database.getDBQuery(exemplar);
+		DBQuery distinctQuery = getQuery(this.database, exemplar);
 		distinctQuery.setBlankQueryAllowed(true);
 		final ColumnProvider column = exemplar.column(thisQDT);
-		distinctQuery.setSortOrder(column);
+		distinctQuery.setSortOrder(column.getSortProvider().nullsLowest());
 		distinctQuery.addGroupByColumn(exemplar, column.getColumn().asExpression());
 		List<DBQueryRow> allRows = distinctQuery.getAllRows();
 		for (DBQueryRow dBQueryRow : allRows) {
@@ -967,7 +1150,74 @@ public class DBTable<E extends DBRow> {
 		return returnList;
 	}
 
-//	public void mustIntersectWith(DBQuery dbQuery) {
-//		this.query.mustIntersectWith(dbQuery);
-//	}
+	public void printSQLForQuery() {
+		System.out.println(this.getSQLForQuery());
+	}
+
+	public DBTable<E> setPrintSQLBeforeExecution(boolean b) {
+		options.setPrintSQLBeforeExecution(b);
+		return this;
+	}
+
+	public boolean getPrintSQLBeforeExecution() {
+		return options.getPrintSQLBeforeExecution();
+	}
+
+	/**
+	 * Changes the default timeout for this query.
+	 *
+	 * <p>
+	 * Use this method to set the exact timeout for the query.
+	 *
+	 * <p>
+	 * DBvolution defaults to a timeout of 10000milliseconds (10 seconds) to avoid
+	 * eternal queries. The actual timeout is based on the performance of the
+	 * application server.
+	 *
+	 * <p>
+	 * Use this method If you require a longer running query.
+	 *
+	 * @param milliseconds the number of milliseconds required to elapse
+	 * @return this query.
+	 */
+	public DBTable<E> setQueryTimeout(int milliseconds) {
+		options.setTimeoutInMilliseconds(milliseconds);
+		return this;
+	}
+
+	/**
+	 * Completely removes the timeout from this query.
+	 *
+	 * <p>
+	 * DBvolution defaults to a timeout of 10000milliseconds (10 seconds) to avoid
+	 * eternal queries.
+	 *
+	 * <p>
+	 * Use this method if you expect an extremely long query.
+	 *
+	 * @return this DBQuery object
+	 */
+	public DBTable<E> clearTimeout() {
+		options.clearTimeout();
+		return this;
+	}
+
+	public DBTable<E> setTimeoutToForever() {
+		options.setTimeoutToForever();
+		return this;
+	}
+
+	public DBTable<E> setQueryLabel(String queryLabel) {
+		this.options.setQueryLabel(queryLabel);
+		return this;
+	}
+
+	public String getQueryLabel() {
+		return this.options.getQueryLabel();
+	}
+
+	DBTable<E> setReturnEmptyStringForNullString(boolean b) {
+		options.setRequireEmptyStringForNullString(b);
+		return this;
+	}
 }

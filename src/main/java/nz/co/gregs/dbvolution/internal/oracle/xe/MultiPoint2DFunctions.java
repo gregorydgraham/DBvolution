@@ -15,28 +15,23 @@
  */
 package nz.co.gregs.dbvolution.internal.oracle.xe;
 
-import java.sql.SQLException;
-import java.sql.Statement;
+import nz.co.gregs.dbvolution.internal.FeatureAdd;
 
 /**
  *
- * <p style="color: #F90;">Support DBvolution at
- * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
  *
  * @author gregorygraham
  */
-public enum MultiPoint2DFunctions {
+public enum MultiPoint2DFunctions implements FeatureAdd {
 
 	/**
 	 *
 	 */
 	GETPOINTATINDEX(GeometryFunctions.GETPOINTATINDEX),
-
 	/**
 	 *
 	 */
 	NUMPOINTS("NUMBER", "p_geometry     IN MDSYS.SDO_GEOMETRY", " begin return p_geometry.sdo_ordinates.count/2; end;"),
-
 	/**
 	 *
 	 */
@@ -50,7 +45,6 @@ public enum MultiPoint2DFunctions {
 			+ "      p_geometry.SDO_ORDINATES\n"
 			+ "    );\n"
 			+ "END;"),
-
 	/**
 	 *
 	 */
@@ -64,12 +58,12 @@ public enum MultiPoint2DFunctions {
 			+ "      p_geometry.SDO_ORDINATES\n"
 			+ "    );\n"
 			+ "END;"),
-
 	/**
 	 *
 	 */
 	ASTEXT("VARCHAR", "p_geometry     IN MDSYS.SDO_GEOMETRY",
-			"     v_dims  PLS_INTEGER;    -- Number of dimensions in geometry\n"
+			""
+			+ "     v_dims  PLS_INTEGER;    -- Number of dimensions in geometry\n"
 			+ "     v_gtype NUMBER;         -- SDO_GTYPE of returned geometry\n"
 			+ "     v_count NUMBER;         -- SDO_GTYPE of returned geometry\n"
 			+ "     v_p     NUMBER := 1;    -- Index into ordinates array\n"
@@ -96,17 +90,18 @@ public enum MultiPoint2DFunctions {
 			+ "     -- Get the number of dimensions from the gtype\n"
 			+ "     v_dims := SUBSTR (p_geometry.SDO_GTYPE, 1, 1);\n"
 			+ "     v_gtype := (v_dims*1000) + 1;\n"
-			+ "     v_count := p_geometry.sdo_ordinates.count;\n"
+			+ "     if (p_geometry.sdo_ordinates IS NOT NULL) THEN\n"
+			+ "       v_count := p_geometry.sdo_ordinates.count;\n"
 			+ "     \n"
-			+ "     WHILE (v_p <= v_count)\n"
-			+ "     LOOP\n"
-			+ "       v_px := p_geometry.SDO_ORDINATES(v_p);\n"
-			+ "       v_py := p_geometry.SDO_ORDINATES(v_p+1);\n"
-			+ "       IF ( v_dims > 3 ) THEN\n"
-			+ "         v_pm := p_geometry.SDO_ORDINATES(v_p+3);\n"
-			+ "         v_pz := p_geometry.SDO_ORDINATES(v_p+2);\n"
-			+ "         v_wkt := v_wkt||v_sep||'('||v_px||' '||v_py||' '||v_pz||' '||v_pm||')';\n"
-			+ "       ELSIF ( v_dims = 3 ) THEN\n"
+			+ "       WHILE (v_p <= v_count)\n"
+			+ "       LOOP\n"
+			+ "         v_px := p_geometry.SDO_ORDINATES(v_p);\n"
+			+ "         v_py := p_geometry.SDO_ORDINATES(v_p+1);\n"
+			+ "         IF ( v_dims > 3 ) THEN\n"
+			+ "           v_pm := p_geometry.SDO_ORDINATES(v_p+3);\n"
+			+ "           v_pz := p_geometry.SDO_ORDINATES(v_p+2);\n"
+			+ "           v_wkt := v_wkt||v_sep||'('||v_px||' '||v_py||' '||v_pz||' '||v_pm||')';\n"
+			+ "         ELSIF ( v_dims = 3 ) THEN\n"
 			+ "           IF ( ST_isMeasured(p_geometry.SDO_GTYPE) ) THEN\n"
 			+ "             v_pm := p_geometry.SDO_ORDINATES(v_p+2);\n"
 			+ "             v_wkt := v_wkt||v_sep||'('||v_px||' '||v_py||' '||v_pm||')';\n"
@@ -114,13 +109,25 @@ public enum MultiPoint2DFunctions {
 			+ "             v_pz := p_geometry.SDO_ORDINATES(v_p+2);\n"
 			+ "             v_wkt := v_wkt||v_sep||'('||v_px||' '||v_py||' '||v_pz||')';\n"
 			+ "           END IF;\n"
-			+ "       ELSE\n"
+			+ "         ELSE\n"
 			+ "           v_wkt := v_wkt||v_sep||'('||v_px||' '||v_py||')';\n"
-			+ "       END IF;\n"
+			+ "         END IF;\n"
 			+ "      \n"
-			+ "      v_sep := ', ';\n"
-			+ "      v_p := v_p+v_dims;\n"
-			+ "    END LOOP;\n"
+			+ "        v_sep := ', ';\n"
+			+ "        v_p := v_p+v_dims;\n"
+			+ "      END LOOP;\n"
+			+ "    ELSIF (p_geometry.sdo_point IS NOT NULL) THEN\n"
+			+ "      v_px := p_geometry.SDO_POINT.X;\n"
+			+ "      v_py := p_geometry.SDO_POINT.Y;\n"
+			+ "      IF ( v_dims = 3 ) THEN\n"
+			+ "        v_pz := p_geometry.SDO_POINT.Z;\n"
+			+ "        v_wkt := v_wkt||v_sep||'('||v_px||' '||v_py||' '||v_pz||')';\n"
+			+ "      ELSE\n"
+			+ "        v_wkt := v_wkt||v_sep||'('||v_px||' '||v_py||')';\n"
+			+ "      END IF;\n"
+			+ "    ELSE\n"
+			+ "      return null;\n"
+			+ "    END IF;\n"
 			+ "    return v_wkt||')';\n"
 			+ "-- return 'MULTIPOINT ((), (), ...)';\n"
 			+ "end;"
@@ -147,22 +154,18 @@ public enum MultiPoint2DFunctions {
 		return "DBV_MP2D_" + name();
 	}
 
-	/**
-	 *
-	 * @param stmt
-	 * @throws SQLException
-	 */
-	public void add(Statement stmt) throws SQLException {
-		try {
-			if (!this.code.isEmpty()) {
-				final String createFn = "CREATE OR REPLACE FUNCTION " + this + "(" + this.parameters + ")\n"
-						+ "    RETURN " + this.returnType
-						+ " AS \n" + "\n" + this.code;
-				System.out.println(createFn);
-				stmt.execute(createFn);
-			}
-		} catch (SQLException ex) {
-			;
+	public String toSQLString(String parameters) {
+		return toString() + "(" + parameters + ")";
+	}
+
+	@Override
+	public String[] createSQL() {
+		if (!this.code.isEmpty()) {
+			final String create = "CREATE OR REPLACE FUNCTION " + this + "(" + this.parameters + ")\n"
+					+ "    RETURN " + this.returnType
+					+ " AS \n" + "\n" + this.code;
+			return new String[]{create};
 		}
+		return new String[]{};
 	}
 }

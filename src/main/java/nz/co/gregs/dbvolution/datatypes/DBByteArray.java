@@ -16,13 +16,20 @@
 package nz.co.gregs.dbvolution.datatypes;
 
 import java.io.*;
+import static java.nio.charset.StandardCharsets.UTF_8;
 import java.sql.*;
 import java.util.*;
 import java.util.logging.*;
 import nz.co.gregs.dbvolution.*;
+import nz.co.gregs.dbvolution.columns.ByteArrayColumn;
+import nz.co.gregs.dbvolution.columns.LargeObjectColumn;
 import nz.co.gregs.dbvolution.databases.definitions.DBDefinition;
 import nz.co.gregs.dbvolution.exceptions.DBRuntimeException;
+import nz.co.gregs.dbvolution.exceptions.IncorrectRowProviderInstanceSuppliedException;
 import nz.co.gregs.dbvolution.expressions.LargeObjectExpression;
+import nz.co.gregs.dbvolution.query.RowDefinition;
+import nz.co.gregs.dbvolution.results.ByteArrayResult;
+import nz.co.gregs.dbvolution.utility.comparators.ByteArrayComparator;
 import org.apache.commons.codec.binary.Base64;
 
 /**
@@ -41,15 +48,19 @@ import org.apache.commons.codec.binary.Base64;
  * <p>
  * DBByteArray is the standard type of {@link DBLargeObject BLOB columns}.
  *
+ * @deprecated DBByteArray does not correctly differentiate between CLOB and
+ * BLOB producing inconsistencies between databases. Move to
+ * {@link DBLargeBinary} for binaries like images or {@link DBLargeText} for
+ * XML, HTML, or other large text values.
  * <p style="color: #F90;">Support DBvolution at
  * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
- *
  * @author Gregory Graham
  */
-public class DBByteArray extends DBLargeObject {
+@Deprecated()
+public class DBByteArray extends DBLargeObject<byte[]> implements ByteArrayResult{
 
 	private static final long serialVersionUID = 1;
-	transient BufferedInputStream byteStream = null;
+	transient InputStream byteStream = null;
 
 	/**
 	 * The Default constructor for a DBByteArray.
@@ -69,7 +80,21 @@ public class DBByteArray extends DBLargeObject {
 	 *
 	 * @param aThis an expression that will result in a large object value
 	 */
-	public DBByteArray(LargeObjectExpression aThis) {
+	public DBByteArray(ByteArrayResult aThis) {
+		super(aThis);
+	}
+
+	/**
+	 * Creates a column expression with a large object result from the expression
+	 * provided.
+	 *
+	 * <p>
+	 * Used in {@link DBReport}, and some {@link DBRow}, sub-classes to derive
+	 * data from the database prior to retrieval.
+	 *
+	 * @param aThis an expression that will result in a large object value
+	 */
+	public DBByteArray(byte[] aThis) {
 		super(aThis);
 	}
 
@@ -90,6 +115,7 @@ public class DBByteArray extends DBLargeObject {
 	 *
 	 * @param byteArray	byteArray
 	 */
+	@Override
 	public void setValue(byte[] byteArray) {
 		super.setLiteralValue(byteArray);
 		if (byteArray == null) {
@@ -109,7 +135,7 @@ public class DBByteArray extends DBLargeObject {
 	 * @param inputViaStream	inputViaStream
 	 */
 	public void setValue(InputStream inputViaStream) {
-		super.setLiteralValue(inputViaStream);
+		super.setLiteralValue(null);
 		byteStream = new BufferedInputStream(inputViaStream);
 	}
 
@@ -134,22 +160,11 @@ public class DBByteArray extends DBLargeObject {
 	 * @param string	string
 	 */
 	public void setValue(String string) {
-		setValue(string.getBytes());
+		setValue(string.getBytes(UTF_8));
 	}
 
-	@Override
-	void setValue(Object newLiteralValue) {
-		if (newLiteralValue instanceof byte[]) {
-			setValue((byte[]) newLiteralValue);
-		} else if (newLiteralValue instanceof DBByteArray) {
-			final DBByteArray valBytes = (DBByteArray) newLiteralValue;
-			setValue(valBytes.getValue());
-		} else if (newLiteralValue instanceof String) {
-			final String valBytes = (String) newLiteralValue;
-			setValue(valBytes.getBytes());
-		} else {
-			throw new ClassCastException(this.getClass().getSimpleName() + ".setValue() Called With A Non-Byte[]: Use only byte arrays with this class");
-		}
+	void setValue(DBByteArray newLiteralValue) {
+		setValue(newLiteralValue.getValue());
 	}
 
 	private byte[] getFromBinaryStream(ResultSet resultSet, String fullColumnName) throws SQLException {
@@ -183,49 +198,36 @@ public class DBByteArray extends DBLargeObject {
 	}
 
 	private byte[] getBytesFromInputStream(InputStream inputStream) {
+		byte[] bytes;
 		InputStream input = new BufferedInputStream(inputStream);
-		List<byte[]> byteArrays = new ArrayList<byte[]>();
+		List<byte[]> byteArrays = new ArrayList<>();
+		int totalBytesRead = 0;
 		try {
 			byte[] resultSetBytes;
-			final int byteArrayDefaultSize = 100000;
-			resultSetBytes = new byte[byteArrayDefaultSize];
+			resultSetBytes = new byte[100000];
 			int bytesRead = input.read(resultSetBytes);
 			while (bytesRead > 0) {
-				if (bytesRead == byteArrayDefaultSize) {
-					byteArrays.add(resultSetBytes);
-				} else {
-					byte[] shortBytes = new byte[bytesRead];
-					System.arraycopy(resultSetBytes, 0, shortBytes, 0, bytesRead);
-					byteArrays.add(shortBytes);
-				}
-				resultSetBytes = new byte[byteArrayDefaultSize];
+				totalBytesRead += bytesRead;
+				byteArrays.add(resultSetBytes);
+				resultSetBytes = new byte[100000];
 				bytesRead = input.read(resultSetBytes);
 			}
 		} catch (IOException ex) {
 			Logger.getLogger(DBByteArray.class.getName()).log(Level.SEVERE, null, ex);
 		}
-		return concatAllByteArrays(byteArrays);
+		bytes = new byte[totalBytesRead];
+		int bytesAdded = 0;
+		for (byte[] someBytes : byteArrays) {
+			System.arraycopy(someBytes, 0, bytes, bytesAdded, Math.min(someBytes.length, bytes.length - bytesAdded));
+			bytesAdded += someBytes.length;
+		}
+//			this.setValue(bytes);
+		return bytes;
 	}
 
-	public static byte[] concatAllByteArrays(List<byte[]> bytes) {
-		byte[] first = bytes.get(0);
-		bytes.remove(0);
-		byte[][] rest = bytes.toArray(new byte[][]{});
-		int totalLength = first.length;
-		for (byte[] array : rest) {
-			totalLength += array.length;
-		}
-		byte[] result = Arrays.copyOf(first, totalLength);
-		int offset = first.length;
-		for (byte[] array : rest) {
-			System.arraycopy(array, 0, result, offset, array.length);
-			offset += array.length;
-		}
-		return result;
-	}
-	
 	private byte[] getFromGetBytes(ResultSet resultSet, String fullColumnName) throws SQLException {
 		byte[] bytes = resultSet.getBytes(fullColumnName);
+//		this.setValue(bytes);
 		return bytes;
 	}
 
@@ -242,48 +244,35 @@ public class DBByteArray extends DBLargeObject {
 				this.setToNull();
 			} else {
 				BufferedReader input = new BufferedReader(inputReader);
-				List<char[]> byteArrays = new ArrayList<char[]>();
+				List<byte[]> byteArrays = new ArrayList<>();
+
+				int totalBytesRead = 0;
 				try {
 					char[] resultSetBytes;
-					final int byteArrayDefaultSize = 100000;
-					resultSetBytes = new char[byteArrayDefaultSize];
+					resultSetBytes = new char[100000];
 					int bytesRead = input.read(resultSetBytes);
 					while (bytesRead > 0) {
-						if (bytesRead == byteArrayDefaultSize) {
-							byteArrays.add(resultSetBytes);
-						} else {
-							char[] shortBytes = new char[bytesRead];
-							System.arraycopy(resultSetBytes, 0, shortBytes, 0, bytesRead);
-							byteArrays.add(shortBytes);
-						}
-						resultSetBytes = new char[byteArrayDefaultSize];
+						totalBytesRead += bytesRead;
+						byteArrays.add(String.valueOf(resultSetBytes).getBytes(UTF_8));
+						resultSetBytes = new char[100000];
 						bytesRead = input.read(resultSetBytes);
 					}
 				} catch (IOException ex) {
 					Logger.getLogger(DBByteArray.class.getName()).log(Level.SEVERE, null, ex);
+				} finally {
+					input.close();
 				}
-				char[] bytes = concatAllCharArrays(byteArrays);
-				decodeBuffer = Base64.decodeBase64(new String(bytes));
+				byte[] bytes = new byte[totalBytesRead];
+				int bytesAdded = 0;
+				for (byte[] someBytes : byteArrays) {
+					System.arraycopy(someBytes, 0, bytes, bytesAdded, Math.min(someBytes.length, bytes.length - bytesAdded));
+					bytesAdded += someBytes.length;
+				}
+				decodeBuffer = Base64.decodeBase64(bytes);
+//				this.setValue(decodeBuffer);
 			}
 		}
 		return decodeBuffer;
-	}
-
-	public static char[] concatAllCharArrays(List<char[]> chars) {
-		char[] first = chars.get(0);
-		chars.remove(0);
-		char[][] rest = chars.toArray(new char[][]{});
-		int totalLength = first.length;
-		for (char[] array : rest) {
-			totalLength += array.length;
-		}
-		char[] result = Arrays.copyOf(first, totalLength);
-		int offset = first.length;
-		for (char[] array : rest) {
-			System.arraycopy(array, 0, result, offset, array.length);
-			offset += array.length;
-		}
-		return result;
 	}
 
 	private byte[] getFromCLOB(ResultSet resultSet, String fullColumnName) throws SQLException {
@@ -295,27 +284,32 @@ public class DBByteArray extends DBLargeObject {
 			final Reader characterStream = clob.getCharacterStream();
 			try {
 				BufferedReader input = new BufferedReader(characterStream);
-				List<byte[]> byteArrays = new ArrayList<byte[]>();
+				List<byte[]> byteArrays = new ArrayList<>();
+
+				int totalBytesRead = 0;
 				try {
 					char[] resultSetBytes;
-					final int byteArrayDefaultSize = 100000;
-					resultSetBytes = new char[byteArrayDefaultSize];
-					int bytesRead = input.read(resultSetBytes);
-					while (bytesRead > 0) {
-						if (bytesRead == byteArrayDefaultSize) {
-							byteArrays.add(String.valueOf(resultSetBytes).getBytes());
-						} else {
-							char[] shortBytes = new char[bytesRead];
-							System.arraycopy(resultSetBytes, 0, shortBytes, 0, bytesRead);
-							byteArrays.add(String.valueOf(shortBytes).getBytes());
+					resultSetBytes = new char[100000];
+					try {
+						int bytesRead = input.read(resultSetBytes);
+						while (bytesRead > 0) {
+							totalBytesRead += bytesRead;
+							byteArrays.add(String.valueOf(resultSetBytes).getBytes(UTF_8));
+							resultSetBytes = new char[100000];
+							bytesRead = input.read(resultSetBytes);
 						}
-						resultSetBytes = new char[byteArrayDefaultSize];
-						bytesRead = input.read(resultSetBytes);
+					} finally {
+						input.close();
 					}
 				} catch (IOException ex) {
 					Logger.getLogger(DBByteArray.class.getName()).log(Level.SEVERE, null, ex);
 				}
-				bytes = concatAllByteArrays(byteArrays);
+				bytes = new byte[totalBytesRead];
+				int bytesAdded = 0;
+				for (byte[] someBytes : byteArrays) {
+					System.arraycopy(someBytes, 0, bytes, bytesAdded, Math.min(someBytes.length, bytes.length - bytesAdded));
+					bytesAdded += someBytes.length;
+				}
 			} finally {
 				try {
 					characterStream.close();
@@ -328,7 +322,7 @@ public class DBByteArray extends DBLargeObject {
 	}
 
 	@Override
-	public String formatValueForSQLStatement(DBDatabase db) {
+	public String formatValueForSQLStatement(DBDefinition db) {
 		throw new UnsupportedOperationException("Binary datatypes like " + this.getClass().getSimpleName() + " do not have a simple SQL representation. Do not call getSQLValue(), use the getInputStream() method instead.");
 	}
 
@@ -341,7 +335,6 @@ public class DBByteArray extends DBLargeObject {
 	 * @param originalFile	originalFile
 	 * <p style="color: #F90;">Support DBvolution at
 	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
-	 *
 	 * @return the byte[] of the contents of the file.
 	 * @throws java.io.FileNotFoundException java.io.FileNotFoundException
 	 * @throws java.io.IOException java.io.IOException
@@ -362,7 +355,6 @@ public class DBByteArray extends DBLargeObject {
 	 * @param originalFile	originalFile
 	 * <p style="color: #F90;">Support DBvolution at
 	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
-	 *
 	 * @return the byte[] of the contents of the file.
 	 * @throws java.io.FileNotFoundException java.io.FileNotFoundException
 	 * @throws java.io.IOException java.io.IOException
@@ -380,7 +372,6 @@ public class DBByteArray extends DBLargeObject {
 	 * @param originalFile	originalFile
 	 * <p style="color: #F90;">Support DBvolution at
 	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
-	 *
 	 * @return the byte[] of the contents of the file.
 	 * @throws java.io.FileNotFoundException java.io.FileNotFoundException
 	 * @throws java.io.IOException java.io.IOException
@@ -401,6 +392,11 @@ public class DBByteArray extends DBLargeObject {
 					totalBytesRead += bytesRead;
 				}
 			}
+			/*
+			 the above style is a bit tricky: it places bytes into the 'result' array;
+			 'result' is an output parameter;
+			 the while loop usually has a single iteration only.
+			 */
 		} finally {
 			if (input != null) {
 				input.close();
@@ -450,10 +446,19 @@ public class DBByteArray extends DBLargeObject {
 	 * @throws java.io.IOException java.io.IOException
 	 */
 	public void writeToFileSystem(File originalFile) throws FileNotFoundException, IOException {
-		boolean createdNewFile = false;
 		if (getLiteralValue() != null && originalFile != null) {
 			if (!originalFile.exists()) {
-				createdNewFile = originalFile.createNewFile();
+				boolean createNewFile = originalFile.createNewFile();
+				if (!createNewFile) {
+					boolean deleteResult = originalFile.delete();
+					if (!deleteResult) {
+						throw new IOException("Unable to delete file: " + originalFile.getPath() + " could not be deleted, check the permissions of the file, directory, drive, and current user.");
+					}
+					createNewFile = originalFile.createNewFile();
+					if (!createNewFile) {
+						throw new IOException("Unable to create file: " + originalFile.getPath() + " could not be created, check the permissions of the file, directory, drive, and current user.");
+					}
+				}
 			}
 			if (originalFile.exists()) {
 				OutputStream output = null;
@@ -499,12 +504,7 @@ public class DBByteArray extends DBLargeObject {
 	 * @return the byte[] value of this DBByteArray.
 	 */
 	public byte[] getBytes() {
-		final Object value = getLiteralValue();
-		if (value instanceof InputStream) {
-			return getBytesFromInputStream((InputStream) value);
-		} else {
-			return (byte[]) value;
-		}
+		return this.getLiteralValue();
 	}
 
 	@Override
@@ -513,7 +513,7 @@ public class DBByteArray extends DBLargeObject {
 		if (this.isNull()) {
 			return super.stringValue();
 		} else {
-			return new String(value);
+			return new String(value, UTF_8);
 		}
 	}
 
@@ -544,24 +544,23 @@ public class DBByteArray extends DBLargeObject {
 
 	@Override
 	public Set<DBRow> getTablesInvolved() {
-		return new HashSet<DBRow>();
+		return new HashSet<>();
 	}
 
 	@Override
-	protected Object getFromResultSet(DBDatabase database, ResultSet resultSet, String fullColumnName) throws SQLException {
+	protected byte[] getFromResultSet(DBDefinition defn, ResultSet resultSet, String fullColumnName) throws SQLException {
 		byte[] bytes = new byte[]{};
-		DBDefinition defn = database.getDefinition();
-		if (defn.prefersLargeObjectsReadAsBase64CharacterStream()) {
+		if (defn.prefersLargeObjectsReadAsBase64CharacterStream(this)) {
 			try {
 				bytes = getFromCharacterReader(resultSet, fullColumnName);
 			} catch (IOException ex) {
 				throw new DBRuntimeException("Unable To Set Value: " + ex.getMessage(), ex);
 			}
-		} else if (defn.prefersLargeObjectsReadAsBytes()) {
+		} else if (defn.prefersLargeObjectsReadAsBytes(this)) {
 			bytes = getFromGetBytes(resultSet, fullColumnName);
-		} else if (defn.prefersLargeObjectsReadAsCLOB()) {
+		} else if (defn.prefersLargeObjectsReadAsCLOB(this)) {
 			bytes = getFromCLOB(resultSet, fullColumnName);
-		} else if (defn.prefersLargeObjectsReadAsBLOB()) {
+		} else if (defn.prefersLargeObjectsReadAsBLOB(this)) {
 			bytes = getFromBLOB(resultSet, fullColumnName);
 		} else {
 			bytes = getFromBinaryStream(resultSet, fullColumnName);
@@ -574,4 +573,23 @@ public class DBByteArray extends DBLargeObject {
 		return false;
 	}
 
+	@Override
+	protected void setValueFromStandardStringEncoding(String encodedValue) {
+		throw new UnsupportedOperationException("DBByteArray does not support setValueFromStandardStringEncoding(String) yet."); //To change body of generated methods, choose Tools | Templates.
+	}
+
+	@Override
+	public ByteArrayColumn getColumn(RowDefinition row) throws IncorrectRowProviderInstanceSuppliedException{
+		return new ByteArrayColumn(row, this);
+	}
+
+	@Override
+	public Comparator<byte[]> getComparator() {
+		return new ByteArrayComparator();
+	}
+
+	@Override
+	public DBByteArray copy() {
+		return (DBByteArray) super.copy();
+	}
 }

@@ -16,9 +16,9 @@
 package nz.co.gregs.dbvolution.databases;
 
 import java.sql.SQLException;
+import java.util.Map;
 import javax.sql.DataSource;
-import nz.co.gregs.dbvolution.DBDatabase;
-import nz.co.gregs.dbvolution.databases.definitions.DBDefinition;
+import nz.co.gregs.dbvolution.databases.settingsbuilders.PostgresOverSSLSettingsBuilder;
 
 /**
  * Extends the PostgreSQL database connection by adding SSL.
@@ -30,7 +30,9 @@ import nz.co.gregs.dbvolution.databases.definitions.DBDefinition;
  */
 public class PostgresDBOverSSL extends PostgresDB {
 
-/**
+	public static final long serialVersionUID = 1l;
+
+	/**
 	 *
 	 * Provides a convenient constructor for DBDatabases that have configuration
 	 * details hardwired or are able to automatically retrieve the details.
@@ -52,16 +54,51 @@ public class PostgresDBOverSSL extends PostgresDB {
 	 *
 	 * @see DBDefinition
 	 */
-	protected PostgresDBOverSSL() {
+//	protected PostgresDBOverSSL() {
+//	}
+
+	/**
+	 * Creates a {@link DBDatabase } instance for the data source.
+	 *
+	 * @param ds	ds
+	 * @throws java.sql.SQLException database errors
+	 */
+	public PostgresDBOverSSL(DataSource ds) throws SQLException {
+		super(ds);
 	}
 
 	/**
 	 * Creates a {@link DBDatabase } instance for the data source.
 	 *
 	 * @param ds	ds
+	 * @throws java.sql.SQLException database errors
 	 */
-	public PostgresDBOverSSL(DataSource ds) {
-		super(ds);
+	public PostgresDBOverSSL(DatabaseConnectionSettings ds) throws SQLException {
+		this(new PostgresOverSSLSettingsBuilder().fromSettings(ds));
+	}
+
+	/**
+	 * Creates a DBDatabase for a PostgreSQL database over SSL.
+	 *
+	 * @param hostname host name
+	 * @param databaseName databaseName
+	 * @param port port
+	 * @param username username
+	 * @param password password
+	 * @param extras extra connection configuration settings specific to this
+	 * database
+	 * @throws java.sql.SQLException database errors
+	 */
+	public PostgresDBOverSSL(String hostname, int port, String databaseName, String username, String password, Map<String, String> extras) throws SQLException {
+		this(new PostgresOverSSLSettingsBuilder()
+				.setHost(hostname)
+				.setPort(port)
+				.setDatabaseName(databaseName)
+				.setUsername(username)
+				.setPassword(password)
+				.setExtras(extras)
+		);
+		//		super(hostname, port, databaseName, username, password, "ssl=true&sslfactory=org.postgresql.ssl.NonValidatingFactory" + (urlExtras == null || urlExtras.isEmpty() ? "" : "&" + urlExtras));
 	}
 
 	/**
@@ -73,9 +110,18 @@ public class PostgresDBOverSSL extends PostgresDB {
 	 * @param username username
 	 * @param password password
 	 * @param urlExtras urlExtras
+	 * @throws java.sql.SQLException database errors
 	 */
-	public PostgresDBOverSSL(String hostname, int port, String databaseName, String username, String password, String urlExtras) {
-		super(hostname, port, databaseName, username, password, "ssl=true&sslfactory=org.postgresql.ssl.NonValidatingFactory" + (urlExtras == null || urlExtras.isEmpty() ? "" : "&" + urlExtras));
+	@Deprecated
+	public PostgresDBOverSSL(String hostname, int port, String databaseName, String username, String password, String urlExtras) throws SQLException {
+		this(new PostgresOverSSLSettingsBuilder()
+				.setHost(hostname)
+				.setPort(port)
+				.setDatabaseName(databaseName)
+				.setUsername(username)
+				.setPassword(password)
+		);
+		//		super(hostname, port, databaseName, username, password, "ssl=true&sslfactory=org.postgresql.ssl.NonValidatingFactory" + (urlExtras == null || urlExtras.isEmpty() ? "" : "&" + urlExtras));
 	}
 
 	/**
@@ -86,14 +132,31 @@ public class PostgresDBOverSSL extends PostgresDB {
 	 * @param databaseName databaseName
 	 * @param port port
 	 * @param username username
+	 * @throws java.sql.SQLException database errors
 	 */
-	public PostgresDBOverSSL(String hostname, int port, String databaseName, String username, String password) {
-		this(hostname, port, databaseName, username, password, "");
+	public PostgresDBOverSSL(String hostname, int port, String databaseName, String username, String password) throws SQLException {
+		this(new PostgresOverSSLSettingsBuilder()
+				.setHost(hostname)
+				.setPort(port)
+				.setDatabaseName(databaseName)
+				.setUsername(username)
+				.setPassword(password)
+		);
+//		this(hostname, port, databaseName, username, password, "");
+	}
+
+	public PostgresDBOverSSL(PostgresOverSSLSettingsBuilder builder) throws SQLException {
+		super(builder);
 	}
 
 	@Override
 	public DBDatabase clone() throws CloneNotSupportedException {
 		return super.clone(); //To change body of generated methods, choose Tools | Templates.
+	}
+
+	@Override
+	public PostgresOverSSLSettingsBuilder getURLInterpreter() {
+		return new PostgresOverSSLSettingsBuilder();
 	}
 
 }

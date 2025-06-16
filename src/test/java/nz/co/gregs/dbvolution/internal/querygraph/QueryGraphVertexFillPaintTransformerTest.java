@@ -15,16 +15,17 @@
  */
 package nz.co.gregs.dbvolution.internal.querygraph;
 
+import nz.co.gregs.dbvolution.internal.query.DBRowClass;
 import java.awt.Color;
 import java.awt.Paint;
 import nz.co.gregs.dbvolution.example.Marque;
 import nz.co.gregs.dbvolution.generic.AbstractTest;
 import org.junit.After;
 import org.junit.AfterClass;
+import static org.junit.Assert.assertEquals;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
-import static org.junit.Assert.*;
 
 /**
  *
@@ -60,14 +61,13 @@ public class QueryGraphVertexFillPaintTransformerTest extends AbstractTest {
 	 */
 	@Test
 	public void testTransform() {
-		System.out.println("transform");
-		QueryGraphNode i = new QueryGraphNode((new Marque()).getClass());
+		QueryGraphNode i = new QueryGraphNode(new DBRowClass(new Marque()));
 		QueryGraphVertexFillPaintTransformer instance = new QueryGraphVertexFillPaintTransformer();
 		Paint expResult = Color.RED;
 		Paint result = instance.transform(i);
 		assertEquals(expResult, result);
 		expResult = Color.ORANGE;
-		i = new QueryGraphNode((new Marque()).getClass(), false);
+		i = new QueryGraphNode(new DBRowClass(new Marque()), false);
 		result = instance.transform(i);
 		assertEquals(expResult, result);
 	}

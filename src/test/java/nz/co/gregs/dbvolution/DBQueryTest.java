@@ -17,8 +17,10 @@ package nz.co.gregs.dbvolution;
 
 import java.sql.SQLException;
 import java.util.List;
+
 import java.util.SortedSet;
 import static org.hamcrest.Matchers.*;
+import static org.hamcrest.MatcherAssert.assertThat;
 import nz.co.gregs.dbvolution.example.CarCompany;
 import nz.co.gregs.dbvolution.example.CompanyLogo;
 import nz.co.gregs.dbvolution.example.LinkCarCompanyAndLogo;
@@ -27,10 +29,11 @@ import nz.co.gregs.dbvolution.example.Marque;
 import nz.co.gregs.dbvolution.example.MarqueSelectQuery;
 import nz.co.gregs.dbvolution.exceptions.IncorrectRowProviderInstanceSuppliedException;
 import nz.co.gregs.dbvolution.generic.AbstractTest;
-import org.junit.Assert;
 import org.junit.Test;
 import static junit.framework.TestCase.assertEquals;
 import static junit.framework.TestCase.assertTrue;
+import nz.co.gregs.dbvolution.example.CompanyText;
+import org.junit.Assert;
 
 /**
  *
@@ -54,32 +57,40 @@ public class DBQueryTest extends AbstractTest {
 		dbQuery.add(carCompany);
 		// make sure it works
 		List<DBQueryRow> allRows = dbQuery.getAllRows();
-		Assert.assertThat(allRows.size(), is(2));
+		assertThat(allRows.size(), is(2));
 	}
 
 	@Test
 	public void testQueryExecution() throws SQLException {
-		DBQuery dbQuery = database.getDBQuery();
-		CarCompany carCompany = new CarCompany();
-		carCompany.name.permittedValues("TOYOTA");
-		dbQuery.add(carCompany);
-		dbQuery.add(new Marque());
+		Object[][] tests = new Object[][]{
+			{"TOYOTA", 2, new long[]{1l, 4896300l}},
+			{"TATA", 0, null},
+			{"Ford", 1, 4893090}
+		};
+		for (Object[] test : tests) {
+			DBQuery dbQuery = database.getDBQuery();
+			CarCompany carCompany = new CarCompany();
+			carCompany.name.permittedValues(test[0]);
+			dbQuery.add(carCompany);
+			dbQuery.add(new Marque());
 
-		List<DBQueryRow> results = dbQuery.getAllRows();
-		dbQuery.print();
-		assertEquals(2, results.size());
+			List<DBQueryRow> results = dbQuery.getAllRows();
 
-		for (DBQueryRow queryRow : results) {
+			assertEquals(test[1], results.size());
 
-			CarCompany carCo = queryRow.get(carCompany);
-			String carCoName = carCo.name.toString();
+			for (DBQueryRow queryRow : results) {
 
-			Marque marque = queryRow.get(new Marque());
-			Long marqueUID = marque.getUidMarque().getValue();
+				CarCompany carCo = queryRow.get(carCompany);
+				String carCoName = carCo.name.toString();
 
-			System.out.println(carCoName + ": " + marqueUID);
-			assertTrue(carCoName.equals("TOYOTA"));
-			assertTrue(marqueUID == 1 || marqueUID == 4896300);
+				Marque marque = queryRow.get(new Marque());
+				Long marqueUID = marque.getUidMarque().getValue();
+
+				assertTrue(carCoName.equals(test[0]));
+				if (test[0] == "TOYOTA") {
+					assertTrue(marqueUID == 1 || marqueUID == 4896300);
+				}
+			}
 		}
 	}
 
@@ -95,7 +106,7 @@ public class DBQueryTest extends AbstractTest {
 		dbQuery.add(marque);
 
 		List<DBQueryRow> results = dbQuery.getAllRows();
-		dbQuery.print();
+
 		assertEquals(2, results.size());
 		boolean foundToyota = false;
 		boolean foundHyundai = false;
@@ -108,7 +119,6 @@ public class DBQueryTest extends AbstractTest {
 			marque = queryRow.get(new Marque());
 			Long marqueUID = marque.getUidMarque().getValue();
 
-			System.out.println(carCoName + ": " + marqueUID);
 			assertTrue(carCoName.equals("TOYOTA"));
 			assertTrue(marque.name.stringValue().equals("TOYOTA") || marque.name.stringValue().equals("HYUNDAI"));
 			if (marque.name.stringValue().equals("TOYOTA")) {
@@ -129,8 +139,7 @@ public class DBQueryTest extends AbstractTest {
 		DBQuery dbQuery = database.getDBQuery(carCompany, new Marque());
 
 		List<DBQueryRow> results = dbQuery.getAllRows();
-		System.out.println(dbQuery.getSQLForQuery());
-		dbQuery.print();
+
 		assertEquals(2, results.size());
 
 		for (DBQueryRow queryRow : results) {
@@ -141,7 +150,6 @@ public class DBQueryTest extends AbstractTest {
 			Marque marque = queryRow.get(new Marque());
 			Long marqueUID = marque.getUidMarque().getValue();
 
-			System.out.println(carCoName + ": " + marqueUID);
 			assertTrue(carCoName.equals("TOYOTA"));
 			assertTrue(marqueUID == 1 || marqueUID == 4896300);
 		}
@@ -154,8 +162,7 @@ public class DBQueryTest extends AbstractTest {
 		DBQuery dbQuery = database.getDBQuery(carCompany, new Marque());
 
 		List<DBQueryRow> results = dbQuery.getAllRows();
-		System.out.println(dbQuery.getSQLForQuery());
-		dbQuery.print();
+
 		assertEquals(2, results.size());
 
 		DBQueryRow[] rows = new DBQueryRow[2];
@@ -180,10 +187,9 @@ public class DBQueryTest extends AbstractTest {
 		}
 
 		if (toyota != null) {
-			List<Marque> relatedInstances = toyota.getRelatedInstancesFromQuery(dbQuery, new Marque());
+			List<Marque> relatedInstances = toyota.getRelatedInstancesFromQuery(dbQuery.getQueryDetails(), new Marque());
 
-			database.print(relatedInstances);
-			Assert.assertThat(relatedInstances.size(), is(2));
+			assertThat(relatedInstances.size(), is(2));
 		} else {
 			throw new RuntimeException("Unable To Find Toyota From The Query Results");
 		}
@@ -204,10 +210,23 @@ public class DBQueryTest extends AbstractTest {
 		marqueQuery.ignoreForeignKey(marqueQuery.carCompany);
 		query.setCartesianJoinsAllowed(true);
 		List<DBQueryRow> rows = query.getAllRows();
-//		System.out.println(query.getSQLForQuery());
-//
-//		System.out.println();
-//		System.out.println(rows);
+	}
+
+	@Test
+	public void thrownExceptionIfColumnIsNotInTheInstance() throws Exception {
+		Marque wrongMarque = new Marque();
+		Marque marqueQuery = new Marque();
+		marqueQuery.uidMarque.permittedValues(wrongMarque.uidMarque.getValue());
+
+		DBQuery query = database.getDBQuery(marqueQuery, new CarCompany());
+		try {
+			query.getDistinctCombinationsOfColumnValues(wrongMarque.carCompany);
+			throw new RuntimeException("IncorrectDBRowInstanceSuppliedException should have been thrown");
+		} catch (IncorrectRowProviderInstanceSuppliedException wrongDBRowEx) {
+		}
+		marqueQuery.ignoreForeignKey(marqueQuery.carCompany);
+		query.setCartesianJoinsAllowed(true);
+		List<DBQueryRow> rows = query.getAllRows();
 	}
 
 	@Test
@@ -219,16 +238,14 @@ public class DBQueryTest extends AbstractTest {
 		DBQuery query = database.getDBQuery(marqueQuery, new CarCompany());
 		try {
 			marqueQuery.ignoreForeignKeys(wrongMarque.carCompany, wrongMarque.carCompany);
-			throw new RuntimeException("IncorrectDBRowInstanceSuppliedException should have been thrown");
+			Assert.fail(IncorrectRowProviderInstanceSuppliedException.class.getSimpleName()
+					+" should have been thrown");
 		} catch (IncorrectRowProviderInstanceSuppliedException wrongDBRowEx) {
 		}
 		marqueQuery.ignoreForeignKey(marqueQuery.carCompany);
 		query.setCartesianJoinsAllowed(true);
 		List<DBQueryRow> rows = query.getAllRows();
-//		System.out.println(query.getSQLForQuery());
-//
-//		System.out.println();
-//		System.out.println(rows);
+		assertThat(rows.size(), is(0));
 	}
 
 	@Test
@@ -240,16 +257,14 @@ public class DBQueryTest extends AbstractTest {
 		DBQuery query = database.getDBQuery(marqueQuery, new CarCompany());
 		try {
 			marqueQuery.ignoreForeignKeys(marqueQuery.column(wrongMarque.carCompany), marqueQuery.column(wrongMarque.carCompany));
-			throw new RuntimeException("IncorrectDBRowInstanceSuppliedException should have been thrown");
+			Assert.fail(IncorrectRowProviderInstanceSuppliedException.class.getSimpleName()
+					+" should have been thrown");
 		} catch (IncorrectRowProviderInstanceSuppliedException wrongDBRowEx) {
 		}
 		marqueQuery.ignoreForeignKeys(marqueQuery.column(marqueQuery.carCompany), marqueQuery.column(marqueQuery.carCompany));
 		query.setCartesianJoinsAllowed(true);
 		List<DBQueryRow> rows = query.getAllRows();
-//		System.out.println(query.getSQLForQuery());
-//
-//		System.out.println();
-//		System.out.println(rows);
+		assertThat(rows.size(), is(0));
 	}
 
 	@Test
@@ -267,10 +282,6 @@ public class DBQueryTest extends AbstractTest {
 		marqueQuery.ignoreAllForeignKeysExcept(marqueQuery.carCompany);
 		query.setCartesianJoinsAllowed(true);
 		List<DBQueryRow> rows = query.getAllRows();
-//		System.out.println(query.getSQLForQuery());
-//
-//		System.out.println();
-//		System.out.println(rows);
 	}
 
 	@Test
@@ -278,13 +289,14 @@ public class DBQueryTest extends AbstractTest {
 		CarCompany carco = new CarCompany();
 		SortedSet<DBRow> relatedTables = database.getDBQuery(carco).getRelatedTables();
 
-		Assert.assertThat(relatedTables.size(), is(5));
+		assertThat(relatedTables.size(), is(6));
 		final DBRow[] rowArray = relatedTables.toArray(new DBRow[]{});
 		Assert.assertEquals(CompanyLogo.class, rowArray[0].getClass());
-		Assert.assertEquals(LinkCarCompanyAndLogo.class, rowArray[1].getClass());
-		Assert.assertEquals(LinkCarCompanyAndLogoWithPreviousLink.class, rowArray[2].getClass());
-		Assert.assertEquals(Marque.class, rowArray[3].getClass());
-		Assert.assertEquals(MarqueSelectQuery.class, rowArray[4].getClass());
+		Assert.assertEquals(CompanyText.class, rowArray[1].getClass());
+		Assert.assertEquals(LinkCarCompanyAndLogo.class, rowArray[2].getClass());
+		Assert.assertEquals(LinkCarCompanyAndLogoWithPreviousLink.class, rowArray[3].getClass());
+		Assert.assertEquals(Marque.class, rowArray[4].getClass());
+		Assert.assertEquals(MarqueSelectQuery.class, rowArray[5].getClass());
 	}
 
 	@Test
@@ -292,11 +304,11 @@ public class DBQueryTest extends AbstractTest {
 		CarCompany carco = new CarCompany();
 		SortedSet<DBRow> relatedTables = database.getDBQuery(carco).getReferencedTables();
 
-		Assert.assertThat(relatedTables.size(), is(0));
+		assertThat(relatedTables.size(), is(0));
 
 		relatedTables = database.getDBQuery(new Marque(), new LinkCarCompanyAndLogo()).getReferencedTables();
 
-		Assert.assertThat(relatedTables.size(), is(2));
+		assertThat(relatedTables.size(), is(2));
 
 		final DBRow[] rowArray = relatedTables.toArray(new DBRow[]{});
 		Assert.assertEquals(CarCompany.class, rowArray[0].getClass());

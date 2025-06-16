@@ -15,17 +15,14 @@
  */
 package nz.co.gregs.dbvolution.internal.oracle.xe;
 
-import java.sql.SQLException;
-import java.sql.Statement;
+import nz.co.gregs.dbvolution.internal.FeatureAdd;
 
 /**
  *
- * <p style="color: #F90;">Support DBvolution at
- * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
  *
  * @author gregory.graham
  */
-public enum GeometryFunctions {
+public enum GeometryFunctions implements FeatureAdd {
 
 	/**
 	 *
@@ -109,7 +106,6 @@ public enum GeometryFunctions {
 			+ "    return v_wkt||v_wktend;\n"
 			+ "-- return 'MULTIPOINT ((), (), ...)';\n"
 			+ "end;"),
-
 	/**
 	 *
 	 */
@@ -191,22 +187,38 @@ public enum GeometryFunctions {
 		return "DBV_GEOM_" + name();
 	}
 
-	/**
-	 *
-	 * @param stmt
-	 * @throws SQLException
-	 */
-	public void add(Statement stmt) throws SQLException {
-		try {
-			if (!this.code.isEmpty()) {
-				final String createFn = "CREATE OR REPLACE FUNCTION " + this + "(" + this.parameters + ")\n"
-						+ "    RETURN " + this.returnType
-						+ " AS \n" + "\n" + this.code;
-				System.out.println(createFn);
-				stmt.execute(createFn);
-			}
-		} catch (SQLException ex) {
-			;
+//	/**
+//	 *
+//	 * @param stmt the database
+//	 * @throws ExceptionDuringDatabaseFeatureSetup database errors
+//	 */
+//	public void add(Statement stmt) throws ExceptionDuringDatabaseFeatureSetup {
+//		try {
+//			if (!this.code.isEmpty()) {
+//				final String createFn = "CREATE OR REPLACE FUNCTION " + this + "(" + this.parameters + ")\n"
+//						+ "    RETURN " + this.returnType
+//						+ " AS \n" + "\n" + this.code;
+//				stmt.execute(createFn);
+//			}
+//		} catch (SQLException ex) {
+//			;
+//		}
+//	}
+	
+	@Override
+	public String featureName() {
+		return name();
+	}
+
+	@Override
+	public String[] createSQL() {
+		if (!this.code.isEmpty()) {
+			return new String[]{
+				"CREATE OR REPLACE FUNCTION " + this + "(" + this.parameters + ")\n"
+				+ "    RETURN " + this.returnType
+				+ " AS \n" + "\n" + this.code
+			};
 		}
+		return new String[]{};
 	}
 }

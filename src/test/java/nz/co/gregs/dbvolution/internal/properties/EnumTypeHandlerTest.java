@@ -2,9 +2,6 @@ package nz.co.gregs.dbvolution.internal.properties;
 
 import static nz.co.gregs.dbvolution.internal.properties.PropertyMatchers.*;
 import static org.hamcrest.Matchers.*;
-import static org.junit.Assert.*;
-
-import java.util.List;
 
 import junit.framework.AssertionFailedError;
 import nz.co.gregs.dbvolution.DBRow;
@@ -14,21 +11,21 @@ import nz.co.gregs.dbvolution.datatypes.DBEnumValue;
 import nz.co.gregs.dbvolution.exceptions.InvalidDeclaredTypeException;
 import nz.co.gregs.dbvolution.internal.properties.JavaPropertyFinder.PropertyType;
 import nz.co.gregs.dbvolution.internal.properties.JavaPropertyFinder.Visibility;
-import nz.co.gregs.dbvolution.internal.properties.EnumTypeHandler;
+import static org.hamcrest.MatcherAssert.assertThat;
 
 import org.junit.Test;
 
 @SuppressWarnings({"serial", "unused"})
 public class EnumTypeHandlerTest {
 
-	private JavaPropertyFinder privateFieldPublicBeanFinder = new JavaPropertyFinder(
+	private final JavaPropertyFinder privateFieldPublicBeanFinder = new JavaPropertyFinder(
 			Visibility.PRIVATE, Visibility.PUBLIC, null, (PropertyType[]) null);
 
 	@Test
 	public void acceptsInvalidDeclarationGivenNonColumn() {
 		class TestClass extends DBRow {
 
-			public DBEnum<?> field;
+			public DBEnum<?, ?> field;
 		}
 
 		try {
@@ -45,7 +42,7 @@ public class EnumTypeHandlerTest {
 		class TestClass extends DBRow {
 
 			@DBColumn
-			public DBEnum<MyIntegerEnum> field;
+			public DBEnum<MyIntegerEnum, Integer> field;
 		}
 
 		try {
@@ -74,7 +71,7 @@ public class EnumTypeHandlerTest {
 		class TestClass extends DBRow {
 
 			@DBColumn
-			public DBEnum<?> field;
+			public DBEnum<?, ?> field;
 		}
 
 		typeHandlerOf(TestClass.class, "field");
@@ -85,7 +82,7 @@ public class EnumTypeHandlerTest {
 		class TestClass extends DBRow {
 
 			@DBColumn
-			public DBEnum<? extends MyIntegerEnum> field;
+			public DBEnum<? extends MyIntegerEnum, Integer> field;
 		}
 
 		typeHandlerOf(TestClass.class, "field");
@@ -96,10 +93,10 @@ public class EnumTypeHandlerTest {
 		class TestClass extends DBRow {
 
 			@DBColumn
-			public DBEnum<MyIntegerEnum> field;
+			public DBEnum<MyIntegerEnum, Integer> field;
 		}
 
-		EnumTypeHandler enumTypeHandler = typeHandlerOf(TestClass.class, "field");
+		var enumTypeHandler = typeHandlerOf(TestClass.class, "field");
 		assertThat(enumTypeHandler.getEnumType(), is((Object) MyIntegerEnum.class));
 	}
 
@@ -108,10 +105,10 @@ public class EnumTypeHandlerTest {
 		class TestClass extends DBRow {
 
 			@DBColumn
-			public DBEnum<MyIntegerEnum> field;
+			public DBEnum<MyIntegerEnum, Integer> field;
 		}
 
-		EnumTypeHandler enumTypeHandler = typeHandlerOf(TestClass.class, "field");
+		var enumTypeHandler = typeHandlerOf(TestClass.class, "field");
 		assertThat(enumTypeHandler.getEnumLiteralValueType(), is((Object) Integer.class));
 	}
 
@@ -120,10 +117,10 @@ public class EnumTypeHandlerTest {
 		class TestClass extends DBRow {
 
 			@DBColumn
-			public DBEnum<MyStringEnum> field;
+			public DBEnum<MyStringEnum, String> field;
 		}
 
-		EnumTypeHandler enumTypeHandler = typeHandlerOf(TestClass.class, "field");
+		var enumTypeHandler = typeHandlerOf(TestClass.class, "field");
 		assertThat(enumTypeHandler.getEnumLiteralValueType(), is((Object) String.class));
 	}
 
@@ -147,14 +144,15 @@ public class EnumTypeHandlerTest {
 		}
 	}
 
-	private EnumTypeHandler typeHandlerOf(Class<?> clazz, String javaPropertyName) {
-		ColumnHandler columnHandler = new ColumnHandler(propertyOf(clazz, javaPropertyName));
-		return new EnumTypeHandler(propertyOf(clazz, javaPropertyName), columnHandler);
+	private EnumTypeHandler<?> typeHandlerOf(Class<?> clazz, String javaPropertyName) {
+		ColumnHandler<?> columnHandler = new ColumnHandler<>(propertyOf(clazz, javaPropertyName));
+		final JavaProperty<?> prop = propertyOf(clazz, javaPropertyName);
+		return new EnumTypeHandler<>(prop, columnHandler);
 	}
 
-	private JavaProperty propertyOf(Class<?> clazz, String javaPropertyName) {
-		List<JavaProperty> properties = privateFieldPublicBeanFinder.getPropertiesOf(clazz);
-		JavaProperty property = itemOf(properties, that(hasJavaPropertyName(javaPropertyName)));
+	private JavaProperty<?> propertyOf(Class<?> clazz, String javaPropertyName) {
+		var properties = privateFieldPublicBeanFinder.getPropertiesOf(clazz);
+		var property = itemOf(properties, that(hasJavaPropertyName(javaPropertyName)));
 		if (property == null) {
 			throw new IllegalArgumentException("No property found with java name '" + javaPropertyName + "'");
 		}

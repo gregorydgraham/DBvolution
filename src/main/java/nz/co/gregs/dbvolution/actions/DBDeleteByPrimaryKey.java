@@ -18,11 +18,11 @@ package nz.co.gregs.dbvolution.actions;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
-import nz.co.gregs.dbvolution.DBDatabase;
+import nz.co.gregs.dbvolution.databases.DBDatabase;
 import nz.co.gregs.dbvolution.DBRow;
 import nz.co.gregs.dbvolution.databases.DBStatement;
+import nz.co.gregs.dbvolution.databases.QueryIntention;
 import nz.co.gregs.dbvolution.databases.definitions.DBDefinition;
-import nz.co.gregs.dbvolution.datatypes.InternalQueryableDatatypeProxy;
 import nz.co.gregs.dbvolution.datatypes.QueryableDatatype;
 
 /**
@@ -30,17 +30,16 @@ import nz.co.gregs.dbvolution.datatypes.QueryableDatatype;
  * key.
  *
  * <p>
- * The best way to use this is by using {@link DBDelete#getDeletes(nz.co.gregs.dbvolution.DBDatabase, nz.co.gregs.dbvolution.DBRow...)
+ * The best way to use this is by using {@link DBDelete#getDeletes(nz.co.gregs.dbvolution.databases.DBDatabase, nz.co.gregs.dbvolution.DBRow...)
  * } to automatically use this action.
- *
- * <p style="color: #F90;">Support DBvolution at
- * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
  *
  * @author Gregory Graham
  */
 public class DBDeleteByPrimaryKey extends DBDelete {
 
-	private final List<DBRow> savedRows = new ArrayList<DBRow>();
+	private static final long serialVersionUID = 1l;
+
+	private final ArrayList<DBRow> savedRows = new ArrayList<>();
 
 	/**
 	 * Creates a DBDeleteByPrimaryKey action for the supplied example DBRow on the
@@ -50,15 +49,12 @@ public class DBDeleteByPrimaryKey extends DBDelete {
 	 * @param row the row to be deleted
 	 */
 	protected <R extends DBRow> DBDeleteByPrimaryKey(R row) {
-		super(row);
+		super(row, QueryIntention.DELETE_ROW);
 	}
 
 	private <R extends DBRow> DBDeleteByPrimaryKey(DBDatabase db, R row) throws SQLException {
-		super(row);
-		DBRow example = DBRow.getDBRow(row.getClass());
-		final QueryableDatatype pkQDT = example.getPrimaryKey();
-		InternalQueryableDatatypeProxy pkQDTProxy = new InternalQueryableDatatypeProxy(pkQDT);
-		pkQDTProxy.setValue(row.getPrimaryKey());
+		this(row);
+		DBRow example = DBRow.getPrimaryKeyExample(row);
 		List<DBRow> gotRows = db.get(example);
 		for (DBRow gotRow : gotRows) {
 			savedRows.add(gotRow);
@@ -66,24 +62,19 @@ public class DBDeleteByPrimaryKey extends DBDelete {
 	}
 
 	@Override
-	protected DBActionList execute(DBDatabase db) throws SQLException {
-		DBRow row = getRow();
-		final DBDeleteByPrimaryKey newDeleteAction = new DBDeleteByPrimaryKey(row);
+	public DBActionList execute(DBDatabase db) throws SQLException {
+		DBRow table = getRow();
+		final DBDeleteByPrimaryKey newDeleteAction = new DBDeleteByPrimaryKey(table);
 		DBActionList actions = new DBActionList(newDeleteAction);
-		DBRow example = DBRow.getDBRow(row.getClass());
-		final QueryableDatatype pkQDT = example.getPrimaryKey();
-		new InternalQueryableDatatypeProxy(pkQDT).setValue(row.getPrimaryKey());
+		DBRow example = DBRow.getPrimaryKeyExample(table);
 		List<DBRow> rowsToBeDeleted = db.get(example);
 		for (DBRow deletingRow : rowsToBeDeleted) {
 			newDeleteAction.savedRows.add(DBRow.copyDBRow(deletingRow));
 		}
-		DBStatement statement = db.getDBStatement();
-		try {
-			for (String str : getSQLStatements(db)) {
-				statement.execute(str);
+		try (DBStatement statement = db.getDBStatement()) {
+			for (String sql : getSQLStatements(db)) {
+				statement.execute("DELETE ROW", QueryIntention.DELETE_ROW,sql);
 			}
-		} finally {
-			statement.close();
 		}
 		return actions;
 	}
@@ -91,16 +82,23 @@ public class DBDeleteByPrimaryKey extends DBDelete {
 	@Override
 	public ArrayList<String> getSQLStatements(DBDatabase db) {
 		DBDefinition defn = db.getDefinition();
-		DBRow row = getRow();
+		DBRow table = getRow();
 
-		ArrayList<String> strs = new ArrayList<String>();
-		strs.add(defn.beginDeleteLine()
-				+ defn.formatTableName(row)
-				+ defn.beginWhereClause()
-				+ defn.formatColumnName(row.getPrimaryKeyColumnName())
-				+ defn.getEqualsComparator()
-				+ row.getPrimaryKey().toSQLString(db)
-				+ defn.endDeleteLine());
+		ArrayList<String> strs = new ArrayList<>();
+		StringBuilder sql = new StringBuilder(defn.beginDeleteLine()
+				+ defn.formatTableName(table)
+				+ defn.beginWhereClause());
+		List<QueryableDatatype<?>> primaryKeys = table.getPrimaryKeys();
+		String separatePKs = "";
+		for (QueryableDatatype<?> pk : primaryKeys) {
+			sql.append(separatePKs)
+					.append(defn.formatColumnName(table.getPropertyWrapperOf(pk).columnName()))
+					.append(defn.getEqualsComparator())
+					.append(pk.toSQLString(defn));
+			separatePKs = defn.beginAndLine();
+		}
+		sql.append(defn.endDeleteLine());
+		strs.add(sql.toString());
 		return strs;
 	}
 
@@ -131,11 +129,10 @@ public class DBDeleteByPrimaryKey extends DBDelete {
 	 * @throws SQLException Database actions can throw SQLException
 	 * <p style="color: #F90;">Support DBvolution at
 	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
-	 *
 	 * @return the list of actions required to delete all the rows.
 	 */
 	@Override
 	protected DBActionList getActions(DBDatabase db, DBRow row) throws SQLException {
 		return new DBActionList(new DBDeleteByPrimaryKey(db, row));
 	}
-}
+	}

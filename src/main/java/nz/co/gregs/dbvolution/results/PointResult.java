@@ -24,13 +24,15 @@ import nz.co.gregs.dbvolution.expressions.NumberExpression;
  *
  * @author gregorygraham
  */
+@Deprecated// use Point2DResult or similar instead
 public interface PointResult {
 
 	/**
 	 * Retrieves the X value of this point expression.
 	 *
 	 * <p>
-	 * Provides access to the X value of this point allowing for transforms and tests.
+	 * Provides access to the X value of this point allowing for transforms and
+	 * tests.
 	 *
 	 * <p style="color: #F90;">Support DBvolution at
 	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
@@ -43,7 +45,8 @@ public interface PointResult {
 	 * Retrieves the Y value of this point expression.
 	 *
 	 * <p>
-	 * Provides access to the Y value of this point allowing for transforms and tests.
+	 * Provides access to the Y value of this point allowing for transforms and
+	 * tests.
 	 *
 	 * <p style="color: #F90;">Support DBvolution at
 	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
@@ -51,5 +54,5 @@ public interface PointResult {
 	 * @return a NumberExpression of the Y coordinate.
 	 */
 	NumberExpression getY();
-	
+
 }

@@ -1,13 +1,13 @@
 package nz.co.gregs.dbvolution.internal.properties;
 
+import java.io.Serializable;
+import java.lang.reflect.InvocationTargetException;
 import java.util.List;
-import nz.co.gregs.dbvolution.DBDatabase;
 import nz.co.gregs.dbvolution.DBRow;
 import nz.co.gregs.dbvolution.annotations.AutoFillDuringQueryIfPossible;
 import nz.co.gregs.dbvolution.annotations.DBForeignKey;
-import nz.co.gregs.dbvolution.datatypes.DBEnumValue;
-import nz.co.gregs.dbvolution.datatypes.DBNumberStatistics;
-import nz.co.gregs.dbvolution.datatypes.QueryableDatatype;
+import nz.co.gregs.dbvolution.databases.definitions.DBDefinition;
+import nz.co.gregs.dbvolution.datatypes.*;
 import nz.co.gregs.dbvolution.exceptions.DBThrownByEndUserCodeException;
 import nz.co.gregs.dbvolution.expressions.BooleanExpression;
 import nz.co.gregs.dbvolution.expressions.DBExpression;
@@ -18,10 +18,8 @@ import nz.co.gregs.dbvolution.query.RowDefinition;
 /**
  * Abstracts a java field or bean-property on a target object as a
  * DBvolution-centric property, which contains values from a specific column in
- * a database table. Transparently handles all annotations associated with the
- * property, including type adaption.
- *
- * <p>
+ * a database table.Transparently handles all annotations associated with the
+ * property, including type adaption.<p>
  * Provides access to the meta-data defined on a single java property of a
  * class, and provides methods for reading and writing the value of the property
  * on a single bound object, given a specified database definition.
@@ -51,20 +49,30 @@ import nz.co.gregs.dbvolution.query.RowDefinition;
  * <p>
  * This class is not serializable. References to it within serializable classes
  * should be marked as {@code transient}.
+ *
+ * @param <ROW> the class referenced by the RowDefinitionInstanceWrapper
+ * @param <BASETYPE> the object returned by getValue on the QDT of this property
+ * @param <QDT> the class of the object returned by getQueryableDatatype
  */
-public class PropertyWrapper {
+public class PropertyWrapper<ROW extends RowDefinition, BASETYPE, QDT extends QueryableDatatype<BASETYPE>> implements Serializable {
 
-	private final RowDefinitionInstanceWrapper dbRowInstanceWrapper;
-	private final PropertyWrapperDefinition propertyDefinition;
-	private final Object target;
+	private static final long serialVersionUID = 1l;
+
+	private final RowDefinitionInstanceWrapper<ROW> dbRowInstanceWrapper;
+	private final PropertyWrapperDefinition<ROW, BASETYPE> propertyDefinition;
+	private final RowDefinition target;
+	private Boolean isAutomaticValueField;
 
 	/**
 	 * @param instanceWrapper instanceWrapper
 	 * @param classProperty the class-level wrapper
 	 * @param target the target object containing the given property
 	 */
-	public PropertyWrapper(RowDefinitionInstanceWrapper instanceWrapper,
-			PropertyWrapperDefinition classProperty, Object target) {
+	public PropertyWrapper(
+			RowDefinitionInstanceWrapper<ROW> instanceWrapper,
+			PropertyWrapperDefinition<ROW, BASETYPE> classProperty,
+			RowDefinition target
+	) {
 		this.dbRowInstanceWrapper = instanceWrapper;
 		this.propertyDefinition = classProperty;
 		this.target = target;
@@ -140,9 +148,9 @@ public class PropertyWrapper {
 	}
 
 	/**
-	 * Equality of this property wrapper definition, based on the java property
-	 * it wraps in a specific class, plus the underlying object reference
-	 * containing the wrapped property.
+	 * Equality of this property wrapper definition, based on the java property it
+	 * wraps in a specific class, plus the underlying object reference containing
+	 * the wrapped property.
 	 *
 	 * <p>
 	 * Two instances are identical if they wrap the same java property (field or
@@ -152,7 +160,6 @@ public class PropertyWrapper {
 	 * @param obj obj
 	 * <p style="color: #F90;">Support DBvolution at
 	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
-	 *
 	 * @return TRUE if this PropertyWrapper wraps the same property on the same
 	 * RowDefinition as the object supplied, FALSE otherwise
 	 */
@@ -167,7 +174,7 @@ public class PropertyWrapper {
 		if (!(obj instanceof PropertyWrapper)) {
 			return false;
 		}
-		PropertyWrapper other = (PropertyWrapper) obj;
+		var other = (PropertyWrapper<?, ?, ?>) obj;
 		if (propertyDefinition == null) {
 			if (other.propertyDefinition != null) {
 				return false;
@@ -224,8 +231,7 @@ public class PropertyWrapper {
 	 * <p style="color: #F90;">Support DBvolution at
 	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
 	 *
-	 * @return the String of the full class name of the containing
-	 * RowDefinition.
+	 * @return the String of the full class name of the containing RowDefinition.
 	 */
 	public String qualifiedJavaName() {
 		return propertyDefinition.qualifiedJavaName();
@@ -245,7 +251,8 @@ public class PropertyWrapper {
 	 *
 	 * @return the Class of the QDT used internally to handle database values.
 	 */
-	public Class<? extends QueryableDatatype> type() {
+	@SuppressWarnings("unchecked")
+	public Class<? extends QueryableDatatype<?>> type() {
 		return propertyDefinition.type();
 	}
 
@@ -256,12 +263,25 @@ public class PropertyWrapper {
 	 * @param refType refType
 	 * <p style="color: #F90;">Support DBvolution at
 	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 * @return TRUE if this property's internal QueryableDatatype is the similar
+	 * to that of the supplied instance.
+	 */
+	public boolean isInstanceOf(Class<? extends QueryableDatatype<?>> refType) {
+		return propertyDefinition.isInstanceOf(refType);
+	}
+
+	/**
+	 * Convenience method for testing the type of the QueryableDatatype.
+	 * Equivalent to {@code refType.isAssignableFrom(this.type())}.
+	 *
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
 	 *
 	 * @return TRUE if this property's internal QueryableDatatype is the similar
 	 * to that of the supplied instance.
 	 */
-	public boolean isInstanceOf(Class<? extends QueryableDatatype> refType) {
-		return propertyDefinition.isInstanceOf(refType);
+	public boolean isInstanceOfLargeObject() {
+		return propertyDefinition.isInstanceOfLargeObject();
 	}
 
 	/**
@@ -279,9 +299,8 @@ public class PropertyWrapper {
 	}
 
 	/**
-	 * Gets the annotated column name. Applies defaulting if the
-	 * {@code DBColumn} annotation is present but does not explicitly specify
-	 * the column name.
+	 * Gets the annotated column name. Applies defaulting if the {@code DBColumn}
+	 * annotation is present but does not explicitly specify the column name.
 	 *
 	 * <p>
 	 * If the {@code DBColumn} annotation is missing, this method returns
@@ -321,6 +340,18 @@ public class PropertyWrapper {
 	}
 
 	/**
+	 * Indicates whether this property is a primary key.
+	 *
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
+	 * @return {@code true} if this property is a primary key
+	 */
+	public boolean isNotPrimaryKey() {
+		return !isPrimaryKey();
+	}
+
+	/**
 	 * Indicates whether this property is a foreign key.
 	 *
 	 * <p style="color: #F90;">Support DBvolution at
@@ -339,8 +370,8 @@ public class PropertyWrapper {
 	 * <p style="color: #F90;">Support DBvolution at
 	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
 	 *
-	 * @return the referenced class if this property is a foreign key; null if
-	 * not a foreign key
+	 * @return the referenced class if this property is a foreign key; null if not
+	 * a foreign key
 	 */
 	public Class<? extends DBRow> referencedClass() {
 		return propertyDefinition.referencedClass();
@@ -361,8 +392,8 @@ public class PropertyWrapper {
 	}
 
 	/**
-	 * Gets the column name in the foreign table referenced by this property.
-	 * The referenced column is either explicitly indicated by use of the
+	 * Gets the column name in the foreign table referenced by this property. The
+	 * referenced column is either explicitly indicated by use of the
 	 * {@link DBForeignKey#column()} attribute, or it is implicitly the single
 	 * primary key of the referenced table if the {@link DBForeignKey#column()}
 	 * attribute is unset.
@@ -393,10 +424,10 @@ public class PropertyWrapper {
 	 * <p style="color: #F90;">Support DBvolution at
 	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
 	 *
-	 * @return the referenced property if this property is a foreign key; null
-	 * if not a foreign key
+	 * @return the referenced property if this property is a foreign key; null if
+	 * not a foreign key
 	 */
-	public PropertyWrapperDefinition referencedPropertyDefinitionIdentity() {
+	public PropertyWrapperDefinition<?, ?> referencedPropertyDefinitionIdentity() {
 		return propertyDefinition.referencedPropertyDefinitionIdentity();
 	}
 
@@ -413,8 +444,8 @@ public class PropertyWrapper {
 	}
 
 	/**
-	 * Gets the type of the code supplied by enum values. This is derived from
-	 * the {@link DBEnumValue} implementation in the enum.
+	 * Gets the type of the code supplied by enum values. This is derived from the
+	 * {@link DBEnumValue} implementation in the enum.
 	 *
 	 * <p style="color: #F90;">Support DBvolution at
 	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
@@ -427,8 +458,8 @@ public class PropertyWrapper {
 
 	/**
 	 * Indicates whether the value of the property can be retrieved. Bean
-	 * properties which are missing a 'getter' can not be read, but may be able
-	 * to be set.
+	 * properties which are missing a 'getter' can not be read, but may be able to
+	 * be set.
 	 *
 	 * <p style="color: #F90;">Support DBvolution at
 	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
@@ -454,9 +485,9 @@ public class PropertyWrapper {
 	}
 
 	/**
-	 * Indicates whether the property's type is adapted by an explicit or
-	 * implicit type adaptor. (Note: at present there is no support for implicit
-	 * type adaptors)
+	 * Indicates whether the property's type is adapted by an explicit or implicit
+	 * type adaptor. (Note: at present there is no support for implicit type
+	 * adaptors)
 	 *
 	 * <p style="color: #F90;">Support DBvolution at
 	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
@@ -476,38 +507,31 @@ public class PropertyWrapper {
 	 * Use {@link #isReadable()} beforehand to check whether the property can be
 	 * read.
 	 *
-	 * @param <A> the QDT type
-	 * <p style="color: #F90;">Support DBvolution at
-	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
-	 *
 	 * @return The queryableDatatype instance representing this property
 	 * @throws IllegalStateException if not readable (you should have called
 	 * isReadable() first)
-	 * @throws DBThrownByEndUserCodeException if any user code throws an
-	 * exception
+	 * @throws DBThrownByEndUserCodeException if any user code throws an exception
 	 */
 	@SuppressWarnings("unchecked")
-	public <A extends QueryableDatatype> A getQueryableDatatype() {
-		return (A) propertyDefinition.getQueryableDatatype(target);
+	public QDT getQueryableDatatype() {
+		return (QDT) propertyDefinition.getQueryableDatatype(target);
 	}
 
 	/**
-	 * Sets the DBvolution-centric value of the property. The value set may have
-	 * undergone type conversion to the target object's actual property type, if
-	 * a type adaptor is present.
-	 *
-	 * <p>
+	 * Sets the DBvolution-centric value of the property.The value set may have
+	 * undergone type conversion to the target object's actual property type, if a
+	 * type adaptor is present.<p>
 	 * Use {@link #isWritable()} beforehand to check whether the property can be
 	 * modified.
 	 *
 	 * @param value value
 	 * @throws IllegalStateException if not writable (you should have called
 	 * isWritable() first)
-	 * @throws DBThrownByEndUserCodeException if any user code throws an
-	 * exception
+	 * @throws DBThrownByEndUserCodeException if any user code throws an exception
 	 */
-	public void setQueryableDatatype(QueryableDatatype value) {
-		propertyDefinition.setQueryableDatatype(target, value);
+	@SuppressWarnings("unchecked")
+	public void setQueryableDatatype(QueryableDatatype<?> value) {
+		propertyDefinition.setQueryableDatatype(target, (QueryableDatatype<BASETYPE>) value);
 	}
 
 	/**
@@ -515,8 +539,8 @@ public class PropertyWrapper {
 	 * prior to type conversion to the DBvolution-centric type.
 	 *
 	 * <p>
-	 * In most cases you will not need to call this method, as type conversion
-	 * is done transparently via the {@link #getQueryableDatatype()} and
+	 * In most cases you will not need to call this method, as type conversion is
+	 * done transparently via the {@link #getQueryableDatatype()} and
 	 * {@link #setQueryableDatatype(QueryableDatatype)} methods.
 	 *
 	 * <p>
@@ -529,8 +553,7 @@ public class PropertyWrapper {
 	 * @return value
 	 * @throws IllegalStateException if not readable (you should have called
 	 * isReadable() first)
-	 * @throws DBThrownByEndUserCodeException if any user code throws an
-	 * exception
+	 * @throws DBThrownByEndUserCodeException if any user code throws an exception
 	 */
 	public Object rawJavaValue() {
 		return propertyDefinition.rawJavaValue(target);
@@ -541,8 +564,8 @@ public class PropertyWrapper {
 	 * without type conversion to/from the DBvolution-centric type.
 	 *
 	 * <p>
-	 * In most cases you will not need to call this method, as type conversion
-	 * is done transparently via the {@link #getQueryableDatatype()} and
+	 * In most cases you will not need to call this method, as type conversion is
+	 * done transparently via the {@link #getQueryableDatatype()} and
 	 * {@link #setQueryableDatatype(QueryableDatatype)} methods.
 	 *
 	 * <p>
@@ -552,8 +575,7 @@ public class PropertyWrapper {
 	 * @param value new value
 	 * @throws IllegalStateException if not writable (you should have called
 	 * isWritable() first)
-	 * @throws DBThrownByEndUserCodeException if any user code throws an
-	 * exception
+	 * @throws DBThrownByEndUserCodeException if any user code throws an exception
 	 */
 	public void setRawJavaValue(Object value) {
 		propertyDefinition.setRawJavaValue(target, value);
@@ -564,8 +586,8 @@ public class PropertyWrapper {
 	 * prior to type conversion to the DBvolution-centric type.
 	 *
 	 * <p>
-	 * In most cases you will not need to call this method, as type conversion
-	 * is done transparently via the {@link #getQueryableDatatype()} and
+	 * In most cases you will not need to call this method, as type conversion is
+	 * done transparently via the {@link #getQueryableDatatype()} and
 	 * {@link #setQueryableDatatype(QueryableDatatype)} methods. Use the
 	 * {@link #type()} method to get the DBv-centric property type, after type
 	 * conversion.
@@ -587,7 +609,7 @@ public class PropertyWrapper {
 	 *
 	 * @return the propertyDefinition
 	 */
-	public PropertyWrapperDefinition getDefinition() {
+	public PropertyWrapperDefinition<?, BASETYPE> getPropertyWrapperDefinition() {
 		return propertyDefinition;
 	}
 
@@ -599,7 +621,7 @@ public class PropertyWrapper {
 	 *
 	 * @return the RowDefinitionInstanceWrapper for this property.
 	 */
-	public RowDefinitionInstanceWrapper getRowDefinitionInstanceWrapper() {
+	public RowDefinitionInstanceWrapper<?> getRowDefinitionInstanceWrapper() {
 		return dbRowInstanceWrapper;
 	}
 
@@ -611,8 +633,8 @@ public class PropertyWrapper {
 	 * {@link DBExpression DBexpressions} like
 	 * {@link StringExpression}, {@link NumberExpression}, and
 	 * {@link BooleanExpression}. The often involve database columns using
-	 * {@link DBRow#column(java.lang.Boolean) the DBRow column methods} or
-	 * literal values using the, for instance, the StringExpression
+	 * {@link DBRow#column(java.lang.Boolean) the DBRow column methods} or literal
+	 * values using the, for instance, the StringExpression
 	 * {@link StringExpression#value(java.lang.String) value method}.
 	 *
 	 * <p style="color: #F90;">Support DBvolution at
@@ -639,9 +661,9 @@ public class PropertyWrapper {
 	}
 
 	/**
-	 * The names and aliases of this property as it will appear in a SELECT and WHERE
-	 * clauses.
-	 * 
+	 * The names and aliases of this property as it will appear in a SELECT and
+	 * WHERE clauses.
+	 *
 	 * <p>
 	 * Multiple names and aliases are supported for
 	 * {@link QueryableDatatype QueryableDatatypes} like
@@ -650,42 +672,24 @@ public class PropertyWrapper {
 	 * @param db db
 	 * <p style="color: #F90;">Support DBvolution at
 	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
-	 *
-	 * @return A map of all the selectable name and column aliases for this property.
+	 * @return A map of all the selectable name and column aliases for this
+	 * property.
 	 */
-	public List<PropertyWrapperDefinition.ColumnAspects> getColumnAspects(DBDatabase db) {
+	public List<ColumnAspects> getColumnAspects(DBDefinition db) {
 		final RowDefinition adapteeRowProvider = this.getRowDefinitionInstanceWrapper().adapteeRowDefinition();
-		return getDefinition().getColumnAspects(db, adapteeRowProvider);
+		return getPropertyWrapperDefinition().getColumnAspects(db, adapteeRowProvider);
 	}
-
-	/**
-	 * The name of this property as it will appear in a SELECT and WHERE
-	 * clauses.
-	 *
-	 * @param db db
-	 * <p style="color: #F90;">Support DBvolution at
-	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
-	 *
-	 * @return A String of the property for use in SELECT and WHERE clauses.
-	 */
-//	private String[] getSelectableName(DBDatabase db) {
-//		final RowDefinition adapteeRowProvider = this.getRowDefinitionInstanceWrapper().adapteeRowDefinition();
-//		return getDefinition().getSelectableName(db, adapteeRowProvider);
-//	}
 
 	/**
 	 * The alias to the column for use in the select clause and during value
 	 * retrieval
 	 *
-	 * @param db db
-	 * <p style="color: #F90;">Support DBvolution at
-	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
-	 *
+	 * @param defn db
 	 * @return the column alias for this property.
 	 */
-	public String[] getColumnAlias(DBDatabase db) {
+	public String[] getColumnAlias(DBDefinition defn) {
 		final RowDefinition actualRow = this.getRowDefinitionInstanceWrapper().adapteeRowDefinition();
-		return propertyDefinition.getColumnAlias(db, actualRow);
+		return propertyDefinition.getColumnAlias(defn, actualRow);
 	}
 
 	/**
@@ -693,9 +697,6 @@ public class PropertyWrapper {
 	 * table supplied
 	 *
 	 * @param table	table
-	 * <p style="color: #F90;">Support DBvolution at
-	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
-	 *
 	 * @return TRUE if the property wrapped is a foreign key reference to the
 	 * table supplied, otherwise FALSE.
 	 */
@@ -704,14 +705,22 @@ public class PropertyWrapper {
 	}
 
 	/**
+	 * Returns TRUE if the property wrapped is a foreign key reference to the
+	 * table supplied
+	 *
+	 * @return TRUE if the property wrapped is a foreign key reference to the
+	 * table supplied, otherwise FALSE.
+	 */
+	public boolean isRecursiveForeignKey() {
+		return propertyDefinition.isRecursiveForeignKey();
+	}
+
+	/**
 	 * Returns true if the property wrapped is an auto-incrementing column.
 	 *
 	 * <p>
-	 * This generally means that the column is a primary key. and definitely
-	 * means you do not need to set the value of the column.
-	 *
-	 * <p style="color: #F90;">Support DBvolution at
-	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 * This generally means that the column is a primary key. and definitely means
+	 * you do not need to set the value of the column.
 	 *
 	 * @return TRUE if the value of this column is provided by the database's
 	 * auto-increment functionality, otherwise FALSE.
@@ -724,18 +733,23 @@ public class PropertyWrapper {
 	 * Returns true if the property wrapped is a Spatial2D column.
 	 *
 	 * <p>
-	 * This generally means that the column is a polygon, line, point, or other 2D geometry.
-	 * 
+	 * This generally means that the column is a polygon, line, point, or other 2D
+	 * geometry.
+	 *
 	 * <p>
-	 * Spatial columns are special in that some databases need indexes to support them properly.
+	 * Spatial columns are special in that some databases need indexes to support
+	 * them properly.
 	 *
 	 * <p style="color: #F90;">Support DBvolution at
 	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
 	 *
-	 * @return TRUE if the value of this column is a 2D geometry type, otherwise FALSE.
-	 */	public boolean isSpatial2DType() {
+	 * @return TRUE if the value of this column is a 2D geometry type, otherwise
+	 * FALSE.
+	 */
+	public boolean isSpatial2DType() {
 		return propertyDefinition.isSpatial2DType();
 	}
+
 	/**
 	 * Returns true if the property wrapped is an auto-filling field.
 	 *
@@ -750,8 +764,9 @@ public class PropertyWrapper {
 	}
 
 	/**
-	 * Returns the class provided to the {@link AutoFillDuringQueryIfPossible} annotation.
-	 * 
+	 * Returns the class provided to the {@link AutoFillDuringQueryIfPossible}
+	 * annotation.
+	 *
 	 * <p style="color: #F90;">Support DBvolution at
 	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
 	 *
@@ -759,5 +774,67 @@ public class PropertyWrapper {
 	 */
 	public Class<?> getAutoFillingClass() {
 		return propertyDefinition.getAutoFillingClass();
+	}
+
+	/**
+	 * Returns true if the property wrapped is a Large Object column.
+	 *
+	 * <p>
+	 * This generally means that the column is a BLOB, CLOB, TEXT, Java Object of
+	 * other binary type.
+	 *
+	 * <p>
+	 * Spatial columns are special in that they can't generally be used in WHERE
+	 * clauses.
+	 *
+	 * @return TRUE if the value of this column is a 2D geometry type, otherwise
+	 * FALSE.
+	 */
+	public boolean isLargeObjectType() {
+		return propertyDefinition.isLargeObject();
+	}
+
+	public Object getRawJavaTypeInstance() {
+		try {
+			return this.getRawJavaType().getDeclaredConstructor().newInstance();
+		} catch (InstantiationException | IllegalAccessException | NoSuchMethodException | SecurityException | IllegalArgumentException | InvocationTargetException ex) {
+			// note: InstantiationException tends to be thrown without a message
+			throw new RuntimeException("Unable to instantiate instance of " + this.toString(), ex);
+		}
+	}
+
+	public <R extends DBRow> int compareBetweenRows(R o1, R o2) {
+		PropertyWrapperDefinition<?, BASETYPE> defn = this.getPropertyWrapperDefinition();
+		return defn.compareBetweenRows(o1, o2);
+	}
+
+	public void setQueryableDatatypeAsUnchanged() {
+		final QueryableDatatype<BASETYPE> qdt = getQueryableDatatype();
+		if (!(qdt instanceof DBLargeObject)) {
+			if (qdt != null && qdt.hasChanged()) {
+				qdt.setUnchanged();
+
+				// ensure field set when using type adaptors
+				setQueryableDatatype(qdt);
+			}
+		}
+	}
+
+	public void copyFromRowToOtherRow(DBRow freshRow, DBRow staleRow) {
+		final PropertyWrapperDefinition<?, BASETYPE> propertyWrapperDefinition = this.getPropertyWrapperDefinition();
+		QueryableDatatype<BASETYPE> freshQDT = propertyWrapperDefinition.getQueryableDatatype(freshRow);
+		QueryableDatatype<BASETYPE> staleQDT = propertyWrapperDefinition.getQueryableDatatype(staleRow);
+		if (freshQDT.getValue() != staleQDT.getValue()) {
+			new InternalQueryableDatatypeProxy<>(staleQDT).setValueFromDatabase(freshQDT.getValue());
+//			staleQDT.setValue(freshQDT.getValue());
+		}
+	}
+
+	public boolean isAutomaticValueField() {
+		if (isAutomaticValueField == null) {
+			final QDT qdt = this.getQueryableDatatype();
+			isAutomaticValueField = qdt.hasDefaultInsertValue() || qdt.hasDefaultUpdateValue();
+		}
+		return isAutomaticValueField;
 	}
 }

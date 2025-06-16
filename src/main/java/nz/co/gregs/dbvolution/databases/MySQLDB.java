@@ -15,30 +15,77 @@
  */
 package nz.co.gregs.dbvolution.databases;
 
+import java.sql.*;
+import java.util.Properties;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+import nz.co.gregs.regexi.Regex;
 import javax.sql.DataSource;
-import nz.co.gregs.dbvolution.DBDatabase;
+import nz.co.gregs.dbvolution.DBRow;
+import nz.co.gregs.dbvolution.databases.settingsbuilders.MySQLSettingsBuilder;
 import nz.co.gregs.dbvolution.databases.definitions.MySQLDBDefinition;
+import nz.co.gregs.dbvolution.databases.definitions.MySQLDBDefinition_5_7;
+import nz.co.gregs.dbvolution.databases.metadata.DBDatabaseMetaData;
+import nz.co.gregs.dbvolution.databases.metadata.MySQLDBDatabaseMetaData;
+import nz.co.gregs.dbvolution.databases.settingsbuilders.AbstractMySQLSettingsBuilder;
 import nz.co.gregs.dbvolution.databases.supports.SupportsPolygonDatatype;
+import nz.co.gregs.dbvolution.exceptions.ExceptionDuringDatabaseFeatureSetup;
+import nz.co.gregs.dbvolution.databases.metadata.Options;
+import nz.co.gregs.dbvolution.internal.mysql.MigrationFunctions;
+import nz.co.gregs.dbvolution.internal.query.StatementDetails;
 
 /**
  * A DBDatabase tweaked for MySQL databases
  *
- * <p style="color: #F90;">Support DBvolution at
- * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
- *
  * @author Gregory Graham
  */
-public class MySQLDB extends DBDatabase implements SupportsPolygonDatatype{
+public class MySQLDB extends DBDatabaseImplementation implements SupportsPolygonDatatype {
 
-	private final static String MYSQLDRIVERNAME = "com.mysql.jdbc.Driver";
+	public final static String MYSQLDRIVERNAME = "com.mysql.cj.jdbc.Driver";
+	//public final static String MYSQLDRIVERNAME = "com.mysql.jdbc.Driver";
+	private static final long serialVersionUID = 1l;
+	public static final int DEFAULT_PORT = 3306;
 
 	/**
 	 * Creates a {@link DBDatabase } instance for the data source.
 	 *
 	 * @param ds	ds
+	 * @throws java.sql.SQLException database errors
 	 */
-	public MySQLDB(DataSource ds) {
-		super(new MySQLDBDefinition(), ds);
+	public MySQLDB(DataSource ds) throws SQLException {
+		super(
+				new MySQLSettingsBuilder().setDataSource(ds)
+		);
+	}
+
+	/**
+	 * Creates a MySQL connection for the DatabaseConnectionSettings.
+	 *
+	 * @param dcs	dcs
+	 * @throws java.sql.SQLException database errors
+	 */
+	public MySQLDB(DatabaseConnectionSettings dcs) throws SQLException {
+		super(new MySQLSettingsBuilder().fromSettings(dcs));
+	}
+
+	/**
+	 * Creates a MySQL connection for the DatabaseConnectionSettings.
+	 *
+	 * @param dcs	dcs
+	 * @throws java.sql.SQLException database errors
+	 */
+	public MySQLDB(MySQLSettingsBuilder dcs) throws SQLException {
+		super(dcs);
+	}
+
+	/**
+	 * Creates a MySQL connection for the DatabaseConnectionSettings.
+	 *
+	 * @param dcs	dcs
+	 * @throws java.sql.SQLException database errors
+	 */
+	protected MySQLDB(AbstractMySQLSettingsBuilder<?, ?> dcs) throws SQLException {
+		super(dcs);
 	}
 
 	/**
@@ -48,9 +95,14 @@ public class MySQLDB extends DBDatabase implements SupportsPolygonDatatype{
 	 * @param jdbcURL jdbcURL
 	 * @param password password
 	 * @param username username
+	 * @throws java.sql.SQLException database errors
 	 */
-	public MySQLDB(String jdbcURL, String username, String password) {
-		super(new MySQLDBDefinition(), MYSQLDRIVERNAME, jdbcURL, username, password);
+	public MySQLDB(String jdbcURL, String username, String password) throws SQLException {
+		this(new MySQLSettingsBuilder()
+				.fromJDBCURL(jdbcURL)
+				.setUsername(username)
+				.setPassword(password)
+		);
 	}
 
 	/**
@@ -62,29 +114,82 @@ public class MySQLDB extends DBDatabase implements SupportsPolygonDatatype{
 	 * @param databaseName the database that is required on the server.
 	 * @param username the user to login as.
 	 * @param password the password required to login successfully.
+	 * @throws java.sql.SQLException database errors
 	 */
-	public MySQLDB(String server, long port, String databaseName, String username, String password) {
-		super(new MySQLDBDefinition(),
-				MYSQLDRIVERNAME,
-				"jdbc:mysql://" + server + ":" + port + "/" + databaseName,
-				username,
-				password);
-		this.setDatabaseName(databaseName);
+	public MySQLDB(String server, int port, String databaseName, String username, String password) throws SQLException {
+		this(new MySQLSettingsBuilder()
+				.setHost(server)
+				.setPort(port)
+				.setDatabaseName(databaseName)
+				.setUsername(username)
+				.setPassword(password)
+		);
 	}
 
 	@Override
-	public boolean supportsFullOuterJoinNatively() {
-		return false;
+	public AbstractMySQLSettingsBuilder<?, ?> getURLInterpreter() {
+		return new MySQLSettingsBuilder();
 	}
 
 	@Override
 	public DBDatabase clone() throws CloneNotSupportedException {
-		return super.clone(); //To change body of generated methods, choose Tools | Templates.
+		return super.clone();
 	}
 
 	@Override
-	public boolean supportsRecursiveQueriesNatively() {
-		return false;
+	public void addDatabaseSpecificFeatures(Statement statement) throws ExceptionDuringDatabaseFeatureSetup {
+		for (MigrationFunctions fn : MigrationFunctions.values()) {
+			fn.add(statement);
+		}
 	}
 
+	@Override
+	public Integer getDefaultPort() {
+		return 3306;
+	}
+
+	private final static Regex FUNCTION_DOES_NOT_EXIST = Regex.startingAnywhere().literal("FUNCTION ").noneOfThisCharacter(' ').atLeastOnce().literal(" does not exist").toRegex();
+	private final static Regex TABLE_ALREADY_EXISTS = Regex.startingAnywhere().literal("Table ").charactersWrappedBy('\'').literal(" already exists").toRegex();
+	private final static Regex TABLE_DOES_NOT_EXIST = Regex.startingAnywhere().literal("Table ").noneOfThisCharacter(' ').atLeastOnce().literal(" does not exist").toRegex();
+
+	@Override
+	public ResponseToException addFeatureToFixException(Exception exp, QueryIntention intent, StatementDetails details) throws Exception {
+		String message = exp.getMessage();
+		if (TABLE_ALREADY_EXISTS.matchesEntireString(message)) {
+			return ResponseToException.SKIPQUERY;
+		} else if (intent.is(QueryIntention.DROP_FUNCTION) && FUNCTION_DOES_NOT_EXIST.matchesEntireString(message)) {
+			return ResponseToException.SKIPQUERY;
+		} else if (QueryIntention.CHECK_TABLE_EXISTS.equals(intent)) {
+			if (TABLE_DOES_NOT_EXIST.matchesWithinString(message)) {
+				return ResponseToException.SKIPQUERY;
+			}
+		}
+		return super.addFeatureToFixException(exp, intent, details);
+	}
+
+	@Override
+	public void setDefinitionBasedOnConnectionMetaData(Properties clientInfo, DatabaseMetaData metaData) {
+		try {
+			if (metaData.getDatabaseMajorVersion() < 4
+					|| (metaData.getDatabaseMajorVersion() == 5 && metaData.getDatabaseMinorVersion() < 8)) {
+				setDefinition(new MySQLDBDefinition_5_7());
+			} else {
+				setDefinition(new MySQLDBDefinition());
+			}
+		} catch (SQLException ex) {
+			final Logger logger = Logger.getLogger(MySQLDB.class.getName());
+			logger.log(Level.INFO, "Failed to get connection metadata information to set the database definition");
+			logger.log(Level.INFO, null, ex);
+		}
+	}
+
+	@Override
+	public DBDatabaseMetaData getDBDatabaseMetaData(Options options)  throws SQLException{
+		return new MySQLDBDatabaseMetaData(options);
+	}
+
+	@Override
+	public boolean supportsGeometryTypesFullyInSchema() {
+		return true;
+	}
 }

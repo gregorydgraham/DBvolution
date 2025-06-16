@@ -19,118 +19,119 @@ package nz.co.gregs.dbvolution.generation;
  * Stores information needed to automatically create a Java field from a
  * database column.
  *
- * <p style="color: #F90;">Support DBvolution at
- * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
- *
  * @author Gregory Graham
  */
 public class DBTableField {
 
-    /**
-     * Stores the Java name of the DBTableField.
-     *
-     */
-    public String fieldName;
+	/**
+	 * Stores the Java name of the DBTableField.
+	 *
+	 */
+	public String fieldName;
 
-    /**
-     * Stores the actual database name of the DBTableField.
-     */
-    public String columnName;
+	/**
+	 * Stores the actual database name of the DBTableField.
+	 */
+	public String columnName;
 
-    /**
-     * TRUE if the column/field is a Primary Key DBTableField, otherwise FALSE.
-     *
-     */
-    public boolean isPrimaryKey = false;
+	/**
+	 * TRUE if the column/field is a Primary Key DBTableField, otherwise FALSE.
+	 *
+	 */
+	public boolean isPrimaryKey = false;
 
-    /**
-     * TRUE if the column/field is a Foreign Key DBTableField, otherwise FALSE.
-     *
-     */
-    public boolean isForeignKey = false;
+	/**
+	 * TRUE if the column/field is a Foreign Key DBTableField, otherwise FALSE.
+	 *
+	 */
+	public boolean isForeignKey = false;
 
-    /**
-     * Stores the name of the class referenced by this DBTableField if it is a
-     * Foreign Key, otherwise null.
-     */
-    public String referencesClass;
+	/**
+	 * Stores the name of the class referenced by this DBTableField if it is a
+	 * Foreign Key, otherwise null.
+	 */
+	public String referencesClass;
 
-    /**
-     * Stores the name of the field in the referenced class referenced by this
-     * column/field if this DBTableField is a foreign key, otherwise null.
-     *
-     */
-    public String referencesField;
+	/**
+	 * Stores the name of the table referenced by this DBTableField if it is a
+	 * Foreign Key, otherwise null.
+	 */
+	public String referencedTable;
+	/**
+	 * Stores the name of the field in the referenced class referenced by this
+	 * column/field if this DBTableField is a foreign key, otherwise null.
+	 *
+	 */
+	public String referencesField;
 
-    /**
-     * Stores the class of the Java field that will be created.
-     *
-     */
-    public Class<? extends Object> columnType;
+	/**
+	 * Stores the class of the Java field that will be created.
+	 *
+	 */
+	public Class<? extends Object> columnType;
 
-    /**
-     * Stores the precision of the column.
-     *
-     */
-    public int precision;
+	/**
+	 * Stores the precision of the column.
+	 *
+	 */
+	public int precision;
 
-    /**
-     * Stores the datatype reported by Java in case an unknown datatype is
-     * reported.
-     *
-     */
-    public int javaSQLDatatype = 0;
+	/**
+	 * Stores the datatype reported by Java in case an unknown datatype is
+	 * reported.
+	 *
+	 */
+	public int javaSQLDatatype = 0;
 
-    /**
-     * Stores column comments/remarks from the database.
-     *
-     */
-    public String comments;
+	/**
+	 * Stores column comments/remarks from the database.
+	 *
+	 */
+	public String comments;
 
-    /**
-     * TRUE if the DBTableField is an auto-incrementing column, otherwise FALSE.
-     *
-     */
-    public boolean isAutoIncrement;
+	/**
+	 * TRUE if the DBTableField is an auto-incrementing column, otherwise FALSE.
+	 *
+	 */
+	public boolean isAutoIncrement;
 
-    /**
-     * Stores the data type of the DBTableField as reported from the database.
-     */
-    public int sqlDataTypeInt;
+	/**
+	 * Stores the data type of the DBTableField as reported from the database.
+	 */
+	public int sqlDataTypeInt;
 
-    /**
-     * Stores the data type name of the DBTableField as reported from the
-     * database.
-     */
-    public String sqlDataTypeName;
-    String referencedTable;
+	/**
+	 * Stores the data type name of the DBTableField as reported from the
+	 * database.
+	 */
+	public String sqlDataTypeName;
 
-    @Override
-    public boolean equals(Object obj) {
-        if (obj instanceof DBTableField) {
-            DBTableField other = (DBTableField) obj;
-            return fieldName.equals(other.fieldName);
-        } else {
-            return false;
-        }
-    }
+	@Override
+	public boolean equals(Object obj) {
+		if (obj instanceof DBTableField) {
+			DBTableField other = (DBTableField) obj;
+			return fieldName.equals(other.fieldName);
+		} else {
+			return false;
+		}
+	}
 
-    @Override
-    public int hashCode() {
-        int hash = 3;
-        hash = 79 * hash + (this.fieldName != null ? this.fieldName.hashCode() : 0);
-        hash = 79 * hash + (this.columnName != null ? this.columnName.hashCode() : 0);
-        hash = 79 * hash + (this.isPrimaryKey ? 1 : 0);
-        hash = 79 * hash + (this.isForeignKey ? 1 : 0);
-        hash = 79 * hash + (this.referencesClass != null ? this.referencesClass.hashCode() : 0);
-        hash = 79 * hash + (this.referencesField != null ? this.referencesField.hashCode() : 0);
-        hash = 79 * hash + (this.columnType != null ? this.columnType.hashCode() : 0);
-        hash = 79 * hash + this.precision;
-        hash = 79 * hash + this.javaSQLDatatype;
-        hash = 79 * hash + (this.comments != null ? this.comments.hashCode() : 0);
-        hash = 79 * hash + (this.isAutoIncrement ? 1 : 0);
-        hash = 79 * hash + this.sqlDataTypeInt;
-        return hash;
-    }
+	@Override
+	public int hashCode() {
+		int hash = 3;
+		hash = 79 * hash + (this.fieldName != null ? this.fieldName.hashCode() : 0);
+		hash = 79 * hash + (this.columnName != null ? this.columnName.hashCode() : 0);
+		hash = 79 * hash + (this.isPrimaryKey ? 1 : 0);
+		hash = 79 * hash + (this.isForeignKey ? 1 : 0);
+		hash = 79 * hash + (this.referencesClass != null ? this.referencesClass.hashCode() : 0);
+		hash = 79 * hash + (this.referencesField != null ? this.referencesField.hashCode() : 0);
+		hash = 79 * hash + (this.columnType != null ? this.columnType.hashCode() : 0);
+		hash = 79 * hash + this.precision;
+		hash = 79 * hash + this.javaSQLDatatype;
+		hash = 79 * hash + (this.comments != null ? this.comments.hashCode() : 0);
+		hash = 79 * hash + (this.isAutoIncrement ? 1 : 0);
+		hash = 79 * hash + this.sqlDataTypeInt;
+		return hash;
+	}
 
 }

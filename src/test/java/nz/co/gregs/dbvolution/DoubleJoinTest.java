@@ -24,23 +24,9 @@ import nz.co.gregs.dbvolution.annotations.DBTableName;
 import nz.co.gregs.dbvolution.datatypes.DBInteger;
 import nz.co.gregs.dbvolution.example.CarCompany;
 import nz.co.gregs.dbvolution.generic.AbstractTest;
-import static org.hamcrest.Matchers.is;
 import org.junit.*;
 import static org.hamcrest.Matchers.is;
-import static org.hamcrest.Matchers.is;
-import static org.hamcrest.Matchers.is;
-import static org.hamcrest.Matchers.is;
-import static org.hamcrest.Matchers.is;
-import static org.hamcrest.Matchers.is;
-import static org.hamcrest.Matchers.is;
-import static org.hamcrest.Matchers.is;
-import static org.hamcrest.Matchers.is;
-import static org.hamcrest.Matchers.is;
-import static org.hamcrest.Matchers.is;
-import static org.hamcrest.Matchers.is;
-import static org.hamcrest.Matchers.is;
-import static org.hamcrest.Matchers.is;
-import static org.hamcrest.Matchers.is;
+import static org.hamcrest.MatcherAssert.assertThat;
 
 public class DoubleJoinTest extends AbstractTest {
 
@@ -54,7 +40,6 @@ public class DoubleJoinTest extends AbstractTest {
 
 	@Test
 	public void doubleJoinTest() throws SQLException {
-		database.setPrintSQLBeforeExecuting(true);
 		database.preventDroppingOfTables(false);
 		database.dropTableNoExceptions(new DoubleJoinTest.DoubleLinkedWithSubclasses());
 		database.createTable(new DoubleJoinTest.DoubleLinkedWithSubclasses());
@@ -68,17 +53,15 @@ public class DoubleJoinTest extends AbstractTest {
 		final Marketer marketer = new DoubleJoinTest.Marketer();
 		DBQuery query = database.getDBQuery(doubleLinked1, manufacturer, marketer);
 		query.setBlankQueryAllowed(true);
-		System.out.println(query.getSQLForQuery());
+
 		List<DBQueryRow> allRows = query.getAllRows();
-		Assert.assertThat(allRows.size(),
+		assertThat(allRows.size(),
 				is(1));
-		Assert.assertThat(allRows.get(0).get(marketer).uidCarCompany.getValue().intValue(),
+		assertThat(allRows.get(0).get(marketer).uidCarCompany.getValue().intValue(),
 				is(doubleLinked.marketer.getValue().intValue()));
-		Assert.assertThat(allRows.get(0).get(manufacturer).uidCarCompany.getValue().intValue(),
+		assertThat(allRows.get(0).get(manufacturer).uidCarCompany.getValue().intValue(),
 				is(doubleLinked.manufacturer.getValue().intValue())
 		);
-
-		database.print(allRows);
 
 		database.preventDroppingOfTables(false);
 		database.dropTableNoExceptions(new DoubleJoinTest.DoubleLinkedWithSubclasses());
@@ -86,7 +69,6 @@ public class DoubleJoinTest extends AbstractTest {
 
 	@Test
 	public void doubleJoinWithSameClassTest() throws SQLException {
-		database.setPrintSQLBeforeExecuting(true);
 		database.preventDroppingOfTables(false);
 		database.dropTableNoExceptions(new DoubleJoinTest.DoubleLinkedWithClass());
 		database.createTable(new DoubleJoinTest.DoubleLinkedWithClass());
@@ -99,21 +81,19 @@ public class DoubleJoinTest extends AbstractTest {
 		final CarCompany carco = new CarCompany();
 		DBQuery query = database.getDBQuery(doubleLinked1, carco);
 		query.setBlankQueryAllowed(true);
-		System.out.println(query.getSQLForQuery());
+
 		List<DBQueryRow> allRows = query.getAllRows();
 
-		Assert.assertThat(
+		assertThat(
 				allRows.size(),
 				is(0));
 
-		database.print(allRows);
 		database.preventDroppingOfTables(false);
 		database.dropTableNoExceptions(new DoubleJoinTest.DoubleLinkedWithClass());
 	}
 
 	@Test
 	public void doubleJoinWithSameClassAndIDTest() throws SQLException {
-		database.setPrintSQLBeforeExecuting(true);
 		database.preventDroppingOfTables(false);
 		database.dropTableNoExceptions(new DoubleJoinTest.DoubleLinkedWithClass());
 		database.createTable(new DoubleJoinTest.DoubleLinkedWithClass());
@@ -126,14 +106,13 @@ public class DoubleJoinTest extends AbstractTest {
 		final CarCompany carco = new CarCompany();
 		DBQuery query = database.getDBQuery(doubleLinked1, carco);
 		query.setBlankQueryAllowed(true);
-		System.out.println(query.getSQLForQuery());
+
 		List<DBQueryRow> allRows = query.getAllRows();
 
-		Assert.assertThat(
+		assertThat(
 				allRows.size(),
 				is(1));
 
-		database.print(allRows);
 		database.preventDroppingOfTables(false);
 		database.dropTableNoExceptions(new DoubleJoinTest.DoubleLinkedWithClass());
 	}

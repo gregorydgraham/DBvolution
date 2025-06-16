@@ -18,29 +18,28 @@ package nz.co.gregs.dbvolution.actions;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
-import nz.co.gregs.dbvolution.DBDatabase;
+import nz.co.gregs.dbvolution.databases.DBDatabase;
 import nz.co.gregs.dbvolution.databases.DBStatement;
 import nz.co.gregs.dbvolution.DBRow;
+import nz.co.gregs.dbvolution.databases.QueryIntention;
 import nz.co.gregs.dbvolution.databases.definitions.DBDefinition;
 import nz.co.gregs.dbvolution.datatypes.QueryableDatatype;
-import nz.co.gregs.dbvolution.internal.properties.PropertyWrapper;
 
 /**
  * Provides support for the abstract concept of deleting rows based on a defined
  * row without a primary key.
  *
  * <p>
- * The best way to use this is by using {@link DBDelete#getDeletes(nz.co.gregs.dbvolution.DBDatabase, nz.co.gregs.dbvolution.DBRow...)
+ * The best way to use this is by using {@link DBDelete#getDeletes(nz.co.gregs.dbvolution.databases.DBDatabase, nz.co.gregs.dbvolution.DBRow...)
  * } to automatically use this action.
- *
- * <p style="color: #F90;">Support DBvolution at
- * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
  *
  * @author Gregory Graham
  */
 public class DBDeleteUsingAllColumns extends DBDelete {
 
-	private List<DBRow> savedRows = new ArrayList<DBRow>();
+	private static final long serialVersionUID = 1l;
+	
+	private final ArrayList<DBRow> savedRows = new ArrayList<>();
 
 	/**
 	 * Creates a DBDeleteUsingAllColumns action for the supplied example DBRow on
@@ -50,11 +49,11 @@ public class DBDeleteUsingAllColumns extends DBDelete {
 	 * @param row the row to be deleted
 	 */
 	protected <R extends DBRow> DBDeleteUsingAllColumns(R row) {
-		super(row);
+		super(row, QueryIntention.DELETE_ROW);
 	}
 
 	private <R extends DBRow> DBDeleteUsingAllColumns(DBDatabase db, R row) throws SQLException {
-		super(row);
+		this(row);
 		List<R> gotRows = db.get(row);
 		for (R gotRow : gotRows) {
 			savedRows.add(gotRow);
@@ -63,43 +62,40 @@ public class DBDeleteUsingAllColumns extends DBDelete {
 
 	@Override
 	public DBActionList execute(DBDatabase db) throws SQLException {
-		DBRow row = getRow();
-		DBActionList actions = new DBActionList(new DBDeleteUsingAllColumns(row));
-		DBStatement statement = db.getDBStatement();
-		try {
-			List<DBRow> rowsToBeDeleted = db.get(row);
-			for (DBRow deletingRow : rowsToBeDeleted) {
-				savedRows.add(DBRow.copyDBRow(deletingRow));
+		DBRow table = getRow();
+		final DBDeleteUsingAllColumns dbDeleteUsingAllColumns = new DBDeleteUsingAllColumns(table);
+		DBActionList actions = new DBActionList(dbDeleteUsingAllColumns);
+		List<DBRow> rowsToBeDeleted = db.get(table);
+		for (DBRow deletingRow : rowsToBeDeleted) {
+			dbDeleteUsingAllColumns.savedRows.add(DBRow.copyDBRow(deletingRow));
+		}
+		try (DBStatement statement = db.getDBStatement()) {
+			for (String sql : getSQLStatements(db)) {
+				statement.execute("DELETE ROW", QueryIntention.DELETE_ROW,sql);
 			}
-			for (String str : getSQLStatements(db)) {
-				statement.execute(str);
-			}
-		} finally {
-			statement.close();
 		}
 		return actions;
 	}
 
 	@Override
 	public ArrayList<String> getSQLStatements(DBDatabase db) {
-		DBRow row = getRow();
+		DBRow table = getRow();
 		DBDefinition defn = db.getDefinition();
 
-		String sql = defn.beginDeleteLine()
-				+ defn.formatTableName(row)
+		StringBuilder sql = new StringBuilder(defn.beginDeleteLine()
+				+ defn.formatTableName(table)
 				+ defn.beginWhereClause()
-				+ defn.getWhereClauseBeginningCondition();
-		for (PropertyWrapper prop : row.getColumnPropertyWrappers()) {
-			QueryableDatatype qdt = prop.getQueryableDatatype();
-			sql = sql
-					+ defn.beginWhereClauseLine()
-					+ prop.columnName()
-					+ defn.getEqualsComparator()
-					+ (qdt.hasChanged() ? qdt.getPreviousSQLValue(db) : qdt.toSQLString(db));
+				+ defn.getWhereClauseBeginningCondition());
+		for (var prop : table.getColumnPropertyWrappers()) {
+			QueryableDatatype<?> qdt = prop.getQueryableDatatype();
+			sql.append(defn.beginWhereClauseLine())
+					.append(prop.columnName())
+					.append(defn.getEqualsComparator())
+					.append(qdt.hasChanged() ? qdt.getPreviousSQLValue(defn) : qdt.toSQLString(defn));
 		}
-		sql += defn.endDeleteLine();
-		ArrayList<String> strs = new ArrayList<String>();
-		strs.add(sql);
+		sql.append(defn.endDeleteLine());
+		ArrayList<String> strs = new ArrayList<>();
+		strs.add(sql.toString());
 		return strs;
 	}
 
@@ -130,7 +126,6 @@ public class DBDeleteUsingAllColumns extends DBDelete {
 	 * @throws SQLException Database actions can throw SQLException
 	 * <p style="color: #F90;">Support DBvolution at
 	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
-	 *
 	 * @return the list of actions required to delete all the rows.
 	 */
 	@Override

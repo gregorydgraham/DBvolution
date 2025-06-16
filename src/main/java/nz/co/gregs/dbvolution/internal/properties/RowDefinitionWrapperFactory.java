@@ -17,9 +17,6 @@ import nz.co.gregs.dbvolution.query.RowDefinition;
  * <p>
  * This class is <i>thread-safe</i>.
  *
- * <p style="color: #F90;">Support DBvolution at
- * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
- *
  * @author Malcolm Lett
  */
 public class RowDefinitionWrapperFactory {
@@ -27,24 +24,23 @@ public class RowDefinitionWrapperFactory {
 	/**
 	 * Thread-safety: access to this object must be synchronized on it
 	 */
-	private final Map<Class<?>, RowDefinitionClassWrapper> classWrappersByClass = new HashMap<Class<?>, RowDefinitionClassWrapper>();
+	private final Map<Class<?>, RowDefinitionClassWrapper<?>> classWrappersByClass = new HashMap<Class<?>, RowDefinitionClassWrapper<?>>();
 
 	/**
-	 * Gets the class adaptor for the given class. If an adaptor for the given
+	 * Gets the class adaptor for the given class.If an adaptor for the given
 	 * class has not yet been created, one will be created and added to the
 	 * internal cache.
 	 *
+	 * @param <ROW> the type of DBRow this object applies to.
 	 * @param clazz clazz
-	 * <p style="color: #F90;">Support DBvolution at
-	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
-	 *
 	 * @return the class adaptor
 	 */
-	public RowDefinitionClassWrapper classWrapperFor(Class<? extends RowDefinition> clazz) {
+	public <ROW extends RowDefinition> RowDefinitionClassWrapper<ROW> classWrapperFor(Class<ROW> clazz) {
 		synchronized (classWrappersByClass) {
-			RowDefinitionClassWrapper wrapper = classWrappersByClass.get(clazz);
+			@SuppressWarnings("unchecked")
+			RowDefinitionClassWrapper<ROW> wrapper = (RowDefinitionClassWrapper<ROW>) classWrappersByClass.get(clazz);
 			if (wrapper == null) {
-				wrapper = new RowDefinitionClassWrapper(clazz);
+				wrapper = new RowDefinitionClassWrapper<>(clazz);
 				classWrappersByClass.put(clazz, wrapper);
 			}
 			return wrapper;
@@ -52,17 +48,17 @@ public class RowDefinitionWrapperFactory {
 	}
 
 	/**
-	 * Gets the object adaptor for the given object. If an adaptor for the
-	 * object's class has not yet been created, one will be created and added to
-	 * the internal cache.
+	 * Gets the object adaptor for the given object.If an adaptor for the
+ object's class has not yet been created, one will be created and added to
+ the internal cache.
 	 *
+	 * @param <ROW> the type of DBRow this object applies to.
 	 * @param object the DBRow instance to wrap
-	 * <p style="color: #F90;">Support DBvolution at
-	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
-	 *
 	 * @return the object adaptor for the given object
 	 */
-	public RowDefinitionInstanceWrapper instanceWrapperFor(RowDefinition object) {
-		return classWrapperFor(object.getClass()).instanceWrapperFor(object);
+	public <ROW extends RowDefinition> RowDefinitionInstanceWrapper<ROW> instanceWrapperFor(ROW object) {
+		@SuppressWarnings("unchecked")
+		final RowDefinitionClassWrapper<ROW> classWrapper = (RowDefinitionClassWrapper<ROW>) classWrapperFor(object.getClass());
+		return classWrapper.instanceWrapperFor(object);
 	}
 }

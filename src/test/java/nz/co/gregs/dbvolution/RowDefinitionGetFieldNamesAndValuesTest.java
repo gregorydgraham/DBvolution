@@ -21,7 +21,7 @@ import java.util.List;
 import nz.co.gregs.dbvolution.example.*;
 import nz.co.gregs.dbvolution.generic.AbstractTest;
 import static org.hamcrest.Matchers.*;
-import org.junit.Assert;
+import static org.hamcrest.MatcherAssert.assertThat;
 import org.junit.Test;
 
 /**
@@ -50,18 +50,15 @@ public class RowDefinitionGetFieldNamesAndValuesTest extends AbstractTest {
 		dbQuery.setSortOrder(marque.column(marque.name), carCompany.column(carCompany.name));
 		List<DBQueryRow> rows = dbQuery.setBlankQueryAllowed(true).getAllRows();
 
-		database.print(rows);
 		if (rows.size() > 0) {
 			String header = "" + rows.get(0).toCSVHeader();
-			Assert.assertThat(header, is("\"Marque:name\",\"CarCompany:name\",\"CarCompany:uidCarCompany\""));
-			System.out.println(header);
+			assertThat(header, is("\"Marque:name\",\"CarCompany:name\",\"CarCompany:uidCarCompany\""));
 			for (DBQueryRow row : rows) {
 				String csvLine = "" + row.toCSVLine();
-				System.out.println(csvLine);
 				lines.add(csvLine);
 
 			}
 		}
-		Assert.assertThat(lines.get(0), is("\"BMW\",\"OTHER\",\"4\""));
+		assertThat(lines.get(0), is("\"BMW\",\"OTHER\",\"4\""));
 	}
 }

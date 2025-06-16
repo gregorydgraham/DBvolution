@@ -37,7 +37,7 @@ public class QueryGraphEdgeStrokeTransformer implements Transformer<DBExpression
 
 	/**
 	 *
-	 * @param originalQuery
+	 * @param originalQuery the original query
 	 */
 	public QueryGraphEdgeStrokeTransformer(final DBQuery originalQuery) {
 		this.query = originalQuery;
@@ -48,7 +48,6 @@ public class QueryGraphEdgeStrokeTransformer implements Transformer<DBExpression
 	 * @param input
 	 * <p style="color: #F90;">Support DBvolution at
 	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
-	 *
 	 * @return the Stroke used to draw an edge
 	 */
 	@Override

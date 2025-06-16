@@ -16,9 +16,11 @@
 package nz.co.gregs.dbvolution.databases;
 
 import java.sql.SQLException;
+import java.sql.Statement;
 import javax.sql.DataSource;
-import nz.co.gregs.dbvolution.DBDatabase;
-import nz.co.gregs.dbvolution.databases.definitions.JavaDBDefinition;
+import nz.co.gregs.dbvolution.databases.settingsbuilders.JavaDBSettingsBuilder;
+import nz.co.gregs.dbvolution.databases.settingsbuilders.AbstractJavaDBSettingsBuilder;
+import nz.co.gregs.dbvolution.exceptions.ExceptionDuringDatabaseFeatureSetup;
 
 /**
  * A version of DBDatabase tweaked for JavaDB.
@@ -32,24 +34,50 @@ import nz.co.gregs.dbvolution.databases.definitions.JavaDBDefinition;
  *
  * @author Gregory Graham
  */
-public class JavaDB extends DBDatabase {
+public class JavaDB extends DBDatabaseImplementation {
 
-	private static final String driverName = "org.apache.derby.jdbc.ClientDriver";
+	public static final String DRIVER_NAME = "org.apache.derby.jdbc.ClientDriver";
+	public static final long serialVersionUID = 1l;
 
 	/**
 	 * Default Constructor.
 	 *
 	 */
-	public JavaDB() {
+//	public JavaDB() {
+//	}
+
+	/**
+	 * Creates a new JavaDB instance that will connect to the DataSource.
+	 *
+	 * @param dataSource	dataSource
+	 * @throws java.sql.SQLException database errors
+	 */
+	public JavaDB(DataSource dataSource) throws SQLException {
+		super(
+				new JavaDBSettingsBuilder()
+						.setDataSource(dataSource)
+		);
+//		super(new JavaDBDefinition(), DRIVER_NAME, dataSource);
 	}
 
 	/**
 	 * Creates a new JavaDB instance that will connect to the DataSource.
 	 *
 	 * @param dataSource	dataSource
+	 * @throws java.sql.SQLException database errors
 	 */
-	public JavaDB(DataSource dataSource) {
-		super(new JavaDBDefinition(), dataSource);
+	public JavaDB(DatabaseConnectionSettings dataSource) throws SQLException {
+		this(new JavaDBSettingsBuilder().fromSettings(dataSource));
+	}
+
+	/**
+	 * Creates a new JavaDB instance that will connect to the DataSource.
+	 *
+	 * @param dataSource	dataSource
+	 * @throws java.sql.SQLException database errors
+	 */
+	public JavaDB(JavaDBSettingsBuilder dataSource) throws SQLException {
+		super(dataSource);
 	}
 
 	/**
@@ -59,9 +87,11 @@ public class JavaDB extends DBDatabase {
 	 * @param jdbcURL jdbcURL
 	 * @param username username
 	 * @param password password
+	 * @throws java.sql.SQLException database errors
 	 */
-	public JavaDB(String jdbcURL, String username, String password) {
-		super(new JavaDBDefinition(), driverName, jdbcURL, username, password);
+	public JavaDB(String jdbcURL, String username, String password) throws SQLException {
+		this(new JavaDBSettingsBuilder().fromJDBCURL(jdbcURL, username, password)
+		);
 	}
 
 	/**
@@ -73,18 +103,30 @@ public class JavaDB extends DBDatabase {
 	 * @param database database
 	 * @param password password
 	 * @param username username
+	 * @throws java.sql.SQLException database errors
 	 */
-	public JavaDB(String host, int port, String database, String username, String password) {
-		super(new JavaDBDefinition(), driverName, "jdbc:derby://" + host + ":" + port + "/" + database + ";create=true", username, password);
-	}
-
-	@Override
-	protected boolean supportsFullOuterJoinNatively() {
-		return false;
+	public JavaDB(String host, int port, String database, String username, String password) throws SQLException {
+		this(new JavaDBSettingsBuilder().setHost(host).setPort(port).setUsername(username).setPassword(password)
+		);
 	}
 
 	@Override
 	public JavaDB clone() throws CloneNotSupportedException {
 		return (JavaDB) super.clone(); //To change body of generated methods, choose Tools | Templates.
+	}
+
+	@Override
+	public void addDatabaseSpecificFeatures(Statement statement) throws ExceptionDuringDatabaseFeatureSetup {
+		;
+	}
+
+	@Override
+	public Integer getDefaultPort() {
+		return 1527;
+	}
+
+	@Override
+	public AbstractJavaDBSettingsBuilder<?,?> getURLInterpreter() {
+		return new JavaDBSettingsBuilder();
 	}
 }

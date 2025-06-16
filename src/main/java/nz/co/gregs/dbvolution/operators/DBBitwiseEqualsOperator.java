@@ -15,7 +15,7 @@
  */
 package nz.co.gregs.dbvolution.operators;
 
-import nz.co.gregs.dbvolution.DBDatabase;
+import nz.co.gregs.dbvolution.databases.definitions.DBDefinition;
 import nz.co.gregs.dbvolution.expressions.BooleanExpression;
 import nz.co.gregs.dbvolution.results.BooleanResult;
 import nz.co.gregs.dbvolution.expressions.DBExpression;
@@ -34,17 +34,17 @@ public class DBBitwiseEqualsOperator extends DBEqualsOperator {
 
 	private static final long serialVersionUID = 1L;
 
-/**
- * Creates a bitwise comparison for boolean or number expressions
- *
-	 * @param equalTo
- */
+	/**
+	 * Creates a bitwise comparison for boolean or number expressions
+	 *
+	 * @param equalTo the boolean expression
+	 */
 	public DBBitwiseEqualsOperator(BooleanExpression equalTo) {
 		super(equalTo);
 	}
 
 	@Override
-	public BooleanExpression generateWhereExpression(DBDatabase db, DBExpression column) {
+	public BooleanExpression generateWhereExpression(DBDefinition db, DBExpression column) {
 		DBExpression genericExpression = column;
 		BooleanExpression op = BooleanExpression.trueExpression();
 		if (genericExpression instanceof BooleanExpression) {

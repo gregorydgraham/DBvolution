@@ -24,8 +24,6 @@ import org.sqlite.Function;
 
 /**
  *
- * <p style="color: #F90;">Support DBvolution at
- * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
  *
  * @author gregorygraham
  */
@@ -33,15 +31,27 @@ public class MissingStandardFunctions {
 
 	/**
 	 *
-	 * @param db
-	 * @param connection
-	 * @throws SQLException
+	 * @param db the SQLite database
+	 * @param connection the database to add functions to
+	 * @throws SQLException database errors
 	 */
 	public static void addFunctions(SQLiteDB db, Connection connection) throws SQLException {
 		Function.create(connection, "TRUNC", new Trunc());
 		Function.create(connection, "LOCATION_OF", new LocationOf());
 		Function.create(connection, "CURRENT_USER", new CurrentUser(db.getUsername()));
 		Function.create(connection, "STDEV", new StandardDeviation());
+		Function.create(connection, "REGEXP_REPLACE", new RegexpReplace());
+	}
+
+	private static class RegexpReplace extends Function {
+
+		@Override
+		protected void xFunc() throws SQLException {
+			String original = value_text(0);
+			String regexp = value_text(1);
+			String replace = value_text(2);
+			result(original.replaceAll(regexp, replace));
+		}
 	}
 
 	private static class Trunc extends Function {

@@ -15,21 +15,30 @@
  */
 package nz.co.gregs.dbvolution.generic;
 
-import nz.co.gregs.dbvolution.DBDatabase;
+import nz.co.gregs.dbvolution.databases.MSSQLServer2017ContainerDB;
+import nz.co.gregs.dbvolution.databases.Oracle11XEContainerDB;
+import nz.co.gregs.dbvolution.databases.DBDatabase;
 import java.io.IOException;
+import java.lang.reflect.InvocationTargetException;
 import java.sql.SQLException;
 import java.text.SimpleDateFormat;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.GregorianCalendar;
 import java.util.List;
 import java.util.Locale;
-import net.sourceforge.tedhi.FlexibleDateFormat;
+import java.util.Map;
+import java.util.Set;
 import net.sourceforge.tedhi.FlexibleDateRangeFormat;
 import nz.co.gregs.dbvolution.DBTable;
 import nz.co.gregs.dbvolution.databases.*;
+import nz.co.gregs.dbvolution.databases.definitions.H2DBDefinition;
+import nz.co.gregs.dbvolution.databases.settingsbuilders.*;
 import nz.co.gregs.dbvolution.example.*;
-import nz.co.gregs.dbvolution.mysql.MySQLMXJDBInitialisation;
+import nz.co.gregs.dbvolution.exceptions.NoAvailableDatabaseException;
+import nz.co.gregs.regexi.Regex;
+import nz.co.gregs.regexi.RegexReplacement;
 import org.h2.jdbcx.JdbcDataSource;
 import org.junit.After;
 import org.junit.Before;
@@ -39,309 +48,463 @@ import org.junit.runners.Parameterized.Parameters;
 
 /**
  *
- * <p style="color: #F90;">Support DBvolution at
- * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
- *
  * @author Gregory Graham
  */
 @RunWith(Parameterized.class)
 public abstract class AbstractTest {
 
-	public DBDatabase database;
-	Marque myMarqueRow = new Marque();
-	CarCompany myCarCompanyRow = new CarCompany();
-	public DBTable<Marque> marquesTable;
-	DBTable<CarCompany> carCompanies;
-	public List<Marque> marqueRows = new ArrayList<Marque>();
-	public List<CarCompany> carTableRows = new ArrayList<CarCompany>();
-	public static final FlexibleDateFormat TEDHI_FORMAT = FlexibleDateFormat.getPatternInstance("dd/M/yyyy h:m:s", Locale.UK);
-	public static final SimpleDateFormat DATETIME_FORMAT = new SimpleDateFormat("dd/MMM/yyyy HH:mm:ss", Locale.UK);
-	public static final FlexibleDateRangeFormat TEDHI_RANGE_FORMAT = FlexibleDateRangeFormat.getPatternInstance("M yyyy", Locale.UK);
-	public static String firstDateStr = "23/March/2013 12:34:56";
-	public static String secondDateStr = "2/April/2011 1:02:03";
-	public static Date march23rd2013 = (new GregorianCalendar(2013, 2, 23, 12, 34, 56)).getTime();
-	public static Date april2nd2011 = (new GregorianCalendar(2011, 3, 2, 1, 2, 3)).getTime();
+  private static void findWellSpecifiedDatabases(List<Object[]> databases) {
+    Set<Map.Entry<Object, Object>> entrySet = System.getProperties().entrySet();
+    for (Map.Entry<Object, Object> entry : entrySet) {
+      if (entry != null) {
+        Object key = entry.getKey();
+        if (key != null) {
+          String keyString = key.toString();
+          final Object value = entry.getValue();
+          if (keyString.endsWith("Test") && value != null && value.toString().equals("true")) {
+            String testName = keyString.replaceAll("Test$", "").toLowerCase();
+            try {
+              final DatabaseConnectionSettings settings = DatabaseConnectionSettings.getSettingsfromSystemUsingPrefix(testName);
+              databases.add(new Object[]{testName, settings.createDBDatabase()});
+            } catch (ClassNotFoundException | NoSuchMethodException | SecurityException | InstantiationException | IllegalAccessException | IllegalArgumentException | InvocationTargetException ex) {
+              System.getLogger(AbstractTest.class.getName()).log(System.Logger.Level.ERROR, (String) null, ex);
+            }
+          }
+        }
+      }
+    }
 
-	@Parameters(name = "{0}")
-	public static List<Object[]> data() throws IOException, SQLException, ClassNotFoundException {
+  }
 
-		List<Object[]> databases = new ArrayList<Object[]>();
+  public DBDatabase database;
+  static List<Object[]> databases = new ArrayList<>(0);
+  Marque myMarqueRow = new Marque();
+  CarCompany myCarCompanyRow = new CarCompany();
+  public DBTable<Marque> marquesTable;
+  DBTable<CarCompany> carCompanies;
+  public List<Marque> marqueRows = new ArrayList<>();
+  public List<CarCompany> carTableRows = new ArrayList<>();
+  public static final SimpleDateFormat DATETIME_FORMAT = new SimpleDateFormat("dd/MMM/yyyy HH:mm:ss", Locale.UK);
+  public static final DateTimeFormatter LOCALDATETIME_FORMAT = DateTimeFormatter.ofPattern("dd/MMMM/y HH:mm:ss");
+  public static final FlexibleDateRangeFormat TEDHI_RANGE_FORMAT = FlexibleDateRangeFormat.getPatternInstance("M yyyy", Locale.UK);
+  public static String firstDateStr = "23/March/2013 12:34:56";
+  public static String secondDateStr = "2/April/2011 1:02:03";
+  public static Date march23rd2013 = (new GregorianCalendar(2013, 2, 23, 12, 34, 56)).getTime();
+  public static Date april2nd2011 = (new GregorianCalendar(2011, 3, 2, 1, 2, 3)).getTime();
 
-		if (System.getProperty("testSQLite") != null) {
-			final SQLiteDB sqliteDB = new SQLiteTestDB();
-			databases.add(new Object[]{"SQLiteDB", sqliteDB});
-		}
-		if (System.getProperty("testMySQLMXJDB") != null) {
-			databases.add(new Object[]{"SQLMXJDB", MySQLMXJDBInitialisation.getMySQLDBInstance()});
-		}
-		if (System.getProperty("testMySQL") != null) {
-			databases.add(new Object[]{"MySQLDB", new MySQLTestDatabase()});
-		}
-		if (System.getProperty("testMySQLRDS") != null) {
-			databases.add(new Object[]{"MySQLDB-RDS", new MySQLRDSTestDatabase()});
-		}
-		if (System.getProperty("testMySQL56") != null) {
-			databases.add(new Object[]{"MySQLDB-5.6", new MySQL56TestDatabase()});
-		}
-		if (System.getProperty("testH2DB") != null) {
-			databases.add(new Object[]{"H2DB", new H2TestDatabase()});
-		}
-		if (System.getProperty("testH2DataSourceDB") != null) {
-			JdbcDataSource h2DataSource = new JdbcDataSource();
-			h2DataSource.setUser("");
-			h2DataSource.setPassword("");
-			h2DataSource.setURL("jdbc:h2:./dataSourceTest.h2db");
-			H2DB databaseFromDataSource = H2TestDatabase.getDatabaseFromDataSource(h2DataSource);
-			databases.add(new Object[]{"H2DataSourceDB", databaseFromDataSource});
-		}
-		if (System.getProperty("testPostgresSQL") != null) {
-			databases.add(new Object[]{"PostgresSQL", TestPostgreSQL.getLocalTestDatabase()});
-		}
-		if (System.getProperty("testPostgresSQLRDS") != null) {
-			databases.add(new Object[]{"PostgresSQL-RDS", TestPostgreSQL.getRDSTestDatabase()});
-		}
-		if (System.getProperty("testNuo") != null) {
-			databases.add(new Object[]{"NuoDB", new NuoDB("localhost", 48004L, "dbv", "dbv", "dbv", "dbv")});
-		}
-		if (System.getProperty("testOracleAWS") != null) {
-			databases.add(new Object[]{"Oracle11DB", new OracleAWS11TestDB()});
-		}
-		if (System.getProperty("testOracleXE") != null) {
-			databases.add(new Object[]{"Oracle11DB", new Oracle11XETestDB()});
-		}
-		if (System.getProperty("testOracle12") != null) {
-			databases.add(new Object[]{"Oracle12DB", new Oracle12DB("dbvtest-oracle12.cygjg2wvuyam.ap-southeast-2.rds.amazonaws.com", 1521, "ORCL", "dbv", "Testingdbv")});
-		}
-		if (System.getProperty("testMSSQLServer") != null) {
-			databases.add(new Object[]{"MSSQLServer", new MSSQLServerTestDB()});
-		}
-		if (System.getProperty("testJavaDBMemory") != null) {
-			databases.add(new Object[]{"JavaDBMemory", new JavaDBMemoryDB("localhost", 1527, "dbv", "dbv", "dbv")});
-		}
-		if (System.getProperty("testJavaDB") != null) {
-			databases.add(new Object[]{"JavaDB", new JavaDB("localhost", 1527, "dbv", "dbv", "dbv")});
-		}
-		if (databases.isEmpty() || System.getProperty("testH2MemoryDB") != null) {
-			// Do basic testing
-			final H2MemoryDB h2MemoryDB = new H2MemoryTestDB();
-			databases.add(new Object[]{"H2MemoryDB", h2MemoryDB});
-		}
+  @Parameters(name = "{0}")
+  public static List<Object[]> data() throws IOException, SQLException, ClassNotFoundException, NoSuchMethodException, SecurityException, InstantiationException, IllegalAccessException, IllegalArgumentException, InvocationTargetException, Exception {
 
-		return databases;
-	}
+    if (databases.isEmpty()) {
+      getDatabasesFromSettings();
+      databases.forEach(database -> {
+        System.out.print("Processing: Database " + database[0]);
+        System.out.println(" = " + ((DBDatabase) database[1]).getJdbcURL());
+      });
+    }
+    return databases;
+  }
 
-	public AbstractTest(Object testIterationName, Object db) {
-		if (db instanceof DBDatabase) {
-			this.database = (DBDatabase) db;
-			database.setPrintSQLBeforeExecuting(false);
-		}
-	}
+  public synchronized final DBDatabase getDatabaseThatDoesNotSupportDifferenceBetweenEmptyStringsAndNull() throws SQLException {
+    final String name = "DatabaseThatDoesNotSupportDifferenceBetweenEmptyStringsAndNull-" + (Math.round(Math.random() * 1000000000));
+    return new H2MemorySettingsBuilder()
+            .setLabel(name)
+            .setDatabaseName(name)
+            .setDefinition(new H2DBDefinition().getOracleCompatibleVersion())
+            .getDBDatabase();
+  }
 
-	public String testableSQL(String str) {
-		if (str != null) {
-			String trimStr = str.trim().replaceAll("[ \\r\\n]+", " ").toLowerCase();
-			if ((database instanceof OracleDB) || (database instanceof JavaDB)) {
-				return trimStr
-						.replaceAll("\"", "")
-						.replaceAll(" oo", " ")
-						.replaceAll("\\b_+", "")
-						.replaceAll(" +[aA][sS] +", " ")
-						.replaceAll(" *; *$", "");
-			} else if (database instanceof PostgresDB) {
-				return trimStr.replaceAll("::[a-zA-Z]*", "");
-			} else if ((database instanceof NuoDB)) {
-				return trimStr.replaceAll("\\(\\(([^)]*)\\)=true\\)", "$1");
-			} else if (database instanceof MSSQLServerDB) {
-				return trimStr.replaceAll("[\\[\\]]", "");
-			} else {
-				return trimStr;
-			}
-		} else {
-			return str;
-		}
-	}
+  protected synchronized static void getDatabasesFromSettings() throws InvocationTargetException, IllegalArgumentException, IOException, InstantiationException, SQLException, IllegalAccessException, ClassNotFoundException, SecurityException, NoSuchMethodException, Exception {
+    if (System.getProperty("testSmallCluster") != null) {
+      final DBDatabaseCluster cluster
+              = new DBDatabaseCluster(
+                      "testSmallCluster",
+                      DBDatabaseCluster.Configuration.autoStart(),
+                      getSQLiteDBFromSystem(),
+                      H2MemoryDB.createANewRandomDatabase("CLUSTER-SMALL-H2Mem-", "")
+              );
+      cluster.setLabel("ClusteredDB-H2+SQLite");
+      cluster.waitUntilSynchronised();
+      cluster.setFailOnQuarantine(true);
+      databases.add(new Object[]{cluster.getLabel(), cluster});
+    }
+    if (System.getProperty("testBundledCluster") != null) {
+      final DBDatabaseCluster cluster = new DBDatabaseCluster("testBundledCluster", DBDatabaseCluster.Configuration.autoStart(),
+              getSQLiteDBFromSystem("bundle"),
+              H2MemoryDB.createANewRandomDatabase("CLUSTER-BUNDLED-H2Mem-", "")
+      );
+      cluster.setLabel("ClusteredDB-H2+SQLite");
+      cluster.waitUntilSynchronised();
+      databases.add(new Object[]{cluster.getLabel(), cluster});
+    }
+    if (System.getProperty("testOpenSourceCluster") != null) {
+      PostgresDB postgresDB = new PostgresSettingsBuilder().fromSystemUsingPrefix("postgresfullcluster").getDBDatabase();
+      final DBDatabaseCluster cluster
+              = new DBDatabaseCluster(
+                      "testOpenSourceCluster",
+                      DBDatabaseCluster.Configuration.autoStart(),
+                      H2MemoryDB.createANewRandomDatabase("CLUSTER-OPENSOURCE-H2Mem-", ""),
+                      //							H2MemoryTestDB.getFromSettings("h2memory"),
+                      getSQLiteDBFromSystem("open"),
+                      postgresDB,
+                      new MySQLSettingsBuilder().fromSystemUsingPrefix("mysql").setDatabaseName("dbvcluster").getDBDatabase()
+              );
+      cluster.setLabel("ClusteredDB-H2+SQLite+Postgres+MySQL");
+      cluster.waitUntilSynchronised();
+      databases.add(new Object[]{cluster.getLabel(), cluster});
+    }
+    if (System.getProperty("testFullCluster") != null) {
+      final H2MemoryDB h2Mem = H2MemoryDB.createANewRandomDatabase("CLUSTER-FULL-H2Mem-", "");
+//			final H2MemoryDB h2Mem = H2MemoryTestDB.getFromSettings("h2memory");
+      final SQLiteDB sqlite = getSQLiteDBFromSystem("full");
+      final PostgresDB postgres = new PostgresSettingsBuilder().fromSystemUsingPrefix("postgresfullcluster").getDBDatabase();
+      final MySQLDB mysql = new MySQLSettingsBuilder().fromSystemUsingPrefix("mysql").getDBDatabase();
+      final MSSQLServerDB sqlserver = MSSQLServerLocalTestDB.getFromSettings("sqlserver");
+      final Oracle11XEDB oracle = new Oracle11XESettingsBuilder().fromSystemUsingPrefix("oraclexe").getDBDatabase();
+      final DBDatabaseCluster cluster = new DBDatabaseCluster("testFullCluster", DBDatabaseCluster.Configuration.autoStart(), h2Mem, sqlite,
+              postgres, mysql, sqlserver,
+              oracle);
+      cluster.setLabel("ClusteredDB-H2+SQLite+Postgres+MySQL+SQLServer+Oracle");
+      cluster.waitUntilSynchronised();
+      databases.add(new Object[]{cluster.getLabel(), cluster});
+    }
+    if (System.getProperty("MySQL+Cluster") != null) {
+      databases.add(
+              new Object[]{"ClusteredDB-H2+SQLite+Postgres+MySQL",
+                new DBDatabaseCluster("MySQL+Cluster",
+                        DBDatabaseCluster.Configuration.autoStart(),
+                        H2MemoryTestDB.getFromSettings("h2memory"),
+                        getSQLiteDBFromSystem(),
+                        new PostgresSettingsBuilder().fromSystemUsingPrefix("postgresfullcluster").getDBDatabase(),
+                        new MySQLSettingsBuilder().fromSystemUsingPrefix("mysqlcluster").getDBDatabase()
+                )});
+      final MySQLDB dbDatabase = new MySQLSettingsBuilder().fromSystemUsingPrefix("mysql").getDBDatabase();
+      databases.add(new Object[]{"MySQL", dbDatabase});
+    }
+    if (System.getProperty("testSQLite") != null) {
+      databases.add(new Object[]{"SQLiteDB", getSQLiteDBFromSystem()});
+    }
+    if (System.getProperty("testMySQL") != null) {
+      databases.add(new Object[]{"MySQLDB", new MySQLSettingsBuilder().fromSystemUsingPrefix("mysql").getDBDatabase()});
+    }
+    if (System.getProperty("testMySQLContainer") != null) {
+      databases.add(new Object[]{"MySQLDBContainer",
+        new MySQLSettingsBuilder().fromSystemUsingPrefix("mysqlcontainer").getDBDatabase()
+      });
+    }
+    if (System.getProperty("testMySQL56") != null) {
+      databases.add(new Object[]{"MySQLDB-5.6", new MySQLSettingsBuilder().fromSystemUsingPrefix("mysql56").getDBDatabase()});
+    }
+    if (System.getProperty("testH2DB") != null) {
+      databases.add(new Object[]{"H2DB", new H2SettingsBuilder().fromSystemUsingPrefix("h2").getDBDatabase()});
+    }
+    if (System.getProperty("testH2SharedDB") != null) {
+      databases.add(new Object[]{"H2SharedDB", new H2SharedSettingsBuilder().fromSystemUsingPrefix("h2shared").getDBDatabase()});
+    }
+    if (System.getProperty("testH2FileDB") != null) {
+      //Quite convoluted creation but it's meant to test the file builder
+      final DatabaseConnectionSettings settings = DatabaseConnectionSettings.getSettingsfromSystemUsingPrefix("h2file");
+      final H2FileDB h2FileDB = new H2FileDB(
+              new H2FileSettingsBuilder()
+                      .setFilename(settings.getFilename())
+                      .setUsername(settings.getUsername())
+                      .setPassword(settings.getUsername())
+      );
+      h2FileDB.setLabel("H2FileDB");
+      databases.add(new Object[]{h2FileDB.getLabel(), h2FileDB}
+      );
+    }
+    if (System.getProperty("testH2DataSourceDB") != null) {
+      databases.add(new Object[]{"H2DataSourceDB", getH2SharedDatabase()});
+    }
+    if (System.getProperty("testPostgresSQL") != null) {
+      databases.add(new Object[]{"PostgresSQL", new PostgresSettingsBuilder().fromSystemUsingPrefix("postgres").getDBDatabase()});
+    }
+    if (System.getProperty("testPostgresContainer") != null) {
+      databases.add(new Object[]{
+        "PostgresContainer",
+        new PostgresSettingsBuilder().fromSystemUsingPrefix("postgrescontainer").setLabel("PostgresContainer").getDBDatabase()
+      });
+    }
+    if (System.getProperty("testNuo") != null) {
+      databases.add(new Object[]{"NuoDB", new NuoDB("localhost", 48004L, "dbv", "dbv", "dbv", "dbv")});
+    }
+    if (System.getProperty("testOracleXE") != null) {
+      databases.add(new Object[]{"OracleXEDB", new Oracle11XESettingsBuilder().fromSystemUsingPrefix("oraclexe").getDBDatabase()});
+    }
+    if (System.getProperty("testOracleXEContainer") != null) {
+      databases.add(new Object[]{"Oracle11XEContainer", getOracleContainerDatabase()});
+    }
+    if (System.getProperty("testMSSQLServerContainer") != null) {
+      databases.add(new Object[]{"MSSQLServerContainer", getMSSQLServerContainerDatabase()});
+    }
+    if (System.getProperty("testMSSQLServerLocal") != null) {
+      databases.add(new Object[]{"MSSQLServerLocal", MSSQLServerLocalTestDB.getFromSettings("sqlserver")});
+    }
+    if (System.getProperty("testH2MemoryDB") != null) {
+      databases.add(new Object[]{"H2MemoryDB", H2MemoryTestDB.getFromSettings("h2memory")});
+    }
+    findWellSpecifiedDatabases(databases);
+    if (databases.isEmpty() || System.getProperty("testH2BlankDB") != null) {
+      databases.add(new Object[]{"H2BlankDB", H2MemoryTestDB.blankDB()});
+    }
+  }
 
-	public String testableSQLWithoutColumnAliases(String str) {
-		if (str != null) {
-			String trimStr = str
-					.trim()
-					.replaceAll(" DB[_0-9]+", "")
-					.replaceAll("[ \\r\\n]+", " ")
-					.toLowerCase();
-			if ((database instanceof OracleDB)
-					|| (database instanceof JavaDB)) {
-				return trimStr
-						.replaceAll("\"", "")
-						.replaceAll("\\boo", "__")
-						.replaceAll("\\b_+", "")
-						.replaceAll(" *; *$", "")
-						.replaceAll(" as ", " ");
-			} else if ((database instanceof NuoDB)) {
-				return trimStr.replaceAll("\\(\\(([^)]*)\\)=true\\)", "$1");
-			} else if ((database instanceof MSSQLServerDB)) {
-				return trimStr
-						.replaceAll("\\[", "")
-						.replaceAll("]", "")
-						.replaceAll(" *;", "");
-			} else {
-				return trimStr;
-			}
-		} else {
-			return str;
-		}
-	}
+  private static SQLiteDB getSQLiteDBFromSystem(String clusterName) throws Exception {
+    final SQLiteSettingsBuilder sqliteBuilder = new SQLiteSettingsBuilder().fromSystemUsingPrefix("sqlite");
+    sqliteBuilder.setFilename(sqliteBuilder.getFilename() + "-" + clusterName + "cluster.sqlite");
+    return sqliteBuilder.getDBDatabase();
+  }
 
-	@Before
-	@SuppressWarnings("empty-statement")
-	public void setUp() throws Exception {
-		setup(database);
-	}
+  private static SQLiteDB getSQLiteDBFromSystem() throws Exception {
+    final SQLiteSettingsBuilder sqliteBuilder = new SQLiteSettingsBuilder().fromSystemUsingPrefix("sqlite");
+    return sqliteBuilder.getDBDatabase();
+  }
 
-	public void setup(DBDatabase database) throws Exception {
-		database.setPrintSQLBeforeExecuting(false);
-		database.preventDroppingOfTables(false);
-		database.dropTableNoExceptions(new Marque());
-		database.createTable(myMarqueRow);
+  protected static H2DB getH2SharedDatabase() throws SQLException {
+    final String prefix = "h2datasource";
+    String url = System.getProperty(prefix + ".url");
+    String username = System.getProperty(prefix + ".username");
+    String password = System.getProperty(prefix + ".password");
+    JdbcDataSource h2DataSource = new JdbcDataSource();
+    h2DataSource.setUser(username);
+    h2DataSource.setPassword(password);
+    h2DataSource.setURL(url);
+    final H2DB h2DB = new H2DB(h2DataSource);
+    return h2DB;
+  }
 
-		database.preventDroppingOfTables(false);
-		database.dropTableNoExceptions(myCarCompanyRow);
-		database.createTable(myCarCompanyRow);
+  private static MSSQLServer2017ContainerDB MSSQLSERVER_CONTAINER_DATABASE = null;
 
-		marquesTable = DBTable.getInstance(database, myMarqueRow);
-		carCompanies = DBTable.getInstance(database, myCarCompanyRow);
-		carCompanies.insert(new CarCompany("TOYOTA", 1));
-		carTableRows.add(new CarCompany("Ford", 2));
-		carTableRows.add(new CarCompany("GENERAL MOTORS", 3));
-		carTableRows.add(new CarCompany("OTHER", 4));
-		carCompanies.insert(carTableRows);
+  private static MSSQLServer2017ContainerDB getMSSQLServerContainerDatabase() {
+    if (MSSQLSERVER_CONTAINER_DATABASE == null) {
+      MSSQLSERVER_CONTAINER_DATABASE = MSSQLServer2017ContainerDB.getLabelledInstance("MSSQLServer Container DB");
+    }
+    return MSSQLSERVER_CONTAINER_DATABASE;
+  }
 
-		Date firstDate = DATETIME_FORMAT.parse(firstDateStr);
-		Date secondDate = DATETIME_FORMAT.parse(secondDateStr);
+  private static Oracle11XEContainerDB ORACLE_CONTAINER_DATABASE = null;
 
-		marqueRows.add(new Marque(4893059, "True", 1246974, null, 3, "UV", "PEUGEOT", null, "Y", null, 4, true));
-		marqueRows.add(new Marque(4893090, "False", 1246974, "", 1, "UV", "FORD", "", "Y", firstDate, 2, false));
-		marqueRows.add(new Marque(4893101, "False", 1246974, "", 2, "UV", "HOLDEN", "", "Y", firstDate, 3, null));
-		marqueRows.add(new Marque(4893112, "False", 1246974, "", 2, "UV", "MITSUBISHI", "", "Y", firstDate, 4, null));
-		marqueRows.add(new Marque(4893150, "False", 1246974, "", 3, "UV", "SUZUKI", "", "Y", firstDate, 4, null));
-		marqueRows.add(new Marque(4893263, "False", 1246974, "", 2, "UV", "HONDA", "", "Y", firstDate, 4, null));
-		marqueRows.add(new Marque(4893353, "False", 1246974, "", 4, "UV", "NISSAN", "", "Y", firstDate, 4, null));
-		marqueRows.add(new Marque(4893557, "False", 1246974, "", 2, "UV", "SUBARU", "", "Y", firstDate, 4, null));
-		marqueRows.add(new Marque(4894018, "False", 1246974, "", 2, "UV", "MAZDA", "", "Y", firstDate, 4, null));
-		marqueRows.add(new Marque(4895203, "False", 1246974, "", 2, "UV", "ROVER", "", "Y", firstDate, 4, null));
-		marqueRows.add(new Marque(4896300, "False", 1246974, null, 2, "UV", "HYUNDAI", null, "Y", firstDate, 1, null));
-		marqueRows.add(new Marque(4899527, "False", 1246974, "", 1, "UV", "JEEP", "", "Y", firstDate, 3, null));
-		marqueRows.add(new Marque(7659280, "False", 1246972, "Y", 3, "", "DAIHATSU", "", "Y", firstDate, 4, null));
-		marqueRows.add(new Marque(7681544, "False", 1246974, "", 2, "UV", "LANDROVER", "", "Y", firstDate, 4, null));
-		marqueRows.add(new Marque(7730022, "False", 1246974, "", 2, "UV", "VOLVO", "", "Y", firstDate, 4, null));
-		marqueRows.add(new Marque(8376505, "False", 1246974, "", null, "", "ISUZU", "", "Y", firstDate, 4, null));
-		marqueRows.add(new Marque(8587147, "False", 1246974, "", null, "", "DAEWOO", "", "Y", firstDate, 4, null));
-		marqueRows.add(new Marque(9971178, "False", 1246974, "", 1, "", "CHRYSLER", "", "Y", firstDate, 4, null));
-		marqueRows.add(new Marque(13224369, "False", 1246974, "", 0, "", "VW", "", "Y", secondDate, 4, null));
-		marqueRows.add(new Marque(6664478, "False", 1246974, "", 0, "", "BMW", "", "Y", secondDate, 4, null));
-		marqueRows.add(new Marque(1, "False", 1246974, "", 0, "", "TOYOTA", "", "Y", firstDate, 1, true));
-		marqueRows.add(new Marque(2, "False", 1246974, "", 0, "", "HUMMER", "", "Y", secondDate, 3, null));
+  private static Oracle11XEContainerDB getOracleContainerDatabase() {
+    if (ORACLE_CONTAINER_DATABASE == null) {
+      ORACLE_CONTAINER_DATABASE = Oracle11XEContainerDB.getInstance();
+    }
+    return ORACLE_CONTAINER_DATABASE;
+  }
 
-		//database.setPrintSQLBeforeExecuting(true);
-		marquesTable.insert(marqueRows);
-		database.setPrintSQLBeforeExecuting(false);
+  public AbstractTest(Object testIterationName, Object db) {
+    if (db instanceof DBDatabase) {
+      this.database = (DBDatabase) db;
+    }
+  }
 
-		database.preventDroppingOfTables(false);
-		database.dropTableNoExceptions(new CompanyLogo());
-		database.createTable(new CompanyLogo());
+  public String testableSQL(String str) {
+    if (str != null) {
+      String trimStr = REMOVE_COMMENTS.replaceAll(str);
+      trimStr = trimStr
+              .trim()
+              .replaceAll("[ \\r\\n]+", " ")
+              .replaceAll(" +", " ")
+              .toLowerCase()
+              .replaceAll(", ", ",")
+              .replaceAll("`", "");
+      if ((database instanceof OracleDB) || (database instanceof JavaDB)) {
+        return trimStr
+                .replaceAll("\"", "")
+                .replaceAll(" oo", " ")
+                .replaceAll("\\b_+", "")
+                .replaceAll(" +[aA][sS] +", " ")
+                .replaceAll(" *; *$", "");
+      } else if (database instanceof H2DB) {
+        return trimStr
+                .replaceAll("\"", "");
+      } else if (database instanceof PostgresDB) {
+        return trimStr.replaceAll("::[a-zA-Z]*", "");
+      } else if ((database instanceof NuoDB)) {
+        return trimStr.replaceAll("\\(\\(([^)]*)\\)=true\\)", "$1");
+      } else if (database instanceof MSSQLServerDB) {
+        return trimStr.replaceAll("[\\[\\]]", "");
+      } else {
+        return trimStr;
+      }
+    } else {
+      return str;
+    }
+  }
 
-		database.preventDroppingOfTables(false);
-		database.dropTableNoExceptions(new LinkCarCompanyAndLogo());
-		database.createTable(new LinkCarCompanyAndLogo());
+  private static final RegexReplacement REMOVE_COMMENTS = Regex.startingAnywhere().literal("/").asterisk().anyCharacterExcept('*').asterisk().literal("/").replaceWith().nothing();
 
-		database.setPrintSQLBeforeExecuting(false);
-	}
+  public String testableSQLWithoutColumnAliases(String str) {
+    if (str != null) {
+      String trimStr = REMOVE_COMMENTS.replaceAll(str);
+//			System.out.println("STR: "+trimStr);
+      trimStr = trimStr
+              .trim()
+              .replaceAll(" [dD][bB][_0-9]+", "")
+              .replaceAll("[ \\r\\n]+", " ")
+              .replaceAll(", ", ",")
+              .replaceAll("`", "")
+              .toLowerCase();
+      if ((database instanceof OracleDB)
+              || (database instanceof JavaDB)) {
+        return trimStr
+                .replaceAll("\"", "")
+                .replaceAll("\\boo", "__")
+                .replaceAll("\\b_+", "")
+                .replaceAll(" *; *$", "")
+                .replaceAll(" as ", " ");
+      } else if (database instanceof H2DB) {
+        return trimStr
+                .replaceAll("\"", "");
+      } else if ((database instanceof NuoDB)) {
+        return trimStr.replaceAll("\\(\\(([^)]*)\\)=true\\)", "$1");
+      } else if ((database instanceof MSSQLServerDB)) {
+        return trimStr
+                .replaceAll("\\[", "")
+                .replaceAll("\\]", "")
+                .replaceAll(" *;", "");
+      } else {
+        return trimStr;
+      }
+    } else {
+      return str;
+    }
+  }
 
-	@After
-	public void tearDown() throws Exception {
-		tearDown(database);
-	}
+  @Before
+  @SuppressWarnings("empty-statement")
+  public void setUp() throws Exception {
+    setup(database);
+  }
 
-	public void tearDown(DBDatabase database) throws Exception {
-	}
+  public synchronized void setup(DBDatabase database) throws Exception {
+    try {
+      if (database != null) {
+        if (database instanceof DBDatabaseCluster) {
+          try {
+            DBDatabaseCluster cluster = (DBDatabaseCluster) database;
+            cluster.reconnectQuarantinedDatabases();
+            cluster.waitUntilSynchronised();
+          } catch (Exception ex) {
+            ex.printStackTrace();
+            throw ex;
+          }
+        }
+        database.preventDroppingOfTables(false);
+        database.dropTableIfExists(new Marque());
+        database.createTable(myMarqueRow);
 
-	private static class H2TestDatabase extends H2DB {
+        database.preventDroppingOfTables(false);
+        database.dropTableNoExceptions(myCarCompanyRow);
+        database.createTable(myCarCompanyRow);
 
-		private static H2DB getDatabaseFromDataSource(JdbcDataSource h2DataSource) {
-			return new H2DB(h2DataSource);
-		}
+        marquesTable = DBTable.getInstance(database, myMarqueRow);
+        DBTable<Marque> marqueTable = DBTable.getInstance(database, myMarqueRow);
+        carCompanies = DBTable.getInstance(database, myCarCompanyRow);
+        carCompanies.insert(new CarCompany("TOYOTA", 1));
+        carTableRows.clear();
+        carTableRows.add(new CarCompany("Ford", 2));
+        carTableRows.add(new CarCompany("GENERAL MOTORS", 3));
+        carTableRows.add(new CarCompany("OTHER", 4));
+        carCompanies.insert(carTableRows);
 
-		public H2TestDatabase() {
-			super("jdbc:h2:./directTest.h2db", "", "");
-		}
-	}
+        Date firstDate = DATETIME_FORMAT.parse(firstDateStr);
+        Date secondDate = DATETIME_FORMAT.parse(secondDateStr);
 
-	private static class MySQLRDSTestDatabase extends MySQLDB {
+        marqueRows.add(new Marque(4893059, "True", 1246974, null, 3, "UV", "PEUGEOT", null, "Y", null, 4, true));
+        marqueRows.add(new Marque(4893090, "False", 1246974, "", 1, "UV", "FORD", "", "Y", firstDate, 2, false));
+        marqueRows.add(new Marque(4893101, "False", 1246974, "", 2, "UV", "HOLDEN", "", "Y", firstDate, 3, null));
+        marqueRows.add(new Marque(4893112, "False", 1246974, "", 2, "UV", "MITSUBISHI", "", "Y", firstDate, 4, null));
+        marqueRows.add(new Marque(4893150, "False", 1246974, "", 3, "UV", "SUZUKI", "", "Y", firstDate, 4, null));
+        marqueRows.add(new Marque(4893263, "False", 1246974, "", 2, "UV", "HONDA", "", "Y", firstDate, 4, null));
+        marqueRows.add(new Marque(4893353, "False", 1246974, "", 4, "UV", "NISSAN", "", "Y", firstDate, 4, null));
+        marqueRows.add(new Marque(4893557, "False", 1246974, "", 2, "UV", "SUBARU", "", "Y", firstDate, 4, null));
+        marqueRows.add(new Marque(4894018, "False", 1246974, "", 2, "UV", "MAZDA", "", "Y", firstDate, 4, null));
+        marqueRows.add(new Marque(4895203, "False", 1246974, "", 2, "UV", "ROVER", "", "Y", firstDate, 4, null));
+        marqueRows.add(new Marque(4896300, "False", 1246974, null, 2, "UV", "HYUNDAI", null, "Y", firstDate, 1, null));
+        marqueRows.add(new Marque(4899527, "False", 1246974, "", 1, "UV", "JEEP", "", "Y", firstDate, 3, null));
+        marqueRows.add(new Marque(7659280, "False", 1246972, "Y", 3, "", "DAIHATSU", "", "Y", firstDate, 4, null));
+        marqueRows.add(new Marque(7681544, "False", 1246974, "", 2, "UV", "LANDROVER", "", "Y", firstDate, 4, null));
+        marqueRows.add(new Marque(7730022, "False", 1246974, "", 2, "UV", "VOLVO", "", "Y", firstDate, 4, null));
+        marqueRows.add(new Marque(8376505, "False", 1246974, "", null, "", "ISUZU", "", "Y", firstDate, 4, null));
+        marqueRows.add(new Marque(8587147, "False", 1246974, "", null, "", "DAEWOO", "", "Y", firstDate, 4, null));
+        marqueRows.add(new Marque(9971178, "False", 1246974, "", 1, "", "CHRYSLER", "", "Y", firstDate, 4, null));
+        marqueRows.add(new Marque(13224369, "False", 1246974, "", 0, "", "VW", "", "Y", secondDate, 4, null));
+        marqueRows.add(new Marque(6664478, "False", 1246974, "", 0, "", "BMW", "", "Y", secondDate, 4, null));
+        marqueRows.add(new Marque(1, "False", 1246974, "", 0, "", "TOYOTA", "", "Y", firstDate, 1, true));
+        marqueRows.add(new Marque(2, "False", 1246974, "", 0, "", "HUMMER", "", "Y", secondDate, 3, null));
 
-		public MySQLRDSTestDatabase() {
-			super("jdbc:mysql://dbvtest-mysql.cygjg2wvuyam.ap-southeast-2.rds.amazonaws.com:3306/test?createDatabaseIfNotExist=true", "dbv", "Testingdbv");
-		}
-	}
+        marqueTable.insert(marqueRows);
 
-	private static class MySQL56TestDatabase extends MySQLDB {
+        database.preventDroppingOfTables(false);
+        database.dropTableNoExceptions(new CompanyLogo());
+        database.createTable(new CompanyLogo());
 
-		public MySQL56TestDatabase() {
-			//super("jdbc:mysql://dbvtest-mysql.cygjg2wvuyam.ap-southeast-2.rds.amazonaws.com:3306/test?createDatabaseIfNotExist=true", "dbv", "Testingdbv");
-			super("jdbc:mysql://52.64.179.175:3306/dbv?createDatabaseIfNotExist=true", "dbv", "dbv");
-		}
-	}
+        database.preventDroppingOfTables(false);
+        database.dropTableNoExceptions(new CompanyText());
+        database.createTable(new CompanyText());
 
-	private static class MySQLTestDatabase extends MySQLDB {
+        database.preventDroppingOfTables(false);
+        database.dropTableNoExceptions(new LinkCarCompanyAndLogo());
+        database.createOrUpdateTable(new LinkCarCompanyAndLogo());
+      }
+    } catch (Exception ex) {
+      ex.printStackTrace();
+      throw ex;
+    }
+  }
 
-		public MySQLTestDatabase() {
-			super("jdbc:mysql://localhost:3306/test?createDatabaseIfNotExist=true", "dbv", "dbv");
-		}
-	}
+  @After
+  public void tearDown() throws Exception {
+    tearDown(database);
+  }
 
-	private static class TestPostgreSQL extends PostgresDB {
+  public void tearDown(DBDatabase database) throws Exception {
+  }
 
-		protected static PostgresDB getRDSTestDatabase() {
-			return new PostgresDB("dbvtest-postgresql.cygjg2wvuyam.ap-southeast-2.rds.amazonaws.com", 5432, "dbvtest", "dbv", "Testingdbv");
-		}
+  protected String oracleSafeStrings(String expect) throws NoAvailableDatabaseException {
+    return database.supportsDifferenceBetweenNullAndEmptyString() ? expect : expect == null ? "" : expect;
+  }
 
-		protected static PostgresDB getLocalTestDatabase() {
-			return new PostgresDB("dbvtest", "dbv", "dbv", "");
-		}
-	}
+  private static class MSSQLServerLocalTestDB {
 
-	private static class SQLiteTestDB extends SQLiteDB {
+    private final static long serialVersionUID = 1l;
 
-		public SQLiteTestDB() throws SQLException {
-			super("jdbc:sqlite:dbvolutionTest.sqlite", "dbv", "dbv");
-		}
-	}
+    public static MSSQLServerDB getFromSettings(String prefix) throws SQLException {
+      MSSQLServerSettingsBuilder builder = new MSSQLServerSettingsBuilder().fromSystemUsingPrefix(prefix);
+      return new MSSQLServerDB(builder);
+    }
 
-	private static class OracleAWS11TestDB extends OracleAWS11DB {
+    private MSSQLServerLocalTestDB() {
+    }
 
-		public OracleAWS11TestDB() {
-			super("dbvtest-oracle-se1.cygjg2wvuyam.ap-southeast-2.rds.amazonaws.com", 1521, "ORCL", "dbv", "Testingdbv");
-		}
-	}
+  }
 
-	private static class Oracle11XETestDB extends Oracle11XEDB {
+  private static class H2MemoryTestDB {
 
-		public Oracle11XETestDB() {
-			super("54.206.70.155", 1521, "XE", "DBV", "Testingdbv2");
-			//super("ec2-54-206-23-5.ap-southeast-2.compute.amazonaws.com", 1521, "XE", "DBV", "Testingdbv");
-		}
-	}
+    public static final long serialVersionUID = 1l;
 
-	private static class MSSQLServerTestDB extends MSSQLServerDB {
+    public static H2MemoryDB getFromSettings(String prefix) throws SQLException {
+      H2MemorySettingsBuilder builder = new H2MemorySettingsBuilder().fromSystemUsingPrefix(prefix);
+      return new H2MemoryDB(builder);
+    }
 
-		public MSSQLServerTestDB() {
-			super("dbvtest-mssql.cygjg2wvuyam.ap-southeast-2.rds.amazonaws.com", "dbvtest", "dbvtest", 1433, "dbv", "Testingdbv");
-		}
-	}
+    public static H2MemoryDB getClusterDBFromSettings(String prefix) throws SQLException {
+      H2MemorySettingsBuilder builder = new H2MemorySettingsBuilder().fromSystemUsingPrefix(prefix);
+      String file = builder.getDatabaseName();
+      if (file != null && !file.equals("")) {
+        builder.setDatabaseName(file + "-cluster.h2db");
+      } else {
+        builder.setDatabaseName("cluster.h2db");
+      }
+      return new H2MemoryDB(builder);
+    }
 
+    public static H2MemoryDB blankDB() throws SQLException {
+      return new H2MemoryDB();
+    }
 
-	private static class H2MemoryTestDB extends H2MemoryDB {
-
-		public H2MemoryTestDB() {
-			super("memoryTest.h2db", "", "", false);
-		}
-	}
+    private H2MemoryTestDB() {
+    }
+  }
 }

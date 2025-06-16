@@ -15,15 +15,14 @@
  */
 package nz.co.gregs.dbvolution.results;
 
-import nz.co.gregs.dbvolution.expressions.SpatialResult;
-
 /**
  *
  * <p style="color: #F90;">Support DBvolution at
  * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
  *
  * @author gregorygraham
+ * @param <B> the base Java type that this result class produces and manipulates, e.g. Polygon
  */
-public interface Spatial2DResult extends SpatialResult {
-	
+public interface Spatial2DResult<B> extends SpatialResult<B> {
+
 }

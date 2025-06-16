@@ -15,33 +15,36 @@
  */
 package nz.co.gregs.dbvolution.datatypes.spatial2D;
 
-import com.vividsolutions.jts.geom.Coordinate;
-import com.vividsolutions.jts.geom.LineSegment;
-import com.vividsolutions.jts.geom.LineString;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import nz.co.gregs.dbvolution.DBDatabase;
 import nz.co.gregs.dbvolution.datatypes.QueryableDatatype;
-import com.vividsolutions.jts.geom.Point;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import nz.co.gregs.dbvolution.columns.LineSegment2DColumn;
+import nz.co.gregs.dbvolution.databases.definitions.DBDefinition;
 import nz.co.gregs.dbvolution.exceptions.IncorrectGeometryReturnedForDatatype;
+import nz.co.gregs.dbvolution.exceptions.IncorrectRowProviderInstanceSuppliedException;
 import nz.co.gregs.dbvolution.exceptions.ParsingSpatialValueException;
-import nz.co.gregs.dbvolution.expressions.LineSegment2DExpression;
+import nz.co.gregs.dbvolution.expressions.spatial2D.LineSegment2DExpression;
 import nz.co.gregs.dbvolution.expressions.StringExpression;
+import nz.co.gregs.dbvolution.query.RowDefinition;
 import nz.co.gregs.dbvolution.results.LineSegment2DResult;
+import com.vividsolutions.jts.geom.*;
+import com.vividsolutions.jts.io.ParseException;
+import java.util.Comparator;
+import nz.co.gregs.dbvolution.utility.comparators.ComparableComparator;
 
 /**
- * Represents datatypes and columns that are composed of a 2 points
- * connected as a line.
+ * Represents datatypes and columns that are composed of a 2 points connected as
+ * a line.
  *
  * <p>
  * Use this type if the database column stores a series of 2-dimensional (that
  * is X and Y points) that are contiguous and open.
  *
  * <p>
- * Alternatives to a DBLineSegment2D are a series of points constituting a line {@link DBLine2D},
- * infinite lines (TODO), closed paths (TODO), and closed
+ * Alternatives to a DBLineSegment2D are a series of points constituting a line
+ * {@link DBLine2D}, infinite lines (TODO), closed paths (TODO), and closed
  * paths defining a solid {@link DBPolygon2D}.
  *
  * <p>
@@ -56,7 +59,7 @@ import nz.co.gregs.dbvolution.results.LineSegment2DResult;
  *
  * @author gregorygraham
  */
-public class DBLineSegment2D extends QueryableDatatype implements LineSegment2DResult {
+public class DBLineSegment2D extends QueryableDatatype<LineSegment> implements LineSegment2DResult {
 
 	private static final long serialVersionUID = 1L;
 
@@ -76,7 +79,7 @@ public class DBLineSegment2D extends QueryableDatatype implements LineSegment2DR
 	 * This is a convenient way to assign a constant value in an expression or
 	 * DBRow subclass.
 	 *
-	 * @param lineSegment 
+	 * @param lineSegment the value to apply
 	 */
 	public DBLineSegment2D(LineSegment lineSegment) {
 		super(lineSegment);
@@ -89,10 +92,23 @@ public class DBLineSegment2D extends QueryableDatatype implements LineSegment2DR
 	 * Useful for defining expression columns in DBRow subclass that acquire their
 	 * value from a transformation of data at query time.
 	 *
-	 * @param columnExpression
+	 * @param columnExpression the column expression to use to fill this field
 	 */
-	public DBLineSegment2D(nz.co.gregs.dbvolution.expressions.LineSegment2DExpression columnExpression) {
+	public DBLineSegment2D(nz.co.gregs.dbvolution.expressions.spatial2D.LineSegment2DExpression columnExpression) {
 		super(columnExpression);
+	}
+
+	public DBLineSegment2D(Double point1x, Double point1y, Double point2x, Double point2y) {
+		super(new LineSegment(point1x, point1y, point2x, point2y));
+
+	}
+
+	public DBLineSegment2D(Point point1, Point point2) {
+		this(new LineSegment(point1.getCoordinate(), point2.getCoordinate()));
+	}
+
+	public DBLineSegment2D(Coordinate coord1, Coordinate coord2) {
+		this(new LineSegment(coord1, coord2));
 	}
 
 	/**
@@ -102,8 +118,9 @@ public class DBLineSegment2D extends QueryableDatatype implements LineSegment2DR
 	 * Use this method to define the value of a field/column before inserting the
 	 * DBRow subclass into the database.
 	 *
-	 * @param line
+	 * @param line the value to apply
 	 */
+	@Override
 	public void setValue(LineSegment line) {
 		setLiteralValue(line);
 	}
@@ -118,8 +135,8 @@ public class DBLineSegment2D extends QueryableDatatype implements LineSegment2DR
 	 * Use this method to define the value of a field/column before inserting the
 	 * DBRow subclass into the database.
 	 *
-	 * @param point1
-	 * @param point2
+	 * @param point1 the starting point of the line segment
+	 * @param point2 the end point of the line segment
 	 */
 	public void setValue(Point point1, Point point2) {
 		LineSegment line = new LineSegment(point1.getCoordinate(), point2.getCoordinate());
@@ -136,8 +153,8 @@ public class DBLineSegment2D extends QueryableDatatype implements LineSegment2DR
 	 * Use this method to define the value of a field/column before inserting the
 	 * DBRow subclass into the database.
 	 *
-	 * @param coord1 
-	 * @param coord2 
+	 * @param coord1 the starting point of the line segment
+	 * @param coord2 the end point of the line segment
 	 */
 	public void setValue(Coordinate coord1, Coordinate coord2) {
 		LineSegment line = new LineSegment(coord1, coord2);
@@ -149,7 +166,7 @@ public class DBLineSegment2D extends QueryableDatatype implements LineSegment2DR
 		if (!isDefined() || isNull()) {
 			return null;
 		} else {
-			return (LineSegment) getLiteralValue();
+			return getLiteralValue();
 		}
 	}
 
@@ -157,13 +174,41 @@ public class DBLineSegment2D extends QueryableDatatype implements LineSegment2DR
 	 * Transform the value of the DBLine2D into a
 	 * {@link LineString JTS LineString}
 	 *
-	 * <p style="color: #F90;">Support DBvolution at
-	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
-	 *
 	 * @return the value of this object if defined and not NULL, NULL otherwise.
 	 */
 	public LineSegment jtsLineSegmentValue() {
-		return getValue();
+		final LineSegment value = getValue();
+		value.normalize();
+		return value;
+	}
+
+	@Override
+	public void setFromResultSet(DBDefinition defn, ResultSet resultSet, String resultSetColumnName) throws SQLException {
+		removeConstraints();
+		if (resultSet == null || resultSetColumnName == null) {
+			this.setToNull(defn);
+		} else {
+			LineSegment dbValue;
+			try {
+				dbValue = getFromResultSet(defn, resultSet, resultSetColumnName);
+				if (resultSet.wasNull()) {
+					dbValue = null;
+				} else if (defn.requiresReversingLineStringsFromDatabase()) {
+					dbValue.reverse();
+				}
+			} catch (SQLException ex) {
+				// Probably means the column wasn't selected.
+				dbValue = null;
+			}
+			if (dbValue == null) {
+				this.setToNull(defn);
+			} else {
+				this.setLiteralValue(dbValue);
+			}
+		}
+		setUnchanged();
+		setDefined(true);
+//		propertyWrapperDefn = null;
 	}
 
 	@Override
@@ -172,18 +217,18 @@ public class DBLineSegment2D extends QueryableDatatype implements LineSegment2DR
 	}
 
 	@Override
-	protected String formatValueForSQLStatement(DBDatabase db) {
+	protected String formatValueForSQLStatement(DBDefinition db) {
 		LineSegment lineString = getValue();
 		if (lineString == null) {
-			return db.getDefinition().getNull();
+			return db.getNull();
 		} else {
-			String str = db.getDefinition().transformLineSegmentIntoDatabaseLineSegment2DFormat(lineString);
+			String str = db.transformLineSegmentIntoDatabaseLineSegment2DFormat(lineString);
 			return str;
 		}
 	}
 
 	@Override
-	protected Object getFromResultSet(DBDatabase database, ResultSet resultSet, String fullColumnName) throws SQLException, IncorrectGeometryReturnedForDatatype {
+	protected LineSegment getFromResultSet(DBDefinition database, ResultSet resultSet, String fullColumnName) throws SQLException, IncorrectGeometryReturnedForDatatype {
 
 		LineSegment lineSegment = null;
 		String string = resultSet.getString(fullColumnName);
@@ -191,10 +236,13 @@ public class DBLineSegment2D extends QueryableDatatype implements LineSegment2DR
 			return null;
 		} else {
 			try {
-				lineSegment = database.getDefinition().transformDatabaseLineSegment2DValueToJTSLineSegment(string);
-			} catch (com.vividsolutions.jts.io.ParseException ex) {
+				if (string.equals("GEOMETRYCOLLECTION()")) {
+					lineSegment = new LineSegment();
+				} else {
+				lineSegment = database.transformDatabaseLineSegment2DValueToJTSLineSegment(string);}
+			} catch (ParseException ex) {
 				Logger.getLogger(DBLineSegment2D.class.getName()).log(Level.SEVERE, null, ex);
-				throw new ParsingSpatialValueException(fullColumnName, string,ex);
+				throw new ParsingSpatialValueException(fullColumnName, string, ex);
 			}
 			return lineSegment;
 		}
@@ -210,34 +258,25 @@ public class DBLineSegment2D extends QueryableDatatype implements LineSegment2DR
 		return false;
 	}
 
-//	@Override
-//	public NumberExpression measurableDimensions() {
-//		return NumberExpression.value(1);
-//	}
-//
-//	@Override
-//	public NumberExpression spatialDimensions() {
-//		return NumberExpression.value(2);
-//	}
-//
-//	@Override
-//	public BooleanExpression hasMagnitude() {
-//		return BooleanExpression.falseExpression();
-//	}
-//
-//	@Override
-//	public NumberExpression magnitude() {
-//		return NumberExpression.value((Number)null);
-//	}
-//
-//	@Override
-//	public StringExpression toWKTFormat(){
-//		return StringExpression.value(jtsLineSegmentValue().toString());
-//	}
-
 	@Override
 	public StringExpression stringResult() {
 		return LineSegment2DExpression.value(this).stringResult();
 	}
 
+	@Override
+	protected void setValueFromStandardStringEncoding(String encodedValue) {
+		throw new UnsupportedOperationException("DBLineSegment2D does not support setValueFromStandardStringEncoding(String) yet."); //To change body of generated methods, choose Tools | Templates.
+	}
+
+	@Override
+	public LineSegment2DColumn getColumn(RowDefinition row) throws IncorrectRowProviderInstanceSuppliedException {
+		return new LineSegment2DColumn(row, this);
+	}
+
+
+	@Override
+	@SuppressWarnings("unchecked")
+	public Comparator<LineSegment> getComparator() {
+		return ComparableComparator.forClass(LineSegment.class);
+	}
 }

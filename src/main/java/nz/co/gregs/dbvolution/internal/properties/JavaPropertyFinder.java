@@ -12,8 +12,10 @@ import java.util.EnumSet;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import nz.co.gregs.dbvolution.DBRow;
 
 import nz.co.gregs.dbvolution.exceptions.DBRuntimeException;
+import nz.co.gregs.dbvolution.query.RowDefinition;
 
 /**
  * Low-level internal utility for finding properties within classes.
@@ -89,11 +91,10 @@ class JavaPropertyFinder {
 	 * @param clazz the type to inspect
 	 * <p style="color: #F90;">Support DBvolution at
 	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
-	 *
 	 * @return the non-null list of properties found on the given class
 	 */
-	List<JavaProperty> getPropertiesOf(Class<?> clazz) {
-		List<JavaProperty> properties = new ArrayList<JavaProperty>();
+	List<JavaProperty<?>> getPropertiesOf(Class<?> clazz) {
+		List<JavaProperty<?>> properties = new ArrayList<JavaProperty<?>>();
 
 		// retrieve fields
 		if (propertyTypes.contains(PropertyType.FIELD)) {
@@ -111,52 +112,59 @@ class JavaPropertyFinder {
 	/**
 	 * Gets the field-based properties.
 	 *
-	 * <p style="color: #F90;">Support DBvolution at
-	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
-	 *
 	 * @return a list of JavaProperty
 	 */
-	// TODO: this may not be able to handle inheritance of protected/default fields
-	private List<JavaProperty> getFields(Class<?> clazz) {
-		List<JavaProperty> properties = new ArrayList<JavaProperty>();
+	private List<JavaProperty<?>> getFields(Class<?> clazz) {
+		Class<?> theClass = clazz;
+		List<JavaProperty<?>> properties = new ArrayList<JavaProperty<?>>();
 
 		Set<String> observedFieldNames = new HashSet<String>();
 
 		// get all public fields
 		// (these are inherited, so need to use the proper inheritance-aware method)
-		for (Field field : clazz.getFields()) {
+		for (Field field : theClass.getFields()) {
 			field.setAccessible(true);
 			if (filter.acceptField(field)) {
-				properties.add(new JavaField(field));
+				properties.add(new JavaField<>(field));
 			}
 			observedFieldNames.add(field.getName());
 		}
 
 		// get all non-public fields
-		// (getDeclaredFields() isn't inheritance aware,
-		//  so we're probably not going to be inherited protected/default fields this way)
+		// getDeclaredFields() isn't inheritance aware,
+		// so we're probably not going to be inherited protected/default fields this way)
+		// so we're going to walk up the inheritance tree 
+		// until we reach RowDefinition, DBRow, the other RowDefinition subclasses, or Object
 		if (fieldVisibility.ordinal() > Visibility.PUBLIC.ordinal()) {
-			for (Field field : clazz.getDeclaredFields()) {
-				field.setAccessible(true);
-				if (!observedFieldNames.contains(field.getName())) {
-					if (visibilityOf(field).ordinal() <= fieldVisibility.ordinal()) {
-						// skip standard java fields
-						if (field.getName().equals("serialVersionUID")) {
-							continue;
-						}
+			// start climbing
+			do {
+				for (Field field : theClass.getDeclaredFields()) {
+					field.setAccessible(true);
+					if (!observedFieldNames.contains(field.getName())) {
+						if (visibilityOf(field).ordinal() <= fieldVisibility.ordinal()) {
+							// skip standard java fields
+							if (field.getName().equals("serialVersionUID")) {
+								continue;
+							}
 
-						// add field if accepted
-						// (plus set accessible)
-						if (filter.acceptField(field)) {
-							// make accessible
-							// TODO: pretty sure there's exception types that need to be caught on this call
-							field.setAccessible(true);
+							// add field if accepted
+							// (plus set accessible)
+							if (filter.acceptField(field)) {
+								// make accessible
+								field.setAccessible(true);
 
-							properties.add(new JavaField(field));
+								properties.add(new JavaField<>(field));
+							}
 						}
 					}
 				}
-			}
+				// move up the tree
+				theClass = theClass.getSuperclass();
+				// make sure we don't climb too high
+			} while (!theClass.equals(DBRow.class)
+					&& !theClass.equals(RowDefinition.class)
+					&& !theClass.equals(Object.class)
+					&& !theClass.getSuperclass().equals(RowDefinition.class));
 		}
 
 		return properties;
@@ -170,8 +178,8 @@ class JavaPropertyFinder {
 	 *
 	 * @return a list of JavaProperty
 	 */
-	private List<JavaProperty> getBeanProperties(Class<?> clazz) {
-		List<JavaProperty> properties = new ArrayList<JavaProperty>();
+	private List<JavaProperty<?>> getBeanProperties(Class<?> clazz) {
+		List<JavaProperty<?>> properties = new ArrayList<JavaProperty<?>>();
 
 		// get all public bean-properties
 		try {
@@ -187,7 +195,7 @@ class JavaPropertyFinder {
 
 				// add field if accepted
 				if (filter.acceptBeanProperty(getter, setter)) {
-					properties.add(new JavaBeanProperty(descriptor));
+					properties.add(new JavaBeanProperty<>(descriptor));
 				}
 			}
 		} catch (IntrospectionException e) {
@@ -207,10 +215,9 @@ class JavaPropertyFinder {
 		return visibilityOf(field.getModifiers());
 	}
 
-	private static Visibility visibilityOf(Method method) {
-		return visibilityOf(method.getModifiers());
-	}
-
+//	private static Visibility visibilityOf(Method method) {
+//		return visibilityOf(method.getModifiers());
+//	}
 	private static Visibility visibilityOf(int modifiers) {
 		if (Modifier.isPublic(modifiers)) {
 			return Visibility.PUBLIC;

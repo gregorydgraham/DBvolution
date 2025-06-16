@@ -22,13 +22,12 @@ import nz.co.gregs.dbvolution.example.Marque;
 import nz.co.gregs.dbvolution.expressions.DBExpression;
 import nz.co.gregs.dbvolution.generic.AbstractTest;
 import static org.hamcrest.Matchers.*;
+import static org.hamcrest.MatcherAssert.assertThat;
 import org.junit.After;
 import org.junit.AfterClass;
-import org.junit.Assert;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
-import static org.junit.Assert.*;
 
 /**
  *
@@ -64,21 +63,20 @@ public class QueryGraphEdgeStrokeTransformerTest extends AbstractTest {
 	 */
 	@Test
 	public void testTransform() {
-		System.out.println("transform");
 		Marque marque = new Marque();
 		DBQuery dbQuery = database.getDBQuery(marque);
 		DBExpression input = marque.column(marque.carCompany).is(2);
 		QueryGraphEdgeStrokeTransformer instance = new QueryGraphEdgeStrokeTransformer(dbQuery);
 		Stroke expResult = QueryGraphEdgeStrokeTransformer.STROKE_FOR_REQUIRED_EXPRESSION;
 		Stroke result = instance.transform(input);
-		Assert.assertThat(result, is(expResult));
+		assertThat(result, is(expResult));
 
 		final CarCompany carCompany = new CarCompany();
 		dbQuery.addOptional(carCompany);
 		input = carCompany.column(carCompany.name).is("TOYOTA");
 		expResult = QueryGraphEdgeStrokeTransformer.STROKE_FOR_OPTIONAL_EXPRESSION;
 		result = instance.transform(input);
-		Assert.assertThat(result, is(expResult));
+		assertThat(result, is(expResult));
 	}
 
 }

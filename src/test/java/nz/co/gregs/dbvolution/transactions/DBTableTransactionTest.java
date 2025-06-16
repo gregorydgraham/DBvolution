@@ -20,17 +20,15 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import nz.co.gregs.dbvolution.DBTable;
-import nz.co.gregs.dbvolution.DBDatabase;
+import nz.co.gregs.dbvolution.databases.DBDatabase;
 import nz.co.gregs.dbvolution.example.Marque;
+import nz.co.gregs.dbvolution.exceptions.ExceptionThrownDuringTransaction;
 import nz.co.gregs.dbvolution.generic.AbstractTest;
-import org.junit.Assert;
+import static org.junit.Assert.assertTrue;
+
 import org.junit.Test;
 
 /**
- *
- * <p style="color: #F90;">Support DBvolution at
- * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
- *
  * @author Gregory Graham
  */
 public class DBTableTransactionTest extends AbstractTest {
@@ -44,73 +42,70 @@ public class DBTableTransactionTest extends AbstractTest {
 	@Test
 	public void testInsertRowsSucceeds() throws SQLException, Exception {
 		List<Marque> original = marquesTable.setBlankQueryAllowed(true).getRowsByExample(new Marque());
-		System.out.println("original.toList().size(): " + original.size());
 		DBTable<Marque> transacted = database.doTransaction(new DBTransaction<DBTable<Marque>>() {
 			@Override
-			public DBTable<Marque> doTransaction(DBDatabase dbDatabase) throws SQLException {
-				Marque myTableRow = new Marque();
-				DBTable<Marque> marques = DBTable.getInstance(dbDatabase, myTableRow);
-				myTableRow.getUidMarque().setValue(999);
-				myTableRow.getName().setValue("TOYOTA");
-				myTableRow.getNumericCode().setValue(10);
-				marques.insert(myTableRow);
-				marques.setBlankQueryAllowed(true).getAllRows();
-				marques.print();
+			public DBTable<Marque> doTransaction(DBDatabase dbDatabase) throws ExceptionThrownDuringTransaction {
+				try {
+					Marque myTableRow = new Marque();
+					DBTable<Marque> marques = DBTable.getInstance(dbDatabase, myTableRow);
+					myTableRow.getUidMarque().setValue(999);
+					myTableRow.getName().setValue("TOYOTA");
+					myTableRow.getNumericCode().setValue(10);
+					marques.insert(myTableRow);
+					marques.setBlankQueryAllowed(true).getAllRows();
 
-				List<Marque> myTableRows = new ArrayList<Marque>();
-				myTableRows.add(new Marque(3, "False", 1246974, "", 3, "UV", "TVR", "", "Y", new Date(), 4, null));
+					List<Marque> myTableRows = new ArrayList<Marque>();
+					myTableRows.add(new Marque(3, "False", 1246974, "", 3, "UV", "TVR", "", "Y", new Date(), 4, null));
 
-				System.out.println("EXPECT A UNIQUE CONSTRAINT VIOLATION EXCEPTION HERE:");
-				marques.insert(myTableRows);
+					marques.insert(myTableRows);
 
-				marques.getAllRows();
-				marques.print();
-				return marques;
+					marques.getAllRows();
+					return marques;
+				} catch (SQLException ex) {
+					throw new ExceptionThrownDuringTransaction(ex);
+				}
 			}
 		}, true);
 		List<Marque> added = marquesTable.getRowsByExample(new Marque());
-		System.out.println("original.toList().size(): " + original.size());
-		System.out.println("added.toList().size(): " + added.size());
-		Assert.assertTrue("Length of list after insert should be longer than the original", added.size() == original.size() + 2);
+		assertTrue("Length of list after insert should be longer than the original", added.size() == original.size() + 2);
 	}
 
 	@Test
 	public void testInsertRowsFailure() throws SQLException {
 		List<Marque> original = marquesTable.setBlankQueryAllowed(true).getRowsByExample(new Marque());
-		System.out.println("original.toList().size(): " + original.size());
 		try {
+			database.setQuietExceptionsPreference(true);
 			DBTable<Marque> transacted = database.doTransaction(new DBTransaction<DBTable<Marque>>() {
 				@Override
-				public DBTable<Marque> doTransaction(DBDatabase dbDatabase) throws SQLException {
-					Marque myTableRow = new Marque();
-					DBTable<Marque> marques = DBTable.getInstance(dbDatabase, myTableRow);
-					myTableRow.getUidMarque().permittedValues(999);
-					myTableRow.getName().permittedValues("TOYOTA");
-					myTableRow.getNumericCode().permittedValues(10);
-					marques.insert(myTableRow);
-//                marquesTable.getAllRows();
-//                marquesTable.printRows();
+				public DBTable<Marque> doTransaction(DBDatabase dbDatabase) throws ExceptionThrownDuringTransaction {
+					try {
+						Marque myTableRow = new Marque();
+						DBTable<Marque> marques = DBTable.getInstance(dbDatabase, myTableRow);
+						myTableRow.getUidMarque().setValue(999);
+						myTableRow.getName().setValue("TOYOTA");
+						myTableRow.getNumericCode().setValue(10);
+						marques.insert(myTableRow);
 
-					List<Marque> myTableRows = new ArrayList<Marque>();
-					myTableRows.add(new Marque(999, "False", 1246974, "", 3, "UV", "TVR", "", "Y", new Date(), 4, null));
+						List<Marque> myTableRows = new ArrayList<Marque>();
+						myTableRows.add(new Marque(999, "False", 1246974, "", 3, "UV", "TVR", "", "Y", new Date(), 4, null));
 
-					marques.insert(myTableRows);
-
-					marques.getAllRows();
-					marques.print();
-					return marques;
+						marques.insert(myTableRows);
+						
+						// should cause an AccidentalBlankQueryException, and rollback the transaction 
+						marques.getAllRows();
+						return marques;
+					} catch (Exception ex) {
+						throw new ExceptionThrownDuringTransaction(ex);
+					}
 				}
-
 			}, true);
-		} catch (Exception e) {
-			e.printStackTrace();
+		} catch (SQLException | ExceptionThrownDuringTransaction e) {
+		} finally {
+			database.setQuietExceptionsPreference(false);
 		}
 		final List<Marque> addedRows = marquesTable.getRowsByExample(new Marque());
-		marquesTable.print();
 		List<Marque> added = marquesTable.toList();
-		System.out.println("original.toList().size(): " + original.size());
-		System.out.println("added.toList().size(): " + added.size());
-		Assert.assertTrue("Length of list after insert should be the same as the original", added.size() == original.size());
+		assertTrue("Length of list after insert should be the same as the original", added.size() == original.size());
 
 	}
 }

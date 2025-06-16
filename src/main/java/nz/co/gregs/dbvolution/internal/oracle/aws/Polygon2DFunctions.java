@@ -15,9 +15,8 @@
  */
 package nz.co.gregs.dbvolution.internal.oracle.aws;
 
+import nz.co.gregs.dbvolution.internal.FeatureAdd;
 import nz.co.gregs.dbvolution.internal.oracle.StringFunctions;
-import java.sql.SQLException;
-import java.sql.Statement;
 
 /**
  *
@@ -26,7 +25,7 @@ import java.sql.Statement;
  *
  * @author gregorygraham
  */
-public enum Polygon2DFunctions {
+public enum Polygon2DFunctions implements FeatureAdd {
 
 	/**
 	 *
@@ -35,7 +34,6 @@ public enum Polygon2DFunctions {
 			+ "BEGIN\n"
 			+ "RETURN wktOfPolygon2D;"
 			+ "END;"),
-
 	/**
 	 *
 	 */
@@ -109,7 +107,6 @@ public enum Polygon2DFunctions {
 			+ "\n"
 			+ "   RETURN result;\n"
 			+ "END;"),
-
 	/**
 	 *
 	 */
@@ -183,7 +180,6 @@ public enum Polygon2DFunctions {
 			+ "\n"
 			+ "   RETURN result;\n"
 			+ "END;"),
-
 	/**
 	 *
 	 */
@@ -257,7 +253,6 @@ public enum Polygon2DFunctions {
 			+ "\n"
 			+ "   RETURN result;\n"
 			+ "END;"),
-
 	/**
 	 *
 	 */
@@ -331,7 +326,6 @@ public enum Polygon2DFunctions {
 			+ "\n"
 			+ "   RETURN result;\n"
 			+ "END;"),
-
 	/**
 	 *
 	 */
@@ -376,7 +370,6 @@ public enum Polygon2DFunctions {
 			+ "      RETURN result;\n"
 			+ "   END IF;\n"
 			+ "END;"),
-
 	/**
 	 *
 	 */
@@ -391,7 +384,6 @@ public enum Polygon2DFunctions {
 			+ "         || ')';\n"
 			+ "   RETURN polyastext;"
 			+ "END;"),
-
 	/**
 	 *
 	 */
@@ -504,49 +496,40 @@ public enum Polygon2DFunctions {
 			+ "\n"
 			+ "   RETURN result;"
 			+ "END;"),
-
 	/**
 	 *
 	 */
 	DIMENSION("NUMBER", "firstPoly IN VARCHAR", "BEGIN RETURN 2; END;"),
-
 	/**
 	 *
 	 */
 	EQUALS("NUMBER", "firstPoly IN VARCHAR, secondPoly IN VARCHAR", "BEGIN \n"
 			+ "   RETURN CASE WHEN (firstpoly = secondPoly) THEN 1 ELSE 0 END;\n"
 			+ "   END;"),
-
 	/**
 	 *
 	 */
 	INTERSECTION("VARCHAR", "firstPoly IN VARCHAR, secondPoly IN VARCHAR", "BEGIN RETURN 2; END;"),
-
 	/**
 	 *
 	 */
 	INTERSECTS("BOOLEAN", "firstPoly IN VARCHAR, secondPoly IN VARCHAR", "BEGIN RETURN 2; END;"),
-
 	/**
 	 *
 	 */
 	CONTAINS("BOOLEAN", "firstPoly IN VARCHAR, secondPoly IN VARCHAR", "BEGIN RETURN 2; END;"),
-
 	/**
 	 *
 	 */
 	DISJOINT("BOOLEAN", "firstPoly IN VARCHAR, secondPoly IN VARCHAR", "BEGIN RETURN 2; END;"),
-
 	/**
 	 *
 	 */
 	OVERLAPS("BOOLEAN", "firstPoly IN VARCHAR, secondPoly IN VARCHAR", "BEGIN RETURN 2; END;"),
-
 	/**
 	 *
 	 */
 	TOUCHES("BOOLEAN", "firstPoly IN VARCHAR, secondPoly IN VARCHAR", "BEGIN RETURN 2; END;"),
-
 	/**
 	 *
 	 */
@@ -567,21 +550,32 @@ public enum Polygon2DFunctions {
 		return "DBVPOLY2D_" + name();
 	}
 
-	/**
-	 *
-	 * @param stmt
-	 * @throws SQLException
-	 */
-	public void add(Statement stmt) throws SQLException {
-		try {
-			if (!this.code.isEmpty()) {
-				final String createFn = "CREATE OR REPLACE FUNCTION " + this + "(" + this.parameters + ")\n"
-						+ "    RETURN " + this.returnType
-						+ " AS \n" + "\n" + this.code;
-				stmt.execute(createFn);
-			}
-		} catch (SQLException ex) {
-			;
+//	/**
+//	 *
+//	 * @param stmt the database
+//	 * @throws ExceptionDuringDatabaseFeatureSetup database errors
+//	 */
+//	public void add(Statement stmt) throws ExceptionDuringDatabaseFeatureSetup {
+//		try {
+//			if (!this.code.isEmpty()) {
+//				final String createFn = "CREATE OR REPLACE FUNCTION " + this + "(" + this.parameters + ")\n"
+//						+ "    RETURN " + this.returnType
+//						+ " AS \n" + "\n" + this.code;
+//				stmt.execute(createFn);
+//			}
+//		} catch (Exception ex) {
+//			throw new ExceptionDuringDatabaseFeatureSetup("FAILED TO ADD FEATURE: "+name(), ex);
+//		}
+//	}
+	@Override
+	public String[] createSQL() {
+		if (!this.code.isEmpty()) {
+			return new String[]{
+				"CREATE OR REPLACE FUNCTION " + this + "(" + this.parameters + ")\n"
+				+ "    RETURN " + this.returnType
+				+ " AS \n" + "\n" + this.code
+			};
 		}
+		return new String[]{};
 	}
 }

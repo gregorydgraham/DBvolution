@@ -15,6 +15,7 @@
  */
 package nz.co.gregs.dbvolution.internal.properties;
 
+import java.io.Serializable;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Field;
 import java.lang.reflect.Type;
@@ -23,10 +24,14 @@ import nz.co.gregs.dbvolution.exceptions.FailedToSetPropertyValueOnRowDefinition
 
 /**
  * Implementation over java fields.
+ *
+ * @param <BASETYPE> the class of the field wrapped by this instance
  */
-public class JavaField implements JavaProperty {
+public class JavaField<BASETYPE> implements JavaProperty<BASETYPE>, Serializable {
 
-	private final Field field;
+	private static final long serialVersionUID = 1l;
+
+	private transient final Field field;
 
 	/**
 	 * Create a JavaField for the supplied field.
@@ -46,9 +51,6 @@ public class JavaField implements JavaProperty {
 	/**
 	 * Hash-code based on the underlying java field or bean-property.
 	 *
-	 * <p style="color: #F90;">Support DBvolution at
-	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
-	 *
 	 * @return the hash code
 	 */
 	@Override
@@ -63,11 +65,8 @@ public class JavaField implements JavaProperty {
 	 * Tests for equality, based entirely on whether the underlying java field or
 	 * bean-property is the same.
 	 *
-	 * @param second	second
-	 * <p style="color: #F90;">Support DBvolution at
-	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
-	 *
-	 * @return TRUE if second is equal to this instance, otherwise FALSE
+	 * @param second	second @return TRUE if second is equal to this instance,
+	 * otherwise FALSE
 	 */
 	@Override
 	public boolean equals(Object second) {
@@ -79,14 +78,16 @@ public class JavaField implements JavaProperty {
 		}
 		if (!(second instanceof JavaField)) {
 			return false;
-		}
-		JavaField other = (JavaField) second;
-		if (field == null) {
-			if (other.field != null) {
+		} else {
+			@SuppressWarnings("unchecked")
+			JavaField<BASETYPE> other = (JavaField<BASETYPE>) second;
+			if (field == null) {
+				if (other.field != null) {
+					return false;
+				}
+			} else if (!field.equals(other.field)) {
 				return false;
 			}
-		} else if (!field.equals(other.field)) {
-			return false;
 		}
 		return true;
 	}
@@ -112,8 +113,9 @@ public class JavaField implements JavaProperty {
 	}
 
 	@Override
-	public Class<?> type() {
-		return field.getType();
+	@SuppressWarnings("unchecked")
+	public Class<BASETYPE> type() {
+		return (Class<BASETYPE>) field.getType();
 	}
 
 	@Override

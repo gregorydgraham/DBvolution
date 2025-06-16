@@ -15,7 +15,7 @@
  */
 package nz.co.gregs.dbvolution.results;
 
-import nz.co.gregs.dbvolution.expressions.DBExpression;
+import org.joda.time.Period;
 
 /**
  *
@@ -24,7 +24,7 @@ import nz.co.gregs.dbvolution.expressions.DBExpression;
  *
  * @author gregory.graham
  */
-public interface DateRepeatResult extends DBExpression, ExpressionCanHaveNullValues, ExpressionHasStandardStringResult {
+public interface DateRepeatResult extends RangeResult<Period>, ExpressionHasStandardStringResult {
 
 	@Override
 	public DateRepeatResult copy();

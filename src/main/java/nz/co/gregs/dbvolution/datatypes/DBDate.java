@@ -20,23 +20,38 @@ import java.sql.SQLException;
 import java.sql.Timestamp;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
+import java.time.format.DateTimeParseException;
+import java.util.Comparator;
 import java.util.Date;
 import java.util.HashSet;
 import java.util.Set;
-import nz.co.gregs.dbvolution.DBDatabase;
 import nz.co.gregs.dbvolution.DBReport;
 import nz.co.gregs.dbvolution.DBRow;
+import nz.co.gregs.dbvolution.columns.DateColumn;
 import nz.co.gregs.dbvolution.databases.SQLiteDB;
+import nz.co.gregs.dbvolution.databases.definitions.DBDefinition;
 import nz.co.gregs.dbvolution.exceptions.DBRuntimeException;
+import nz.co.gregs.dbvolution.exceptions.IncorrectRowProviderInstanceSuppliedException;
 import nz.co.gregs.dbvolution.expressions.DateExpression;
+import nz.co.gregs.dbvolution.expressions.StringExpression;
+import nz.co.gregs.dbvolution.operators.DBGreaterThanOperator;
+import nz.co.gregs.dbvolution.operators.DBGreaterThanOrEqualsOperator;
+import nz.co.gregs.dbvolution.operators.DBLessThanOperator;
+import nz.co.gregs.dbvolution.operators.DBLessThanOrEqualOperator;
 import nz.co.gregs.dbvolution.results.DateResult;
 import nz.co.gregs.dbvolution.operators.DBPermittedRangeExclusiveOperator;
 import nz.co.gregs.dbvolution.operators.DBPermittedRangeInclusiveOperator;
 import nz.co.gregs.dbvolution.operators.DBPermittedRangeOperator;
 import nz.co.gregs.dbvolution.operators.DBPermittedValuesOperator;
+import nz.co.gregs.dbvolution.query.RowDefinition;
+import nz.co.gregs.dbvolution.utility.comparators.ComparableComparator;
 
 /**
  * Encapsulates database values that are Dates.
+ *
+ * <p>
+ * DEPRECATED: please change to {@link DBLocalDateTime}, {@link DBLocalDate}, or
+ * {@link DBInstant}.</p>
  *
  * <p>
  * Use DBDate when the column is a date datatype, even in databases where the
@@ -51,13 +66,17 @@ import nz.co.gregs.dbvolution.operators.DBPermittedValuesOperator;
  *
  * @author Gregory Graham
  */
-public class DBDate extends QueryableDatatype implements DateResult {
+public class DBDate extends QueryableDatatype<Date> implements DateResult {
 
 	private static final long serialVersionUID = 1L;
-	private static SimpleDateFormat toStringFormat = new SimpleDateFormat("yyyy-MM-dd KK:mm:ss.SSSa ZZZZ");
+	private final SimpleDateFormat toStringFormat = new SimpleDateFormat("yyyy-MM-dd KK:mm:ss.SSSa ZZZZ");
 
 	/**
 	 * The default constructor for DBDate.
+	 *
+	 * <p>
+	 * DEPRECATED: please change to {@link DBLocalDateTime}, {@link DBLocalDate},
+	 * or {@link DBInstant}.</p>
 	 *
 	 * <p>
 	 * Creates an unset undefined DBDate object.
@@ -69,6 +88,10 @@ public class DBDate extends QueryableDatatype implements DateResult {
 
 	/**
 	 * Creates a DBDate with the value provided.
+	 *
+	 * <p>
+	 * DEPRECATED: please change to {@link DBLocalDateTime}, {@link DBLocalDate},
+	 * or {@link DBInstant}.</p>
 	 *
 	 * <p>
 	 * The resulting DBDate will be set as having the value provided but will not
@@ -85,6 +108,10 @@ public class DBDate extends QueryableDatatype implements DateResult {
 	 * provided.
 	 *
 	 * <p>
+	 * DEPRECATED: please change to {@link DBLocalDateTime}, {@link DBLocalDate},
+	 * or {@link DBInstant}.</p>
+	 *
+	 * <p>
 	 * Used in {@link DBReport}, and some {@link DBRow}, sub-classes to derive
 	 * data from the database prior to retrieval.
 	 *
@@ -96,6 +123,10 @@ public class DBDate extends QueryableDatatype implements DateResult {
 
 	/**
 	 * Creates a DBDate with the value provided.
+	 *
+	 * <p>
+	 * DEPRECATED: please change to {@link DBLocalDateTime}, {@link DBLocalDate},
+	 * or {@link DBInstant}.</p>
 	 *
 	 * <p>
 	 * The resulting DBDate will be set as having the value provided but will not
@@ -118,6 +149,10 @@ public class DBDate extends QueryableDatatype implements DateResult {
 	 * Creates a DBDate with the value provided.
 	 *
 	 * <p>
+	 * DEPRECATED: please change to {@link DBLocalDateTime}, {@link DBLocalDate},
+	 * or {@link DBInstant}.</p>
+	 *
+	 * <p>
 	 * The resulting DBDate will be set as having the value provided but will not
 	 * be defined in the database.
 	 *
@@ -138,41 +173,56 @@ public class DBDate extends QueryableDatatype implements DateResult {
 	/**
 	 * Returns the set value of this DBDate as a Java Date instance.
 	 *
-	 * <p style="color: #F90;">Support DBvolution at
-	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 * <p>
+	 * DEPRECATED: please change to {@link DBLocalDateTime}, {@link DBLocalDate},
+	 * or {@link DBInstant}.</p>
 	 *
 	 * @return the value as a Java Date.
 	 */
 	public Date dateValue() {
 		if (getLiteralValue() instanceof Date) {
-			return (Date) getLiteralValue();
+			return getLiteralValue();
 		} else {
 			return null;
 		}
 	}
 
-	@Override
-	void setValue(Object newLiteralValue) {
-		if (newLiteralValue instanceof Date) {
-			setValue((Date) newLiteralValue);
-		} else if (newLiteralValue instanceof DBDate) {
-			setValue(((QueryableDatatype) newLiteralValue).getLiteralValue());
-		} else {
-			throw new ClassCastException(this.getClass().getSimpleName() + ".setValue() Called With A Non-Date: Use only Dates with this class");
-		}
+	void setValue(DBDate newLiteralValue) {
+		setValue(newLiteralValue.getLiteralValue());
 	}
 
 	/**
 	 * Sets the value of this QDT to the Java Date provided.
 	 *
+	 * <p>
+	 * DEPRECATED: please change to {@link DBLocalDateTime}, {@link DBLocalDate},
+	 * or {@link DBInstant}.</p>
+	 *
 	 * @param date	date
 	 */
+	@Override
 	public void setValue(Date date) {
 		super.setLiteralValue(date);
 	}
 
 	/**
+	 * Sets the value of this QDT to the date and time now.
+	 *
+	 * <p>
+	 * DEPRECATED: please change to {@link DBLocalDateTime}, {@link DBLocalDate},
+	 * or {@link DBInstant}.</p>
+	 *
+	 */
+	public void setValueToNow() {
+		super.setValue(new Date());
+	}
+
+	/**
 	 * Sets the value of this QDT to the dateStr provided.
+	 *
+	 * <p>
+	 * DEPRECATED: please change to {@link DBLocalDateTime}, {@link DBLocalDate},
+	 * or {@link DBInstant}.</p>
 	 *
 	 * <p>
 	 * The date String will be parsed by {@link Date#parse(java.lang.String) }
@@ -196,8 +246,9 @@ public class DBDate extends QueryableDatatype implements DateResult {
 	/**
 	 * Returns the string value of the DBDate.
 	 *
-	 * <p style="color: #F90;">Support DBvolution at
-	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 * <p>
+	 * DEPRECATED: please change to {@link DBLocalDateTime}, {@link DBLocalDate},
+	 * or {@link DBInstant}.</p>
 	 *
 	 * @return a string version of the current value of this DBDate
 	 */
@@ -210,40 +261,40 @@ public class DBDate extends QueryableDatatype implements DateResult {
 	}
 
 	@Override
-	public String formatValueForSQLStatement(DBDatabase db) {
-		return db.getDefinition().getDateFormattedForQuery(dateValue());
+	public String formatValueForSQLStatement(DBDefinition db) {
+		return db.getDateFormattedForQuery(dateValue());
 	}
 
 	@Override
-	protected Date getFromResultSet(DBDatabase database, ResultSet resultSet, String fullColumnName) {
+	protected Date getFromResultSet(DBDefinition defn, ResultSet resultSet, String fullColumnName) {
 		Date dbValue;
-		if (database.getDefinition().prefersDatesReadAsStrings()) {
-			dbValue = setByGetString(database, resultSet, fullColumnName);
+		if (defn.prefersDatesReadAsStrings()) {
+			dbValue = setByGetString(defn, resultSet, fullColumnName);
 		} else {
-			dbValue = setByGetDate(database, resultSet, fullColumnName);
+			dbValue = setByGetDate(defn, resultSet, fullColumnName);
 		}
 		return dbValue;
 	}
 
-	private Date setByGetString(DBDatabase database, ResultSet resultSet, String fullColumnName) {
+	private Date setByGetString(DBDefinition database, ResultSet resultSet, String fullColumnName) {
 		String string = null;
 		try {
 			string = resultSet.getString(fullColumnName);
 		} catch (SQLException sqlex) {
-			throw new DBRuntimeException(sqlex);
+			throw new DBRuntimeException("Unable to get Date from String:" + sqlex.getLocalizedMessage(), sqlex);
 		}
 		if (string == null || string.isEmpty()) {
 			return null;
 		} else {
 			try {
-				return new Date(database.getDefinition().parseDateFromGetString(string).getTime());
-			} catch (ParseException ex) {
+				return new Date(database.parseDateFromGetString(string).getTime());
+			} catch (DateTimeParseException ex) {
 				throw new DBRuntimeException("Unable To Parse Date: " + string, ex);
 			}
 		}
 	}
 
-	private Date setByGetDate(DBDatabase database, ResultSet resultSet, String fullColumnName) {
+	private Date setByGetDate(DBDefinition defn, ResultSet resultSet, String fullColumnName) {
 		Date dbValue = null;
 		try {
 			Date dateValue = resultSet.getDate(fullColumnName);
@@ -261,7 +312,7 @@ public class DBDate extends QueryableDatatype implements DateResult {
 				}
 			}
 		} catch (SQLException sqlex) {
-			throw new DBRuntimeException(sqlex);
+			throw new DBRuntimeException("Unable to set Date by getting Date: " + sqlex.getLocalizedMessage(), sqlex);
 		}
 		return dbValue;
 	}
@@ -288,33 +339,44 @@ public class DBDate extends QueryableDatatype implements DateResult {
 
 	@Override
 	public Set<DBRow> getTablesInvolved() {
-		return new HashSet<DBRow>();
+		return new HashSet<>();
 	}
 
 	/**
 	 *
 	 * reduces the rows to only the object, Set, List, Array, or vararg of objects
 	 *
+	 * <p>
+	 * DEPRECATED: please change to {@link DBLocalDateTime}, {@link DBLocalDate},
+	 * or {@link DBInstant}.</p>
+	 *
 	 * @param permitted	permitted
 	 */
 	public void permittedValues(Date... permitted) {
-		this.setOperator(new DBPermittedValuesOperator((Object[]) permitted));
+		this.setOperator(new DBPermittedValuesOperator<Date>(permitted));
 	}
 
 	/**
 	 *
 	 * excludes the object, Set, List, Array, or vararg of objects
 	 *
+	 * <p>
+	 * DEPRECATED: please change to {@link DBLocalDateTime}, {@link DBLocalDate},
+	 * or {@link DBInstant}.</p>
 	 *
 	 * @param excluded	excluded
 	 */
 	public void excludedValues(Date... excluded) {
-		this.setOperator(new DBPermittedValuesOperator((Object[]) excluded));
+		this.setOperator(new DBPermittedValuesOperator<Date>(excluded));
 		negateOperator();
 	}
 
 	/**
 	 * Performs searches based on a range.
+	 *
+	 * <p>
+	 * DEPRECATED: please change to {@link DBLocalDateTime}, {@link DBLocalDate},
+	 * or {@link DBInstant}.</p>
 	 *
 	 * if both ends of the range are specified the lower-bound will be included in
 	 * the search and the upper-bound excluded. I.e permittedRange(1,3) will
@@ -336,11 +398,15 @@ public class DBDate extends QueryableDatatype implements DateResult {
 	 * @param upperBound upperBound
 	 */
 	public void permittedRange(Date lowerBound, Date upperBound) {
-		setOperator(new DBPermittedRangeOperator(lowerBound, upperBound));
+		setOperator(new DBPermittedRangeOperator<Date>(lowerBound, upperBound));
 	}
 
 	/**
 	 * Performs searches based on a range.
+	 *
+	 * <p>
+	 * DEPRECATED: please change to {@link DBLocalDateTime}, {@link DBLocalDate},
+	 * or {@link DBInstant}.</p>
 	 *
 	 * if both ends of the range are specified both the lower- and upper-bound
 	 * will be included in the search. I.e permittedRangeInclusive(1,3) will
@@ -368,6 +434,10 @@ public class DBDate extends QueryableDatatype implements DateResult {
 	/**
 	 * Performs searches based on a range.
 	 *
+	 * <p>
+	 * DEPRECATED: please change to {@link DBLocalDateTime}, {@link DBLocalDate},
+	 * or {@link DBInstant}.</p>
+	 *
 	 * if both ends of the range are specified both the lower- and upper-bound
 	 * will be excluded in the search. I.e permittedRangeExclusive(1,3) will
 	 * return 2.
@@ -394,6 +464,10 @@ public class DBDate extends QueryableDatatype implements DateResult {
 	/**
 	 * Performs searches based on a range.
 	 *
+	 * <p>
+	 * DEPRECATED: please change to {@link DBLocalDateTime}, {@link DBLocalDate},
+	 * or {@link DBInstant}.</p>
+	 *
 	 * if both ends of the range are specified the lower-bound will be included in
 	 * the search and the upper-bound excluded. I.e excludedRange(1,3) will return
 	 * everything except 1 and 2.
@@ -414,12 +488,16 @@ public class DBDate extends QueryableDatatype implements DateResult {
 	 * @param upperBound upperBound
 	 */
 	public void excludedRange(Date lowerBound, Date upperBound) {
-		setOperator(new DBPermittedRangeOperator(lowerBound, upperBound));
+		setOperator(new DBPermittedRangeOperator<Date>(lowerBound, upperBound));
 		negateOperator();
 	}
 
 	/**
 	 * Performs searches based on a range.
+	 *
+	 * <p>
+	 * DEPRECATED: please change to {@link DBLocalDateTime}, {@link DBLocalDate},
+	 * or {@link DBInstant}.</p>
 	 *
 	 * if both ends of the range are specified both the lower- and upper-bound
 	 * will be included in the search. I.e excludedRangeInclusive(1,3) will return
@@ -447,6 +525,10 @@ public class DBDate extends QueryableDatatype implements DateResult {
 
 	/**
 	 * Performs searches based on a range.
+	 *
+	 * <p>
+	 * DEPRECATED: please change to {@link DBLocalDateTime}, {@link DBLocalDate},
+	 * or {@link DBInstant}.</p>
 	 *
 	 * if both ends of the range are specified both the lower- and upper-bound
 	 * will be excluded in the search. I.e excludedRangeExclusive(1,3) will return
@@ -476,26 +558,37 @@ public class DBDate extends QueryableDatatype implements DateResult {
 	 *
 	 * reduces the rows to only the object, Set, List, Array, or vararg of objects
 	 *
+	 * <p>
+	 * DEPRECATED: please change to {@link DBLocalDateTime}, {@link DBLocalDate},
+	 * or {@link DBInstant}.</p>
+	 *
 	 * @param permitted	permitted
 	 */
 	public void permittedValues(DateExpression... permitted) {
-		this.setOperator(new DBPermittedValuesOperator((Object[]) permitted));
+		this.setOperator(new DBPermittedValuesOperator<DateExpression>(permitted));
 	}
 
 	/**
 	 *
 	 * excludes the object, Set, List, Array, or vararg of objects
 	 *
+	 * <p>
+	 * DEPRECATED: please change to {@link DBLocalDateTime}, {@link DBLocalDate},
+	 * or {@link DBInstant}.</p>
 	 *
 	 * @param excluded	excluded
 	 */
 	public void excludedValues(DateExpression... excluded) {
-		this.setOperator(new DBPermittedValuesOperator((Object[]) excluded));
+		this.setOperator(new DBPermittedValuesOperator<DateExpression>(excluded));
 		negateOperator();
 	}
 
 	/**
 	 * Performs searches based on a range.
+	 *
+	 * <p>
+	 * DEPRECATED: please change to {@link DBLocalDateTime}, {@link DBLocalDate},
+	 * or {@link DBInstant}.</p>
 	 *
 	 * if both ends of the range are specified the lower-bound will be included in
 	 * the search and the upper-bound excluded. I.e permittedRange(1,3) will
@@ -517,11 +610,15 @@ public class DBDate extends QueryableDatatype implements DateResult {
 	 * @param upperBound upperBound
 	 */
 	public void permittedRange(DateExpression lowerBound, DateExpression upperBound) {
-		setOperator(new DBPermittedRangeOperator(lowerBound, upperBound));
+		setOperator(new DBPermittedRangeOperator<DateExpression>(lowerBound, upperBound));
 	}
 
 	/**
 	 * Performs searches based on a range.
+	 *
+	 * <p>
+	 * DEPRECATED: please change to {@link DBLocalDateTime}, {@link DBLocalDate},
+	 * or {@link DBInstant}.</p>
 	 *
 	 * if both ends of the range are specified both the lower- and upper-bound
 	 * will be included in the search. I.e permittedRangeInclusive(1,3) will
@@ -549,6 +646,10 @@ public class DBDate extends QueryableDatatype implements DateResult {
 	/**
 	 * Performs searches based on a range.
 	 *
+	 * <p>
+	 * DEPRECATED: please change to {@link DBLocalDateTime}, {@link DBLocalDate},
+	 * or {@link DBInstant}.</p>
+	 *
 	 * if both ends of the range are specified both the lower- and upper-bound
 	 * will be excluded in the search. I.e permittedRangeExclusive(1,3) will
 	 * return 2.
@@ -575,6 +676,10 @@ public class DBDate extends QueryableDatatype implements DateResult {
 	/**
 	 * Performs searches based on a range.
 	 *
+	 * <p>
+	 * DEPRECATED: please change to {@link DBLocalDateTime}, {@link DBLocalDate},
+	 * or {@link DBInstant}.</p>
+	 *
 	 * if both ends of the range are specified the lower-bound will be included in
 	 * the search and the upper-bound excluded. I.e excludedRange(1,3) will return
 	 * everything except 1 and 2.
@@ -595,12 +700,16 @@ public class DBDate extends QueryableDatatype implements DateResult {
 	 * @param upperBound upperBound
 	 */
 	public void excludedRange(DateExpression lowerBound, DateExpression upperBound) {
-		setOperator(new DBPermittedRangeOperator(lowerBound, upperBound));
+		setOperator(new DBPermittedRangeOperator<DateExpression>(lowerBound, upperBound));
 		negateOperator();
 	}
 
 	/**
 	 * Performs searches based on a range.
+	 *
+	 * <p>
+	 * DEPRECATED: please change to {@link DBLocalDateTime}, {@link DBLocalDate},
+	 * or {@link DBInstant}.</p>
 	 *
 	 * if both ends of the range are specified both the lower- and upper-bound
 	 * will be included in the search. I.e excludedRangeInclusive(1,3) will return
@@ -628,6 +737,10 @@ public class DBDate extends QueryableDatatype implements DateResult {
 
 	/**
 	 * Performs searches based on a range.
+	 *
+	 * <p>
+	 * DEPRECATED: please change to {@link DBLocalDateTime}, {@link DBLocalDate},
+	 * or {@link DBInstant}.</p>
 	 *
 	 * if both ends of the range are specified both the lower- and upper-bound
 	 * will be excluded in the search. I.e excludedRangeExclusive(1,3) will return
@@ -657,13 +770,324 @@ public class DBDate extends QueryableDatatype implements DateResult {
 	 * Used internally to decide whether the required query needs to include NULL
 	 * values.
 	 *
-	 * <p style="color: #F90;">Support DBvolution at
-	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 * <p>
+	 * DEPRECATED: please change to {@link DBLocalDateTime}, {@link DBLocalDate},
+	 * or {@link DBInstant}.</p>
 	 *
 	 * @return whether the query expression needs to test for NULL.
 	 */
 	@Override
 	public boolean getIncludesNull() {
 		return dateValue() == null;
+	}
+
+	@Override
+	protected void setValueFromStandardStringEncoding(String encodedValue) {
+		throw new UnsupportedOperationException("DBDate does not support setValueFromStandardStringEncoding(String) yet."); //To change body of generated methods, choose Tools | Templates.
+	}
+
+	@Override
+	public DateColumn getColumn(RowDefinition row) throws IncorrectRowProviderInstanceSuppliedException {
+		return new DateColumn(row, this);
+	}
+
+	@Override
+	public StringExpression stringResult() {
+		return new DateExpression(this).stringResult();
+	}
+
+	public void excludeNotNull() {
+		this.permittedValues((Date) null);
+	}
+
+	public void excludeNull() {
+		this.excludedValues((Date) null);
+	}
+
+	public void permitOnlyNull() {
+		excludeNotNull();
+	}
+
+	public void permitOnlyNotNull() {
+		excludeNull();
+	}
+
+	/**
+	 * Set the value to be inserted when no value has been set, using
+	 * {@link #setValue(nz.co.gregs.dbvolution.datatypes.DBDate) setValue(...)},
+	 * for the QDT.
+	 *
+	 * <p>
+	 * DEPRECATED: please change to {@link DBLocalDateTime}, {@link DBLocalDate},
+	 * or {@link DBInstant}.</p>
+	 *
+	 * <p>
+	 * The value is only used during the initial insert and does not effect the
+	 * definition of the column within the database.</p>
+	 *
+	 * <p>
+	 * Correct usages for standard date defaults:</p>
+	 *
+	 * <pre>
+	 * &#64;DBColumn
+	 * public DBDate creationDate = new DBDate().setDefaultInsertValue(DateExpression.currentDate());
+	 *
+	 * &#64;DBColumn
+	 * public DBDate updateDate = new DBDate().setDefaultUpdateValue(DateExpression.currentDate());
+	 *
+	 * &#64;DBColumn
+	 * public DBDate creationOrUpdateDate = new DBDate()
+	 * .setDefaultInsertValue(DateExpression.currentDate())
+	 * .setDefaultUpdateValue(DateExpression.currentDate());
+	 * </pre>
+	 *
+	 * @param value the value to use during insertion when no particular value has
+	 * been specified.
+	 * @return This QDT
+	 */
+	@Override
+	public synchronized DBDate setDefaultInsertValue(Date value) {
+		super.setDefaultInsertValue(value);
+		return this;
+	}
+
+	/**
+	 * Sets the value to be inserted when no value has been set to the current
+	 * database date.
+	 *
+	 * <p>
+	 * DEPRECATED: please change to {@link DBLocalDateTime}, {@link DBLocalDate},
+	 * or {@link DBInstant}.</p>
+	 *
+	 * <p>
+	 * The value is only used during the initial insert and does not effect the
+	 * definition of the column within the database.</p>
+	 *
+	 * <p>
+	 * Correct usages for standard date defaults:</p>
+	 *
+	 * <pre>
+	 * &#64;DBColumn
+	 * public DBDate creationDate = new DBDate().setDefaultInsertValue(DateExpression.currentDate());
+	 *
+	 * &#64;DBColumn
+	 * public DBDate updateDate = new DBDate().setDefaultUpdateValue(DateExpression.currentDate());
+	 *
+	 * &#64;DBColumn
+	 * public DBDate creationOrUpdateDate = new DBDate()
+	 * .setDefaultInsertValue(DateExpression.currentDate())
+	 * .setDefaultUpdateValue(DateExpression.currentDate());
+	 * </pre>
+	 *
+	 * @return This QDT
+	 */
+	public synchronized DBDate setDefaultInsertValueToCurrentDate() {
+		super.setDefaultInsertValue(DateExpression.currentDate());
+		return this;
+	}
+
+	/**
+	 * Set the value to be inserted when no value has been set, using
+	 * {@link #setValue(nz.co.gregs.dbvolution.datatypes.DBDate) setValue(...)},
+	 * for the QDT.
+	 *
+	 * <p>
+	 * DEPRECATED: please change to {@link DBLocalDateTime}, {@link DBLocalDate},
+	 * or {@link DBInstant}.</p>
+	 *
+	 * <p>
+	 * The value is only used during the initial insert and does not effect the
+	 * definition of the column within the database.</p>
+	 *
+	 * <p>
+	 * Care should be taken when using this as some "obvious" uses are better
+	 * handled using the
+	 * {@link #setDefaultInsertValue(nz.co.gregs.dbvolution.results.AnyResult) expression version}.
+	 * In particular, setDefaultInsertValue(new Date()) is probably NOT what you
+	 * want, setDefaultInsertValue(DateExpression.currentDate()) will produce a
+	 * correct creation date value.</p>
+	 *
+	 * <p>
+	 * Correct usages for standard date defaults:
+	 *
+	 * <pre>
+	 * &#64;DBColumn
+	 * public DBDate creationDate = new DBDate().setDefaultInsertValue(DateExpression.currentDate());
+	 *
+	 * &#64;DBColumn
+	 * public DBDate updateDate = new DBDate().setDefaultUpdateValue(DateExpression.currentDate());
+	 *
+	 * &#64;DBColumn
+	 * public DBDate creationOrUpdateDate = new DBDate()
+	 * .setDefaultInsertValue(DateExpression.currentDate())
+	 * .setDefaultUpdateValue(DateExpression.currentDate());
+	 * </pre>
+	 *
+	 * @param value the value to use during insertion when no particular value has
+	 * been specified.
+	 * @return This QDT
+	 */
+	public synchronized DBDate setDefaultInsertValue(DateResult value) {
+		super.setDefaultInsertValue(value);
+		return this;
+	}
+
+	/**
+	 * Set the value to be used during an update when no value has been set, using
+	 * {@link #setValue(nz.co.gregs.dbvolution.datatypes.DBDate)  setValue(...)},
+	 * for the QDT.
+	 *
+	 * <p>
+	 * DEPRECATED: please change to {@link DBLocalDateTime}, {@link DBLocalDate},
+	 * or {@link DBInstant}.</p>
+	 *
+	 * <p>
+	 * The value is only used during updates and does not effect the definition of
+	 * the column within the database nor the initial value of the column.</p>
+	 *
+	 * <p>
+	 * Care should be taken when using this as some "obvious" uses are better
+	 * handled using the
+	 * {@link #setDefaultUpdateValue(nz.co.gregs.dbvolution.results.AnyResult) expression version}.
+	 * In particular, setDefaultUpdateValue(new Date()) is probably NOT what you
+	 * want, setDefaultUpdateValue(DateExpression.currentDate()) will produce a
+	 * correct update time value.</p>
+	 *
+	 * <p>
+	 * Correct usages for standard date defaults:
+	 *
+	 * <pre>
+	 * &#64;DBColumn
+	 * public DBDate creationDate = new DBDate().setDefaultInsertValue(DateExpression.currentDate());
+	 *
+	 * &#64;DBColumn
+	 * public DBDate updateDate = new DBDate().setDefaultUpdateValue(DateExpression.currentDate());
+	 *
+	 * &#64;DBColumn
+	 * public DBDate creationOrUpdateDate = new DBDate()
+	 * .setDefaultInsertValue(DateExpression.currentDate())
+	 * .setDefaultUpdateValue(DateExpression.currentDate());
+	 * </pre>
+	 *
+	 * @param value the value to use during update when no particular value has
+	 * been specified.
+	 * @return This QDT
+	 */
+	@Override
+	public synchronized DBDate setDefaultUpdateValue(Date value) {
+		super.setDefaultUpdateValue(value);
+		return this;
+	}
+
+	/**
+	 * Sets the value to be used during an update when no value has been set,
+	 * using
+	 * {@link #setValue(nz.co.gregs.dbvolution.datatypes.DBDate)  setValue(...)},
+	 * for the QDT.
+	 *
+	 * <p>
+	 * DEPRECATED: please change to {@link DBLocalDateTime}, {@link DBLocalDate},
+	 * or {@link DBInstant}.</p>
+	 *
+	 * <p>
+	 * The value is only used during updates and does not effect the definition of
+	 * the column within the database nor the initial value of the column.</p>
+	 *
+	 * <p>
+	 * Correct usages for standard date defaults:
+	 *
+	 * <pre>
+	 * &#64;DBColumn
+	 * public DBDate creationDate = new DBDate().setDefaultInsertValue(DateExpression.currentDate());
+	 *
+	 * &#64;DBColumn
+	 * public DBDate updateDate = new DBDate().setDefaultUpdateValue(DateExpression.currentDate());
+	 *
+	 * &#64;DBColumn
+	 * public DBDate creationOrUpdateDate = new DBDate()
+	 * .setDefaultInsertValue(DateExpression.currentDate())
+	 * .setDefaultUpdateValue(DateExpression.currentDate());
+	 * </pre>
+	 *
+	 * @return This QDT
+	 */
+	public synchronized DBDate setDefaultUpdateValueToCurrentDate() {
+		super.setDefaultUpdateValue(DateExpression.currentDate());
+		return this;
+	}
+
+	/**
+	 * Set the value to be used during an update when no value has been set, using
+	 * {@link #setValue(nz.co.gregs.dbvolution.datatypes.DBDate)  setValue(...)},
+	 * for the QDT.
+	 *
+	 * <p>
+	 * DEPRECATED: please change to {@link DBLocalDateTime}, {@link DBLocalDate},
+	 * or {@link DBInstant}.</p>
+	 *
+	 * <p>
+	 * The value is only used during updates and does not effect the definition of
+	 * the column within the database nor the initial value of the column.</p>
+	 *
+	 * <p>
+	 * Correct usages for standard date defaults:
+	 *
+	 * <pre>
+	 * &#64;DBColumn
+	 * public DBDate creationDate = new DBDate().setDefaultInsertValue(DateExpression.currentDate());
+	 *
+	 * &#64;DBColumn
+	 * public DBDate updateDate = new DBDate().setDefaultUpdateValue(DateExpression.currentDate());
+	 *
+	 * &#64;DBColumn
+	 * public DBDate creationOrUpdateDate = new DBDate()
+	 * .setDefaultInsertValue(DateExpression.currentDate())
+	 * .setDefaultUpdateValue(DateExpression.currentDate());
+	 * </pre>
+	 *
+	 * @param value the value to use during update when no particular value has
+	 * been specified.
+	 * @return This QDT
+	 */
+	public synchronized DBDate setDefaultUpdateValue(DateResult value) {
+		super.setDefaultUpdateValue(value);
+		return this;
+	}
+
+	public void permitOnlyPastAndPresent() {
+		this.setOperator(new DBLessThanOrEqualOperator(DateExpression.currentDate()));
+	}
+
+	public void permitOnlyPresentAndFuture() {
+		this.setOperator(new DBGreaterThanOrEqualsOperator(DateExpression.currentDate()));
+	}
+
+	public void permitOnlyPast() {
+		this.setOperator(new DBLessThanOperator(DateExpression.currentDate()));
+	}
+
+	public void permitOnlyFuture() {
+		this.setOperator(new DBGreaterThanOperator(DateExpression.currentDate()));
+	}
+
+	public void permitOnlyPastAndPresentByDateOnly() {
+		this.setOperator(new DBLessThanOrEqualOperator(DateExpression.currentDateOnly()));
+	}
+
+	public void permitOnlyPresentAndFutureByDateOnly() {
+		this.setOperator(new DBGreaterThanOrEqualsOperator(DateExpression.currentDateOnly()));
+	}
+
+	public void permitOnlyPastByDateOnly() {
+		this.setOperator(new DBLessThanOperator(DateExpression.currentDateOnly()));
+	}
+
+	public void permitOnlyFutureByDateOnly() {
+		this.setOperator(new DBGreaterThanOperator(DateExpression.currentDateOnly()));
+	}
+
+	@Override
+	public Comparator<Date> getComparator() {
+		return ComparableComparator.forClass(Date.class);
 	}
 }

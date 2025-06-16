@@ -15,53 +15,45 @@
  */
 package nz.co.gregs.dbvolution.databases;
 
+import java.io.File;
+import java.io.IOException;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
+import java.sql.Statement;
 import javax.sql.DataSource;
+import nz.co.gregs.dbvolution.databases.metadata.DBDatabaseMetaData;
+import nz.co.gregs.dbvolution.databases.metadata.Options;
+import nz.co.gregs.dbvolution.databases.metadata.SQLiteDBDatabaseMetaData;
+import nz.co.gregs.dbvolution.databases.settingsbuilders.SQLiteSettingsBuilder;
 import org.sqlite.SQLiteConfig;
-import nz.co.gregs.dbvolution.DBDatabase;
-import nz.co.gregs.dbvolution.databases.definitions.DBDefinition;
-import nz.co.gregs.dbvolution.databases.definitions.SQLiteDefinition;
-import nz.co.gregs.dbvolution.databases.supports.SupportsDateRepeatDatatypeFunctions;
-import nz.co.gregs.dbvolution.databases.supports.SupportsPolygonDatatype;
+import nz.co.gregs.dbvolution.exceptions.ExceptionDuringDatabaseFeatureSetup;
+import nz.co.gregs.dbvolution.internal.query.StatementDetails;
 import nz.co.gregs.dbvolution.internal.sqlite.*;
+import nz.co.gregs.regexi.Regex;
 
 /**
  * Creates a DBDatabase for an SQLite database.
  *
- * <p style="color: #F90;">Support DBvolution at
- * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
  *
  * @author Gregory Graham
  */
-public class SQLiteDB extends DBDatabase implements SupportsDateRepeatDatatypeFunctions, SupportsPolygonDatatype {
+public class SQLiteDB extends DBDatabaseImplementation {
 
-	private static final String SQLITE_DRIVER_NAME = "org.sqlite.JDBC";
+	public static final String SQLITE_DRIVER_NAME = "org.sqlite.JDBC";
+	public static final long serialVersionUID = 1l;
 
 	/**
+	 * Creates a DBDatabase tweaked for a SQLite database on the DataSource
+	 * provided.
 	 *
-	 * Provides a convenient constructor for DBDatabases that have configuration
-	 * details hardwired or are able to automatically retrieve the details.
-	 *
-	 * <p>
-	 * This constructor creates an empty DBDatabase with only the default
-	 * settings, in particular with no driver, URL, username, password, or
-	 * {@link DBDefinition}
-	 *
-	 * <p>
-	 * Most programmers should not call this constructor directly. Instead you
-	 * should define a no-parameter constructor that supplies the details for
-	 * creating an instance using a more complete constructor.
-	 *
-	 * <p>
-	 * DBDatabase encapsulates the knowledge of the database, in particular the
-	 * syntax of the database in the DBDefinition and the connection details from
-	 * a DataSource.
-	 *
-	 * @see DBDefinition
+	 * @param ds	ds
+	 * @throws java.sql.SQLException database errors
 	 */
-	protected SQLiteDB() {
+	public SQLiteDB(DataSource ds) throws SQLException {
+		super(
+				new SQLiteSettingsBuilder().setDataSource(ds)
+		);
 	}
 
 	/**
@@ -69,9 +61,21 @@ public class SQLiteDB extends DBDatabase implements SupportsDateRepeatDatatypeFu
 	 * provided.
 	 *
 	 * @param ds	ds
+	 * @throws java.sql.SQLException database errors
 	 */
-	public SQLiteDB(DataSource ds) {
-		super(new SQLiteDefinition(), ds);
+	public SQLiteDB(DatabaseConnectionSettings ds) throws SQLException {
+		this(new SQLiteSettingsBuilder().fromSettings(ds));
+	}
+
+	/**
+	 * Creates a DBDatabase tweaked for a SQLite database on the DataSource
+	 * provided.
+	 *
+	 * @param ds	ds
+	 * @throws java.sql.SQLException database errors
+	 */
+	public SQLiteDB(SQLiteSettingsBuilder ds) throws SQLException {
+		super(ds);
 	}
 
 	/**
@@ -81,23 +85,55 @@ public class SQLiteDB extends DBDatabase implements SupportsDateRepeatDatatypeFu
 	 * @param jdbcURL jdbcURL
 	 * @param username username
 	 * @param password password
+	 * @throws java.sql.SQLException database errors
 	 */
-	public SQLiteDB(String jdbcURL, String username, String password) {
-		super(new SQLiteDefinition(), SQLITE_DRIVER_NAME, jdbcURL, username, password);
+	public SQLiteDB(String jdbcURL, String username, String password) throws SQLException {
+		this(new SQLiteSettingsBuilder().fromJDBCURL(jdbcURL, username, password));
+	}
+
+	/**
+	 * Creates a DBDatabase tweaked for a SQLite database using the parameters
+	 * provided.
+	 *
+	 * @param databaseFile the SQLite file to be used with this database
+	 * @param username username
+	 * @param password password
+	 * @throws java.io.IOException file system errors
+	 * @throws java.sql.SQLException database errors
+	 */
+	public SQLiteDB(File databaseFile, String username, String password) throws IOException, SQLException {
+		this(
+				new SQLiteSettingsBuilder()
+						.setFilename(databaseFile.getCanonicalFile().toString())
+						.setDatabaseName(databaseFile.getCanonicalFile().toString())
+						.setUsername(username)
+						.setPassword(password)
+		);
+	}
+
+	/**
+	 * Creates a DBDatabase tweaked for a SQLite database using the parameters
+	 * provided.
+	 *
+	 * @param filename the SQLite file to connect to.
+	 * @param username username
+	 * @param password password
+	 * @param dummy just use TRUE
+	 * @throws java.io.IOException file system errors
+	 * @throws java.sql.SQLException database errors
+	 */
+	public SQLiteDB(String filename, String username, String password, boolean dummy) throws IOException, SQLException {
+		this(
+				new SQLiteSettingsBuilder()
+						.setFilename(filename)
+						.setDatabaseName(new File(filename).getCanonicalFile().toString())
+						.setUsername(username)
+						.setPassword(password)
+		);
 	}
 
 	@Override
-	protected boolean supportsFullOuterJoinNatively() {
-		return false;
-	}
-
-	@Override
-	public boolean supportsFullOuterJoin() {
-		return false;
-	}
-
-	@Override
-	protected Connection getConnectionFromDriverManager() throws SQLException {
+	public Connection getConnectionFromDriverManager() throws SQLException {
 		SQLiteConfig config = new SQLiteConfig();
 		config.enableCaseSensitiveLike(true);
 		Connection connection = DriverManager.getConnection(getJdbcURL(), getUsername(), getPassword());
@@ -119,6 +155,61 @@ public class SQLiteDB extends DBDatabase implements SupportsDateRepeatDatatypeFu
 	@Override
 	public DBDatabase clone() throws CloneNotSupportedException {
 		return super.clone(); //To change body of generated methods, choose Tools | Templates.
+	}
+
+	@Override
+	public void addDatabaseSpecificFeatures(Statement statement) throws ExceptionDuringDatabaseFeatureSetup {
+		;
+	}
+
+	@Override
+	public Integer getDefaultPort() {
+		return 5432;
+	}
+
+	private static final Regex TABLE_ALREADY_EXISTS = Regex.empty()
+			.literal("[SQLITE_ERROR] SQL error or missing database (table ").noneOfThisCharacter(' ').optionalMany()
+			.literal(" already exists)").toRegex();
+	private static final Regex TABLE_DOESNT_EXIST_REGEX = Regex.empty()
+			.literal("[SQLITE_ERROR] SQL error or missing database (no such table: ")
+			.toRegex();
+
+	@Override
+	public ResponseToException addFeatureToFixException(Exception exp, QueryIntention intent, StatementDetails details) throws Exception {
+		String message = exp.getMessage();
+		if (intent.is(QueryIntention.CREATE_TABLE) && TABLE_ALREADY_EXISTS.matchesWithinString(message)) {
+			return ResponseToException.SKIPQUERY;
+		} else if (intent.is(QueryIntention.CHECK_TABLE_EXISTS)) {
+			if (TABLE_DOESNT_EXIST_REGEX.matchesWithinString(message)) {
+				return ResponseToException.SKIPQUERY;
+			}
+		}
+		return super.addFeatureToFixException(exp, intent, details);
+	}
+
+	@Override
+	public SQLiteSettingsBuilder getURLInterpreter() {
+		return new SQLiteSettingsBuilder();
+	}
+
+	@Override
+	public boolean supportsMicrosecondPrecision() {
+		return false;
+	}
+
+	@Override
+	public boolean supportsNanosecondPrecision() {
+		return false;
+	}
+
+	@Override
+	public boolean supportsGeometryTypesFullyInSchema() {
+		return true;
+	}
+
+	@Override
+	public DBDatabaseMetaData getDBDatabaseMetaData(Options options) throws SQLException {
+		return new SQLiteDBDatabaseMetaData(options);
 	}
 
 }

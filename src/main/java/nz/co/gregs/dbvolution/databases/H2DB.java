@@ -17,36 +17,63 @@ package nz.co.gregs.dbvolution.databases;
 
 import java.io.File;
 import java.io.IOException;
-import java.sql.Connection;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.*;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import javax.sql.DataSource;
-import nz.co.gregs.dbvolution.DBDatabase;
-import nz.co.gregs.dbvolution.databases.definitions.H2DBDefinition;
-import nz.co.gregs.dbvolution.databases.supports.SupportsDateRepeatDatatypeFunctions;
-import nz.co.gregs.dbvolution.databases.supports.SupportsPolygonDatatype;
-import nz.co.gregs.dbvolution.exceptions.DBRuntimeException;
+import nz.co.gregs.dbvolution.databases.metadata.DBDatabaseMetaData;
+import nz.co.gregs.dbvolution.databases.metadata.H2DBDatabaseMetaData;
+import nz.co.gregs.dbvolution.databases.metadata.Options;
+import nz.co.gregs.dbvolution.databases.settingsbuilders.H2SettingsBuilder;
+import nz.co.gregs.dbvolution.databases.settingsbuilders.AbstractH2SettingsBuilder;
+import nz.co.gregs.dbvolution.databases.settingsbuilders.H2FileSettingsBuilder;
+import nz.co.gregs.dbvolution.exceptions.ExceptionDuringDatabaseFeatureSetup;
 import nz.co.gregs.dbvolution.internal.h2.*;
+import nz.co.gregs.dbvolution.internal.query.StatementDetails;
+import nz.co.gregs.regexi.Regex;
+import org.h2.jdbc.JdbcException;
 
 /**
  * Stores all the required functionality to use an H2 database.
  *
- * <p style="color: #F90;">Support DBvolution at
- * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
- *
  * @author Gregory Graham
  */
-public class H2DB extends DBDatabase implements SupportsDateRepeatDatatypeFunctions, SupportsPolygonDatatype {
+public class H2DB extends DBDatabaseImplementation {
 
-	private static Map<String, DBVFeature> featureMap = null;
+	private static final long serialVersionUID = 1l;
+	public static final String DRIVER_NAME = "org.h2.Driver";
+	private final static Map<String, DBVFeature> FEATURE_MAP = new HashMap<>();
+	private static boolean dataTypesNotProcessed = true;
 
-	/**
-	 * Default constructor, try not to use this.
-	 *
-	 */
-	protected H2DB() {
-		super();
+	static {
+		try {
+			Class.forName(DRIVER_NAME);
+		} catch (ClassNotFoundException ex) {
+			Logger.getLogger(H2DB.class.getName()).log(Level.SEVERE, null, ex);
+		}
+		for (DBVFeature function : DateRepeatFunctions.values()) {
+			FEATURE_MAP.put(function.alias(), function);
+		}
+		for (DBVFeature function : Point2DFunctions.values()) {
+			FEATURE_MAP.put(function.alias(), function);
+		}
+		for (DBVFeature function : LineSegment2DFunctions.values()) {
+			FEATURE_MAP.put(function.alias(), function);
+		}
+		for (DBVFeature function : Line2DFunctions.values()) {
+			FEATURE_MAP.put(function.alias(), function);
+		}
+		for (DBVFeature function : Polygon2DFunctions.values()) {
+			FEATURE_MAP.put(function.alias(), function);
+		}
+		for (DBVFeature function : MultiPoint2DFunctions.values()) {
+			FEATURE_MAP.put(function.alias(), function);
+		}
+		for (DataTypes datatype : DataTypes.values()) {
+			FEATURE_MAP.put(datatype.alias(), datatype);
+		}
 	}
 
 	/**
@@ -68,7 +95,12 @@ public class H2DB extends DBDatabase implements SupportsDateRepeatDatatypeFuncti
 	 * @throws java.sql.SQLException java.sql.SQLException
 	 */
 	public H2DB(File file, String username, String password) throws IOException, SQLException {
-		this("jdbc:h2:" + file.getCanonicalFile(), username, password);
+		this(new H2FileSettingsBuilder()
+				.setDatabaseName(file.getCanonicalFile().toString())
+				.setUsername(username)
+				.setPassword(password)
+				.toSettings()
+		);
 	}
 
 	/**
@@ -78,10 +110,38 @@ public class H2DB extends DBDatabase implements SupportsDateRepeatDatatypeFuncti
 	 * Database exceptions may be thrown
 	 *
 	 * @param dataSource dataSource
+	 * @throws java.sql.SQLException database errors
 	 */
-	public H2DB(DataSource dataSource) {
-		super(new H2DBDefinition(), dataSource);
-//		jamDatabaseConnectionOpen();
+	public H2DB(DataSource dataSource) throws SQLException {
+		super(
+				new H2SettingsBuilder().setDataSource(dataSource)
+		);
+	}
+
+	/**
+	 * Creates a DBDatabase for a H2 database.
+	 *
+	 * <p>
+	 * Database exceptions may be thrown
+	 *
+	 * @param dcs dataSource
+	 * @throws java.sql.SQLException database errors
+	 */
+	public H2DB(DatabaseConnectionSettings dcs) throws SQLException {
+		super(new H2SettingsBuilder().fromSettings(dcs));
+	}
+
+	/**
+	 * Creates a DBDatabase for a H2 database.
+	 *
+	 * <p>
+	 * Database exceptions may be thrown
+	 *
+	 * @param settings dataSource
+	 * @throws java.sql.SQLException database errors
+	 */
+	protected H2DB(AbstractH2SettingsBuilder<?, ?> settings) throws SQLException {
+		super(settings);
 	}
 
 	/**
@@ -95,57 +155,67 @@ public class H2DB extends DBDatabase implements SupportsDateRepeatDatatypeFuncti
 	 * @param jdbcURL jdbcURL
 	 * @param username username
 	 * @param password password
+	 * @throws java.sql.SQLException database errors
 	 */
-	public H2DB(String jdbcURL, String username, String password) {
-		super(new H2DBDefinition(), "org.h2.Driver", jdbcURL, username, password);
-//		jamDatabaseConnectionOpen();
+	public H2DB(String jdbcURL, String username, String password) throws SQLException {
+		this(new H2SettingsBuilder()
+				.fromJDBCURL(jdbcURL)
+				.setUsername(username)
+				.setPassword(password)
+				.toSettings()
+		);
+	}
+
+	/**
+	 * Creates a DBDatabase for a H2 database.
+	 *
+	 *
+	 *
+	 *
+	 * 1 Database exceptions may be thrown
+	 *
+	 * @param databaseFilename the name and path of the database file
+	 * @param username username
+	 * @param password password
+	 * @param dummy unused
+	 * @throws java.sql.SQLException database errors
+	 */
+	public H2DB(String databaseFilename, String username, String password, boolean dummy) throws SQLException {
+		this(new H2FileSettingsBuilder()
+				.setFilename(databaseFilename)
+				.setUsername(username)
+				.setPassword(password)
+				.toSettings()
+		);
+	}
+
+	/**
+	 * Creates a DBDatabase for a H2 database.
+	 *
+	 * <p>
+	 * Database exceptions may be thrown</p>
+	 *
+	 * @param settings the settings that specify everything necessary to connect
+	 * to the H2 database
+	 * @throws java.sql.SQLException database errors
+	 */
+	public H2DB(H2SettingsBuilder settings) throws SQLException {
+		this(settings.toSettings());
 	}
 
 	@Override
-	protected void addDatabaseSpecificFeatures(final Statement stmt) throws SQLException {
-//		DateRepeatFunctions.addFunctions(stmt);
+	public synchronized void addDatabaseSpecificFeatures(final Statement stmt) throws ExceptionDuringDatabaseFeatureSetup {
 		DataTypes.addAll(stmt);
-		if (featureMap == null) {
-			featureMap = new HashMap<String, DBVFeature>();
-			for (DBVFeature function : DateRepeatFunctions.values()) {
-				featureMap.put(function.alias(), function);
+		if (dataTypesNotProcessed) {
+			for (DataTypes datatype : DataTypes.values()) {
+				FEATURE_MAP.put(datatype.alias(), datatype);
 			}
-			for (DBVFeature function : Point2DFunctions.values()) {
-				featureMap.put(function.alias(), function);
-			}
-			for (DBVFeature function : LineSegment2DFunctions.values()) {
-				featureMap.put(function.alias(), function);
-			}
-			for (DBVFeature function : Line2DFunctions.values()) {
-				featureMap.put(function.alias(), function);
-			}
-			for (DBVFeature function : Polygon2DFunctions.values()) {
-				featureMap.put(function.alias(), function);
-			}
-			for (DBVFeature function : MultiPoint2DFunctions.values()) {
-				featureMap.put(function.alias(), function);
-			}
+			dataTypesNotProcessed = false;
 		}
-		for (DataTypes datatype : DataTypes.values()) {
-			featureMap.put(datatype.alias(), datatype);
-		}
-	}
-//
-//	private void jamDatabaseConnectionOpen() throws DBRuntimeException, SQLException {
-//		this.storedConnection = getConnection();
-//		this.storedConnection.createStatement();
-//	}
-
-	@Override
-	public boolean supportsFullOuterJoinNatively() {
-		return false;
 	}
 
 	/**
 	 * Clones the DBDatabase
-	 *
-	 * <p style="color: #F90;">Support DBvolution at
-	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
 	 *
 	 * @return a clone of the database.
 	 * @throws java.lang.CloneNotSupportedException
@@ -157,55 +227,101 @@ public class H2DB extends DBDatabase implements SupportsDateRepeatDatatypeFuncti
 		return (H2DB) super.clone();
 	}
 
+	private final static Regex BROKEN_CONNECTION_PATTERN = Regex.startingAnywhere().literal("Connection is broken: \"session closed\"").toRegex();
+	private final static Regex ALREADY_CLOSED_PATTERN = Regex.startingAnywhere().literal("The object is already closed").toRegex();
+	private final static Regex DROPPING_NONEXISTENT_TABLE_PATTERN = Regex.startingAnywhere().literal("Table \"").beginNamedCapture("table").noneOfTheseCharacters("\"").oneOrMore().endNamedCapture().literal("\" not found; SQL statement:").anyCharacter().optionalMany().literal("DROP TABLE ").namedBackReference("table").toRegex();
+	private final static Regex TABLE_NOT_FOUND_WHILE_CHECKING_EXISTENCE_PATTERN = Regex.startingAnywhere().literal("Table \"").noneOfTheseCharacters("\"").oneOrMore().literal("\" not found").anyCharacterIncludingLineEnd().optionalMany().literal("SQL statement:").anyCharacterIncludingLineEnd().optionalMany().literal("SELECT COUNT(").star().literal(")").toRegex();
+	private final static Regex CREATING_EXISTING_TABLE_PATTERN = Regex.startingAnywhere().literal("Table \"").anythingButThis("\"").oneOrMore().literal("\" already exists; SQL statement:").toRegex();
+
 	@Override
-	public void addFeatureToFixException(Exception exp) throws Exception {
-//		org.h2.jdbc.JdbcSQLException: Function "DBV_LINE2D_EQUALS" not found
-//      org.h2.jdbc.JdbcSQLException: Unknown data type: "DBV_LINE2D"; SQL statement:
+	public ResponseToException addFeatureToFixException(Exception exp, QueryIntention intent, StatementDetails details) throws Exception {
 		boolean handledException = false;
-		if (exp instanceof org.h2.jdbc.JdbcSQLException) {
+		if ((exp instanceof JdbcException)) {
 			String message = exp.getMessage();
-			if ((message.startsWith("Function \"DBV_") && message.contains("\" not found"))
-					|| (message.startsWith("Method \"DBV_") && message.contains("\" not found"))) {
-				String[] split = message.split("[\" ]+");
-				String functionName = split[1];
-				DBVFeature functions = featureMap.get(functionName);
-				if (functions != null) {
-					functions.add(getConnection().createStatement());
-					handledException = true;
-				}
-			} else if (message.startsWith("Unknown data type: \"DBV_")) {
-				String[] split = message.split("\"");
-				String functionName = split[1];
-				DBVFeature datatype = featureMap.get(functionName);
-				if (datatype != null) {
-					datatype.add(getConnection().createStatement());
-					handledException = true;
-				}
-				//symbol:   method DBV_MULTIPOINT2D_BOUNDINGBOX(
-			} else if (message.matches(": +method \"DBV_[A-Z_0-9]+")) {
-				String[] split = message.split("method \"");
-				split = split[1].split("(");
-				String functionName = split[0];
-				System.out.println("ADDING FUNCTION: " + functionName);
-				DBVFeature functions = featureMap.get(functionName);
-				if (functions != null) {
-					functions.add(getConnection().createStatement());
-					handledException = true;
-				}
-			} else {
-				for (Map.Entry<String, DBVFeature> entrySet : featureMap.entrySet()) {
-					String key = entrySet.getKey();
-					DBVFeature value = entrySet.getValue();
-					if (message.contains(key)) {
-						value.add(getConnection().createStatement());
-						handledException = true;
+			if (message != null) {
+				if (BROKEN_CONNECTION_PATTERN.matchesWithinString(message)
+						|| ALREADY_CLOSED_PATTERN.matchesWithinString(message)) {
+					return ResponseToException.REPLACECONNECTION;
+				} else if (DROPPING_NONEXISTENT_TABLE_PATTERN.matchesWithinString(message)) {
+					return ResponseToException.SKIPQUERY;
+				} else if (QueryIntention.CHECK_TABLE_EXISTS.equals(intent) && TABLE_NOT_FOUND_WHILE_CHECKING_EXISTENCE_PATTERN.matchesWithinString(message)) {
+					return ResponseToException.SKIPQUERY;
+				} else if (CREATING_EXISTING_TABLE_PATTERN.matchesWithinString(message)) {
+					return ResponseToException.SKIPQUERY;
+				} else {
+					try (DBStatement statement = getConnection().createDBStatement()) {
+						if ((message.startsWith("Function \"DBV_") && message.contains("\" not found"))
+								|| (message.startsWith("Method \"DBV_") && message.contains("\" not found"))) {
+							String[] split = message.split("[\" ]+");
+							String functionName = split[1];
+							DBVFeature functions = FEATURE_MAP.get(functionName);
+							if (functions != null) {
+								functions.add(statement.getInternalStatement());
+								handledException = true;
+							}
+						} else if (message.startsWith("Unknown data type: \"DBV_")) {
+							String[] split = message.split("\"");
+							String functionName = split[1];
+							DBVFeature datatype = FEATURE_MAP.get(functionName);
+							if (datatype != null) {
+								datatype.add(statement.getInternalStatement());
+								handledException = true;
+							}
+						} else if (message.matches(": +method \"DBV_[A-Z_0-9]+")) {
+							String[] split = message.split("method \"");
+							split = split[1].split("\\(");
+							String functionName = split[0];
+
+							DBVFeature functions = FEATURE_MAP.get(functionName);
+							if (functions != null) {
+								functions.add(statement.getInternalStatement());
+								handledException = true;
+							}
+						} else {
+							for (Map.Entry<String, DBVFeature> entrySet : FEATURE_MAP.entrySet()) {
+								String key = entrySet.getKey();
+								DBVFeature value = entrySet.getValue();
+								if (message.contains(key)) {
+									value.add(statement.getInternalStatement());
+									handledException = true;
+								}
+							}
+						}
 					}
 				}
 			}
 		}
 		if (!handledException) {
 			throw exp;
+		} else {
+			return ResponseToException.REQUERY;
 		}
 	}
 
+	@Override
+	public boolean isMemoryDatabase() {
+		return getJdbcURL().contains(":mem:");
+	}
+
+	@Override
+	public Integer getDefaultPort() {
+		return 9123;
+	}
+
+	private final static H2SettingsBuilder URL_PROCESSOR = new H2SettingsBuilder();
+
+	@Override
+	public AbstractH2SettingsBuilder<?, ?> getURLInterpreter() {
+		return URL_PROCESSOR;
+	}
+
+	@Override
+	public boolean supportsGeometryTypesFullyInSchema() {
+		return true;
+	}
+
+	@Override
+	public DBDatabaseMetaData getDBDatabaseMetaData(Options options) throws SQLException {
+		return new H2DBDatabaseMetaData(options);
+	}
 }

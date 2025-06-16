@@ -15,7 +15,7 @@
  */
 package nz.co.gregs.dbvolution.exceptions;
 
-import nz.co.gregs.dbvolution.DBDatabase;
+import nz.co.gregs.dbvolution.databases.definitions.DBDefinition;
 import nz.co.gregs.dbvolution.expressions.DBExpression;
 
 /**
@@ -55,10 +55,10 @@ public class IncomparableTypeUsedInComparison extends DBRuntimeException {
 	 * <p>
 	 * Alternatively inform the developers and they will fix it.
 	 *
-	 * @param db
-	 * @param genericExpression
+	 * @param db the database definition
+	 * @param genericExpression the expression that is not capable of being compared with equals
 	 */
-	public IncomparableTypeUsedInComparison(DBDatabase db, DBExpression genericExpression) {
+	public IncomparableTypeUsedInComparison(DBDefinition db, DBExpression genericExpression) {
 		super("Incomparable Type: " + genericExpression.toSQLString(db) + " is a " + genericExpression.getClass().getSimpleName() + " and is not an equals comparable expression");
 	}
 

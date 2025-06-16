@@ -16,10 +16,11 @@
 package nz.co.gregs.dbvolution.actions;
 
 import java.util.List;
-import nz.co.gregs.dbvolution.DBDatabase;
+import nz.co.gregs.dbvolution.databases.DBDatabase;
 import nz.co.gregs.dbvolution.DBRow;
 import nz.co.gregs.dbvolution.databases.definitions.DBDefinition;
 import nz.co.gregs.dbvolution.datatypes.QueryableDatatype;
+import nz.co.gregs.dbvolution.expressions.BooleanExpression;
 import nz.co.gregs.dbvolution.internal.properties.PropertyWrapper;
 
 /**
@@ -37,6 +38,8 @@ import nz.co.gregs.dbvolution.internal.properties.PropertyWrapper;
  */
 public class DBUpdateToPreviousValues extends DBUpdateSimpleTypes {
 
+	private static final long serialVersionUID = 1l;
+	
 	DBUpdateToPreviousValues(DBRow row) {
 		super(row);
 	}
@@ -48,21 +51,20 @@ public class DBUpdateToPreviousValues extends DBUpdateSimpleTypes {
 	 * @param row the row to be updated
 	 * <p style="color: #F90;">Support DBvolution at
 	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
-	 *
 	 * @return The SET clause of the UPDATE statement.
 	 */
 	@Override
 	protected String getSetClause(DBDatabase db, DBRow row) {
 		DBDefinition defn = db.getDefinition();
 		StringBuilder sql = new StringBuilder();
-		List<PropertyWrapper> fields = row.getColumnPropertyWrappers();
+		var fields = row.getColumnPropertyWrappers();
 
 		String separator = defn.getStartingSetSubClauseSeparator();
-		for (PropertyWrapper field : fields) {
+		for (var field : fields) {
 			if (field.isColumn()) {
-				final QueryableDatatype qdt = field.getQueryableDatatype();
+				final QueryableDatatype<?> qdt = field.getQueryableDatatype();
 				if (qdt.hasChanged()) {
-					String previousSQLValue = qdt.getPreviousSQLValue(db);
+					String previousSQLValue = qdt.getPreviousSQLValue(defn);
 					if (previousSQLValue == null) {
 						previousSQLValue = defn.getNull();
 					}
@@ -86,16 +88,33 @@ public class DBUpdateToPreviousValues extends DBUpdateSimpleTypes {
 	 * @param row the row to be updated
 	 * <p style="color: #F90;">Support DBvolution at
 	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
-	 *
 	 * @return The WHERE clause of the UPDATE statement.
 	 */
 	@Override
 	protected String getWhereClause(DBDatabase db, DBRow row) {
 		DBDefinition defn = db.getDefinition();
-		QueryableDatatype primaryKey = row.getPrimaryKey();
-		String pkCurrentValue = primaryKey.toSQLString(db);
-		return defn.formatColumnName(row.getPrimaryKeyColumnName())
-				+ defn.getEqualsComparator()
-				+ pkCurrentValue;
+		StringBuilder sqlString = new StringBuilder();
+		List<QueryableDatatype<?>> primaryKeys = row.getPrimaryKeys();
+		String separator = "";
+		if (primaryKeys.size() > 0) {
+			for (QueryableDatatype<?> pk : primaryKeys) {
+				var wrapper = row.getPropertyWrapperOf(pk);
+				String pkValue = pk.toSQLString(defn);
+				sqlString.append(separator).append(defn.formatColumnName(wrapper.columnName())).append(defn.getEqualsComparator()).append(pkValue);
+				separator = defn.beginAndLine();
+			}
+		} else {
+			for (var prop : row.getColumnPropertyWrappers()) {
+				QueryableDatatype<?> qdt = prop.getQueryableDatatype();
+				if (qdt.isNull()) {
+					sqlString.append(separator).append(BooleanExpression.isNull(row.column(qdt)).toSQLString(defn));
+				} else {
+					sqlString.append(separator).append(prop.columnName()).append(defn.getEqualsComparator()).append(qdt.toSQLString(defn));
+				}
+				separator = defn.beginAndLine();
+			}
+		}
+		return sqlString.toString();
+
 	}
 }

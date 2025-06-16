@@ -18,11 +18,14 @@ package nz.co.gregs.dbvolution.databases;
 import nz.co.gregs.dbvolution.internal.oracle.StringFunctions;
 import java.sql.SQLException;
 import java.sql.Statement;
-import javax.sql.DataSource;
-import nz.co.gregs.dbvolution.DBDatabase;
-import nz.co.gregs.dbvolution.DBRow;
+import nz.co.gregs.dbvolution.databases.settingsbuilders.AbstractOracleSettingsBuilder;
 import nz.co.gregs.dbvolution.databases.definitions.DBDefinition;
+import nz.co.gregs.dbvolution.databases.definitions.OracleDBDefinition;
+import nz.co.gregs.dbvolution.databases.settingsbuilders.Oracle11XESettingsBuilder;
 import nz.co.gregs.dbvolution.databases.supports.SupportsPolygonDatatype;
+import nz.co.gregs.dbvolution.exceptions.ExceptionDuringDatabaseFeatureSetup;
+import nz.co.gregs.dbvolution.internal.query.StatementDetails;
+import nz.co.gregs.regexi.Regex;
 
 /**
  * Super class for connecting the different versions of the Oracle DB.
@@ -30,44 +33,49 @@ import nz.co.gregs.dbvolution.databases.supports.SupportsPolygonDatatype;
  * <p>
  * You should probably use {@link Oracle11XEDB} or {@link Oracle12DB} instead.
  *
- * <p style="color: #F90;">Support DBvolution at
- * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
- *
  * @author Gregory Graham
  * @see Oracle11XEDB
  * @see Oracle12DB
  */
-public abstract class OracleDB extends DBDatabase implements SupportsPolygonDatatype {
+public abstract class OracleDB extends DBDatabaseImplementation implements SupportsPolygonDatatype {
+
+	public static final String ORACLE_JDBC_DRIVER = "oracle.jdbc.driver.OracleDriver";
+	public static final long serialVersionUID = 1l;
+	public static final int DEFAULT_PORT = 1521;
 
 	/**
-
-	 * Provides a convenient constructor for DBDatabases that have configuration
-	 * details hardwired or are able to automatically retrieve the details.
+	 * Creates an Oracle connection for the DatabaseConnectionSettings.
 	 *
-	 * <p>
-	 * This constructor creates an empty DBDatabase with only the default
-	 * settings, in particular with no driver, URL, username, password, or
-	 * {@link DBDefinition}
-	 * 
-	 * <p>
-	 * Most programmers should not call this constructor directly. Check the
-	 * subclasses in {@code nz.co.gregs.dbvolution.databases} for your particular
-	 * database.
-	 *
-	 * <p>
-	 * DBDatabase encapsulates the knowledge of the database, in particular the
-	 * syntax of the database in the DBDefinition and the connection details from
-	 * a DataSource.
-	 *
-	 * @see DBDefinition
-	 * @see Oracle12DB
-	 * @see Oracle11XEDB
-	 * @see OracleAWS11DB
-	 * @see OracleAWSDB
+	 * @param builder settings required to connect to the database server
+	 * @throws java.sql.SQLException database errors
 	 */
-	protected OracleDB(){
-		
+	public OracleDB(AbstractOracleSettingsBuilder<?, ?> builder) throws SQLException {
+		super(builder);
 	}
+
+	/**
+	 * Creates an Oracle connection for the DatabaseConnectionSettings.
+	 *
+	 * @param dcs	dcs
+	 * @throws java.sql.SQLException database errors
+	 */
+	@Deprecated
+	public OracleDB(DatabaseConnectionSettings dcs) throws SQLException {
+		this(new OracleDBDefinition(), dcs);
+	}
+
+	/**
+	 * Creates an Oracle connection for the DatabaseConnectionSettings.
+	 *
+	 * @param dcs	dcs
+	 * @param defn the oracle database definition
+	 * @throws java.sql.SQLException database errors
+	 */
+	@Deprecated
+	public OracleDB(OracleDBDefinition defn, DatabaseConnectionSettings dcs) throws SQLException {
+		super(new Oracle11XESettingsBuilder().fromSettings(dcs).setDefinition(defn));
+	}
+
 	/**
 	 * Creates a DBDatabase instance for the definition and data source.
 	 *
@@ -77,13 +85,15 @@ public abstract class OracleDB extends DBDatabase implements SupportsPolygonData
 	 * {@link Oracle12DB#Oracle12DB(java.lang.String, int, java.lang.String, java.lang.String, java.lang.String)}
 	 *
 	 * @param definition definition
+	 * @param driverName the database driver class name
 	 * @param password password
 	 * @param jdbcURL jdbcURL
-	 * @param driverName driverName
 	 * @param username username
+	 * @throws java.sql.SQLException database errors
 	 */
-	public OracleDB(DBDefinition definition, String driverName, String jdbcURL, String username, String password) {
-		super(definition, driverName, jdbcURL, username, password);
+	@Deprecated
+	public OracleDB(DBDefinition definition, String driverName, String jdbcURL, String username, String password) throws SQLException {
+		this(new Oracle11XESettingsBuilder().fromJDBCURL(jdbcURL, username, password).setDefinition(definition).setDriverName(driverName));
 	}
 
 	/**
@@ -91,9 +101,24 @@ public abstract class OracleDB extends DBDatabase implements SupportsPolygonData
 	 *
 	 * @param dbDefinition an oracle database definition instance
 	 * @param dataSource a data source to an Oracle database
+	 * @throws java.sql.SQLException database errors
 	 */
-	public OracleDB(DBDefinition dbDefinition, DataSource dataSource) {
-		super(dbDefinition, dataSource);
+	@Deprecated
+	public OracleDB(DBDefinition dbDefinition, AbstractOracleSettingsBuilder<?, ?> dataSource) throws SQLException {
+		this(dbDefinition, ORACLE_JDBC_DRIVER, dataSource);
+	}
+
+	/**
+	 * Creates a DBDatabase instance.
+	 *
+	 * @param dbDefinition an oracle database definition instance
+	 * @param driverName the database driver class name
+	 * @param dataSource a data source to an Oracle database
+	 * @throws java.sql.SQLException database errors
+	 */
+	@Deprecated
+	public OracleDB(DBDefinition dbDefinition, String driverName, AbstractOracleSettingsBuilder<?, ?> dataSource) throws SQLException {
+		super(dataSource.setDefinition(dbDefinition).setDriverName(driverName));
 	}
 
 	@Override
@@ -101,48 +126,51 @@ public abstract class OracleDB extends DBDatabase implements SupportsPolygonData
 		return super.clone();
 	}
 
-	/**
-	 * Oracle does not differentiate between NULL and an empty string.
-	 *
-	 * <p style="color: #F90;">Support DBvolution at
-	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
-	 *
-	 * @return FALSE.
-	 */
 	@Override
-	public Boolean supportsDifferenceBetweenNullAndEmptyString() {
-		return false;
-	}
-
-	@Override
-	protected void addDatabaseSpecificFeatures(Statement statement) throws SQLException {
+	public void addDatabaseSpecificFeatures(Statement statement) throws ExceptionDuringDatabaseFeatureSetup {
 		for (StringFunctions fn : StringFunctions.values()) {
-			fn.add(statement);
+			try {
+				fn.add(statement);
+			} catch (Exception ex) {
+				throw new ExceptionDuringDatabaseFeatureSetup("FAILED TO ADD FEATURE: " + fn.name(), ex);
+			}
 		}
+	}
+
+	private final static Regex SEQUENCE_DOES_NOT_EXIST = Regex.empty().literal("ORA-02289: sequence does not exist").toRegex();
+	private final static Regex TRIGGER_DOES_NOT_EXIST = Regex.empty().literal("ORA-04080: trigger ").anyCharacter().optionalMany().literal(" does not exist").toRegex();
+	private final static Regex TABLE_ALREADY_EXISTS = Regex.empty().literal("ORA-00955: name is already used by an existing object").toRegex();
+	private final static Regex TABLE_DOES_NOT_EXIST = Regex.empty().literal("ORA-00942: table or view does not exist").toRegex();
+	private final static Regex LOOP_IN_RECURSIVE_QUERY = Regex.empty().literal("ORA-32044: cycle detected while executing recursive WITH query").toRegex();
+
+	@Override
+	public ResponseToException addFeatureToFixException(Exception exp, QueryIntention intent, StatementDetails details) throws Exception {
+		final String message = exp.getMessage();
+		if ((intent.is(QueryIntention.CHECK_TABLE_EXISTS) && TABLE_DOES_NOT_EXIST.matchesWithinString(message))) {
+			return ResponseToException.SKIPQUERY;
+		} else if ((intent.isOneOf(QueryIntention.DROP_SEQUENCE, QueryIntention.CREATE_TRIGGER_BASED_IDENTITY)) && SEQUENCE_DOES_NOT_EXIST.matchesWithinString(message)) {
+			return ResponseToException.SKIPQUERY;
+		} else if ((intent.is(QueryIntention.DROP_TABLE) && TABLE_DOES_NOT_EXIST.matchesWithinString(message))) {
+			return ResponseToException.SKIPQUERY;
+		} else if (intent.is(QueryIntention.CHECK_TABLE_EXISTS)) {
+			if (TABLE_DOES_NOT_EXIST.matchesWithinString(message)) {
+				return ResponseToException.SKIPQUERY;
+			}
+		} else if (TABLE_ALREADY_EXISTS.matchesWithinString(message)) {
+			return ResponseToException.SKIPQUERY;
+		} else if (TRIGGER_DOES_NOT_EXIST.matchesWithinString(message)) {
+			return ResponseToException.SKIPQUERY;
+		} else if (LOOP_IN_RECURSIVE_QUERY.matchesWithinString(message)) {
+			return ResponseToException.EMULATE_RECURSIVE_QUERY;
+		} else {
+		}
+
+		return super.addFeatureToFixException(exp, intent, details);
 	}
 
 	@Override
-	protected <TR extends DBRow> void dropAnyAssociatedDatabaseObjects(TR tableRow) throws SQLException {
-		
-		removeSpatialMetadata(tableRow);
-	}
-
-	/**
-	 * Allows the database to remove any spatial metadata that might exist for a table during DROP TABLE.
-	 *
-	 * @param <TR> the class of the object defining the table to have it's spatial meta-data removed.
-	 * @param tableRow the object defining the table to have it's spatial meta-data removed.
-	 * @throws SQLException database exceptions may be thrown.
-	 */
-	protected <TR extends DBRow> void removeSpatialMetadata(TR tableRow) throws SQLException {
-		DBDefinition definition = getDefinition();
-		final String formattedTableName = definition.formatTableName(tableRow);
-		final DBStatement dbStatement3 = getDBStatement();
-		try {
-			dbStatement3.execute("DELETE FROM USER_SDO_GEOM_METADATA WHERE TABLE_NAME = '" + formattedTableName.toUpperCase() + "'");
-		} finally {
-			dbStatement3.close();
-		}
+	public Integer getDefaultPort() {
+		return 1521;
 	}
 
 }

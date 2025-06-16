@@ -1,7 +1,9 @@
 package nz.co.gregs.dbvolution.internal.properties;
 
+import java.io.Serializable;
 import nz.co.gregs.dbvolution.annotations.DBAutoIncrement;
 import nz.co.gregs.dbvolution.annotations.DBColumn;
+import nz.co.gregs.dbvolution.annotations.DBForeignKey;
 import nz.co.gregs.dbvolution.annotations.DBPrimaryKey;
 
 /**
@@ -19,17 +21,22 @@ import nz.co.gregs.dbvolution.annotations.DBPrimaryKey;
  *
  * @author Malcolm Lett
  */
-class ColumnHandler {
+class ColumnHandler<BASETYPE>  implements Serializable{
+
+	private static final long serialVersionUID = 1l;
 
 	private final String columnName;
-	private final DBColumn columnAnnotation; // null if not present on property
-	private final DBPrimaryKey primaryKeyAnnotation; // null if not present on property
-	private final DBAutoIncrement autoIncrementAnnotation; // null if not present on property
+	private transient final DBColumn columnAnnotation; // null if not present on property
+	private transient final DBPrimaryKey primaryKeyAnnotation; // null if not present on property
+	private transient final DBAutoIncrement autoIncrementAnnotation; // null if not present on property
+	private transient final DBForeignKey foreignKeyAnnotation; // null if not present on property
+//	private transient final boolean foreignKeyIsRecursive = false;
 
-	ColumnHandler(JavaProperty adaptee) {
+	ColumnHandler(JavaProperty<BASETYPE> adaptee) {
 		this.columnAnnotation = adaptee.getAnnotation(DBColumn.class);
 		this.primaryKeyAnnotation = adaptee.getAnnotation(DBPrimaryKey.class);
 		this.autoIncrementAnnotation = adaptee.getAnnotation(DBAutoIncrement.class);
+		this.foreignKeyAnnotation = adaptee.getAnnotation(DBForeignKey.class);
 
 		// pre-calculate column name
 		// (null if no annotation, default if annotation present but no name given)
@@ -66,6 +73,18 @@ class ColumnHandler {
 	}
 
 	/**
+	 * Indicates whether this property is a primary key column.
+	 *
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
+	 * @return {@code true} if a column and marked as primary key
+	 */
+	public boolean isForeignKey() {
+		return isColumn() && (foreignKeyAnnotation != null);
+	}
+
+	/**
 	 * Gets the explicitly or implicitly indicated column name.
 	 *
 	 * <p>
@@ -98,7 +117,7 @@ class ColumnHandler {
 		return columnAnnotation;
 	}
 
-	boolean isAutoIncrement() {
+	public boolean isAutoIncrement() {
 		return this.autoIncrementAnnotation != null;
 	}
 }

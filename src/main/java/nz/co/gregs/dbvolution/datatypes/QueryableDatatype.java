@@ -20,15 +20,16 @@ import java.lang.reflect.InvocationTargetException;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Timestamp;
-import java.util.Arrays;
-import java.util.Date;
-import java.util.HashSet;
-import java.util.Set;
-
-import nz.co.gregs.dbvolution.DBDatabase;
+import java.time.Instant;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.util.*;
 import nz.co.gregs.dbvolution.DBRow;
 import nz.co.gregs.dbvolution.actions.DBActionList;
+import nz.co.gregs.dbvolution.columns.ColumnProvider;
+import nz.co.gregs.dbvolution.databases.DBDatabase;
 import nz.co.gregs.dbvolution.databases.definitions.DBDefinition;
+import nz.co.gregs.dbvolution.exceptions.IncorrectRowProviderInstanceSuppliedException;
 import nz.co.gregs.dbvolution.exceptions.UnableInstantiateQueryableDatatypeException;
 import nz.co.gregs.dbvolution.exceptions.UnableToCopyQueryableDatatypeException;
 import nz.co.gregs.dbvolution.results.BooleanResult;
@@ -41,6 +42,14 @@ import nz.co.gregs.dbvolution.internal.properties.PropertyWrapperDefinition;
 import nz.co.gregs.dbvolution.operators.DBEqualsOperator;
 import nz.co.gregs.dbvolution.operators.DBIsNullOperator;
 import nz.co.gregs.dbvolution.operators.DBOperator;
+import nz.co.gregs.dbvolution.query.RowDefinition;
+import nz.co.gregs.dbvolution.results.AnyResult;
+import nz.co.gregs.dbvolution.results.IntegerResult;
+import nz.co.gregs.dbvolution.expressions.HasSQLString;
+import nz.co.gregs.dbvolution.results.InstantResult;
+import nz.co.gregs.dbvolution.results.LocalDateResult;
+import nz.co.gregs.dbvolution.results.LocalDateTimeResult;
+import nz.co.gregs.dbvolution.utility.comparators.HashCodeComparator;
 
 /**
  *
@@ -48,17 +57,24 @@ import nz.co.gregs.dbvolution.operators.DBOperator;
  * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
  *
  * @author Gregory Graham
+ * @param <T> the java type of the value to be represent by this QDT
  */
-public abstract class QueryableDatatype extends Object implements Serializable, DBExpression {
+public abstract class QueryableDatatype<T> extends Object implements Serializable, DBExpression, Comparable<QueryableDatatype<T>> {
 
 	private static final long serialVersionUID = 1L;
-	Object literalValue = null;
+	private T literalValue = null;
 	private boolean isDBNull = false;
 	private DBOperator operator = null;
 	private boolean undefined = true;
 	private boolean changed = false;
-	private QueryableDatatype previousValueAsQDT = null;
+	private QueryableDatatype<T> previousValueAsQDT = null;
 
+	/**
+	 * Used to indicate the the QDT should be sorted using the default ordering
+	 * when using the {@link #setSortOrder(java.lang.Boolean)
+	 * } method.
+	 */
+	public static Boolean SORT_UNSORTED = null;
 	/**
 	 * Used to indicate the the QDT should be sorted so that the values run from
 	 * A-&gt;Z or 0-&gt;9 when using the {@link #setSortOrder(java.lang.Boolean)
@@ -75,9 +91,13 @@ public abstract class QueryableDatatype extends Object implements Serializable, 
 	 */
 	public final static Boolean SORT_DESCENDING = Boolean.FALSE;
 	private Boolean sort = SORT_ASCENDING;
-	transient PropertyWrapperDefinition propertyWrapperDefn; // no guarantees whether this gets set
+	transient PropertyWrapperDefinition<?, T> propertyWrapperDefn; // no guarantees whether this gets set
 	private DBExpression[] columnExpression = new DBExpression[]{};
 	private boolean setValueHasBeenCalled = false;
+	private T defaultInsertValue = null;
+	private AnyResult<T> defaultInsertExpression;
+	private AnyResult<T> defaultUpdateExpression;
+	private T defaultUpdateValue;
 
 	/**
 	 * Default Constructor
@@ -94,7 +114,7 @@ public abstract class QueryableDatatype extends Object implements Serializable, 
 	 *
 	 * @param obj the literal value of the QDT.
 	 */
-	protected QueryableDatatype(Object obj) {
+	protected QueryableDatatype(T obj) {
 		if (obj == null) {
 			this.isDBNull = true;
 		} else {
@@ -150,25 +170,45 @@ public abstract class QueryableDatatype extends Object implements Serializable, 
 	 * @param requiredQueryableDatatype requiredQueryableDatatype
 	 * <p style="color: #F90;">Support DBvolution at
 	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
-	 *
 	 * @return a new instance of the supplied QDT class
+	 * @throws java.lang.NoSuchMethodException All QDTs need an accessible default
+	 * constructor
+	 * @throws java.lang.InstantiationException All QDTs need an accessible
+	 * default constructor
+	 * @throws java.lang.IllegalAccessException All QDTs need an accessible
+	 * default constructor
+	 * @throws java.lang.reflect.InvocationTargetException All QDTs need an
+	 * accessible default constructor
 	 */
-	public static <T extends QueryableDatatype> T getQueryableDatatypeInstance(Class<T> requiredQueryableDatatype) {
-		try {
-			return requiredQueryableDatatype.getConstructor().newInstance();
-		} catch (NoSuchMethodException ex) {
-			throw new RuntimeException("Unable To Create " + requiredQueryableDatatype.getClass().getSimpleName() + ": Please ensure that the constructor of " + requiredQueryableDatatype.getClass().getSimpleName() + " has no arguments, throws no exceptions, and is public", ex);
-		} catch (SecurityException ex) {
-			throw new RuntimeException("Unable To Create " + requiredQueryableDatatype.getClass().getSimpleName() + ": Please ensure that the constructor of " + requiredQueryableDatatype.getClass().getSimpleName() + " has no arguments, throws no exceptions, and is public", ex);
-		} catch (InstantiationException ex) {
-			throw new RuntimeException("Unable To Create " + requiredQueryableDatatype.getClass().getSimpleName() + ": Please ensure that the constructor of " + requiredQueryableDatatype.getClass().getSimpleName() + " has no arguments, throws no exceptions, and is public", ex);
-		} catch (IllegalAccessException ex) {
-			throw new RuntimeException("Unable To Create " + requiredQueryableDatatype.getClass().getSimpleName() + ": Please ensure that the constructor of " + requiredQueryableDatatype.getClass().getSimpleName() + " has no arguments, throws no exceptions, and is public", ex);
-		} catch (IllegalArgumentException ex) {
-			throw new RuntimeException("Unable To Create " + requiredQueryableDatatype.getClass().getSimpleName() + ": Please ensure that the constructor of " + requiredQueryableDatatype.getClass().getSimpleName() + " has no arguments, throws no exceptions, and is public", ex);
-		} catch (InvocationTargetException ex) {
-			throw new RuntimeException("Unable To Create " + requiredQueryableDatatype.getClass().getSimpleName() + ": Please ensure that the constructor of " + requiredQueryableDatatype.getClass().getSimpleName() + " has no arguments, throws no exceptions, and is public", ex);
-		}
+	public static <T extends QueryableDatatype<?>> T getQueryableDatatypeInstance(Class<T> requiredQueryableDatatype) throws NoSuchMethodException, InstantiationException, IllegalAccessException, IllegalArgumentException, InvocationTargetException {
+		return requiredQueryableDatatype.getConstructor().newInstance();
+	}
+
+	/**
+	 * Factory method that creates a new QDT instance with the same class as the
+	 * provided example.
+	 *
+	 * <p>
+	 * This method only provides a new blank instance. To copy the QDT and its
+	 * fields, use {@link #copy() }.
+	 *
+	 * @param <T> the QDT type
+	 * @param requiredQueryableDatatype requiredQueryableDatatype
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 * @return a new instance of the supplied QDT class
+	 * @throws java.lang.NoSuchMethodException All QDTs need an accessible default
+	 * constructor
+	 * @throws java.lang.InstantiationException All QDTs need an accessible
+	 * default constructor
+	 * @throws java.lang.IllegalAccessException All QDTs need an accessible
+	 * default constructor
+	 * @throws java.lang.reflect.InvocationTargetException All QDTs need an
+	 * accessible default constructor
+	 */
+	@SuppressWarnings("unchecked")
+	public static <T extends QueryableDatatype<?>> T getQueryableDatatypeInstance(T requiredQueryableDatatype) throws NoSuchMethodException, InstantiationException, IllegalAccessException, IllegalArgumentException, InvocationTargetException {
+		return (T) getQueryableDatatypeInstance(requiredQueryableDatatype.getClass());
 	}
 
 	/**
@@ -179,47 +219,55 @@ public abstract class QueryableDatatype extends Object implements Serializable, 
 	 * NumberResult, StringResult, DateResult, LargeObjectResult, BooleanResult
 	 * and defaults everything else to DBJavaObject.
 	 *
-	 * @param o	o
+	 * @param <S> the base datatype returned by the QDT
+	 * @param o	the object to be encapsulated in the QDT
 	 * <p style="color: #F90;">Support DBvolution at
 	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
-	 *
 	 * @return a QDT that will provide good results for the provided object.
 	 */
-	static public QueryableDatatype getQueryableDatatypeForObject(Object o) {
-		QueryableDatatype qdt;
-		if (o instanceof QueryableDatatype) {
-			qdt = QueryableDatatype.getQueryableDatatypeInstance(((QueryableDatatype) o).getClass());
-			qdt.setLiteralValue(((QueryableDatatype) o).getLiteralValue());
+	@SuppressWarnings("unchecked")
+	static public <S extends Object> QueryableDatatype<S> getQueryableDatatypeForObject(S o) {
+		QueryableDatatype<S> qdt;
+		if (o instanceof Integer || o instanceof Long) {
+			qdt = (QueryableDatatype<S>) new DBInteger();
+		} else if (o instanceof IntegerResult) {
+			qdt = (QueryableDatatype<S>) new DBInteger();
+		} else if (o instanceof Number) {
+			qdt = (QueryableDatatype<S>) new DBNumber();
+		} else if (o instanceof NumberResult) {
+			qdt = (QueryableDatatype<S>) new DBNumber();
+		} else if (o instanceof String) {
+			qdt = (QueryableDatatype<S>) new DBString();
+		} else if (o instanceof StringResult) {
+			qdt = (QueryableDatatype<S>) new DBString();
+		} else if (o instanceof Date) {
+			qdt = (QueryableDatatype<S>) new DBDate();
+		} else if (o instanceof DateResult) {
+			qdt = (QueryableDatatype<S>) new DBDate();
+		} else if (o instanceof LocalDateResult) {
+			qdt = (QueryableDatatype<S>) new DBLocalDate();
+		} else if (o instanceof LocalDate) {
+			qdt = (QueryableDatatype<S>) new DBLocalDate();
+		} else if (o instanceof LocalDateTime) {
+			qdt = (QueryableDatatype<S>) new DBLocalDateTime();
+		} else if (o instanceof LocalDateTimeResult) {
+			qdt = (QueryableDatatype<S>) new DBLocalDateTime();
+		} else if (o instanceof Instant) {
+			qdt = (QueryableDatatype<S>) new DBInstant();
+		} else if (o instanceof InstantResult) {
+			qdt = (QueryableDatatype<S>) new DBInstant();
+		} else if (o instanceof Byte[]) {
+			qdt = (QueryableDatatype<S>) new DBLargeBinary();
+		} else if (o instanceof LargeObjectResult) {
+			qdt = (QueryableDatatype<S>) new DBLargeBinary();
+		} else if (o instanceof Boolean) {
+			qdt = (QueryableDatatype<S>) new DBBoolean();
+		} else if (o instanceof BooleanResult) {
+			qdt = (QueryableDatatype<S>) new DBBoolean();
 		} else {
-			if (o instanceof Integer) {
-				qdt = new DBInteger();
-			} else if (o instanceof Long) {
-				qdt = new DBInteger();
-			} else if (o instanceof Number) {
-				qdt = new DBNumber();
-			} else if (o instanceof String) {
-				qdt = new DBString();
-			} else if (o instanceof Date) {
-				qdt = new DBDate();
-			} else if (o instanceof Byte[]) {
-				qdt = new DBByteArray();
-			} else if (o instanceof Boolean) {
-				qdt = new DBBoolean();
-			} else if (o instanceof NumberResult) {
-				qdt = new DBNumber();
-			} else if (o instanceof StringResult) {
-				qdt = new DBString();
-			} else if (o instanceof DateResult) {
-				qdt = new DBDate();
-			} else if (o instanceof LargeObjectResult) {
-				qdt = new DBByteArray();
-			} else if (o instanceof BooleanResult) {
-				qdt = new DBBoolean();
-			} else {
-				qdt = new DBJavaObject<Object>();
-			}
-			qdt.setLiteralValue(o);
+			qdt = new DBJavaObject<>();
 		}
+		qdt.setLiteralValue(o);
 		return qdt;
 	}
 
@@ -243,26 +291,40 @@ public abstract class QueryableDatatype extends Object implements Serializable, 
 	 * @return a complete copy of the QDT with all values set.
 	 */
 	@Override
-	public QueryableDatatype copy() {
-		QueryableDatatype newQDT = this;
+	@SuppressWarnings("unchecked")
+	public synchronized QueryableDatatype<T> copy() {
+		QueryableDatatype<T> newQDT = this;
 		try {
-			newQDT = this.getClass().newInstance();
+			synchronized (newQDT) {
+				newQDT = getQueryableDatatypeInstance(this.getClass());//this.getClass().newInstance();
 
-			newQDT.literalValue = this.getLiteralValue();
-			newQDT.isDBNull = this.isDBNull;
-			newQDT.operator = this.operator;
-			newQDT.undefined = this.undefined;
-			newQDT.changed = this.changed;
-			newQDT.setValueHasBeenCalled = this.setValueHasBeenCalled;
-			if (this.previousValueAsQDT != null) {
-				newQDT.previousValueAsQDT = this.previousValueAsQDT.copy();
+				newQDT.literalValue = this.getLiteralValue();
+				newQDT.isDBNull = this.isDBNull;
+				newQDT.operator = this.operator;
+				newQDT.undefined = this.undefined;
+				newQDT.changed = this.changed;
+				newQDT.setValueHasBeenCalled = this.setValueHasBeenCalled;
+				newQDT.defaultInsertValue = this.defaultInsertValue;
+				newQDT.defaultInsertExpression = this.defaultInsertExpression;
+				newQDT.defaultUpdateValue = this.defaultUpdateValue;
+				newQDT.defaultUpdateExpression = this.defaultUpdateExpression;
+				if (this.previousValueAsQDT != null) {
+					newQDT.previousValueAsQDT = this.previousValueAsQDT.copy();
+				}
+
+				newQDT.sort = this.sort;
+				final DBExpression[] columnExpressions = this.getColumnExpression();
+				final DBExpression[] newExpressions = new DBExpression[columnExpressions.length];
+				int i = 0;
+				for (DBExpression columnExpression1 : columnExpressions) {
+					newExpressions[i] = columnExpression1.copy();
+					i++;
+				}
+				newQDT.setColumnExpression(newExpressions);
 			}
-//			newQDT.isPrimaryKey = this.isPrimaryKey;
-			newQDT.sort = this.sort;
-			newQDT.setColumnExpression(this.getColumnExpression());
-		} catch (InstantiationException ex) {
+		} catch (InstantiationException | NoSuchMethodException | InvocationTargetException ex) {
 			throw new UnableInstantiateQueryableDatatypeException(this, ex);
-		} catch (IllegalAccessException ex) {
+		} catch (IllegalAccessException | IllegalArgumentException ex) {
 			throw new UnableToCopyQueryableDatatypeException(this, ex);
 		}
 
@@ -302,7 +364,7 @@ public abstract class QueryableDatatype extends Object implements Serializable, 
 	 *
 	 * @return this instance.
 	 */
-	public QueryableDatatype removeConstraints() {
+	public QueryableDatatype<T> removeConstraints() {
 		isDBNull = false;
 		this.operator = null;
 		return this;
@@ -347,7 +409,7 @@ public abstract class QueryableDatatype extends Object implements Serializable, 
 	 *
 	 * @return the literal value, if defined, which may be null
 	 */
-	public Object getValue() {
+	public T getValue() {
 		if (undefined || isNull()) {
 			return null;
 		} else {
@@ -356,25 +418,160 @@ public abstract class QueryableDatatype extends Object implements Serializable, 
 	}
 
 	/**
-	 * Internal method, use the subclasses setValue methods or {@link DBRow#setPrimaryKey(java.lang.Object)
-	 * } instead.
+	 * Gets the current literal value of this queryable data type. The returned
+	 * value <i>should</i> be in the correct type as appropriate for the type of
+	 * queryable data type.
 	 *
 	 * <p>
-	 * <b>Set the value of this QDT to the value provided.</b>
+	 * This method will return NULL if the QDT represents a database NULL OR the
+	 * field is undefined. Use {@link #isNull() } and {@link #isDefined() } to
+	 * differentiate the 2 states.
+	 *
+	 * <p>
+	 * Undefined QDTs represents a QDT that is not a field from the database.
+	 * Undefined QDTs are similar to {@link DBRow#isDefined undefined DBRows}
+	 *
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
+	 * @return the literal value, if defined, which may be null
+	 */
+	public Optional<T> getValueOptional() {
+		return Optional.ofNullable(getValue());
+	}
+
+	/**
+	 * Gets the current literal value of this queryable data type or the default
+	 * value specified if no values is set or available. The returned value
+	 * <i>should</i> be in the correct type as appropriate for the type of
+	 * queryable data type.
+	 *
+	 * <p>
+	 * This method will return NULL if the QDT represents a database NULL OR the
+	 * field is undefined. Use {@link #isNull() } and {@link #isDefined() } to
+	 * differentiate the 2 states.
+	 *
+	 * <p>
+	 * Undefined QDTs represents a QDT that is not a field from the database.
+	 * Undefined QDTs are similar to {@link DBRow#isDefined undefined DBRows}
+	 *
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
+	 * @param defaultValue the value to return when the actual value is not set or
+	 * is null
+	 * @return the literal value, if defined, which may be null
+	 */
+	public T getValue(T defaultValue) {
+		if (undefined || isNull()) {
+			return defaultValue;
+		} else {
+			final T literalValue1 = getLiteralValue();
+			return literalValue1 == null ? defaultValue : literalValue1;
+		}
+	}
+
+	/**
+	 * Gets the current literal value of this queryable data type or the value
+	 * supplied if the value is NULL.
+	 *
+	 * <p>
+	 * This method will return NULL if the QDT represents a database NULL OR the
+	 * field is undefined. Use {@link #isNull() } and {@link #isDefined() } to
+	 * differentiate the 2 states.
+	 *
+	 * <p>
+	 * Undefined QDTs represents a QDT that is not a field from the database.
+	 * Undefined QDTs are similar to {@link DBRow#isDefined undefined DBRows}
+	 *
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
+	 * @param valueIfNull the value to use if the column contains NULL
+	 * @return the literal value, if defined, which may be null
+	 */
+	public T getValueWithDefaultValue(T valueIfNull) {
+		T value = getValue();
+		if (value == null) {
+			return valueIfNull;
+		} else {
+			return value;
+		}
+	}
+
+	/**
+	 * Gets the previous literal value of this queryable data type. The returned
+	 * value <i>should</i> be in the correct type as appropriate for the type of
+	 * queryable data type.
+	 *
+	 * <p>
+	 * This method will return NULL if the QDT represents a database NULL OR the
+	 * field is undefined OR the field is unchanged. Use {@link #isNull() } and {@link #isDefined()
+	 * } to differentiate the 2 states.
+	 *
+	 * <p>
+	 * Undefined QDTs represents a QDT that is not a field from the database.
+	 * Undefined QDTs are similar to {@link DBRow#isDefined undefined DBRows}
+	 *
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
+	 * @return the literal value, if defined, which may be null
+	 */
+	public T getPreviousValue() {
+		if (undefined || isNull() || !hasChanged() || getPreviousValueAsQDT() == null) {
+			return null;
+		} else {
+			return getPreviousValueAsQDT().getValue();
+		}
+	}
+
+	/**
+	 * Set the value of this QDT to the value provided.
+	 *
+	 * @param newLiteralValue the new value
+	 */
+	public void setValue(T newLiteralValue) {
+		this.setLiteralValue(newLiteralValue);
+	}
+
+	/**
+	 * Set the value of this QDT to the value provided.
+	 *
+	 * @param newLiteralValue the new value
+	 */
+	public void setValue(QueryableDatatype<T> newLiteralValue) {
+		this.setLiteralValue(newLiteralValue.getValue());
+	}
+
+	/**
+	 * Used by
+	 * {@link InternalQueryableDatatypeProxy#setValueFromDatabase(java.lang.Object)}
+	 *
+	 * @param newLiteralValue the new value
+	 */
+	protected void setValueFromDatabase(T newLiteralValue) {
+		this.setLiteralValueInternal(newLiteralValue);
+		setValueHasBeenCalled = false;
+		changed = false;
+		setDefined(true);
+	}
+
+	/**
+	 * Set the value of this QDT to the value provided from the standard string
+	 * encoding of this datatype.
+	 *
+	 * <p>
+	 * A good example of this method is {@link DBBoolean#setValueFromStandardStringEncoding(java.lang.String)
+	 * } which translates the string encodings TRUE, YES, and 1 to true.
 	 *
 	 * <p>
 	 * Subclass writers should ensure that the method handles nulls correctly and
 	 * throws an exception if an inappropriate value is supplied.
 	 *
-	 * <p>
-	 * This method is public for internal reasons and you should provide/use
-	 * another more strongly typed version of setValue.
-	 *
-	 *
+	 * @param encodedValue the value of the QDT in the appropriate encoding
 	 */
-	void setValue(Object newLiteralValue) {
-		this.setLiteralValue(newLiteralValue);
-	}
+	protected abstract void setValueFromStandardStringEncoding(String encodedValue);
 
 	/**
 	 * Sets the literal value of this queryable data type. Replaces any assigned
@@ -382,22 +579,38 @@ public abstract class QueryableDatatype extends Object implements Serializable, 
 	 *
 	 * @param newLiteralValue the literalValue to set
 	 */
-	protected void setLiteralValue(Object newLiteralValue) {
+	protected synchronized void setLiteralValue(T newLiteralValue) {
+		refreshValue(newLiteralValue);
+		this.setHasBeenSet(true);
+	}
+
+	/**
+	 * Internal
+	 *
+	 * @param refreshValue
+	 */
+	private synchronized void refreshValue(T refreshValue) {
+		if ((!hasBeenSet() && refreshValue != null)
+				|| (hasBeenSet() && refreshValue != null && !refreshValue.equals(getLiteralValue()))
+				|| (hasBeenSet() && refreshValue == null && getLiteralValue() != null)) {
+			setLiteralValueInternal(refreshValue);
+		}
+	}
+
+	private void setLiteralValueInternal(T newLiteralValue) {
+		QueryableDatatype.this.moveCurrentValueToPreviousValue(newLiteralValue);
 		if (newLiteralValue == null) {
-			QueryableDatatype.this.moveCurrentValueToPreviousValue(newLiteralValue);
 			setToNull();
 		} else {
-			QueryableDatatype.this.moveCurrentValueToPreviousValue(newLiteralValue);
 			this.literalValue = newLiteralValue;
-			if (newLiteralValue instanceof Date) {
-				this.setOperator(new DBEqualsOperator(new DBDate((Date) newLiteralValue)));
-			} else if (newLiteralValue instanceof Timestamp) {
+			if (newLiteralValue instanceof Timestamp) {
 				this.setOperator(new DBEqualsOperator(new DBDate((Timestamp) newLiteralValue)));
+			} else if (newLiteralValue instanceof Date) {
+				this.setOperator(new DBEqualsOperator(new DBDate((Date) newLiteralValue)));
 			} else {
 				this.setOperator(new DBEqualsOperator(this.copy()));
 			}
 		}
-		this.setHasBeenSet(true);
 	}
 
 	/**
@@ -411,6 +624,14 @@ public abstract class QueryableDatatype extends Object implements Serializable, 
 	}
 
 	/**
+	 * Used internally
+	 *
+	 */
+	public void setChanged() {
+		changed = true;
+	}
+
+	/**
 	 *
 	 * Sets the value of this column to DBNull Also changes the operator to
 	 * DBIsNullOperator for comparisons
@@ -420,7 +641,7 @@ public abstract class QueryableDatatype extends Object implements Serializable, 
 	 *
 	 * @return the DBOperator that will be used with this QDT
 	 */
-	protected DBOperator setToNull() {
+	protected synchronized DBOperator setToNull() {
 		this.literalValue = null;
 		this.isDBNull = true;
 		this.setOperator(new DBIsNullOperator());
@@ -443,11 +664,17 @@ public abstract class QueryableDatatype extends Object implements Serializable, 
 
 	/**
 	 *
-	 * Provides the SQL datatype used by default for this type of object
+	 * Provides the SQL datatype used by default for this type of object.
 	 *
-	 * This should be overridden in each subclass
+	 * <p>
+	 * This should be overridden in each subclass</p>
 	 *
-	 * Example return value: "VARCHAR(1000)"
+	 * <p>
+	 * Example return value: "VARCHAR(1000)"</p>
+	 *
+	 * <p>
+	 * Database specific datatypes are provided by the DBDefinition in the method
+	 * {@link DBDefinition#getDatabaseDataTypeOfQueryableDatatype}</p>
 	 *
 	 * <p style="color: #F90;">Support DBvolution at
 	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
@@ -467,18 +694,18 @@ public abstract class QueryableDatatype extends Object implements Serializable, 
 	 * <p style="color: #F90;">Support DBvolution at
 	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
 	 *
+	 * @param defn the DBDefinition
 	 * @return the literal value as it would appear in an SQL statement i.e.
 	 * {yada} =&gt; 'yada', {1} =&gt; 1 and {} =&gt; NULL
 	 */
 	@Override
-	public final String toSQLString(DBDatabase db) {
-		DBDefinition def = db.getDefinition();
+	public final String toSQLString(DBDefinition defn) {
 		if (this.isDBNull || getLiteralValue() == null) {
-			return def.getNull();
+			return defn.getNull();
 		} else if (getLiteralValue() instanceof DBExpression) {
-			return "(" + ((DBExpression) getLiteralValue()).toSQLString(db) + ")";
+			return "(" + ((HasSQLString) getLiteralValue()).toSQLString(defn) + ")";
 		} else {
-			return formatValueForSQLStatement(db);
+			return formatValueForSQLStatement(defn);
 		}
 	}
 
@@ -503,11 +730,10 @@ public abstract class QueryableDatatype extends Object implements Serializable, 
 	 * @param db	db
 	 * <p style="color: #F90;">Support DBvolution at
 	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
-	 *
 	 * @return the literal value translated to a String ready to insert into an
 	 * SQL statement
 	 */
-	protected abstract String formatValueForSQLStatement(DBDatabase db);
+	protected abstract String formatValueForSQLStatement(DBDefinition db);
 
 	/**
 	 * <p style="color: #F90;">Support DBvolution at
@@ -561,20 +787,20 @@ public abstract class QueryableDatatype extends Object implements Serializable, 
 	 * very important as are the calls to {@link #setUnchanged() } and {@link #setDefined(boolean)
 	 * }
 	 *
-	 * @param database database
+	 * @param defn database
 	 * @param resultSet resultSet
 	 * @param resultSetColumnName resultSetColumnName
 	 * @throws java.sql.SQLException Database exceptions may be thrown
 	 */
-	public void setFromResultSet(DBDatabase database, ResultSet resultSet, String resultSetColumnName) throws SQLException {
+	public void setFromResultSet(DBDefinition defn, ResultSet resultSet, String resultSetColumnName) throws SQLException {
 		removeConstraints();
 		if (resultSet == null || resultSetColumnName == null) {
-			this.setToNull();
+			this.setToNull(defn);
 		} else {
-			Object dbValue;
+			T dbValue;
 			try {
-				dbValue = getFromResultSet(database, resultSet, resultSetColumnName);
-				if (resultSet.wasNull()) {
+				dbValue = getFromResultSet(defn, resultSet, resultSetColumnName);
+				if (checkForNullDuringSetFromResultSet() && resultSet.wasNull()) {
 					dbValue = null;
 				}
 			} catch (SQLException ex) {
@@ -582,14 +808,14 @@ public abstract class QueryableDatatype extends Object implements Serializable, 
 				dbValue = null;
 			}
 			if (dbValue == null) {
-				this.setToNull(database);
+				this.setToNull(defn);
 			} else {
 				this.setLiteralValue(dbValue);
 			}
 		}
 		setUnchanged();
 		setDefined(true);
-		propertyWrapperDefn = null;
+//		propertyWrapperDefn = null;
 	}
 
 	/**
@@ -601,29 +827,35 @@ public abstract class QueryableDatatype extends Object implements Serializable, 
 	 * @param fullColumnName fullColumnName
 	 * <p style="color: #F90;">Support DBvolution at
 	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
-	 *
 	 * @return the expected object from the ResultSet. 1 Database exceptions may
 	 * be thrown
 	 * @throws java.sql.SQLException java.sql.SQLException
 	 */
-	abstract protected Object getFromResultSet(DBDatabase database, ResultSet resultSet, String fullColumnName) throws SQLException;
+	abstract protected T getFromResultSet(DBDefinition database, ResultSet resultSet, String fullColumnName) throws SQLException;
 
-	private void moveCurrentValueToPreviousValue(Object newLiteralValue) {
+	private synchronized void moveCurrentValueToPreviousValue(T newLiteralValue) {
 		if ((this.isDBNull && newLiteralValue != null)
-				|| (getLiteralValue() != null && (newLiteralValue == null || !newLiteralValue.equals(literalValue)))) {
+				|| (!this.isDBNull && (newLiteralValue == null || !newLiteralValue.equals(literalValue)))) {
 			changed = true;
-			QueryableDatatype copyOfOldValues = QueryableDatatype.getQueryableDatatypeInstance(this.getClass());
-			if (this.isDBNull) {
-				copyOfOldValues.setToNull();
-			} else {
-				copyOfOldValues.setLiteralValue(this.getLiteralValue());
+			try {
+				@SuppressWarnings("unchecked")
+				QueryableDatatype<T> copyOfOldValues = QueryableDatatype.getQueryableDatatypeInstance(this.getClass());
+				if (this.isDBNull) {
+					copyOfOldValues.setToNull();
+				} else {
+					copyOfOldValues.setLiteralValue(this.getLiteralValue());
+				}
+				setPreviousValue(copyOfOldValues);
+			} catch (InstantiationException | NoSuchMethodException | InvocationTargetException ex) {
+				throw new UnableInstantiateQueryableDatatypeException(this, ex);
+			} catch (IllegalAccessException | IllegalArgumentException ex) {
+				throw new UnableToCopyQueryableDatatypeException(this, ex);
 			}
-			setPreviousValue(copyOfOldValues);
 		}
 	}
 
 	/**
-	 * Indicates whether object is NULL within the database
+	 * Indicates whether object is NULL within the database.
 	 *
 	 * <p>
 	 * Databases and Java both use the term NULL but for slightly different
@@ -632,6 +864,10 @@ public abstract class QueryableDatatype extends Object implements Serializable, 
 	 * <p>
 	 * This method indicates whether the field represented by this object is NULL
 	 * in the database sense.
+	 *
+	 * <p>
+	 * If you are trying to set a test for a query, use permittedOnlyNull or
+	 * excludedOnlyNull instead</p>
 	 *
 	 * <p style="color: #F90;">Support DBvolution at
 	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
@@ -644,7 +880,7 @@ public abstract class QueryableDatatype extends Object implements Serializable, 
 	}
 
 	/**
-	 * Indicates whether object is NULL within the database
+	 * Indicates whether object is NULL within the database.
 	 *
 	 * <p>
 	 * Databases and Java both use the term NULL but for slightly different
@@ -653,6 +889,10 @@ public abstract class QueryableDatatype extends Object implements Serializable, 
 	 * <p>
 	 * This method indicates whether the field represented by this object is NULL
 	 * in the database sense.
+	 *
+	 * <p>
+	 * If you are trying to set a test for a query, use permittedOnlyNull or
+	 * excludedOnlyNull instead</p>
 	 *
 	 * <p style="color: #F90;">Support DBvolution at
 	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
@@ -674,16 +914,15 @@ public abstract class QueryableDatatype extends Object implements Serializable, 
 	 * @param db	db
 	 * <p style="color: #F90;">Support DBvolution at
 	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
-	 *
 	 * @return the previous value of this field as an SQL formatted String
 	 */
-	public String getPreviousSQLValue(DBDatabase db) {
-		QueryableDatatype prevQDT = getPreviousValue();
+	public String getPreviousSQLValue(DBDefinition db) {
+		QueryableDatatype<T> prevQDT = getPreviousValueAsQDT();
 		return (prevQDT == null) ? null : prevQDT.toSQLString(db);
 	}
 
 	/**
-	 * Used to switch the direction of the column's sort order
+	 * Used to switch the direction of the column's sort order.
 	 *
 	 * use setSortOrderAscending() and setSortOrderDescending() where possible
 	 *
@@ -697,7 +936,7 @@ public abstract class QueryableDatatype extends Object implements Serializable, 
 	 *
 	 * @return this object
 	 */
-	private QueryableDatatype setSortOrder(Boolean order) {
+	private QueryableDatatype<T> setSortOrder(Boolean order) {
 		sort = order;
 		return this;
 	}
@@ -710,7 +949,7 @@ public abstract class QueryableDatatype extends Object implements Serializable, 
 	 *
 	 * @return this object
 	 */
-	public QueryableDatatype setSortOrderAscending() {
+	public QueryableDatatype<T> setSortOrderAscending() {
 		return this.setSortOrder(true);
 	}
 
@@ -722,7 +961,7 @@ public abstract class QueryableDatatype extends Object implements Serializable, 
 	 *
 	 * @return this object
 	 */
-	public QueryableDatatype setSortOrderDescending() {
+	public QueryableDatatype<T> setSortOrderDescending() {
 		return this.setSortOrder(false);
 	}
 
@@ -732,8 +971,9 @@ public abstract class QueryableDatatype extends Object implements Serializable, 
 	 * <p style="color: #F90;">Support DBvolution at
 	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
 	 *
-	 * @return {@link #SORT_ASCENDING} if the column is to be sorted ascending,
-	 * {@link #SORT_DESCENDING} otherwise.
+	 * @return {@link #SORT_DESCENDING} if the column is to be sorted descending,
+	 * {@link #SORT_ASCENDING} if the column is to be sorted ascending otherwise
+	 * {@link #SORT_UNSORTED}.
 	 */
 	public Boolean getSortOrder() {
 		return sort;
@@ -754,7 +994,7 @@ public abstract class QueryableDatatype extends Object implements Serializable, 
 	 *
 	 * @return this instance
 	 */
-	public QueryableDatatype clear() {
+	public QueryableDatatype<T> clear() {
 		return removeConstraints();
 	}
 
@@ -765,11 +1005,26 @@ public abstract class QueryableDatatype extends Object implements Serializable, 
 
 	@Override
 	public boolean equals(Object otherObject) {
-		if (otherObject instanceof QueryableDatatype) {
-			QueryableDatatype other = (QueryableDatatype) otherObject;
+		if (super.equals(otherObject)) {
+			return true;
+		} else if (otherObject instanceof QueryableDatatype) {
+			QueryableDatatype<?> other = (QueryableDatatype<?>) otherObject;
 			if (this.operator == null && other.operator == null) {
-				return this.getLiteralValue().equals(other.getLiteralValue());
-//			return true;
+				if (this.columnExpression.length > 1 && this.columnExpression.length == other.columnExpression.length) {
+					for (int i = 0; i < columnExpression.length; i++) {
+						if (!this.columnExpression[i].equals(other.columnExpression[i])) {
+							return false;
+						}
+					}
+					// all the column expressions match so it must be good
+					return true;
+				} else {
+					if (this.columnExpression.length == 0) {
+						return this.getLiteralValue().equals(other.getLiteralValue());
+					} else {
+						return false;
+					}
+				}
 			} else if (this.operator != null && other.operator == null) {
 				return false;
 			} else if (this.operator == null && other.operator != null) {
@@ -786,7 +1041,7 @@ public abstract class QueryableDatatype extends Object implements Serializable, 
 	 * <p style="color: #F90;">Support DBvolution at
 	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
 	 *
-	 * @return the undefined
+	 * @return true if the value was retrieved from the database
 	 */
 	public boolean isDefined() {
 		return !undefined;
@@ -818,17 +1073,18 @@ public abstract class QueryableDatatype extends Object implements Serializable, 
 	 *
 	 *
 	 */
-	void setPropertyWrapper(PropertyWrapperDefinition propertyWrapper) {
+	void setPropertyWrapper(PropertyWrapperDefinition<?, T> propertyWrapper) {
 		this.propertyWrapperDefn = propertyWrapper;
 	}
 
 	@Override
-	public QueryableDatatype getQueryableDatatypeForExpressionValue() {
+	@SuppressWarnings("unchecked")
+	public QueryableDatatype<T> getQueryableDatatypeForExpressionValue() {
 		try {
-			return this.getClass().newInstance();
-		} catch (InstantiationException e) {
-			return this;
-		} catch (IllegalAccessException ex) {
+			final QueryableDatatype<T> newInstance = getQueryableDatatypeInstance(this);//this.getClass().newInstance();
+			newInstance.setColumnExpression(this.getColumnExpression());
+			return newInstance;
+		} catch (InstantiationException | IllegalAccessException | NoSuchMethodException | IllegalArgumentException | InvocationTargetException e) {
 			return this;
 		}
 	}
@@ -846,7 +1102,7 @@ public abstract class QueryableDatatype extends Object implements Serializable, 
 	 * @return the underlying expression if there is one, or NULL otherwise.
 	 */
 	public final DBExpression[] getColumnExpression() {
-		return columnExpression;
+		return columnExpression.clone();
 	}
 
 	/**
@@ -862,7 +1118,7 @@ public abstract class QueryableDatatype extends Object implements Serializable, 
 	 * @return TRUE if there is a underlying expression, or FALSE otherwise.
 	 */
 	public final boolean hasColumnExpression() {
-		return columnExpression.length>0;
+		return columnExpression.length > 0;
 	}
 
 	@Override
@@ -870,8 +1126,9 @@ public abstract class QueryableDatatype extends Object implements Serializable, 
 		if (hasColumnExpression()) {
 			HashSet<DBRow> hashSet = new HashSet<DBRow>();
 			for (DBExpression dBExpression : columnExpression) {
-				hashSet.addAll( dBExpression.getTablesInvolved());
+				hashSet.addAll(dBExpression.getTablesInvolved());
 			}
+			return hashSet;
 		}
 		return new HashSet<DBRow>();
 	}
@@ -880,17 +1137,21 @@ public abstract class QueryableDatatype extends Object implements Serializable, 
 	 * <p style="color: #F90;">Support DBvolution at
 	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
 	 *
-	 * @return the setValueHasBeenCalled
+	 * Indicates whether this column has had it's value set, either by the
+	 * external program or DBV's internal processes.
+	 *
+	 * @return the setValue method has been called
 	 */
-	public boolean hasBeenSet() {
+	public synchronized boolean hasBeenSet() {
 		return setValueHasBeenCalled;
 	}
 
 	/**
 	 * @param hasBeenSet the setValueHasBeenCalled to set
 	 */
-	private void setHasBeenSet(boolean hasBeenSet) {
+	private synchronized void setHasBeenSet(boolean hasBeenSet) {
 		this.setValueHasBeenCalled = hasBeenSet;
+		this.setChanged(true);
 	}
 
 	/**
@@ -899,7 +1160,7 @@ public abstract class QueryableDatatype extends Object implements Serializable, 
 	 *
 	 * @return the literalValue
 	 */
-	protected Object getLiteralValue() {
+	protected synchronized T getLiteralValue() {
 		return literalValue;
 	}
 
@@ -920,10 +1181,9 @@ public abstract class QueryableDatatype extends Object implements Serializable, 
 	 * @param database	database
 	 * <p style="color: #F90;">Support DBvolution at
 	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
-	 *
 	 * @return the DBOperator that will be used with this QDT
 	 */
-	protected DBOperator setToNull(DBDatabase database) {
+	protected DBOperator setToNull(DBDefinition database) {
 		return setToNull();
 	}
 
@@ -934,7 +1194,7 @@ public abstract class QueryableDatatype extends Object implements Serializable, 
 	 */
 	protected void setChanged(boolean hasChanged) {
 		if (hasChanged) {
-			changed = true;
+			setChanged();
 		} else {
 			setUnchanged();
 		}
@@ -948,7 +1208,7 @@ public abstract class QueryableDatatype extends Object implements Serializable, 
 	 *
 	 * @return the previous value of this QDT.
 	 */
-	protected QueryableDatatype getPreviousValue() {
+	protected QueryableDatatype<T> getPreviousValueAsQDT() {
 		return previousValueAsQDT;
 	}
 
@@ -957,7 +1217,7 @@ public abstract class QueryableDatatype extends Object implements Serializable, 
 	 *
 	 * @param queryableDatatype	queryableDatatype
 	 */
-	protected void setPreviousValue(QueryableDatatype queryableDatatype) {
+	protected void setPreviousValue(QueryableDatatype<T> queryableDatatype) {
 		this.previousValueAsQDT = queryableDatatype;
 	}
 
@@ -969,7 +1229,7 @@ public abstract class QueryableDatatype extends Object implements Serializable, 
 	 *
 	 * @return the PropertyWrapperDefinition
 	 */
-	protected PropertyWrapperDefinition getPropertyWrapperDefinition() {
+	protected PropertyWrapperDefinition<?, T> getPropertyWrapperDefinition() {
 		return propertyWrapperDefn;
 	}
 
@@ -996,7 +1256,7 @@ public abstract class QueryableDatatype extends Object implements Serializable, 
 			return getTablesInvolved().isEmpty();
 		} else {
 			for (DBExpression dBExpression : columnExpression) {
-				if (!dBExpression.isPurelyFunctional()){
+				if (!dBExpression.isPurelyFunctional()) {
 					return false;
 				}
 			}
@@ -1004,7 +1264,266 @@ public abstract class QueryableDatatype extends Object implements Serializable, 
 		return true;
 	}
 
-    public String formatColumnForSQLStatementQuery(DBDatabase db, String formattedColumnName) {
-        return formattedColumnName;
-    }
+	/**
+	 *
+	 * Returns the column of the object formatted for the database.
+	 *
+	 * <p>
+	 * This method provides a route to transforming all calls to a column prior to
+	 * use in SQL.</p>
+	 *
+	 * <p>
+	 * See
+	 * {@link DBStringTrimmed#formatColumnForSQLStatement(nz.co.gregs.dbvolution.databases.definitions.DBDefinition, java.lang.String) the implementation in DBStringTrimmed}
+	 * for an example.</p>
+	 *
+	 * @param db	db
+	 * @param formattedColumnName the name of the database column or similar
+	 * expression ready to be used in an SQL excerpt
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 * @return the formatted column ready to be used in an SQL statement
+	 */
+	public String formatColumnForSQLStatement(DBDefinition db, String formattedColumnName) {
+		return formattedColumnName;
+	}
+
+	/**
+	 * Creates a Column Provider suitable to this QDT.
+	 *
+	 * <p>
+	 * Creates a ColumnProvider object of the correct type for this
+	 * QueryableDatatype, using this object and the provided row.</p>
+	 *
+	 * <p>
+	 * Used internally to maintain the relationship between QDTs and their
+	 * ColumnProvider equivalents.</p>
+	 *
+	 * @param row the row from which to get the column provider
+	 * @return a column object appropriate to this datatype based on the object
+	 * and the row
+	 * @throws IncorrectRowProviderInstanceSuppliedException if this object is not
+	 * a field in the row.
+	 */
+	public abstract ColumnProvider getColumn(RowDefinition row) throws IncorrectRowProviderInstanceSuppliedException;
+
+	@Override
+	public final String createSQLForFromClause(DBDatabase database) {
+		if (hasColumnExpression()) {
+			StringBuilder str = new StringBuilder();
+			for (DBExpression expr : getColumnExpression()) {
+				if (str.length() > 0) {
+					str.append(", ");
+				}
+				str.append(expr.createSQLForFromClause(database));
+			}
+			return str.toString();
+		} else {
+			throw new UnsupportedOperationException("QueryableDatatype does not support createSQLForFromClause(DBDatabase) for non-column-expression yet.");
+		}
+	}
+
+	@Override
+	public final boolean isComplexExpression() {
+		if (hasColumnExpression()) {
+			DBExpression[] exprs = getColumnExpression();
+			for (DBExpression expr : exprs) {
+				if (expr.isComplexExpression()) {
+					return true;
+				}
+			}
+		}
+		return false;
+	}
+
+	public boolean isLargeObject() {
+		return false;
+	}
+
+	@Override
+	public String createSQLForGroupByClause(DBDatabase database) {
+		return "";
+	}
+
+	/**
+	 * Set the value to be inserted when no value has been set, using
+	 * {@link #setValue(java.lang.Object) setValue(...)}, for the QDT.
+	 *
+	 * <p>
+	 * The value is only used during the initial insert and does not effect the
+	 * definition of the column within the database.</p>
+	 *
+	 * <p>
+	 * Care should be taken when using this as some "obvious" uses are better
+	 * handled using the
+	 * {@link #setDefaultInsertValue(nz.co.gregs.dbvolution.results.AnyResult) expression version}.
+	 * In particular, setDefaultInsertValue(new Date()) is probably NOT what you
+	 * want, setDefaultInsertValue(DateExpression.currentDate()) will produce a
+	 * correct creation date value.</p>
+	 *
+	 * @param value the value to use during insertion when no particular value has
+	 * been specified.
+	 * @return This QDT
+	 */
+	public synchronized QueryableDatatype<T> setDefaultInsertValue(T value) {
+		this.defaultInsertExpression = null;
+		this.defaultInsertValue = value;
+		return this;
+	}
+
+	/**
+	 * Set the value to be inserted when no value has been set, using
+	 * {@link #setValue(java.lang.Object) setValue(...)}, for the QDT.
+	 *
+	 * <p>
+	 * The value is only used during the initial insert and does not effect the
+	 * definition of the column within the database.</p>
+	 *
+	 * @param value the value to use during insertion when no particular value has
+	 * been specified.
+	 * @return This QDT
+	 */
+	protected synchronized QueryableDatatype<T> setDefaultInsertValue(AnyResult<T> value) {
+		this.defaultInsertValue = null;
+		this.defaultInsertExpression = value;
+		return this;
+	}
+
+	/**
+	 * Set the value to be used during an update when no value has been set, using
+	 * {@link #setValue(java.lang.Object) setValue(...)}, for the QDT.
+	 *
+	 * <p>
+	 * The value is only used during updates and does not effect the definition of
+	 * the column within the database nor the initial value of the column.</p>
+	 *
+	 * <p>
+	 * Care should be taken when using this as some "obvious" uses are better
+	 * handled using the
+	 * {@link #setDefaultUpdateValue(nz.co.gregs.dbvolution.results.AnyResult) expression version}.
+	 * In particular, setDefaultUpdateValue(new Date()) is probably NOT what you
+	 * want, setDefaultUpdateValue(DateExpression.currentDate()) will produce a
+	 * correct update time value.</p>
+	 *
+	 * @param value the value to use during update when no particular value has
+	 * been specified.
+	 * @return This QDT
+	 */
+	public synchronized QueryableDatatype<T> setDefaultUpdateValue(T value) {
+		this.defaultUpdateExpression = null;
+		this.defaultUpdateValue = value;
+		return this;
+	}
+
+	/**
+	 * Set the value to be used during an update when no value has been set, using
+	 * {@link #setValue(java.lang.Object) setValue(...)}, for the QDT.
+	 *
+	 * <p>
+	 * The value is only used during updates and does not effect the definition of
+	 * the column within the database nor the initial value of the column.</p>
+	 *
+	 * @param value the value to use during update when no particular value has
+	 * been specified.
+	 * @return This QDT
+	 */
+	protected synchronized QueryableDatatype<T> setDefaultUpdateValue(AnyResult<T> value) {
+		this.defaultUpdateValue = null;
+		this.defaultUpdateExpression = value;
+		return this;
+	}
+
+	/**
+	 * Return true if the QDT has a default insert value defined.
+	 *
+	 * @return TRUE if a default has been defined for use during inserts.
+	 */
+	public boolean hasDefaultInsertValue() {
+		return defaultInsertValue != null || defaultInsertExpression != null;
+	}
+
+	/**
+	 * Returns the value of the default insert value formatted by the DBDefinition
+	 * provided.
+	 *
+	 * <p>
+	 * Probably not the method you are looking for.</p>
+	 *
+	 * @param defn the DBDefinition
+	 * @return the SQL version of the default value
+	 */
+	public String getDefaultInsertValueSQLString(DBDefinition defn) {
+		QueryableDatatype<T> newQDT = this.getQueryableDatatypeForExpressionValue();
+		if (defaultInsertValue != null) {
+			newQDT.setValue(defaultInsertValue);
+			return newQDT.toSQLString(defn);
+		} else if (defaultInsertExpression != null) {
+			return defaultInsertExpression.toSQLString(defn);
+		}
+		return newQDT.toSQLString(defn);
+	}
+
+	/**
+	 * Return true if the QDT has a default update value defined.
+	 *
+	 * @return TRUE if a default update value has been set
+	 */
+	public boolean hasDefaultUpdateValue() {
+		return defaultUpdateValue != null || defaultUpdateExpression != null;
+	}
+
+	/**
+	 * Returns the value of the default update value formatted by the DBDefinition
+	 * provided.
+	 *
+	 * <p>
+	 * Probably not the method you are looking for.</p>
+	 *
+	 * @param defn the DBDefinition
+	 * @return the default update value as SQL
+	 */
+	public String getDefaultUpdateValueSQLString(DBDefinition defn) {
+		QueryableDatatype<T> newQDT = this.getQueryableDatatypeForExpressionValue();
+		if (defaultUpdateValue != null) {
+			newQDT.setValue(defaultUpdateValue);
+			return newQDT.toSQLString(defn);
+		} else if (defaultUpdateExpression != null) {
+			return defaultUpdateExpression.toSQLString(defn);
+		}
+		return newQDT.toSQLString(defn);
+	}
+
+	@Override
+	public boolean isWindowingFunction() {
+		if (hasColumnExpression()) {
+			boolean windower = false;
+			for (DBExpression dBExpression : getColumnExpression()) {
+				windower = windower && dBExpression.isWindowingFunction();
+			}
+			return windower;
+		} else {
+			return false;
+		}
+	}
+
+	protected boolean checkForNullDuringSetFromResultSet() {
+		return true;
+	}
+
+	public Boolean isConsistentWithEmptyRow(DBDefinition defn) {
+		return isNull();
+	}
+
+	public Comparator<T> getComparator() {
+		return new HashCodeComparator<>();
+	}
+
+	@Override
+	public int compareTo(QueryableDatatype<T> o) {
+		return this.getComparator().compare(this.getValue(), o.getValue());
+	}
+
+	public boolean getCouldProduceEmptyStringForNull() {
+		return false;
+	}
 }

@@ -21,8 +21,6 @@ import org.sqlite.Function;
 
 /**
  *
- * <p style="color: #F90;">Support DBvolution at
- * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
  *
  * @author gregorygraham
  */
@@ -31,45 +29,45 @@ public class Point2DFunctions {
 	/**
 	 *
 	 */
-	public static String CREATE_FROM_POINT2DS_FUNCTION = "DBV_CREATE_POINT2D_FROM_COORDS";
+	public final static String CREATE_FROM_POINT2DS_FUNCTION = "DBV_CREATE_POINT2D_FROM_COORDS";
 
 	/**
 	 *
 	 */
-	public static String EQUALS_FUNCTION = "DBV_POINT2D_EQUALS";
+	public final static String EQUALS_FUNCTION = "DBV_POINT2D_EQUALS";
 
 	/**
 	 *
 	 */
-	public static String GETX_FUNCTION = "DBV_POINT2D_GETX";
+	public final static String GETX_FUNCTION = "DBV_POINT2D_GETX";
 
 	/**
 	 *
 	 */
-	public static String GETY_FUNCTION = "DBV_POINT2D_GETY";
+	public final static String GETY_FUNCTION = "DBV_POINT2D_GETY";
 
 	/**
 	 *
 	 */
-	public static String GETDIMENSION_FUNCTION = "DBV_POINT2D_GETDIMENSION";
+	public final static String GETDIMENSION_FUNCTION = "DBV_POINT2D_GETDIMENSION";
 
 	/**
 	 *
 	 */
-	public static String GETBOUNDINGBOX_FUNCTION = "DBV_POINT2D_GETBOUNDINGBOX";
+	public final static String GETBOUNDINGBOX_FUNCTION = "DBV_POINT2D_GETBOUNDINGBOX";
 
 	/**
 	 *
 	 */
-	public static String ASTEXT_FUNCTION = "DBV_POINT2D_ASTEXT";
+	public final static String ASTEXT_FUNCTION = "DBV_POINT2D_ASTEXT";
 
 	private Point2DFunctions() {
 	}
 
 	/**
 	 *
-	 * @param connection
-	 * @throws SQLException
+	 * @param connection the database to add functions to
+	 * @throws SQLException database errors
 	 */
 	public static void addFunctions(Connection connection) throws SQLException {
 		Function.create(connection, CREATE_FROM_POINT2DS_FUNCTION, new CreateFromCoords());

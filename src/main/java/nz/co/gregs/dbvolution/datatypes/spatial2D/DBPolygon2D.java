@@ -15,6 +15,7 @@
  */
 package nz.co.gregs.dbvolution.datatypes.spatial2D;
 
+import com.vividsolutions.jts.geom.Coordinate;
 import nz.co.gregs.dbvolution.datatypes.TransformRequiredForSelectClause;
 import com.vividsolutions.jts.geom.Polygon;
 import com.vividsolutions.jts.io.ParseException;
@@ -22,11 +23,17 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import nz.co.gregs.dbvolution.DBDatabase;
+import nz.co.gregs.dbvolution.columns.Polygon2DColumn;
+import nz.co.gregs.dbvolution.databases.definitions.DBDefinition;
 import nz.co.gregs.dbvolution.datatypes.QueryableDatatype;
-import nz.co.gregs.dbvolution.expressions.Polygon2DExpression;
+import nz.co.gregs.dbvolution.exceptions.IncorrectRowProviderInstanceSuppliedException;
+import nz.co.gregs.dbvolution.expressions.spatial2D.Polygon2DExpression;
 import nz.co.gregs.dbvolution.expressions.StringExpression;
+import nz.co.gregs.dbvolution.query.RowDefinition;
 import nz.co.gregs.dbvolution.results.Polygon2DResult;
+import com.vividsolutions.jts.geom.GeometryFactory;
+import java.util.Comparator;
+import nz.co.gregs.dbvolution.utility.comparators.ComparableComparator;
 
 /**
  * Represents database columns and values that are a 2 dimensional polygon: an
@@ -46,7 +53,7 @@ import nz.co.gregs.dbvolution.results.Polygon2DResult;
  *
  * @author Gregory Graham
  */
-public class DBPolygon2D extends QueryableDatatype implements TransformRequiredForSelectClause, Polygon2DResult {
+public class DBPolygon2D extends QueryableDatatype<Polygon> implements TransformRequiredForSelectClause, Polygon2DResult {
 
 	private static final long serialVersionUID = 1L;
 
@@ -78,9 +85,9 @@ public class DBPolygon2D extends QueryableDatatype implements TransformRequiredF
 	 * When retrieving this object from the database the expression will be
 	 * evaluated to provide the value.
 	 *
-	 * @param columnExpression
+	 * @param columnExpression the expression to use to fill this field
 	 */
-	public DBPolygon2D(nz.co.gregs.dbvolution.expressions.Polygon2DExpression columnExpression) {
+	public DBPolygon2D(Polygon2DResult columnExpression) {
 		super(columnExpression);
 	}
 
@@ -91,7 +98,7 @@ public class DBPolygon2D extends QueryableDatatype implements TransformRequiredF
 	 * Equivalent to {code polygon2D = new DBPolygon2D();
 	 * polygon2D.setValue(aPolygon);}
 	 *
-	 * @param polygon
+	 * @param polygon the value to set this field to
 	 */
 	public DBPolygon2D(Polygon polygon) {
 		super(polygon);
@@ -103,13 +110,13 @@ public class DBPolygon2D extends QueryableDatatype implements TransformRequiredF
 	}
 
 	@Override
-	protected String formatValueForSQLStatement(DBDatabase db) {
-		Polygon geom = (Polygon) getLiteralValue();
-		return db.getDefinition().transformPolygonIntoDatabasePolygon2DFormat(geom);
+	protected String formatValueForSQLStatement(DBDefinition db) {
+		Polygon geom = getLiteralValue();
+		return db.transformPolygonIntoDatabasePolygon2DFormat(geom);
 	}
 
 	@Override
-	protected Object getFromResultSet(DBDatabase database, ResultSet resultSet, String fullColumnName) throws SQLException {
+	protected Polygon getFromResultSet(DBDefinition database, ResultSet resultSet, String fullColumnName) throws SQLException {
 
 		Polygon geometry = null;
 		String string = resultSet.getString(fullColumnName);
@@ -117,7 +124,11 @@ public class DBPolygon2D extends QueryableDatatype implements TransformRequiredF
 			return null;
 		} else {
 			try {
-				geometry = database.getDefinition().transformDatabasePolygon2DToJTSPolygon(string);
+				if (string.equals("GEOMETRYCOLLECTION()")) {
+					geometry = (new GeometryFactory()).createPolygon(new Coordinate[]{});
+				} else {
+					geometry = database.transformDatabasePolygon2DToJTSPolygon(string);
+				}
 			} catch (ParseException ex) {
 				Logger.getLogger(DBPolygon2D.class.getName()).log(Level.SEVERE, null, ex);
 				throw new nz.co.gregs.dbvolution.exceptions.ParsingSpatialValueException(fullColumnName, string, ex);
@@ -138,7 +149,7 @@ public class DBPolygon2D extends QueryableDatatype implements TransformRequiredF
 	 * @return the set value of this object as a JTS Polygon object.
 	 */
 	public Polygon jtsPolygonValue() {
-		return (Polygon) ((this.getLiteralValue() != null) ? this.getLiteralValue() : null);
+		return (this.getLiteralValue() != null) ? this.getLiteralValue() : null;
 	}
 
 	@Override
@@ -183,5 +194,21 @@ public class DBPolygon2D extends QueryableDatatype implements TransformRequiredF
 	@Override
 	public StringExpression stringResult() {
 		return Polygon2DExpression.value(this).stringResult();
+	}
+
+	@Override
+	protected void setValueFromStandardStringEncoding(String encodedValue) {
+		throw new UnsupportedOperationException("DBPolygon2D does not support setValueFromStandardStringEncoding(String) yet."); //To change body of generated methods, choose Tools | Templates.
+	}
+
+	@Override
+	public Polygon2DColumn getColumn(RowDefinition row) throws IncorrectRowProviderInstanceSuppliedException {
+		return new Polygon2DColumn(row, this);
+	}
+
+	@Override
+	@SuppressWarnings("unchecked")
+	public Comparator<Polygon> getComparator() {
+		return ComparableComparator.forClass(Polygon.class);
 	}
 }

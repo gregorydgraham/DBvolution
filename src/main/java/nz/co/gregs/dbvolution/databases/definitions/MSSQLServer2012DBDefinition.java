@@ -15,7 +15,8 @@
  */
 package nz.co.gregs.dbvolution.databases.definitions;
 
-import nz.co.gregs.dbvolution.query.QueryOptions;
+import nz.co.gregs.dbvolution.internal.query.QueryOptions;
+import nz.co.gregs.dbvolution.internal.query.QueryState;
 
 /**
  * Extends and updates the MS SQLServer database definition to use features made
@@ -28,24 +29,29 @@ import nz.co.gregs.dbvolution.query.QueryOptions;
  */
 public class MSSQLServer2012DBDefinition extends MSSQLServerDBDefinition {
 
+	public static final long serialVersionUID = 1L;
+	
 	@Override
 	public boolean supportsPagingNatively(QueryOptions options) {
 		return true;
 	}
 
 	@Override
-	public Object getLimitRowsSubClauseDuringSelectClause(QueryOptions options) {
+	public String getLimitRowsSubClauseDuringSelectClause(QueryOptions options) {
 		return "";
 	}
 
 	@Override
-	public Object getLimitRowsSubClauseAfterWhereClause(QueryOptions options) {
-		String returnString = "";
-		if (options.getSortColumns().length == 0) {
-			returnString = " order by 1";
+	public String getLimitRowsSubClauseAfterWhereClause(QueryState state, QueryOptions options) {
+		StringBuilder returnString = new StringBuilder();
+		if (state.hasBeenOrdered()==false) {
+			returnString.append(" ORDER BY 1 ");
 		}
-		returnString += " OFFSET " + options.getPageIndex() + " ROWS FETCH NEXT " + options.getRowLimit() + " ROWS ONLY ";
-		return returnString;
+		if (options.getRowLimit() > 0) {
+			returnString.append(" OFFSET ").append(options.getPageIndex() * options.getRowLimit()).append(" ROWS");
+			returnString.append(" FETCH NEXT ").append(options.getRowLimit()).append(" ROWS ONLY ");
+		}
+		return returnString.toString();
 	}
 
 	@Override
@@ -60,7 +66,16 @@ public class MSSQLServer2012DBDefinition extends MSSQLServerDBDefinition {
 
 	@Override
 	public String doIfThenElseTransform(String booleanTest, String thenResult, String elseResult) {
-		return " IFF( (" + booleanTest + "), (" + thenResult + "), (" + elseResult + "))";
+		return " IIF( (" + booleanTest + "), (" + thenResult + "), (" + elseResult + "))";
 	}
 
+	@Override
+	public int getNumericPrecision() {
+		return 38;
+	}
+
+	@Override
+	public boolean requiresOnClauseForAllJoins() {
+		return true;
+	}
 }

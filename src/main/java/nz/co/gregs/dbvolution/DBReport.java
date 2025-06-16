@@ -15,18 +15,23 @@
  */
 package nz.co.gregs.dbvolution;
 
+import nz.co.gregs.dbvolution.databases.DBDatabase;
 import java.lang.reflect.Field;
+import java.lang.reflect.InvocationTargetException;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import nz.co.gregs.dbvolution.columns.ColumnProvider;
 import nz.co.gregs.dbvolution.datatypes.QueryableDatatype;
+import nz.co.gregs.dbvolution.exceptions.AccidentalBlankQueryException;
+import nz.co.gregs.dbvolution.exceptions.AccidentalCartesianJoinException;
 import nz.co.gregs.dbvolution.exceptions.UnableToAccessDBReportFieldException;
 import nz.co.gregs.dbvolution.exceptions.UnableToInstantiateDBReportSubclassException;
 import nz.co.gregs.dbvolution.exceptions.UnableToSetDBReportFieldException;
 import nz.co.gregs.dbvolution.expressions.BooleanExpression;
 import nz.co.gregs.dbvolution.expressions.DBExpression;
+import nz.co.gregs.dbvolution.expressions.SortProvider;
 import nz.co.gregs.dbvolution.query.RowDefinition;
 
 /**
@@ -87,7 +92,8 @@ public class DBReport extends RowDefinition {
 
 	private static final long serialVersionUID = 1L;
 
-	private transient ColumnProvider[] sortColumns = new ColumnProvider[]{};
+	private SortProvider[] sortColumns = new SortProvider[]{};
+	private boolean blankQueryAllowed = false;
 
 	/**
 	 * Gets all the report rows of the supplied DBReport using only conditions
@@ -100,20 +106,56 @@ public class DBReport extends RowDefinition {
 	 * <p>
 	 * If you require extra criteria to be add to the DBReport, limiting the
 	 * results to a subset, use the
-	 * {@link DBReport#getAllRows(nz.co.gregs.dbvolution.DBDatabase, nz.co.gregs.dbvolution.DBReport, nz.co.gregs.dbvolution.DBRow...) getRows method}.
+	 * {@link DBReport#getAllRows(nz.co.gregs.dbvolution.databases.DBDatabase, nz.co.gregs.dbvolution.DBReport, nz.co.gregs.dbvolution.DBRow...) getRows method}.
 	 *
 	 * @param <A> DBReport type
 	 * @param database database
 	 * @param exampleReport exampleReport
 	 * <p style="color: #F90;">Support DBvolution at
 	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
-	 *
 	 * @return a list of DBReport instances representing the results of the report
 	 * query. 1 Database exceptions may be thrown
 	 * @throws java.sql.SQLException java.sql.SQLException
+	 * @throws nz.co.gregs.dbvolution.exceptions.AccidentalBlankQueryException thrown if no conditions are set on the report and blank queries have not been specifically permitted.
 	 */
-	public static <A extends DBReport> List<A> getAllRows(DBDatabase database, A exampleReport) throws SQLException {
+	public static <A extends DBReport> List<A> getAllRows(DBDatabase database, A exampleReport) throws SQLException, AccidentalCartesianJoinException, AccidentalBlankQueryException {
 		return getAllRows(database, exampleReport, new DBRow[]{});
+	}
+
+	/**
+	 * Change the Default Setting of Disallowing Blank Queries
+	 *
+	 * <p>
+	 * A common mistake is creating a query without supplying criteria and
+	 * accidently retrieving a huge number of rows.
+	 *
+	 * <p>
+	 * DBvolution detects this situation and, by default, throws a
+	 * {@link nz.co.gregs.dbvolution.exceptions.AccidentalBlankQueryException AccidentalBlankQueryException}
+	 * when it happens.
+	 *
+	 * <p>
+	 * To change this behaviour, and allow blank queries, call
+	 * {@code setBlankQueriesAllowed(true)}.
+	 *
+	 * @param allow - TRUE to allow blank queries, FALSE to return it to the
+	 * default setting.
+	 */
+	public void setBlankQueryAllowed(boolean allow) {
+		this.blankQueryAllowed = allow;
+	}
+
+	/**
+	 * Reports whether or not this DBReport is allowed to return all rows without
+	 * restriction.
+	 *
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
+	 * @return TRUE if blank queries are allowed, otherwise FALSE
+	 */
+	public boolean getBlankQueryAllowed() {
+		return this.blankQueryAllowed;
 	}
 
 	/**
@@ -127,15 +169,13 @@ public class DBReport extends RowDefinition {
 	 * @param <A> DBReport type
 	 * @param database database
 	 * @param exampleReport exampleReport
-	 * @param extraExamples
-	 * <p style="color: #F90;">Support DBvolution at
-	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
-	 *
+	 * @param extraExamples DBRow instances that will be used to add extra criteria
 	 * @return a list of DBReport instances representing the results of the report
 	 * query. 1 Database exceptions may be thrown
 	 * @throws java.sql.SQLException java.sql.SQLException
-	 */
-	public static <A extends DBReport> List<A> getAllRows(DBDatabase database, A exampleReport, DBRow... extraExamples) throws SQLException {
+	 * @throws nz.co.gregs.dbvolution.exceptions.AccidentalBlankQueryException thrown if no conditions are set on the report and blank queries have not been specifically permitted.
+	*/
+	public static <A extends DBReport> List<A> getAllRows(DBDatabase database, A exampleReport, DBRow... extraExamples) throws SQLException, AccidentalCartesianJoinException, AccidentalBlankQueryException {
 		DBQuery query = getDBQuery(database, exampleReport, extraExamples);
 		List<A> reportRows;
 		query.setBlankQueryAllowed(true);
@@ -143,7 +183,7 @@ public class DBReport extends RowDefinition {
 		reportRows = getReportsFromQueryResults(allRows, exampleReport);
 		return reportRows;
 	}
-	private final List<DBRow> optionalTables = new ArrayList<DBRow>();
+	private final ArrayList<DBRow> optionalTables = new ArrayList<DBRow>();
 
 	@Override
 	public String toString() {
@@ -161,13 +201,11 @@ public class DBReport extends RowDefinition {
 					}
 				} else if (value != null && QueryableDatatype.class.isAssignableFrom(value.getClass())) {
 					if ((value instanceof QueryableDatatype)) {
-						QueryableDatatype qdt = (QueryableDatatype) value;
+						QueryableDatatype<?> qdt = (QueryableDatatype) value;
 						str.append(field.getName()).append(": ").append(qdt.toString()).append(" ");
 					}
 				}
-			} catch (IllegalArgumentException ex) {
-				throw new UnableToAccessDBReportFieldException(this, field, ex);
-			} catch (IllegalAccessException ex) {
+			} catch (IllegalArgumentException | IllegalAccessException ex) {
 				throw new UnableToAccessDBReportFieldException(this, field, ex);
 			}
 		}
@@ -197,13 +235,14 @@ public class DBReport extends RowDefinition {
 	 * @param rows rows
 	 * <p style="color: #F90;">Support DBvolution at
 	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
-	 *
 	 * @return a list of DBReport instances representing the results of the report
 	 * query. 1 Database exceptions may be thrown
 	 * @throws java.sql.SQLException java.sql.SQLException
-	 */
-	public static <A extends DBReport> List<A> getRows(DBDatabase database, A exampleReport, DBRow... rows) throws SQLException {
+	 * @throws nz.co.gregs.dbvolution.exceptions.AccidentalBlankQueryException thrown if no conditions are set on the report and blank queries have not been specifically permitted.
+	*/
+	public static <A extends DBReport> List<A> getRows(DBDatabase database, A exampleReport, DBRow... rows) throws SQLException, AccidentalCartesianJoinException, AccidentalBlankQueryException {
 		DBQuery query = getDBQuery(database, exampleReport, rows);
+		query.setBlankQueryAllowed(exampleReport.getBlankQueryAllowed());
 		List<A> reportRows;
 		List<DBQueryRow> allRows = query.getAllRows();
 		reportRows = getReportsFromQueryResults(allRows, exampleReport);
@@ -212,12 +251,10 @@ public class DBReport extends RowDefinition {
 
 	/**
 	 * Gets all the report rows of the supplied DBReport limited by the supplied
-	 * example rows but reduce the result to only those that match the post-query
-	 * conditions.
+	 * example rows but reduce the result to only those that match the conditions.
 	 *
 	 * <p>
-	 * All post-query conditions should only reference the fields/column of the
-	 * DBReport.
+	 * All conditions should only reference the fields/column of the DBReport.
 	 *
 	 * <p>
 	 * All supplied rows should be from a DBRow subclass that is included in the
@@ -236,19 +273,19 @@ public class DBReport extends RowDefinition {
 	 * @param database database
 	 * @param exampleReport exampleReport
 	 * @param rows rows example rows that provide extra criteria
-	 * @param postQueryConditions the post-query conditions that will be supplied
-	 * to the HAVING clause of the query
+	 * @param conditions extra conditions that will be supplied to the WHERE or
+	 * HAVING clause of the query
 	 * <p style="color: #F90;">Support DBvolution at
 	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
-	 *
 	 * @return a list of DBReport instances representing the results of the report
 	 * query
 	 * @throws java.sql.SQLException Database exceptions may be thrown
+	 * @throws nz.co.gregs.dbvolution.exceptions.AccidentalBlankQueryException thrown if no conditions are set on the report and blank queries have not been specifically permitted.
 	 */
-	public static <A extends DBReport> List<A> getRowsHaving(DBDatabase database, A exampleReport, DBRow[] rows, BooleanExpression... postQueryConditions) throws SQLException {
+	public static <A extends DBReport> List<A> getRowsHaving(DBDatabase database, A exampleReport, DBRow[] rows, BooleanExpression... conditions) throws SQLException, AccidentalCartesianJoinException, AccidentalBlankQueryException {
 		DBQuery query = getDBQuery(database, exampleReport, rows);
 		List<A> reportRows;
-		List<DBQueryRow> allRows = query.getAllRowsHaving(postQueryConditions);
+		List<DBQueryRow> allRows = query.addConditions(conditions).getAllRows();
 		reportRows = getReportsFromQueryResults(allRows, exampleReport);
 		return reportRows;
 	}
@@ -271,26 +308,24 @@ public class DBReport extends RowDefinition {
 	 * <p>
 	 * Generates the SQL query for retrieving the objects but does not execute the
 	 * SQL. Use
-	 * {@link #getAllRows(nz.co.gregs.dbvolution.DBDatabase, nz.co.gregs.dbvolution.DBReport)  the getAllRows method}
+	 * {@link #getAllRows(nz.co.gregs.dbvolution.databases.DBDatabase, nz.co.gregs.dbvolution.DBReport)  the getAllRows method}
 	 * to retrieve the rows.
 	 *
 	 * <p>
 	 * See also
-	 * {@link #getSQLForCount(nz.co.gregs.dbvolution.DBDatabase, nz.co.gregs.dbvolution.DBReport, nz.co.gregs.dbvolution.DBRow...)}
+	 * {@link #getSQLForCount(nz.co.gregs.dbvolution.databases.DBDatabase, nz.co.gregs.dbvolution.DBRow...) }
 	 *
 	 * @param <A> the class of the supplied report.
 	 * @param database the database the SQL will be run against.
-	 * @param exampleReport the report required.
 	 * @param rows additional conditions to apply to the report.
 	 * <p style="color: #F90;">Support DBvolution at
 	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
-	 *
 	 * @return a String of the SQL that will be used by this DBQuery. 1 Database
 	 * exceptions may be thrown
 	 * @throws java.sql.SQLException java.sql.SQLException
 	 */
-	public static <A extends DBReport> String getSQLForQuery(DBDatabase database, A exampleReport, DBRow... rows) throws SQLException {
-		DBQuery query = getDBQuery(database, exampleReport, rows);
+	public <A extends DBReport> String getSQLForQuery(DBDatabase database, DBRow... rows) throws SQLException {
+		DBQuery query = getDBQuery(database, this, rows);
 		return query.getSQLForQuery();
 	}
 
@@ -300,20 +335,18 @@ public class DBReport extends RowDefinition {
 	 *
 	 * <p>
 	 * Use this method to check the SQL that will be executed during
-	 * {@link DBReport#count(nz.co.gregs.dbvolution.DBDatabase, nz.co.gregs.dbvolution.DBReport, nz.co.gregs.dbvolution.DBRow...)  the count method}
+	 * {@link DBReport#count(nz.co.gregs.dbvolution.databases.DBDatabase, nz.co.gregs.dbvolution.DBReport, nz.co.gregs.dbvolution.DBRow...)  the count method}
 	 *
 	 * @param database the database to format the query for.
-	 * @param exampleReport the report to retrieve.
 	 * @param rows additional conditions to be applied.
 	 * <p style="color: #F90;">Support DBvolution at
 	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
-	 *
 	 * @return a String of the SQL query that will be used to count the rows
 	 * returned by this report 1 Database exceptions may be thrown
 	 * @throws java.sql.SQLException java.sql.SQLException
 	 */
-	public static String getSQLForCount(DBDatabase database, DBReport exampleReport, DBRow... rows) throws SQLException {
-		DBQuery query = getDBQuery(database, exampleReport, rows);
+	public String getSQLForCount(DBDatabase database, DBRow... rows) throws SQLException {
+		DBQuery query = getDBQuery(database, this, rows);
 		return query.getSQLForCount();
 	}
 
@@ -322,10 +355,10 @@ public class DBReport extends RowDefinition {
 	 *
 	 * <p>
 	 * Creates a
-	 * {@link #getSQLForCount(nz.co.gregs.dbvolution.DBDatabase, nz.co.gregs.dbvolution.DBReport, nz.co.gregs.dbvolution.DBRow...)  count query}
+	 * {@link #getSQLForCount(nz.co.gregs.dbvolution.databases.DBDatabase, nz.co.gregs.dbvolution.DBRow...)   count query}
 	 * for the report and conditions and retrieves the number of rows that would
 	 * have been returned had
-	 * {@link #getAllRows(nz.co.gregs.dbvolution.DBDatabase, nz.co.gregs.dbvolution.DBReport)  getAllRows method}
+	 * {@link #getAllRows(nz.co.gregs.dbvolution.databases.DBDatabase, nz.co.gregs.dbvolution.DBReport)  getAllRows method}
 	 * been called.
 	 *
 	 * @param database the database to format the query for.
@@ -333,12 +366,12 @@ public class DBReport extends RowDefinition {
 	 * @param rows additional conditions for the query.
 	 * <p style="color: #F90;">Support DBvolution at
 	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
-	 *
 	 * @return the number of rows that have or will be retrieved. 1 Database
 	 * exceptions may be thrown
 	 * @throws java.sql.SQLException java.sql.SQLException
+	 * @throws nz.co.gregs.dbvolution.exceptions.AccidentalBlankQueryException thrown if no conditions are set on the report and blank queries have not been specifically permitted.
 	 */
-	public static Long count(DBDatabase database, DBReport exampleReport, DBRow... rows) throws SQLException {
+	public static Long count(DBDatabase database, DBReport exampleReport, DBRow... rows) throws SQLException, AccidentalCartesianJoinException, AccidentalBlankQueryException {
 		DBQuery setUpQuery = getDBQuery(database, exampleReport, rows);
 		return setUpQuery.count();
 	}
@@ -357,13 +390,36 @@ public class DBReport extends RowDefinition {
 	 * @param columns a list of columns to sort the query by.
 	 * <p style="color: #F90;">Support DBvolution at
 	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 * @return this DBReport instance
+	 */
+	public DBReport setSortOrder(SortProvider... columns) {
+		sortColumns = new SortProvider[columns.length];
+		System.arraycopy(columns, 0, getSortColumns(), 0, columns.length);
+		return this;
+	}
+
+	/**
+	 * Sets the sort order of DBReport (field and/or method) by the given column
+	 * providers.
 	 *
+	 * <p>
+	 * For example the following code snippet will sort by just the name column:
+	 * <pre>
+	 * CustomerReport customers = ...;
+	 * customers.setSortOrder(customers.column(customers.name));
+	 * </pre>
+	 *
+	 * @param columns a list of columns to sort the query by.
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
 	 * @return this DBReport instance
 	 */
 	public DBReport setSortOrder(ColumnProvider... columns) {
-		sortColumns = new ColumnProvider[columns.length];
-		System.arraycopy(columns, 0, getSortColumns(), 0, columns.length);
-		return this;
+		ArrayList<SortProvider> sorters = new ArrayList<SortProvider>(0);
+		for (ColumnProvider column : columns) {
+			sorters.add(column.getSortProvider());
+		}
+		return this.setSortOrder(sorters.toArray(new SortProvider[]{}));
 	}
 
 	/**
@@ -383,23 +439,23 @@ public class DBReport extends RowDefinition {
 	 * @param columns a list of columns to sort the query by.
 	 * <p style="color: #F90;">Support DBvolution at
 	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
-	 *
 	 * @return this DBReport instance
 	 */
-	public DBReport setSortOrder(QueryableDatatype... columns) {
-		List<ColumnProvider> columnProviders = new ArrayList<ColumnProvider>();
-		for (QueryableDatatype qdt : columns) {
-			final ColumnProvider expr = this.column(qdt);
-			columnProviders.add(expr);
+	public DBReport setSortOrder(QueryableDatatype<?>... columns) {
+		List<SortProvider> sorters = new ArrayList<>();
+		for (QueryableDatatype<?> qdt : columns) {
+			final SortProvider expr = this.column(qdt).getSortProvider();
+			sorters.add(expr);
 		}
-		sortColumns = columnProviders.toArray(new ColumnProvider[]{});
-		return this;
+		return this.setSortOrder(sorters.toArray(new SortProvider[]{}));
 	}
 
 	/**
 	 * Add the rows as optional tables in the query.
+	 * 
+	 * <p>Optional tables are added using an outer join and may not contain valid values.</p>
 	 *
-	 * @param examples
+	 * @param examples tables to be included in the results if and only if a matching row can be found
 	 */
 	public void addAsOptionalTables(DBRow... examples) {
 		optionalTables.addAll(Arrays.asList(examples));
@@ -434,20 +490,18 @@ public class DBReport extends RowDefinition {
 						}
 					}
 				} else if (value != null && QueryableDatatype.class.isAssignableFrom(value.getClass())) {
-					final QueryableDatatype qdtValue = (QueryableDatatype) value;
+					final QueryableDatatype<?> qdtValue = (QueryableDatatype) value;
 					if ((value instanceof QueryableDatatype) && qdtValue.hasColumnExpression()) {
+						query.addExpressionColumn(value, qdtValue);
 						final DBExpression[] columnExpressions = qdtValue.getColumnExpression();
 						for (DBExpression columnExpression : columnExpressions) {
-						query.addExpressionColumn(value, columnExpression);
 							if (!columnExpression.isAggregator()) {
 								query.addGroupByColumn(value, columnExpression);
 							}
 						}
 					}
 				}
-			} catch (IllegalArgumentException ex) {
-				throw new UnableToAccessDBReportFieldException(exampleReport, field, ex);
-			} catch (IllegalAccessException ex) {
+			} catch (IllegalArgumentException | IllegalAccessException ex) {
 				throw new UnableToAccessDBReportFieldException(exampleReport, field, ex);
 			}
 		}
@@ -456,21 +510,23 @@ public class DBReport extends RowDefinition {
 	@SuppressWarnings("unchecked")
 	private static <A extends DBReport> A getReportInstance(A exampleReport, DBQueryRow row) {
 		try {
-			A newReport = (A) exampleReport.getClass().newInstance();
+			A newReport = (A) exampleReport.getClass().getConstructor().newInstance();
 			Field[] fields = exampleReport.getClass().getDeclaredFields();
 			for (Field field : fields) {
 				field.setAccessible(true);
-				final Object value;
+				final Object exampleFieldValue;
 				try {
-					value = field.get(exampleReport);
-					if (value != null && DBRow.class.isAssignableFrom(value.getClass())) {
-						if (value instanceof DBRow) {
-							DBRow gotDefinedRow = row.get((DBRow) value);
+					exampleFieldValue = field.get(exampleReport);
+					if (exampleFieldValue != null && DBRow.class.isAssignableFrom(exampleFieldValue.getClass())) {
+						if (exampleFieldValue instanceof DBRow) {
+							DBRow gotDefinedRow = row.get((DBRow) exampleFieldValue);
 							field.set(newReport, gotDefinedRow);
 						}
-					} else if (value != null && QueryableDatatype.class.isAssignableFrom(value.getClass())) {
-						if ((value instanceof QueryableDatatype) && ((QueryableDatatype) value).hasColumnExpression()) {
-							field.set(newReport, row.getExpressionColumnValue(value));
+					} else if (exampleFieldValue != null && QueryableDatatype.class.isAssignableFrom(exampleFieldValue.getClass())) {
+						final QueryableDatatype<?> qdt = (QueryableDatatype) exampleFieldValue;
+						if ((exampleFieldValue instanceof QueryableDatatype) && qdt.hasColumnExpression()) {
+							final QueryableDatatype<?> expressionColumnValue = row.getExpressionColumnValue(qdt);
+							field.set(newReport, expressionColumnValue);
 						}
 					}
 				} catch (IllegalArgumentException ex) {
@@ -480,9 +536,7 @@ public class DBReport extends RowDefinition {
 				}
 			}
 			return newReport;
-		} catch (InstantiationException ex) {
-			throw new UnableToInstantiateDBReportSubclassException(exampleReport, ex);
-		} catch (IllegalAccessException ex) {
+		} catch (InstantiationException | IllegalAccessException | NoSuchMethodException | SecurityException | IllegalArgumentException | InvocationTargetException ex) {
 			throw new UnableToInstantiateDBReportSubclassException(exampleReport, ex);
 		}
 	}
@@ -495,7 +549,7 @@ public class DBReport extends RowDefinition {
 	 *
 	 * @return the sortColumns
 	 */
-	protected ColumnProvider[] getSortColumns() {
+	protected SortProvider[] getSortColumns() {
 		return sortColumns;
 	}
 }

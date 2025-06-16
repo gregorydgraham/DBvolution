@@ -17,7 +17,7 @@ public class Companylogo extends DBRow {
 	public DBInteger carCompanyFk = new DBInteger();
 
 	@DBColumn("IMAGE_FILE")
-	public DBByteArray imageFile = new DBByteArray();
+	public DBLargeBinary imageFile = new DBLargeBinary();
 
 	@DBColumn("IMAGE_NAME")
 	public DBString imageName = new DBString();

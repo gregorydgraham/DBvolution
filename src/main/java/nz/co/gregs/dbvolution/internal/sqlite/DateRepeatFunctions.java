@@ -17,6 +17,7 @@ package nz.co.gregs.dbvolution.internal.sqlite;
 
 import java.sql.SQLException;
 import java.text.ParseException;
+import java.time.format.DateTimeParseException;
 import java.util.Date;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -38,84 +39,90 @@ public class DateRepeatFunctions {
 	/**
 	 *
 	 */
-	public static String DATEREPEAT_GREATERTHANEQUALS_FUNCTION = "DBV_DATEREPEAT_GREATERTHANEQUALS";
+	public final static String DATEREPEAT_GREATERTHANEQUALS_FUNCTION = "DBV_DATEREPEAT_GREATERTHANEQUALS";
 
 	/**
 	 *
 	 */
-	public static String DATEREPEAT_MINUTE_PART_FUNCTION = "DBV_DATEREPEAT_MINUTE_PART";
+	public final static String DATEREPEAT_MINUTE_PART_FUNCTION = "DBV_DATEREPEAT_MINUTE_PART";
 
 	/**
 	 *
 	 */
-	public static String DATEREPEAT_YEAR_PART_FUNCTION = "DBV_DATEREPEAT_YEAR_PART";
+	public final static String DATEREPEAT_YEAR_PART_FUNCTION = "DBV_DATEREPEAT_YEAR_PART";
 
 	/**
 	 *
 	 */
-	public static String DATEREPEAT_CREATION_FUNCTION = "DBV_DATEREPEAT_CREATE";
+	public final static String DATEREPEAT_CREATION_FUNCTION = "DBV_DATEREPEAT_CREATE";
 
 	/**
 	 *
 	 */
-	public static String DATEREPEAT_DATEADDITION_FUNCTION = "DBV_DATEREPEAT_DATEADD";
+	public final static String DATEREPEAT_DATEADDITION_FUNCTION = "DBV_DATEREPEAT_DATEADD";
 
 	/**
 	 *
 	 */
-	public static String DATEREPEAT_DATESUBTRACTION_FUNCTION = "DBV_DATEREPEAT_DATEMINUS";
+	public final static String DATEREPEAT_DATESUBTRACTION_FUNCTION = "DBV_DATEREPEAT_DATEMINUS";
 
 	/**
 	 *
 	 */
-	public static String DATEREPEAT_DAY_PART_FUNCTION = "DBV_DATEREPEAT_DAY_PART";
+	public final static String DATEREPEAT_DAY_PART_FUNCTION = "DBV_DATEREPEAT_DAY_PART";
 
 	/**
 	 *
 	 */
-	public static String DATEREPEAT_HOUR_PART_FUNCTION = "DBV_DATEREPEAT_HOUR_PART";
+	public final static String DATEREPEAT_HOUR_PART_FUNCTION = "DBV_DATEREPEAT_HOUR_PART";
 
 	/**
 	 *
 	 */
-	public static String DATEREPEAT_SECOND_PART_FUNCTION = "DBV_DATEREPEAT_SECOND_PART";
+	public final static String DATEREPEAT_SECOND_PART_FUNCTION = "DBV_DATEREPEAT_SECOND_PART";
 
 	/**
 	 *
 	 */
-	public static String DATEREPEAT_GREATERTHAN_FUNCTION = "DBV_DATEREPEAT_GREATERTHAN";
+	public final static String DATEREPEAT_GREATERTHAN_FUNCTION = "DBV_DATEREPEAT_GREATERTHAN";
 
 	/**
 	 *
 	 */
-	public static String DATEREPEAT_MONTH_PART_FUNCTION = "DBV_DATEREPEAT_MONTH_PART";
+	public final static String DATEREPEAT_MONTH_PART_FUNCTION = "DBV_DATEREPEAT_MONTH_PART";
 
 	/**
 	 *
 	 */
-	public static String DATEREPEAT_EQUALS_FUNCTION = "DBV_DATEREPEAT_EQUALS";
+	public final static String DATEREPEAT_EQUALS_FUNCTION = "DBV_DATEREPEAT_EQUALS";
 
 	/**
 	 *
 	 */
-	public static String DATEREPEAT_LESSTHANEQUALS_FUNCTION = "DBV_DATEREPEAT_LESSTHANEQUALS";
+	public final static String DATEREPEAT_NOTEQUALS_FUNCTION = "DBV_DATEREPEAT_NOTEQUALS";
 
 	/**
 	 *
 	 */
-	public static String DATEREPEAT_LESSTHAN_FUNCTION = "DBV_DATEREPEAT_LESSTHAN";
+	public final static String DATEREPEAT_LESSTHANEQUALS_FUNCTION = "DBV_DATEREPEAT_LESSTHANEQUALS";
+
+	/**
+	 *
+	 */
+	public final static String DATEREPEAT_LESSTHAN_FUNCTION = "DBV_DATEREPEAT_LESSTHAN";
 
 	private DateRepeatFunctions() {
 	}
 
 	/**
 	 *
-	 * @param connection
-	 * @throws SQLException
+	 * @param connection the database connection to add the functions to
+	 * @throws SQLException database errors
 	 */
 	public static void addFunctions(java.sql.Connection connection) throws SQLException {
 		Function.create(connection, DATEREPEAT_CREATION_FUNCTION, new DateRepeatFunctions.Create());
 		Function.create(connection, DATEREPEAT_EQUALS_FUNCTION, new DateRepeatFunctions.Equals());
+		Function.create(connection, DATEREPEAT_NOTEQUALS_FUNCTION, new DateRepeatFunctions.NotEquals());
 		Function.create(connection, DATEREPEAT_LESSTHAN_FUNCTION, new DateRepeatFunctions.LessThan());
 		Function.create(connection, DATEREPEAT_GREATERTHAN_FUNCTION, new DateRepeatFunctions.GreaterThan());
 		Function.create(connection, DATEREPEAT_LESSTHANEQUALS_FUNCTION, new DateRepeatFunctions.LessThanOrEqual());
@@ -135,12 +142,11 @@ public class DateRepeatFunctions {
 	 * @param date
 	 * <p style="color: #F90;">Support DBvolution at
 	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
-	 *
 	 * @return the date as an SQLite SQL statement
-	 * @throws ParseException
+	 * @throws ParseException parse exception
 	 */
 	public static String formatDateForGetString(Date date) throws ParseException {
-		return SQLiteDefinition.DATETIME_FORMAT.format(date);
+		return (new SQLiteDefinition()).getDateTimeFormat().format(date);
 	}
 
 	/**
@@ -163,7 +169,7 @@ public class DateRepeatFunctions {
 					String intervalString = DateRepeatImpl.repeatFromTwoDates(original, compareTo);
 					result(intervalString);
 				}
-			} catch (ParseException ex) {
+			} catch (DateTimeParseException ex) {
 				Logger.getLogger(SQLiteDB.class.getName()).log(Level.SEVERE, null, ex);
 				throw new RuntimeException("Failed To Parse SQLite Date", ex);
 			}
@@ -252,6 +258,26 @@ public class DateRepeatFunctions {
 			} else {
 				int result = DateRepeatImpl.compareDateRepeatStrings(originalStr, compareToStr);
 				result(result == 0 ? 1 : 0);
+			}
+		}
+
+	}
+
+	/**
+	 * Implements DateRepeat NOT EQUALS for SQLite
+	 *
+	 */
+	public static class NotEquals extends Function {
+
+		@Override
+		protected void xFunc() throws SQLException {
+			final String originalStr = value_text(0);
+			final String compareToStr = value_text(1);
+			if (originalStr == null || compareToStr == null) {
+				result((String) null);
+			} else {
+				int result = DateRepeatImpl.compareDateRepeatStrings(originalStr, compareToStr);
+				result(result == 0 ? 0 : 1);
 			}
 		}
 

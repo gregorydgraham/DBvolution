@@ -15,25 +15,28 @@
  */
 package nz.co.gregs.dbvolution.datatypes.spatial2D;
 
-import com.vividsolutions.jts.geom.Coordinate;
-import com.vividsolutions.jts.geom.GeometryFactory;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import nz.co.gregs.dbvolution.DBDatabase;
 import nz.co.gregs.dbvolution.datatypes.QueryableDatatype;
-import com.vividsolutions.jts.geom.LineString;
-import com.vividsolutions.jts.geom.Point;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import nz.co.gregs.dbvolution.columns.Line2DColumn;
+import nz.co.gregs.dbvolution.databases.definitions.DBDefinition;
 import nz.co.gregs.dbvolution.exceptions.IncorrectGeometryReturnedForDatatype;
+import nz.co.gregs.dbvolution.exceptions.IncorrectRowProviderInstanceSuppliedException;
 import nz.co.gregs.dbvolution.exceptions.ParsingSpatialValueException;
-import nz.co.gregs.dbvolution.expressions.Line2DExpression;
-import nz.co.gregs.dbvolution.expressions.MultiPoint2DExpression;
+import nz.co.gregs.dbvolution.expressions.spatial2D.Line2DExpression;
+import nz.co.gregs.dbvolution.expressions.spatial2D.MultiPoint2DExpression;
 import nz.co.gregs.dbvolution.expressions.StringExpression;
+import nz.co.gregs.dbvolution.query.RowDefinition;
 import nz.co.gregs.dbvolution.results.Line2DResult;
 import nz.co.gregs.dbvolution.results.MultiPoint2DResult;
+import com.vividsolutions.jts.geom.*;
+import com.vividsolutions.jts.io.ParseException;
+import java.util.Comparator;
+import nz.co.gregs.dbvolution.utility.comparators.ComparableComparator;
 
 /**
  * Represents datatypes and columns that are composed of a series of points
@@ -45,8 +48,8 @@ import nz.co.gregs.dbvolution.results.MultiPoint2DResult;
  *
  * <p>
  * Alternatives to a DBLine2D are single line segments {@link DBLineSegment2D},
- * infinite lines (#TODO), closed paths (#TODO), and closed
- * paths defining a solid {@link DBPolygon2D}.
+ * infinite lines (#TODO), closed paths (#TODO), and closed paths defining a
+ * solid {@link DBPolygon2D}.
  *
  * <p>
  * Common datatypes covered by this type include LINESTRING.
@@ -60,7 +63,7 @@ import nz.co.gregs.dbvolution.results.MultiPoint2DResult;
  *
  * @author gregorygraham
  */
-public class DBLine2D extends QueryableDatatype implements Line2DResult {
+public class DBLine2D extends QueryableDatatype<LineString> implements Line2DResult {
 
 	private static final long serialVersionUID = 1L;
 
@@ -77,39 +80,74 @@ public class DBLine2D extends QueryableDatatype implements Line2DResult {
 	 * Create a DBLine2D with the value set to the {@link LineString} provided.
 	 *
 	 * <p>
-	 * This is a convenient way to assign a constant value in an expression or
-	 * DBRow subclass.
+	 * This is a convenient way to assign a constant value in an value or DBRow
+	 * subclass.
 	 *
-	 * @param lineString
+	 * @param lineString set the value of this DBLine2D to this value
 	 */
 	public DBLine2D(LineString lineString) {
 		super(lineString);
 	}
 
 	/**
-	 * Create a DBLine2D with the value set to the {@link MultiPoint2DResult multipoint value or expression} provided.
+	 * Create a DBLine2D with the value set to the {@link LineString} provided.
 	 *
 	 * <p>
-	 * This is a convenient way to assign a constant value in an expression or
-	 * DBRow subclass.
+	 * This is a convenient way to assign a constant value in an value or DBRow
+	 * subclass.
 	 *
-	 * @param multipoint either a {@link MultiPoint2DExpression} or a {@link DBMultiPoint2D}
+	 * @param lineString set the value of this DBLine2D to the linestring form by these values
+	 */
+	public DBLine2D(Point... lineString) {
+		super(lineStringFromPoints(lineString));
+	}
+
+	private static LineString lineStringFromPoints(Point... points) {
+		GeometryFactory geometryFactory = new GeometryFactory();
+		List<Coordinate> coords = new ArrayList<Coordinate>();
+		for (Point point : points) {
+			coords.add(point.getCoordinate());
+		}
+		LineString line = geometryFactory.createLineString(coords.toArray(new Coordinate[]{}));
+		return line;
+	}
+
+	/**
+	 * Create a DBLine2D with the value set to the
+	 * {@link MultiPoint2DResult multipoint value or value} provided.
+	 *
+	 * <p>
+	 * This is a convenient way to assign a constant value in an value or DBRow
+	 * subclass.
+	 *
+	 * @param multipoint either a {@link MultiPoint2DExpression} or a
+	 * {@link DBMultiPoint2D}
 	 */
 	public DBLine2D(MultiPoint2DResult multipoint) {
 		super(new MultiPoint2DExpression(multipoint).line2DResult());
 	}
 
 	/**
-	 * Create a DBLine2D using the expression supplied.
+	 * Create a DBLine2D using the value supplied.
 	 *
 	 * <p>
-	 * Useful for defining expression columns in DBRow subclass that acquire their
+	 * Useful for defining value columns in DBRow subclass that acquire their
 	 * value from a transformation of data at query time.
 	 *
-	 * @param columnExpression
+	 * @param columnExpression set the value of this DBLine2D to this expression
 	 */
-	public DBLine2D(nz.co.gregs.dbvolution.expressions.Line2DExpression columnExpression) {
+	public DBLine2D(Line2DExpression columnExpression) {
 		super(columnExpression);
+	}
+
+	public DBLine2D(Coordinate... coords) {
+		super(linestringFromCoords(coords));
+	}
+
+	private static LineString linestringFromCoords(Coordinate... coords) {
+		GeometryFactory geometryFactory = new GeometryFactory();
+		LineString line = geometryFactory.createLineString(coords);
+		return line;
 	}
 
 	/**
@@ -119,8 +157,9 @@ public class DBLine2D extends QueryableDatatype implements Line2DResult {
 	 * Use this method to define the value of a field/column before inserting the
 	 * DBRow subclass into the database.
 	 *
-	 * @param line
+	 * @param line set the value of this DBLine2D to this value
 	 */
+	@Override
 	public void setValue(LineString line) {
 		setLiteralValue(line);
 	}
@@ -135,11 +174,11 @@ public class DBLine2D extends QueryableDatatype implements Line2DResult {
 	 * Use this method to define the value of a field/column before inserting the
 	 * DBRow subclass into the database.
 	 *
-	 * @param points
+	 * @param points set the value of this DBLine2D to the linestring form from these values
 	 */
 	public void setValue(Point... points) {
 		GeometryFactory geometryFactory = new GeometryFactory();
-		List<Coordinate> coords = new ArrayList<Coordinate>();
+		List<Coordinate> coords = new ArrayList<>();
 		for (Point point : points) {
 			coords.add(point.getCoordinate());
 		}
@@ -157,7 +196,7 @@ public class DBLine2D extends QueryableDatatype implements Line2DResult {
 	 * Use this method to define the value of a field/column before inserting the
 	 * DBRow subclass into the database.
 	 *
-	 * @param coords
+	 * @param coords set the value of this DBLine2D to the linestring form from these values
 	 */
 	public void setValue(Coordinate... coords) {
 		GeometryFactory geometryFactory = new GeometryFactory();
@@ -170,7 +209,7 @@ public class DBLine2D extends QueryableDatatype implements Line2DResult {
 		if (!isDefined() || isNull()) {
 			return null;
 		} else {
-			return (LineString) getLiteralValue();
+			return getLiteralValue();
 		}
 	}
 
@@ -193,18 +232,18 @@ public class DBLine2D extends QueryableDatatype implements Line2DResult {
 	}
 
 	@Override
-	protected String formatValueForSQLStatement(DBDatabase db) {
+	protected String formatValueForSQLStatement(DBDefinition db) {
 		LineString lineString = getValue();
 		if (lineString == null) {
-			return db.getDefinition().getNull();
+			return db.getNull();
 		} else {
-			String str = db.getDefinition().transformLineStringIntoDatabaseLine2DFormat(lineString);
+			String str = db.transformLineStringIntoDatabaseLine2DFormat(lineString);
 			return str;
 		}
 	}
 
 	@Override
-	protected Object getFromResultSet(DBDatabase database, ResultSet resultSet, String fullColumnName) throws SQLException, IncorrectGeometryReturnedForDatatype {
+	protected LineString getFromResultSet(DBDefinition database, ResultSet resultSet, String fullColumnName) throws SQLException, IncorrectGeometryReturnedForDatatype {
 
 		LineString lineString = null;
 		String string = resultSet.getString(fullColumnName);
@@ -212,10 +251,14 @@ public class DBLine2D extends QueryableDatatype implements Line2DResult {
 			return null;
 		} else {
 			try {
-				lineString = database.getDefinition().transformDatabaseLine2DValueToJTSLineString(string);
-			} catch (com.vividsolutions.jts.io.ParseException ex) {
+				if (string.equals("GEOMETRYCOLLECTION()")) {
+					lineString = (new GeometryFactory()).createLineString(new Coordinate[]{});
+				} else {
+					lineString = database.transformDatabaseLine2DValueToJTSLineString(string);
+				}
+			} catch (ParseException ex) {
 				Logger.getLogger(DBPoint2D.class.getName()).log(Level.SEVERE, null, ex);
-				throw new ParsingSpatialValueException(fullColumnName, string,ex);
+				throw new ParsingSpatialValueException(fullColumnName, string, ex);
 			}
 			return lineString;
 		}
@@ -236,4 +279,19 @@ public class DBLine2D extends QueryableDatatype implements Line2DResult {
 		return Line2DExpression.value(this).stringResult();
 	}
 
+	@Override
+	protected void setValueFromStandardStringEncoding(String encodedValue) {
+		throw new UnsupportedOperationException("DBLine2D does not support setValueFromStandardStringEncoding(String) yet."); //To change body of generated methods, choose Tools | Templates.
+	}
+
+	@Override
+	public Line2DColumn getColumn(RowDefinition row) throws IncorrectRowProviderInstanceSuppliedException {
+		return new Line2DColumn(row, this);
+	}
+
+	@Override
+	@SuppressWarnings("unchecked")
+	public Comparator<LineString> getComparator() {
+		return ComparableComparator.forClass(LineString.class);
+	}
 }

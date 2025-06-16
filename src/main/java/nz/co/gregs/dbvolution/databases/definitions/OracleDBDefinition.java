@@ -16,20 +16,44 @@
 package nz.co.gregs.dbvolution.databases.definitions;
 
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
+import nz.co.gregs.dbvolution.DBRow;
+import nz.co.gregs.dbvolution.DBTable;
+import nz.co.gregs.dbvolution.databases.DBDatabase;
+import nz.co.gregs.dbvolution.databases.metadata.DBDatabaseMetaData;
 import nz.co.gregs.dbvolution.datatypes.DBBoolean;
 import nz.co.gregs.dbvolution.datatypes.DBBooleanArray;
 import nz.co.gregs.dbvolution.datatypes.DBDate;
+import nz.co.gregs.dbvolution.datatypes.DBDuration;
+import nz.co.gregs.dbvolution.datatypes.DBInstant;
+import nz.co.gregs.dbvolution.datatypes.DBInteger;
 import nz.co.gregs.dbvolution.datatypes.DBJavaObject;
+import nz.co.gregs.dbvolution.datatypes.DBLargeObject;
+import nz.co.gregs.dbvolution.datatypes.DBLargeText;
+import nz.co.gregs.dbvolution.datatypes.DBLocalDate;
+import nz.co.gregs.dbvolution.datatypes.DBLocalDateTime;
+import nz.co.gregs.dbvolution.datatypes.DBNumber;
 import nz.co.gregs.dbvolution.datatypes.DBString;
 import nz.co.gregs.dbvolution.datatypes.QueryableDatatype;
 import nz.co.gregs.dbvolution.expressions.BooleanExpression;
+import nz.co.gregs.dbvolution.expressions.CaseExpression;
 import nz.co.gregs.dbvolution.expressions.DBExpression;
-import nz.co.gregs.dbvolution.generation.DBTableClassGenerator;
+import nz.co.gregs.dbvolution.expressions.InstantExpression;
+import nz.co.gregs.dbvolution.expressions.LocalDateExpression;
+import nz.co.gregs.dbvolution.expressions.LocalDateTimeExpression;
+import nz.co.gregs.dbvolution.expressions.StringExpression;
+import nz.co.gregs.dbvolution.generation.DataRepo;
 import nz.co.gregs.dbvolution.internal.oracle.StringFunctions;
-import nz.co.gregs.dbvolution.query.QueryOptions;
+import nz.co.gregs.dbvolution.internal.properties.PropertyWrapper;
+import nz.co.gregs.dbvolution.internal.query.LargeObjectHandlerType;
+import nz.co.gregs.dbvolution.internal.query.QueryOptions;
+import nz.co.gregs.dbvolution.internal.query.QueryState;
+import nz.co.gregs.dbvolution.results.AnyResult;
+import nz.co.gregs.regexi.Regex;
+import nz.co.gregs.regexi.RegexReplacement;
 
 /**
  * Defines the features of the Oracle database that differ from the standard
@@ -39,47 +63,72 @@ import nz.co.gregs.dbvolution.query.QueryOptions;
  * Provides the base definitions used by all variants of the Oracle database
  * DBDefinition.
  *
- * <p style="color: #F90;">Support DBvolution at
- * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
- *
  * @author Gregory Graham
  */
 public class OracleDBDefinition extends DBDefinition {
 
-	String dateFormatStr = "yyyy-M-d HH:mm:ss.SSS Z";
-	String oracleDateFormatStr = "YYYY-MM-DD HH24:MI:SS.FF3 TZHTZM";
-	SimpleDateFormat javaToStringFormatter = new SimpleDateFormat(dateFormatStr);
-	private static final String[] reservedWordsArray = new String[]{"ACCESS", "ACCOUNT", "ACTIVATE", "ADD", "ADMIN", "ADVISE", "AFTER", "ALL", "ALL_ROWS", "ALLOCATE", "ALTER", "ANALYZE", "AND", "ANY", "ARCHIVE", "ARCHIVELOG", "ARRAY", "AS", "ASC", "AT", "AUDIT", "AUTHENTICATED", "AUTHORIZATION", "AUTOEXTEND", "AUTOMATIC", "BACKUP", "BECOME", "BEFORE", "BEGIN", "BETWEEN", "BFILE", "BITMAP", "BLOB", "BLOCK", "BODY", "BY", "CACHE", "CACHE_INSTANCES", "CANCEL", "CASCADE", "CAST", "CFILE", "CHAINED", "CHANGE", "CHAR", "CHAR_CS", "CHARACTER", "CHECK", "CHECKPOINT", "CHOOSE", "CHUNK", "CLEAR", "CLOB", "CLONE", "CLOSE", "CLOSE_CACHED_OPEN_CURSORS", "CLUSTER", "COALESCE", "COLUMN", "COLUMNS", "COMMENT", "COMMIT", "COMMITTED", "COMPATIBILITY", "COMPILE", "COMPLETE", "COMPOSITE_LIMIT", "COMPRESS", "COMPUTE", "CONNECT", "CONNECT_TIME", "CONSTRAINT", "CONSTRAINTS", "CONTENTS", "CONTINUE", "CONTROLFILE", "CONVERT", "COST", "CPU_PER_CALL", "CPU_PER_SESSION", "CREATE", "CURRENT", "CURRENT_SCHEMA", "CURREN_USER", "CURSOR", "CYCLE", "DANGLING", "DATABASE", "DATAFILE", "DATAFILES", "DATAOBJNO", "DATE", "DBA", "DBHIGH", "DBLOW", "DBMAC", "DEALLOCATE", "DEBUG", "DEC", "DECIMAL", "DECLARE", "DEFAULT", "DEFERRABLE", "DEFERRED", "DEGREE", "DELETE", "DEREF", "DESC", "DIRECTORY", "DISABLE", "DISCONNECT", "DISMOUNT", "DISTINCT", "DISTRIBUTED", "DML", "DOUBLE", "DROP", "DUMP", "EACH", "ELSE", "ENABLE", "END", "ENFORCE", "ENTRY", "ESCAPE", "EXCEPT", "EXCEPTIONS", "EXCHANGE", "EXCLUDING", "EXCLUSIVE", "EXECUTE", "EXISTS", "EXPIRE", "EXPLAIN", "EXTENT", "EXTENTS", "EXTERNALLY", "FAILED_LOGIN_ATTEMPTS", "FALSE", "FAST", "FILE", "FIRST_ROWS", "FLAGGER", "FLOAT", "FLOB", "FLUSH", "FOR", "FORCE", "FOREIGN", "FREELIST", "FREELISTS", "FROM", "FULL", "FUNCTION", "GLOBAL", "GLOBALLY", "GLOBAL_NAME", "GRANT", "GROUP", "GROUPS", "HASH", "HASHKEYS", "HAVING", "HEADER", "HEAP", "IDENTIFIED", "IDGENERATORS", "IDLE_TIME", "IF", "IMMEDIATE", "IN", "INCLUDING", "INCREMENT", "INDEX", "INDEXED", "INDEXES", "INDICATOR", "IND_PARTITION", "INITIAL", "INITIALLY", "INITRANS", "INSERT", "INSTANCE", "INSTANCES", "INSTEAD", "INT", "INTEGER", "INTERMEDIATE", "INTERSECT", "INTO", "IS", "ISOLATION", "ISOLATION_LEVEL", "KEEP", "KEY", "KILL", "LABEL", "LAYER", "LESS", "LEVEL", "LIBRARY", "LIKE", "LIMIT", "LINK", "LIST", "LOB", "LOCAL", "LOCK", "LOCKED", "LOG", "LOGFILE", "LOGGING", "LOGICAL_READS_PER_CALL", "LOGICAL_READS_PER_SESSION", "LONG", "MANAGE", "MASTER", "MAX", "MAXARCHLOGS", "MAXDATAFILES", "MAXEXTENTS", "MAXINSTANCES", "MAXLOGFILES", "MAXLOGHISTORY", "MAXLOGMEMBERS", "MAXSIZE", "MAXTRANS", "MAXVALUE", "MIN", "MEMBER", "MINIMUM", "MINEXTENTS", "MINUS", "MINVALUE", "MLSLABEL", "MLS_LABEL_FORMAT", "MODE", "MODIFY", "MOUNT", "MOVE", "MTS_DISPATCHERS", "MULTISET", "NATIONAL", "NCHAR", "NCHAR_CS", "NCLOB", "NEEDED", "NESTED", "NETWORK", "NEW", "NEXT", "NOARCHIVELOG", "NOAUDIT", "NOCACHE", "NOCOMPRESS", "NOCYCLE", "NOFORCE", "NOLOGGING", "NOMAXVALUE", "NOMINVALUE", "NONE", "NOORDER", "NOOVERRIDE", "NOPARALLEL", "NOPARALLEL", "NOREVERSE", "NORMAL", "NOSORT", "NOT", "NOTHING", "NOWAIT", "NULL", "NUMBER", "NUMERIC", "NVARCHAR2", "OBJECT", "OBJNO", "OBJNO_REUSE", "OF", "OFF", "OFFLINE", "OID", "OIDINDEX", "OLD", "ON", "ONLINE", "ONLY", "OPCODE", "OPEN", "OPTIMAL", "OPTIMIZER_GOAL", "OPTION", "OR", "ORDER", "ORGANIZATION", "OSLABEL", "OVERFLOW", "OWN", "PACKAGE", "PARALLEL", "PARTITION", "PASSWORD", "PASSWORD_GRACE_TIME", "PASSWORD_LIFE_TIME", "PASSWORD_LOCK_TIME", "PASSWORD_REUSE_MAX", "PASSWORD_REUSE_TIME", "PASSWORD_VERIFY_FUNCTION", "PCTFREE", "PCTINCREASE", "PCTTHRESHOLD", "PCTUSED", "PCTVERSION", "PERCENT", "PERMANENT", "PLAN", "PLSQL_DEBUG", "POST_TRANSACTION", "PRECISION", "PRESERVE", "PRIMARY", "PRIOR", "PRIVATE", "PRIVATE_SGA", "PRIVILEGE", "PRIVILEGES", "PROCEDURE", "PROFILE", "PUBLIC", "PURGE", "QUEUE", "QUOTA", "RANGE", "RAW", "RBA", "READ", "READUP", "REAL", "REBUILD", "RECOVER", "RECOVERABLE", "RECOVERY", "REF", "REFERENCES", "REFERENCING", "REFRESH", "RENAME", "REPLACE", "RESET", "RESETLOGS", "RESIZE", "RESOURCE", "RESTRICTED", "RETURN", "RETURNING", "REUSE", "REVERSE", "REVOKE", "ROLE", "ROLES", "ROLLBACK", "ROW", "ROWID", "ROWNUM", "ROWS", "RULE", "SAMPLE", "SAVEPOINT", "SB4", "SCAN_INSTANCES", "SCHEMA", "SCN", "SCOPE", "SD_ALL", "SD_INHIBIT", "SD_SHOW", "SEGMENT", "SEG_BLOCK", "SEG_FILE", "SELECT", "SEQUENCE", "SERIALIZABLE", "SESSION", "SESSION_CACHED_CURSORS", "SESSIONS_PER_USER", "SET", "SHARE", "SHARED", "SHARED_POOL", "SHRINK", "SIZE", "SKIP", "SKIP_UNUSABLE_INDEXES", "SMALLINT", "SNAPSHOT", "SOME", "SORT", "SPECIFICATION", "SPLIT", "SQL_TRACE", "STANDBY", "START", "STATEMENT_ID", "STATISTICS", "STOP", "STORAGE", "STORE", "STRUCTURE", "SUCCESSFUL", "SWITCH", "SYS_OP_ENFORCE_NOT_NULL$", "SYS_OP_NTCIMG$", "SYNONYM", "SYSDATE", "SYSDBA", "SYSOPER", "SYSTEM", "TABLE", "TABLES", "TABLESPACE", "TABLESPACE_NO", "TABNO", "TEMPORARY", "THAN", "THE", "THEN", "THREAD", "TIMESTAMP", "TIME", "TO", "TOPLEVEL", "TRACE", "TRACING", "TRANSACTION", "TRANSITIONAL", "TRIGGER", "TRIGGERS", "TRUE", "TRUNCATE", "TX", "TYPE", "UB2", "UBA", "UID", "UNARCHIVED", "UNDO", "UNION", "UNIQUE", "UNLIMITED", "UNLOCK", "UNRECOVERABLE", "UNTIL", "UNUSABLE", "UNUSED", "UPDATABLE", "UPDATE", "USAGE", "USE", "USER", "USING", "VALIDATE", "VALIDATION", "VALUE", "VALUES", "VARCHAR", "VARCHAR2", "VARYING", "VIEW", "WHEN", "WHENEVER", "WHERE", "WITH", "WITHOUT", "WORK", "WRITE", "WRITEDOWN", "WRITEUP", "XID", "YEAR", "ZONE"};
-	private static final List<String> reservedWords = Arrays.asList(reservedWordsArray);
+	public static final long serialVersionUID = 1L;
+
+	private final static String DATE_FORMAT_STRING_WITH_TIMEZONE = "yyyy-M-d HH:mm:ss.SSS Z";
+	private final static String ORACLE_DATE_FORMAT_STRING_WITH_TIMEZONE = "YYYY-MM-DD HH24:MI:SS.FF6 TZHTZM";
+	private final SimpleDateFormat JAVA_TO_STRING_FORMATTER_WITH_TIMEZONE = new SimpleDateFormat(DATE_FORMAT_STRING_WITH_TIMEZONE);
+	private static final String[] RESERVED_WORDS_ARRAY = new String[]{"ACCESS", "ACCOUNT", "ACTIVATE", "ADD", "ADMIN", "ADVISE", "AFTER", "ALL", "ALL_ROWS", "ALLOCATE", "ALTER", "ANALYZE", "AND", "ANY", "ARCHIVE", "ARCHIVELOG", "ARRAY", "AS", "ASC", "AT", "AUDIT", "AUTHENTICATED", "AUTHORIZATION", "AUTOEXTEND", "AUTOMATIC", "BACKUP", "BECOME", "BEFORE", "BEGIN", "BETWEEN", "BFILE", "BITMAP", "BLOB", "BLOCK", "BODY", "BY", "CACHE", "CACHE_INSTANCES", "CANCEL", "CASCADE", "CAST", "CFILE", "CHAINED", "CHANGE", "CHAR", "CHAR_CS", "CHARACTER", "CHECK", "CHECKPOINT", "CHOOSE", "CHUNK", "CLEAR", "CLOB", "CLONE", "CLOSE", "CLOSE_CACHED_OPEN_CURSORS", "CLUSTER", "COALESCE", "COLUMN", "COLUMNS", "COMMENT", "COMMIT", "COMMITTED", "COMPATIBILITY", "COMPILE", "COMPLETE", "COMPOSITE_LIMIT", "COMPRESS", "COMPUTE", "CONNECT", "CONNECT_TIME", "CONSTRAINT", "CONSTRAINTS", "CONTENTS", "CONTINUE", "CONTROLFILE", "CONVERT", "COST", "CPU_PER_CALL", "CPU_PER_SESSION", "CREATE", "CURRENT", "CURRENT_SCHEMA", "CURREN_USER", "CURSOR", "CYCLE", "DANGLING", "DATABASE", "DATAFILE", "DATAFILES", "DATAOBJNO", "DATE", "DBA", "DBHIGH", "DBLOW", "DBMAC", "DEALLOCATE", "DEBUG", "DEC", "DECIMAL", "DECLARE", "DEFAULT", "DEFERRABLE", "DEFERRED", "DEGREE", "DELETE", "DEREF", "DESC", "DIRECTORY", "DISABLE", "DISCONNECT", "DISMOUNT", "DISTINCT", "DISTRIBUTED", "DML", "DOUBLE", "DROP", "DUMP", "EACH", "ELSE", "ENABLE", "END", "ENFORCE", "ENTRY", "ESCAPE", "EXCEPT", "EXCEPTIONS", "EXCHANGE", "EXCLUDING", "EXCLUSIVE", "EXECUTE", "EXISTS", "EXPIRE", "EXPLAIN", "EXTENT", "EXTENTS", "EXTERNALLY", "FAILED_LOGIN_ATTEMPTS", "FALSE", "FAST", "FILE", "FIRST_ROWS", "FLAGGER", "FLOAT", "FLOB", "FLUSH", "FOR", "FORCE", "FOREIGN", "FREELIST", "FREELISTS", "FROM", "FULL", "FUNCTION", "GLOBAL", "GLOBALLY", "GLOBAL_NAME", "GRANT", "GROUP", "GROUPS", "HASH", "HASHKEYS", "HAVING", "HEADER", "HEAP", "IDENTIFIED", "IDGENERATORS", "IDLE_TIME", "IF", "IMMEDIATE", "IN", "INCLUDING", "INCREMENT", "INDEX", "INDEXED", "INDEXES", "INDICATOR", "IND_PARTITION", "INITIAL", "INITIALLY", "INITRANS", "INSERT", "INSTANCE", "INSTANCES", "INSTEAD", "INT", "INTEGER", "INTERMEDIATE", "INTERSECT", "INTO", "IS", "ISOLATION", "ISOLATION_LEVEL", "KEEP", "KEY", "KILL", "LABEL", "LAYER", "LESS", "LEVEL", "LIBRARY", "LIKE", "LIMIT", "LINK", "LIST", "LOB", "LOCAL", "LOCK", "LOCKED", "LOG", "LOGFILE", "LOGGING", "LOGICAL_READS_PER_CALL", "LOGICAL_READS_PER_SESSION", "LONG", "MANAGE", "MASTER", "MAX", "MAXARCHLOGS", "MAXDATAFILES", "MAXEXTENTS", "MAXINSTANCES", "MAXLOGFILES", "MAXLOGHISTORY", "MAXLOGMEMBERS", "MAXSIZE", "MAXTRANS", "MAXVALUE", "MIN", "MEMBER", "MINIMUM", "MINEXTENTS", "MINUS", "MINVALUE", "MLSLABEL", "MLS_LABEL_FORMAT", "MODE", "MODIFY", "MOUNT", "MOVE", "MTS_DISPATCHERS", "MULTISET", "NATIONAL", "NCHAR", "NCHAR_CS", "NCLOB", "NEEDED", "NESTED", "NETWORK", "NEW", "NEXT", "NOARCHIVELOG", "NOAUDIT", "NOCACHE", "NOCOMPRESS", "NOCYCLE", "NOFORCE", "NOLOGGING", "NOMAXVALUE", "NOMINVALUE", "NONE", "NOORDER", "NOOVERRIDE", "NOPARALLEL", "NOPARALLEL", "NOREVERSE", "NORMAL", "NOSORT", "NOT", "NOTHING", "NOWAIT", "NULL", "NUMBER", "NUMERIC", "NVARCHAR2", "OBJECT", "OBJNO", "OBJNO_REUSE", "OF", "OFF", "OFFLINE", "OID", "OIDINDEX", "OLD", "ON", "ONLINE", "ONLY", "OPCODE", "OPEN", "OPTIMAL", "OPTIMIZER_GOAL", "OPTION", "OR", "ORDER", "ORGANIZATION", "OSLABEL", "OVERFLOW", "OWN", "PACKAGE", "PARALLEL", "PARTITION", "PASSWORD", "PASSWORD_GRACE_TIME", "PASSWORD_LIFE_TIME", "PASSWORD_LOCK_TIME", "PASSWORD_REUSE_MAX", "PASSWORD_REUSE_TIME", "PASSWORD_VERIFY_FUNCTION", "PCTFREE", "PCTINCREASE", "PCTTHRESHOLD", "PCTUSED", "PCTVERSION", "PERCENT", "PERMANENT", "PLAN", "PLSQL_DEBUG", "POST_TRANSACTION", "PRECISION", "PRESERVE", "PRIMARY", "PRIOR", "PRIVATE", "PRIVATE_SGA", "PRIVILEGE", "PRIVILEGES", "PROCEDURE", "PROFILE", "PUBLIC", "PURGE", "QUEUE", "QUOTA", "RANGE", "RAW", "RBA", "READ", "READUP", "REAL", "REBUILD", "RECOVER", "RECOVERABLE", "RECOVERY", "REF", "REFERENCES", "REFERENCING", "REFRESH", "RENAME", "REPLACE", "RESET", "RESETLOGS", "RESIZE", "RESOURCE", "RESTRICTED", "RETURN", "RETURNING", "REUSE", "REVERSE", "REVOKE", "ROLE", "ROLES", "ROLLBACK", "ROW", "ROWID", "ROWNUM", "ROWS", "RULE", "SAMPLE", "SAVEPOINT", "SB4", "SCAN_INSTANCES", "SCHEMA", "SCN", "SCOPE", "SD_ALL", "SD_INHIBIT", "SD_SHOW", "SEGMENT", "SEG_BLOCK", "SEG_FILE", "SELECT", "SEQUENCE", "SERIALIZABLE", "SESSION", "SESSION_CACHED_CURSORS", "SESSIONS_PER_USER", "SET", "SHARE", "SHARED", "SHARED_POOL", "SHRINK", "SIZE", "SKIP", "SKIP_UNUSABLE_INDEXES", "SMALLINT", "SNAPSHOT", "SOME", "SORT", "SPECIFICATION", "SPLIT", "SQL_TRACE", "STANDBY", "START", "STATEMENT_ID", "STATISTICS", "STOP", "STORAGE", "STORE", "STRUCTURE", "SUCCESSFUL", "SWITCH", "SYS_OP_ENFORCE_NOT_NULL$", "SYS_OP_NTCIMG$", "SYNONYM", "SYSDATE", "SYSDBA", "SYSOPER", "SYSTEM", "TABLE", "TABLES", "TABLESPACE", "TABLESPACE_NO", "TABNO", "TEMPORARY", "THAN", "THE", "THEN", "THREAD", "TIMESTAMP", "TIME", "TO", "TOPLEVEL", "TRACE", "TRACING", "TRANSACTION", "TRANSITIONAL", "TRIGGER", "TRIGGERS", "TRUE", "TRUNCATE", "TX", "TYPE", "UB2", "UBA", "UID", "UNARCHIVED", "UNDO", "UNION", "UNIQUE", "UNLIMITED", "UNLOCK", "UNRECOVERABLE", "UNTIL", "UNUSABLE", "UNUSED", "UPDATABLE", "UPDATE", "USAGE", "USE", "USER", "USING", "VALIDATE", "VALIDATION", "VALUE", "VALUES", "VARCHAR", "VARCHAR2", "VARYING", "VIEW", "WHEN", "WHENEVER", "WHERE", "WITH", "WITHOUT", "WORK", "WRITE", "WRITEDOWN", "WRITEUP", "XID", "YEAR", "ZONE"};
+	private static final List<String> RESERVED_WORDS_LIST = Arrays.asList(RESERVED_WORDS_ARRAY);
 
 	@Override
 	public String getDateFormattedForQuery(Date date) {
 		if (date == null) {
 			return getNull();
 		}
-//        yyyy-MM-dd hh:mm:ss[.nnnnnnnnn]
-		return " TO_TIMESTAMP_TZ('" + javaToStringFormatter.format(date) + "','" + oracleDateFormatStr + "') ";
-		//return "'"+strToDateFormat.format(date)+"'";
+		return " TO_TIMESTAMP_TZ('" + JAVA_TO_STRING_FORMATTER_WITH_TIMEZONE.format(date) + "','" + ORACLE_DATE_FORMAT_STRING_WITH_TIMEZONE + "') ";
 	}
 
 	@Override
+	public String getDatePartsFormattedForQuery(String years, String months, String days, String hours, String minutes, String seconds, String subsecond, String timeZoneSign, String timeZoneHourOffset, String timeZoneMinuteOffSet) {
+		return " TO_TIMESTAMP_TZ("
+				+ years
+				+ "||'-'||" + months
+				+ "||'-'||" + days
+				+ "||' '||" + hours
+				+ "||':'||" + minutes
+				+ "||':'||to_char(" + seconds + "+" + subsecond + ", '90D099999')"
+				+ "||' '||'" + timeZoneSign + "'"
+				+ "||" + timeZoneHourOffset
+				+ "||':'||" + timeZoneMinuteOffSet
+				+ ", '" + "YYYY-MM-DD HH24:MI:SS.FF6 TZH:TZM" + "')";
+	}
+
+	@Override
+	public boolean prefersDatesReadAsStrings() {
+		return true;
+	}
+
+	private final RegexReplacement REMOVE_ILLEGAL_STARTING_CHARS = Regex.startingFromTheBeginning().anyOf("_", "-").once().replaceWith().literal("O");
+	private final RegexReplacement REMOVE_HYPHENS = Regex.empty().literal("-").once().replaceWith().literal("_");
+	private final RegexReplacement REMOVE_DOTS = Regex.empty().literal(".").once().replaceWith().literal("__");
+
+	@Override
 	protected String formatNameForDatabase(final String sqlObjectName) {
-		if (sqlObjectName.length() < 30 && !(reservedWords.contains(sqlObjectName.toUpperCase()))) {
-			return sqlObjectName.replaceAll("^[_-]", "O").replaceAll("-", "_");
-		} else {
-			return ("O" + sqlObjectName.hashCode()).replaceAll("^[_-]", "O").replaceAll("-", "_");
-		}
+
+		final boolean shorterThan30 = sqlObjectName.length() < 30;
+		final boolean hasNoReservedWords = !(RESERVED_WORDS_LIST.contains(sqlObjectName.toUpperCase()));
+		boolean simple = (shorterThan30 && hasNoReservedWords);
+		String name = simple ? sqlObjectName : "" + sqlObjectName.hashCode();
+		String replaced = REMOVE_ILLEGAL_STARTING_CHARS.replaceFirst(name);
+		replaced = REMOVE_HYPHENS.replaceAll(replaced);
+		replaced = simple ? replaced : "O" + replaced;
+		return replaced;
 	}
 
 	@Override
 	public String formatTableAlias(String suggestedTableAlias) {
-		return "\"" + suggestedTableAlias.replaceAll("-", "_") + "\"";
+		return "\"" + REMOVE_HYPHENS.replaceAll(suggestedTableAlias) + "\"";
 	}
 
 	@Override
 	public String formatForColumnAlias(final String actualName) {
-		String formattedName = actualName.replaceAll("\\.", "__");
-		return ("DB" + formattedName.hashCode()).replaceAll("-", "_") + "";
+		String formattedName = REMOVE_DOTS.replaceAll(actualName);
+		return "DB" + REMOVE_HYPHENS.replaceAll("" + formattedName.hashCode()) + "";
 	}
 
 	@Override
@@ -88,33 +137,41 @@ public class OracleDBDefinition extends DBDefinition {
 	}
 
 	@Override
-	public String getDatabaseDataTypeOfQueryableDatatype(QueryableDatatype qdt) {
+	public String getDatabaseDataTypeOfQueryableDatatype(QueryableDatatype<?> qdt) {
 		if (qdt instanceof DBBoolean) {
 			return " NUMBER(1)";
+		} else if (qdt instanceof DBNumber) {
+			return " NUMBER(38,16) ";
+		} else if (qdt instanceof DBInteger) {
+			return " NUMBER(38,0) ";
 		} else if (qdt instanceof DBString) {
 			return " VARCHAR(1000) ";
 		} else if (qdt instanceof DBDate) {
+			return " TIMESTAMP WITH TIME ZONE ";
+		} else if (qdt instanceof DBLocalDate) {
+			return " TIMESTAMP WITH TIME ZONE ";
+		} else if (qdt instanceof DBLocalDateTime) {
+			return " TIMESTAMP WITH TIME ZONE ";
+		} else if (qdt instanceof DBInstant) {
 			return " TIMESTAMP WITH TIME ZONE ";
 		} else if (qdt instanceof DBJavaObject) {
 			return " BLOB ";
 		} else if (qdt instanceof DBBooleanArray) {
 			return " VARCHAR(64) ";
+		} else if (qdt instanceof DBDuration) {
+			return " INTERVAL DAY(9) TO SECOND(9) ";
 		} else {
 			return super.getDatabaseDataTypeOfQueryableDatatype(qdt);
 		}
-	}	
-	
+	}
+
 	@Override
 	public boolean supportsArraysNatively() {
 		return false;
 	}
 
-//    @Override
-//    public boolean prefersIndexBasedGroupByClause() {
-//        return true;
-//    }
 	@Override
-	public Object endSQLStatement() {
+	public String endSQLStatement() {
 		return "";
 	}
 
@@ -129,27 +186,26 @@ public class OracleDBDefinition extends DBDefinition {
 	}
 
 	@Override
-	public Object getLimitRowsSubClauseAfterWhereClause(QueryOptions options) {
+	public String getLimitRowsSubClauseAfterWhereClause(QueryState state, QueryOptions options) {
 		return "";
 	}
-	
+
 	@Override
 	public String doWrapQueryForPaging(String sqlQuery, QueryOptions options) {
 		if (options.getRowLimit() > -1) {
-			final int firstRowOfNextPage = (options.getPageIndex() + 1) * options.getRowLimit()+1;
-			final int firstRowOfPage = options.getPageIndex() * options.getRowLimit()+1;
+			final int firstRowOfNextPage = (options.getPageIndex() + 1) * options.getRowLimit() + 1;
+			final int firstRowOfPage = options.getPageIndex() * options.getRowLimit() + 1;
 			return "select *\n"
 					+ "  from ( select /*+ FIRST_ROWS(n) */\n"
 					+ "  a.*, ROWNUM rnum\n"
 					+ "      from ( " + sqlQuery + " ) a\n"
 					+ "      where ROWNUM <" + firstRowOfNextPage + "\n"
 					+ "      )\n"
-					+ "where rnum  >= " + firstRowOfPage +"";
+					+ "where rnum  >= " + firstRowOfPage + "";
 		} else {
 			return super.doWrapQueryForPaging(sqlQuery, options);
 		}
 	}
-
 
 	@Override
 	public String getCurrentUserFunctionName() {
@@ -163,22 +219,17 @@ public class OracleDBDefinition extends DBDefinition {
 
 	@Override
 	public String getIfNullFunctionName() {
-		return "NVL"; //To change body of generated methods, choose Tools | Templates.
+		return "NVL";
 	}
 
 	@Override
 	public String doStringIfNullTransform(String possiblyNullValue, String alternativeIfNull) {
-		return "DECODE(" + possiblyNullValue + ","
-				+ "NULL," + (alternativeIfNull == null ? "NULL" : alternativeIfNull)
-				+ ",''," + (alternativeIfNull == null ? "NULL" : alternativeIfNull)
-				+ "," + possiblyNullValue + ")";
+		return "NVL(" + possiblyNullValue + ", " + alternativeIfNull + ")";
 	}
 
 	@Override
 	public String doNumberIfNullTransform(String possiblyNullValue, String alternativeIfNull) {
-		return "DECODE(" + possiblyNullValue
-				+ ",NULL," + (alternativeIfNull == null ? "NULL" : alternativeIfNull)
-				+ "," + possiblyNullValue + ")";
+		return "NVL(" + possiblyNullValue + ", " + alternativeIfNull + ")";
 	}
 
 	@Override
@@ -192,7 +243,8 @@ public class OracleDBDefinition extends DBDefinition {
 	}
 
 	@Override
-	public String doSubstringTransform(String originalString, String start, String length) {
+	public String doSubstringTransform(String originalString, String start, String length
+	) {
 		return " SUBSTR("
 				+ originalString
 				+ ", "
@@ -215,40 +267,75 @@ public class OracleDBDefinition extends DBDefinition {
 	public String doModulusTransform(String firstNumber, String secondNumber) {
 		return " remainder(" + firstNumber + ", " + secondNumber + ")";
 	}
-	
+
 	@Override
-	public String doAddSecondsTransform(String dateValue, String numberOfSeconds) {
+	public String doDateAddSecondsTransform(String dateValue, String numberOfSeconds) {
 		return "(" + dateValue + " + numtodsinterval( " + numberOfSeconds + ", 'SECOND'))";
 	}
 
 	@Override
-	public String doAddMinutesTransform(String dateValue, String numberOfSeconds) {
+	public String doDateAddMinutesTransform(String dateValue, String numberOfSeconds) {
 		return "(" + dateValue + " + numtodsinterval( " + numberOfSeconds + ", 'MINUTE'))";
 	}
 
 	@Override
-	public String doAddHoursTransform(String dateValue, String numberOfHours) {
+	public String doDateAddHoursTransform(String dateValue, String numberOfHours) {
 		return "(" + dateValue + " + numtodsinterval( " + numberOfHours + ", 'HOUR'))";
 	}
 
 	@Override
-	public String doAddDaysTransform(String dateValue, String numberOfDays) {
-		return "((" + dateValue + ")+(INTERVAL '1' DAY*(" + numberOfDays +")))";
+	public String doDateAddDaysTransform(String dateValue, String numberOfDays) {
+		return "((" + dateValue + ")+(INTERVAL '1' DAY*(" + numberOfDays + ")))";
 	}
 
 	@Override
-	public String doAddWeeksTransform(String dateValue, String numberOfWeeks) {
-		return doAddDaysTransform(dateValue, "(" + numberOfWeeks + ")*7");
+	public String doDateAddWeeksTransform(String dateValue, String numberOfWeeks) {
+		return doDateAddDaysTransform(dateValue, "(" + numberOfWeeks + ")*7");
 	}
 
 	@Override
-	public String doAddMonthsTransform(String dateValue, String numberOfMonths) {
+	public String doDateAddMonthsTransform(String dateValue, String numberOfMonths) {
 		return "ADD_MONTHS(" + dateValue + ", " + numberOfMonths + ")";
 	}
 
 	@Override
-	public String doAddYearsTransform(String dateValue, String numberOfYears) {
-		return doAddMonthsTransform(dateValue, "(" + numberOfYears + ")*12");
+	public String doDateAddYearsTransform(String dateValue, String numberOfYears) {
+		return doDateAddMonthsTransform(dateValue, "(" + numberOfYears + ")*12");
+	}
+
+	@Override
+	public String doInstantAddSecondsTransform(String dateValue, String numberOfSeconds) {
+		return "(" + dateValue + " + numtodsinterval( " + numberOfSeconds + ", 'SECOND'))";
+	}
+
+	@Override
+	public String doInstantAddMinutesTransform(String dateValue, String numberOfSeconds) {
+		return "(" + dateValue + " + numtodsinterval( " + numberOfSeconds + ", 'MINUTE'))";
+	}
+
+	@Override
+	public String doInstantAddHoursTransform(String dateValue, String numberOfHours) {
+		return "(" + dateValue + " + numtodsinterval( " + numberOfHours + ", 'HOUR'))";
+	}
+
+	@Override
+	public String doInstantAddDaysTransform(String dateValue, String numberOfDays) {
+		return "((" + dateValue + ")+(INTERVAL '1' DAY*(" + numberOfDays + ")))";
+	}
+
+	@Override
+	public String doInstantAddWeeksTransform(String dateValue, String numberOfWeeks) {
+		return doDateAddDaysTransform(dateValue, "(" + numberOfWeeks + ")*7");
+	}
+
+	@Override
+	public String doInstantAddMonthsTransform(String dateValue, String numberOfMonths) {
+		return "ADD_MONTHS(" + dateValue + ", " + numberOfMonths + ")";
+	}
+
+	@Override
+	public String doInstantAddYearsTransform(String dateValue, String numberOfYears) {
+		return doDateAddMonthsTransform(dateValue, "(" + numberOfYears + ")*12");
 	}
 
 	@Override
@@ -258,7 +345,7 @@ public class OracleDBDefinition extends DBDefinition {
 
 	@Override
 	public String doDayDifferenceTransform(String dateValue, String otherDateValue) {
-		return "(EXTRACT(DAY FROM (CAST(" + otherDateValue + " AS TIMESTAMP) - CAST(" + dateValue + " AS TIMESTAMP))))";
+		return "(EXTRACT(DAY FROM (CAST(" + otherDateValue + " AS TIMESTAMP WITH TIME ZONE) - CAST(" + dateValue + " AS TIMESTAMP WITH TIME ZONE))))";
 	}
 
 	@Override
@@ -278,19 +365,19 @@ public class OracleDBDefinition extends DBDefinition {
 
 	@Override
 	public String doHourDifferenceTransform(String dateValue, String otherDateValue) {
-		return "(EXTRACT(HOUR FROM (CAST(" + otherDateValue + " AS TIMESTAMP) - CAST(" + dateValue + " AS TIMESTAMP)))"
+		return "(EXTRACT(HOUR FROM (CAST(" + otherDateValue + " AS TIMESTAMP WITH TIME ZONE) - CAST(" + dateValue + " AS TIMESTAMP WITH TIME ZONE)))"
 				+ "+(" + doDayDifferenceTransform(dateValue, otherDateValue) + "*24))";
 	}
 
 	@Override
 	public String doMinuteDifferenceTransform(String dateValue, String otherDateValue) {
-		return "(EXTRACT(MINUTE FROM (CAST(" + otherDateValue + " AS TIMESTAMP) - CAST(" + dateValue + " AS TIMESTAMP)))"
+		return "(EXTRACT(MINUTE FROM (CAST(" + otherDateValue + " AS TIMESTAMP WITH TIME ZONE) - CAST(" + dateValue + " AS TIMESTAMP WITH TIME ZONE)))"
 				+ "+(" + doHourDifferenceTransform(dateValue, otherDateValue) + "*60))";
 	}
 
 	@Override
 	public String doSecondDifferenceTransform(String dateValue, String otherDateValue) {
-		return "(EXTRACT(SECOND FROM (CAST(" + otherDateValue + " AS TIMESTAMP) - CAST(" + dateValue + " AS TIMESTAMP)))"
+		return "(EXTRACT(SECOND FROM (CAST(" + otherDateValue + " AS TIMESTAMP WITH TIME ZONE) - CAST(" + dateValue + " AS TIMESTAMP WITH TIME ZONE)))"
 				+ "+(" + doMinuteDifferenceTransform(dateValue, otherDateValue) + "*60))";
 	}
 
@@ -317,14 +404,13 @@ public class OracleDBDefinition extends DBDefinition {
 	}
 
 	@Override
-	public Object getOrderByDirectionClause(Boolean sortOrder) {
-		if (sortOrder == null) {
-			return "";
-		} else if (sortOrder) {
-			return " ASC NULLS FIRST";
-		} else {
-			return " DESC NULLS LAST";
-		}
+	public String getOrderByDescending() {
+		return " DESC ";
+	}
+
+	@Override
+	public String getOrderByAscending() {
+		return " ASC ";
 	}
 
 	@Override
@@ -339,25 +425,25 @@ public class OracleDBDefinition extends DBDefinition {
 
 	/**
 	 * Creates a pattern that will exclude system tables during DBRow class
-	 * generation i.e. {@link DBTableClassGenerator}.
-	 *
+	 * generation i.e. {@link DBDatabaseMetaData}.
+	 * 
 	 * <p>
-	 * By default this method returns null as system tables are not a problem
-	 * for most databases.
+	 * For Oracle databases this pattern is "^[^$]*$".</p>
 	 *
-	 * <p style="color: #F90;">Support DBvolution at
-	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
-	 *
-	 * @return a regexp pattern
+	 * @return a pattern that will remove any system table.
 	 */
 	@Override
-	public String getSystemTableExclusionPattern() {
-		return "^[^$]*$"; //"^(.*(?!\\$)\\b)*$";
+	public Regex getSystemTableExclusionPattern() {
+		return Regex.startingFromTheBeginning().excludeSet("$").zeroOrMore().endOfTheString().toRegex();
 	}
 
 	@Override
 	public String doDayOfWeekTransform(String dateSQL) {
-//		return " (TO_CHAR("+dateSQL+",'D')+1)";
+		return "DECODE(trim(to_char((" + dateSQL + "), 'Day', 'NLS_DATE_LANGUAGE=ENGLISH')), 'Sunday', 1, 'Monday', 2, 'Tuesday', 3, 'Wednesday', 4, 'Thursday', 5, 'Friday', 6, 'Saturday', 7)";
+	}
+
+	@Override
+	public String doInstantDayOfWeekTransform(String dateSQL) {
 		return "DECODE(trim(to_char((" + dateSQL + "), 'Day', 'NLS_DATE_LANGUAGE=ENGLISH')), 'Sunday', 1, 'Monday', 2, 'Tuesday', 3, 'Wednesday', 4, 'Thursday', 5, 'Friday', 6, 'Saturday', 7)";
 	}
 
@@ -370,14 +456,11 @@ public class OracleDBDefinition extends DBDefinition {
 	public boolean supportsCotangentFunction() {
 		return false;
 	}
-	
+
 	/**
 	 * Transform a Java Boolean into the equivalent in an SQL snippet.
 	 *
 	 * @param boolValue	boolValue
-	 * <p style="color: #F90;">Support DBvolution at
-	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
-	 *
 	 * @return an SQL snippet
 	 */
 	@Override
@@ -389,7 +472,6 @@ public class OracleDBDefinition extends DBDefinition {
 		} else {
 			return getFalseValue();
 		}
-//		return beginNumberValue() + (boolValue ? 1 : 0) + endNumberValue();
 	}
 
 	/**
@@ -397,9 +479,6 @@ public class OracleDBDefinition extends DBDefinition {
 	 *
 	 * <p>
 	 * The default method returns " TRUE ".
-	 *
-	 * <p style="color: #F90;">Support DBvolution at
-	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
 	 *
 	 * @return " TRUE "
 	 */
@@ -414,9 +493,6 @@ public class OracleDBDefinition extends DBDefinition {
 	 * <p>
 	 * The default method returns " FALSE ".
 	 *
-	 * <p style="color: #F90;">Support DBvolution at
-	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
-	 *
 	 * @return " FALSE "
 	 */
 	@Override
@@ -424,12 +500,8 @@ public class OracleDBDefinition extends DBDefinition {
 		return " 0 ";
 	}
 
-
 	/**
 	 * An SQL snippet that always evaluates to FALSE for this database.
-	 *
-	 * <p style="color: #F90;">Support DBvolution at
-	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
 	 *
 	 * @return " 1=0 " or equivalent
 	 */
@@ -440,9 +512,6 @@ public class OracleDBDefinition extends DBDefinition {
 
 	/**
 	 * An SQL snippet that always evaluates to TRUE for this database.
-	 *
-	 * <p style="color: #F90;">Support DBvolution at
-	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
 	 *
 	 * @return " 1=1 " or equivalent
 	 */
@@ -455,13 +524,69 @@ public class OracleDBDefinition extends DBDefinition {
 	public boolean supportsComparingBooleanResults() {
 		return false;
 	}
-	
+
+	@Override
+	public String doColumnTransformForSelect(QueryableDatatype<?> qdt, String selectableName) {
+		return super.doColumnTransformForSelect(qdt, selectableName);
+	}
+
 	@Override
 	public DBExpression transformToStorableType(DBExpression columnExpression) {
+		return super.transformToStorableType(columnExpression);
+	}
+
+	@Override
+	public DBExpression transformToSortableType(DBExpression columnExpression) {
 		if (columnExpression instanceof BooleanExpression) {
-			return ((BooleanExpression) columnExpression).ifThenElse(1, 0);
+			return ((BooleanExpression) columnExpression).ifTrueFalseNull(1, 0, null);
+		}
+		return super.transformToSortableType(columnExpression);
+	}
+
+	@Override
+	public DBExpression transformToGroupableType(DBExpression expression) {
+		if (expression instanceof BooleanExpression) {
+			return ((BooleanExpression) expression).ifTrueFalseNull(1, 0, null);
 		} else {
-			return super.transformToStorableType(columnExpression);
+			return super.transformToGroupableType(expression);
+		}
+	}
+
+	@Override
+	public DBExpression transformToSelectableType(DBExpression expression) {
+		if (expression instanceof CaseExpression) {
+			return super.transformToSelectableType(expression);
+		} else if (expression instanceof BooleanExpression) {
+			BooleanExpression boolExpr = (BooleanExpression) expression;
+			if (boolExpr.isWindowingFunction()) {
+				return super.transformToSelectableType(expression);
+			} else if (!boolExpr.isBooleanStatement()) {
+				return super.transformToSelectableType(expression);
+			} else {
+				return boolExpr.ifTrueFalseNull(1, 0, null);
+			}
+		} else if (expression instanceof LocalDateExpression) {
+			return transformToStandardDateFormatForRetrieval(expression);
+		} else if (expression instanceof LocalDateTimeExpression) {
+			return transformToStandardDateFormatForRetrieval(expression);
+		} else if (expression instanceof InstantExpression) {
+			return transformToStandardDateFormatForRetrieval(expression);
+		} else {
+			return super.transformToSelectableType(expression);
+		}
+	}
+
+	@Override
+	public DBExpression transformToWhenableType(BooleanExpression test) {
+		if (test.isBooleanStatement()) {
+			return test;
+		} else {
+			return new BooleanExpression(test) {
+				@Override
+				public String toSQLString(DBDefinition db) {
+					return "(" + super.toSQLString(db) + "=1)";
+				}
+			};
 		}
 	}
 
@@ -477,6 +602,329 @@ public class OracleDBDefinition extends DBDefinition {
 
 	@Override
 	public String doEndOfMonthTransform(String dateSQL) {
-		return "LAST_DAY("+dateSQL+")";
+		return "LAST_DAY(" + dateSQL + ")";
 	}
+
+	@Override
+	public String doInstantEndOfMonthTransform(String dateSQL) {
+		return "FROM_TZ(CAST(LAST_DAY(" + dateSQL + ") AS TIMESTAMP), 'UTC')";
+	}
+
+	@Override
+	public LargeObjectHandlerType preferredLargeObjectWriter(DBLargeObject<?> lob) {
+		if (lob instanceof DBLargeText) {
+			return LargeObjectHandlerType.CHARSTREAM;
+		} else if (lob instanceof DBJavaObject) {
+			return LargeObjectHandlerType.BLOB;
+		} else {
+			return super.preferredLargeObjectWriter(lob);
+		}
+	}
+
+	@Override
+	public LargeObjectHandlerType preferredLargeObjectReader(DBLargeObject<?> lob) {
+		if (lob instanceof DBLargeText) {
+			return LargeObjectHandlerType.STRING;
+		} else if (lob instanceof DBJavaObject) {
+			return LargeObjectHandlerType.BLOB;
+		} else {
+			return super.preferredLargeObjectReader(lob);
+		}
+	}
+
+	/**
+	 * Returns the required code to generate a random number.
+	 *
+	 * <p>
+	 * For each call of this method a new random number is generated.
+	 *
+	 * <p>
+	 * This method DOES NOT use the SQLServer built-in function as it does not
+	 * produce a different result for different rows in a single query.
+	 *
+	 * @return random number generating code
+	 */
+	@Override
+	public String doRandomNumberTransform() {
+		return " DBMS_RANDOM.VALUE ";
+	}
+
+	@Override
+	public String doLogBase10NumberTransform(String sql) {
+		return "log(10, (" + sql + "))";
+	}
+
+	@Override
+	public String doDayTransform(String dateExpression) {
+		return "(cast(to_char(" + dateExpression + ", 'DD') as number))";
+	}
+
+	@Override
+	public String doHourTransform(String dateExpression) {
+		return "(cast(to_char(" + dateExpression + ", 'HH24') as number))";
+	}
+
+	@Override
+	public String doMonthTransform(String dateExpression) {
+		return "(cast(to_char(" + dateExpression + ", 'MM') as number))";
+	}
+
+	@Override
+	public String doYearTransform(String dateExpression) {
+		return "(cast(to_char(" + dateExpression + ", 'YYYY') as number))";
+	}
+
+	@Override
+	public String doFindNumberInStringTransform(String toSQLString) {
+		return "(case when regexp_replace(" + toSQLString + ",'.*?([-]?[0-9]+(\\.[0-9]+)?).*$', '\\1') = " + toSQLString + " then " + getNull() + " else regexp_replace(" + toSQLString + ",'.*?([-]?[0-9]+(\\.[0-9]+)?).*$', '\\1') end)";
+	}
+
+	@Override
+	public String doFindIntegerInStringTransform(String toSQLString) {
+		return "(case when regexp_replace(" + toSQLString + ",'.*?([-]?[0-9]+).*$', '\\1') = " + toSQLString + " then " + getNull() + " else regexp_replace(" + toSQLString + ",'.*?([-]?[0-9]+).*$', '\\1') end)";
+	}
+
+	/**
+	 * Oracle does not differentiate between NULL and an empty string.
+	 *
+	 * @return FALSE.
+	 */
+	@Override
+	public synchronized Boolean supportsDifferenceBetweenNullAndEmptyStringNatively() {
+		return false;
+	}
+
+	@Override
+	public String getTableExistsSQL(DBRow table) {
+		return "SELECT COUNT(*) FROM " + this.formatTableName(table);
+	}
+
+	/**
+	 * Provides the start of the DROP TABLE expression for this database.
+	 *
+	 * @return "DROP TABLE " or equivalent for the database.
+	 */
+	@Override
+	public String getDropTableStart() {
+		return "DROP TABLE ";
+	}
+
+	@Override
+	public String getLimitRowsSubClauseDuringSelectClause(QueryOptions options) {
+		return " /*+ FIRST_ROWS(" + options.getRowLimit() + ") */ ";
+	}
+
+	@Override
+	public String getColumnAutoIncrementSuffix() {
+		return "";
+	}
+
+	@Override
+	public boolean prefersTriggerBasedIdentities() {
+		return true;
+	}
+
+	@Override
+	public List<String> getTriggerBasedIdentitySQL(DBDatabase DB, String table, String column) {
+
+		List<String> result = new ArrayList<>();
+		String sequenceName = getPrimaryKeySequenceName(table, column);
+		final String primaryKeyTriggerName = getPrimaryKeyTriggerName(table, column);
+		result.add("DROP TRIGGER " + primaryKeyTriggerName + "");
+		result.add("DROP SEQUENCE " + sequenceName + "");
+		result.add("CREATE SEQUENCE " + sequenceName);
+		result.add("CREATE OR REPLACE TRIGGER " + DB.getUsername() + "." + primaryKeyTriggerName + " \n"
+				+ "    BEFORE INSERT ON " + DB.getUsername() + "." + table + " \n"
+				+ "    FOR EACH ROW\n"
+				+ "    WHEN (new." + column + " IS NULL)\n"
+				+ "    BEGIN\n"
+				+ "      SELECT " + sequenceName + ".NEXTVAL\n"
+				+ "      INTO   :new." + column + "\n"
+				+ "      FROM   dual;\n"
+				+ "    END;\n");
+
+		return result;
+	}
+
+	@Override
+	public String getAlterTableAddColumnSQL(DBRow existingTable, PropertyWrapper<?, ?, ?> columnPropertyWrapper) {
+		return "ALTER TABLE " + formatTableName(existingTable) + " ADD " + getAddColumnColumnSQL(columnPropertyWrapper) + endSQLStatement();
+	}
+
+	@Override
+	public String doNumberToIntegerTransform(String sql) {
+		return "CAST(" + sql + " AS NUMBER(38,0))";
+	}
+
+	@Override
+	public String doCurrentUTCDateTimeTransform() {
+		return "(SYSTIMESTAMP at time zone 'UTC')";
+	}
+
+	/**
+	 * Creates the CURRENTTIME function for this database.
+	 *
+	 * @return the default implementation returns " CURRENT_TIMESTAMP "
+	 */
+	@Override
+	public String doCurrentUTCTimeTransform() {
+		return "(SYSTIMESTAMP at time zone 'UTC')";
+	}
+
+	@Override
+	public String doInstantSubsecondTransform(String dateExpression) {
+		return doInstantSecondTransform(dateExpression) + "-" + doRoundTransform(doInstantSecondTransform(dateExpression));
+	}
+
+	@Override
+	public String doStringAccumulateTransform(String accumulateColumn, String separator, String referencedTable) {
+		return "LISTAGG(" + accumulateColumn + ", " + doStringLiteralWrapping(separator) + ") WITHIN GROUP( ORDER BY 1 )";
+	}
+
+	@Override
+	public String doStringAccumulateTransform(String accumulateColumn, String separator, String orderByColumnName, String referencedTable) {
+		return "LISTAGG(" + accumulateColumn + ", " + doStringLiteralWrapping(separator) + ")" + " WITHIN GROUP( ORDER BY " + orderByColumnName + ")";
+	}
+
+	private DBExpression transformToStandardDateFormatForRetrieval(DBExpression expression) {
+		return new StringExpression((AnyResult<?>) expression) {
+			@Override
+			public String toSQLString(DBDefinition db) {
+				return "to_char( CAST(" + expression.toSQLString(db) + " AS TIMESTAMP WITH TIME ZONE), 'YYYY-MM-DD HH24:MI:SS.FF TZH:TZM')";
+			}
+		};
+	}
+
+	@Override
+	public boolean requiresOnClauseForAllJoins() {
+		return true;
+	}
+
+	@Override
+	public int getParseDurationPartOffset() {
+		return 0;
+	}
+
+	@Override
+	public String formatPrimaryKeyForRetrievingGeneratedKeys(String primaryKeyColumnName) {
+		return formatColumnName(primaryKeyColumnName);
+	}
+
+	@Override
+	public String getFromDualEquivalent() {
+		return " FROM DUAL ";
+	}
+
+	@Override
+	public boolean supportsDateRepeatDatatypeFunctions() {
+		return false;
+	}
+
+	@Override
+	public String getTableStructureQuery(DBRow table, DBTable<?> dbTable) {
+		final String sqlForQuery = " select *\n"
+				+ "  from ( select /*+ FIRST_ROWS(n) */\n"
+				+ "  a.*, ROWNUM rnum\n"
+				+ "      from (  SELECT  /*+ FIRST_ROWS(1) */ *"
+				+ " FROM  " + formatNameForDatabase(table.getTableName()) + " \n"
+				+ "\n"
+				+ "\n"
+				+ " ) a\n"
+				+ "      where ROWNUM <2\n"
+				+ "      )\n"
+				+ "where rnum  >= 1";
+		return sqlForQuery;
+	}
+
+	@Override
+	public String doDateRepeatNotEqualsTransform(String leftHandSide, String rightHandSide) {
+		return "(" + leftHandSide + " <> " + rightHandSide + ")";
+	}
+
+	@Override
+	public String doDateRepeatEqualsTransform(String leftHandSide, String rightHandSide) {
+		return "(" + leftHandSide + " = " + rightHandSide + ")";
+	}
+
+	@Override
+	public String doDateRepeatLessThanTransform(String leftHandSide, String rightHandSide) {
+		return "(" + leftHandSide + " < " + rightHandSide + ")";
+	}
+
+	@Override
+	public String doDateRepeatLessThanEqualsTransform(String leftHandSide, String rightHandSide) {
+		return "(" + leftHandSide + " <= " + rightHandSide + ")";
+	}
+
+	@Override
+	public String doDateRepeatGreaterThanTransform(String leftHandSide, String rightHandSide) {
+		return "(" + leftHandSide + " > " + rightHandSide + ")";
+	}
+
+	@Override
+	public String doDateRepeatGreaterThanEqualsTransform(String leftHandSide, String rightHandSide) {
+		return "(" + leftHandSide + " >= " + rightHandSide + ")";
+	}
+
+	@Override
+	public String doSecondAndSubsecondTransform(String dateExpression) {
+		return "extract(second from " + dateExpression + ")";
+	}
+
+	@Override
+	public String doFormatAsDateRepeatSeconds(String numericSQL) {
+		return "to_char(" + numericSQL + ", 'fm90.099999999')";
+	}
+
+	@Override
+	public List<String> getSQLToDropAnyAssociatedDatabaseObjects(DBRow tableRow) {
+		ArrayList<String> result = new ArrayList<>(0);
+		result.addAll(getSQLToDropAnyTriggerBasedPrimaryKeyObject(tableRow));
+		result.addAll(removeSpatialMetadata(tableRow));
+		return result;
+	}
+
+	protected List<String> getSQLToDropAnyTriggerBasedPrimaryKeyObject(DBRow tableRow) {
+		var fields = tableRow.getColumnPropertyWrappers();
+		List<String> triggerBasedIdentitySQL = new ArrayList<>();
+		if (prefersTriggerBasedIdentities()) {
+			List<PropertyWrapper<?, ?, ?>> pkFields = new ArrayList<>();
+			for (var field : fields) {
+				if (field.isColumn() && !field.getQueryableDatatype().hasColumnExpression()) {
+					if (field.isPrimaryKey()) {
+						pkFields.add(field);
+					}
+				}
+			}
+			if (pkFields.size() == 1) {
+				triggerBasedIdentitySQL = dropTriggerBasedIdentitySQL(formatTableName(tableRow), formatColumnName(pkFields.get(0).columnName()));
+			}
+		}
+		return triggerBasedIdentitySQL;
+	}
+
+	@Override
+	public List<String> dropTriggerBasedIdentitySQL(String table, String column) {
+		List<String> result = new ArrayList<>();
+		result.add("DROP TRIGGER " + getPrimaryKeyTriggerName(table, column) + "");
+		result.add("DROP SEQUENCE " + getPrimaryKeySequenceName(table, column) + "");
+		return result;
+	}
+
+	/**
+	 * Allows the database to remove any spatial metadata that might exist for a
+	 * table during DROP TABLE.
+	 *
+	 * @param tableRow the object defining the table to have it's spatial
+	 * meta-data removed.
+	 * @return a list of the SQL required to remove the spatial metadata
+	 */
+	protected ArrayList<String> removeSpatialMetadata(DBRow tableRow) {
+		final String formattedTableName = formatTableName(tableRow);
+		final String sql = "DELETE FROM USER_SDO_GEOM_METADATA WHERE TABLE_NAME = '" + formattedTableName.toUpperCase() + "'";
+		ArrayList<String> result = new ArrayList<>();
+		result.add(sql);
+		return result;
+	}
+
 }

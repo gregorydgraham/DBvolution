@@ -31,7 +31,6 @@ public enum Polygon2DFunctions implements DBVFeature {
 	 *
 	 */
 	CREATE_FROM_WKTPOLYGON2D("String", "String wkt", "return wkt;"),
-
 	/**
 	 *
 	 */
@@ -64,7 +63,6 @@ public enum Polygon2DFunctions implements DBVFeature {
 			+ "			} catch (Exception ex) {\n"
 			+ "				throw new RuntimeException(\"Failed To Parse H2 Polygon2D\", ex);\n"
 			+ "			}"),
-
 	/**
 	 *
 	 */
@@ -90,9 +88,8 @@ public enum Polygon2DFunctions implements DBVFeature {
 			+ "					}\n"
 			+ "				}\n"
 			+ "			} catch (Exception ex) {\n"
-			+ "				throw new RuntimeException(\"Failed To Parse Polygon: either '\"+firstPolyStr+\"' or '\"+secondPolyStr+\"' is wrong somehow\", ex);\n"
+			+ "				throw new RuntimeException(\"Failed To Parse Polygon During EQUALS: either '\"+firstPolyStr+\"' or '\"+secondPolyStr+\"' is wrong somehow\", ex);\n"
 			+ "			}"),
-
 	/**
 	 *
 	 */
@@ -115,12 +112,10 @@ public enum Polygon2DFunctions implements DBVFeature {
 			+ "			} catch (Exception ex) {\n"
 			+ "				throw new RuntimeException(\"Failed To Parse Polygon: '\"+firstPolyStr+\"'\", ex);\n"
 			+ "			}"),
-
 	/**
 	 *
 	 */
 	DIMENSION("Integer", "String firstPoly", "return 2;"),
-
 	/**
 	 *
 	 */
@@ -150,7 +145,6 @@ public enum Polygon2DFunctions implements DBVFeature {
 			+ "			} catch (Exception ex) {\n"
 			+ "				throw new RuntimeException(\"Failed To Parse Polygon\", ex);\n"
 			+ "			}"),
-
 	/**
 	 *
 	 */
@@ -178,7 +172,6 @@ public enum Polygon2DFunctions implements DBVFeature {
 			+ "			} catch (Exception ex) {\n"
 			+ "				throw new RuntimeException(\"Failed To Parse Polygon\", ex);\n"
 			+ "			}"),
-
 	/**
 	 *
 	 */
@@ -206,7 +199,6 @@ public enum Polygon2DFunctions implements DBVFeature {
 			+ "			} catch (Exception ex) {\n"
 			+ "				throw new RuntimeException(\"Failed To Parse Polygon\", ex);\n"
 			+ "			}"),
-
 	/**
 	 *
 	 */
@@ -233,7 +225,6 @@ public enum Polygon2DFunctions implements DBVFeature {
 			+ "			} catch (Exception ex) {\n"
 			+ "				throw new RuntimeException(\"Failed To Parse Polygon\", ex);\n"
 			+ "			}"),
-
 	/**
 	 *
 	 */
@@ -281,7 +272,6 @@ public enum Polygon2DFunctions implements DBVFeature {
 			+ "			} catch (Exception ex) {\n"
 			+ "				throw new RuntimeException(\"Failed To Parse Polygon\", ex);\n"
 			+ "			}\n"),
-
 	/**
 	 *
 	 */
@@ -306,7 +296,6 @@ public enum Polygon2DFunctions implements DBVFeature {
 			+ "				throw new RuntimeException(\"Failed To Parse Polygon\", ex);\n"
 			+ "			}\n"
 			+ ""),
-
 	/**
 	 *
 	 */
@@ -332,7 +321,6 @@ public enum Polygon2DFunctions implements DBVFeature {
 			+ "			} catch (Exception ex) {\n"
 			+ "				throw new RuntimeException(\"Failed To Parse SQLite Polygon\", ex);\n"
 			+ "			}"),
-
 	/**
 	 *
 	 */
@@ -356,7 +344,6 @@ public enum Polygon2DFunctions implements DBVFeature {
 			+ "			} catch (Exception ex) {\n"
 			+ "				throw new RuntimeException(\"Failed To Parse Polygon\", ex);\n"
 			+ "			}"),
-
 	/**
 	 *
 	 */
@@ -380,7 +367,6 @@ public enum Polygon2DFunctions implements DBVFeature {
 			+ "			} catch (Exception ex) {\n"
 			+ "				throw new RuntimeException(\"Failed To Parse Polygon\", ex);\n"
 			+ "			}"),
-
 	/**
 	 *
 	 */
@@ -404,7 +390,6 @@ public enum Polygon2DFunctions implements DBVFeature {
 			+ "			} catch (Exception ex) {\n"
 			+ "				throw new RuntimeException(\"Failed To Parse Polygon\", ex);\n"
 			+ "			}"),
-
 	/**
 	 *
 	 */
@@ -428,7 +413,52 @@ public enum Polygon2DFunctions implements DBVFeature {
 			+ "			} catch (Exception ex) {\n"
 			+ "				throw new RuntimeException(\"Failed To Parse Polygon\", ex);\n"
 			+ "			}"),
-
+	/**
+	 *
+	 */
+	UNION("String", "String firstPolyStr, String secondPolyStr", ""
+			+ "			try {\n"
+			+ "				if (firstPolyStr == null || secondPolyStr == null) {\n"
+			+ "					return null;\n"
+			+ "				} else {\n"
+			+ "					WKTReader wktReader = new WKTReader();\n"
+			+ "					GeometryFactory factory = new GeometryFactory();\n"
+			+ "					Geometry firstGeometry = wktReader.read(firstPolyStr);\n"
+			+ "					Geometry secondGeometry = wktReader.read(secondPolyStr);\n"
+			+ "					if ((firstGeometry instanceof Polygon)&&(secondGeometry instanceof Polygon)) {\n"
+			+ "						Polygon firstPoly = (Polygon) firstGeometry;\n"
+			+ "						Polygon secondPoly = (Polygon) secondGeometry;\n"
+			+ "						return firstPoly.union(secondPoly).toText();\n"
+			+ "					}else{"
+			+ "						return null;"
+			+ "					}"
+			+ "				}\n"
+			+ "			} catch (Exception ex) {\n"
+			+ "				throw new RuntimeException(\"Failed To Parse Polygon\", ex);\n"
+			+ "			}"),
+	/**
+	 *
+	 */
+	INTERSECTION("String", "String firstPolyStr, String secondPolyStr", ""
+			+ "			try {\n"
+			+ "				if (firstPolyStr == null || secondPolyStr == null) {\n"
+			+ "					return null;\n"
+			+ "				} else {\n"
+			+ "					WKTReader wktReader = new WKTReader();\n"
+			+ "					GeometryFactory factory = new GeometryFactory();\n"
+			+ "					Geometry firstGeometry = wktReader.read(firstPolyStr);\n"
+			+ "					Geometry secondGeometry = wktReader.read(secondPolyStr);\n"
+			+ "					if ((firstGeometry instanceof Polygon)&&(secondGeometry instanceof Polygon)) {\n"
+			+ "						Polygon firstPoly = (Polygon) firstGeometry;\n"
+			+ "						Polygon secondPoly = (Polygon) secondGeometry;\n"
+			+ "						return firstPoly.intersection(secondPoly).toText();\n"
+			+ "					}else{"
+			+ "						return null;"
+			+ "					}"
+			+ "				}\n"
+			+ "			} catch (Exception ex) {\n"
+			+ "				throw new RuntimeException(\"Failed To Parse Polygon During INTERSECTION\", ex);\n"
+			+ "			}"),
 	/**
 	 *
 	 */
@@ -450,9 +480,8 @@ public enum Polygon2DFunctions implements DBVFeature {
 			+ "					}"
 			+ "				}\n"
 			+ "			} catch (Exception ex) {\n"
-			+ "				throw new RuntimeException(\"Failed To Parse Polygon\", ex);\n"
+			+ "				throw new RuntimeException(\"Failed To Parse Polygon During INTERSECTS\", ex);\n"
 			+ "			}"),
-
 	/**
 	 *
 	 */
@@ -488,7 +517,7 @@ public enum Polygon2DFunctions implements DBVFeature {
 	}
 
 	@Override
-	public String toString(){
+	public String toString() {
 		return alias();
 	}
 
@@ -497,11 +526,6 @@ public enum Polygon2DFunctions implements DBVFeature {
 		return "DBV_POLYGON2D_" + name();
 	}
 
-	/**
-	 *
-	 * @param stmt
-	 * @throws SQLException
-	 */
 	@Override
 	public void add(Statement stmt) throws SQLException {
 		try {

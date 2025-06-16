@@ -16,8 +16,7 @@
 package nz.co.gregs.dbvolution.internal.oracle.aws;
 
 import nz.co.gregs.dbvolution.internal.oracle.StringFunctions;
-import java.sql.SQLException;
-import java.sql.Statement;
+import nz.co.gregs.dbvolution.internal.FeatureAdd;
 
 /**
  *
@@ -26,7 +25,7 @@ import java.sql.Statement;
  *
  * @author gregory.graham
  */
-public enum LineSegment2DFunctions {
+public enum LineSegment2DFunctions implements FeatureAdd {
 
 	/**
 	 *
@@ -101,7 +100,6 @@ public enum LineSegment2DFunctions {
 			+ "\n"
 			+ "   RETURN result;\n"
 			+ "END;"),
-
 	/**
 	 *
 	 */
@@ -175,7 +173,6 @@ public enum LineSegment2DFunctions {
 			+ "\n"
 			+ "   RETURN result;\n"
 			+ "END;"),
-
 	/**
 	 *
 	 */
@@ -249,7 +246,6 @@ public enum LineSegment2DFunctions {
 			+ "\n"
 			+ "   RETURN result;\n"
 			+ "END;"),
-
 	/**
 	 *
 	 */
@@ -323,7 +319,6 @@ public enum LineSegment2DFunctions {
 			+ "\n"
 			+ "   RETURN result;\n"
 			+ "END;"),
-
 	/**
 	 *
 	 */
@@ -368,7 +363,6 @@ public enum LineSegment2DFunctions {
 			+ "      RETURN result;\n"
 			+ "   END IF;\n"
 			+ "END;"),
-
 	/**
 	 *
 	 */
@@ -447,7 +441,6 @@ public enum LineSegment2DFunctions {
 			+ "      RETURN 0;\n"
 			+ "   END IF;\n"
 			+ "END;"),
-
 	/**
 	 *
 	 */
@@ -455,7 +448,6 @@ public enum LineSegment2DFunctions {
 			+ "BEGIN\n"
 			+ "   RETURN CASE WHEN (lineString1 = lineString2) THEN 1 ELSE 0 END;\n"
 			+ "END;"),
-
 	/**
 	 *
 	 */
@@ -553,22 +545,38 @@ public enum LineSegment2DFunctions {
 		return "DBV_LSEG2D_" + name();
 	}
 
-	/**
-	 *
-	 * @param stmt
-	 * @throws SQLException
-	 */
-	public void add(Statement stmt) throws SQLException {
-		try {
-			if (!this.code.isEmpty()) {
-				final String createFn = "CREATE OR REPLACE FUNCTION " + this + "(" + this.parameters + ")\n"
+//	/**
+//	 *
+//	 * @param stmt the database
+//	 * @throws ExceptionDuringDatabaseFeatureSetup database errors
+//	 */
+//	public void add(Statement stmt) throws ExceptionDuringDatabaseFeatureSetup {
+//		try {
+//			if (!this.code.isEmpty()) {
+//				final String createFn = "CREATE OR REPLACE FUNCTION " + this + "(" + this.parameters + ")\n"
+//						+ "    RETURN " + this.returnType
+//						+ " AS \n" + "\n" + this.code;
+//				stmt.execute(createFn);
+//			}
+//		} catch (Exception ex) {
+//			throw new ExceptionDuringDatabaseFeatureSetup("FAILED TO ADD FEATURE: "+name(), ex);
+//		}
+//	}
+	
+	@Override
+	public String featureName() {
+		return name();
+	}
+
+	@Override
+	public String[] createSQL() {
+		if (!this.code.isEmpty()) {
+			return new String[]{
+				"CREATE OR REPLACE FUNCTION " + this + "(" + this.parameters + ")\n"
 						+ "    RETURN " + this.returnType
-						+ " AS \n" + "\n" + this.code;
-				System.out.println(createFn);
-				stmt.execute(createFn);
-			}
-		} catch (SQLException ex) {
-			;
+						+ " AS \n" + "\n" + this.code
+			};
 		}
+		return new String[]{};
 	}
 }

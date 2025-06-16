@@ -18,12 +18,10 @@ package nz.co.gregs.dbvolution;
 import nz.co.gregs.dbvolution.datatypes.QueryableDatatype;
 import java.io.PrintStream;
 import java.text.SimpleDateFormat;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
+import nz.co.gregs.dbvolution.internal.query.QueryDetails;
+import nz.co.gregs.separatedstring.Builder;
+import nz.co.gregs.separatedstring.Encoder;
 
 /**
  * Contains all the instances of DBRow that are associated with one line of a
@@ -38,25 +36,18 @@ import java.util.Map;
  * Each instance is accessible thru the
  * {@link #get(nz.co.gregs.dbvolution.DBRow) get(DBRow) method}.
  *
- * <p style="color: #F90;">Support DBvolution at
- * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
- *
  * @author Gregory Graham
  *
  */
-public class DBQueryRow extends HashMap<Class<?>, DBRow> {
+public class DBQueryRow extends HashMap<Class<? extends DBRow>, DBRow> {
 
 	private static final long serialVersionUID = 1;
-	private final Map<Object, QueryableDatatype> expressionColumnValues = new LinkedHashMap<Object, QueryableDatatype>();
-	private transient final DBQuery baseQuery;
+	private final LinkedHashMap<Object, QueryableDatatype<?>> expressionColumnValues = new LinkedHashMap<>();
+	private transient final QueryDetails baseQuery;
 
-	DBQueryRow(DBQuery queryThatThisRowWasGeneratedFor) {
+	public DBQueryRow(QueryDetails queryThatThisRowWasGeneratedFor) {
 		super();
 		baseQuery = queryThatThisRowWasGeneratedFor;
-	}
-
-	DBQueryRow() {
-		throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
 	}
 
 	/**
@@ -78,8 +69,6 @@ public class DBQueryRow extends HashMap<Class<?>, DBRow> {
 	 *
 	 * @param <E> DBRow type
 	 * @param exemplar exemplar
-	 * <p style="color: #F90;">Support DBvolution at
-	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
 	 *
 	 * @return the instance of exemplar that is in the DBQueryRow instance
 	 */
@@ -91,13 +80,10 @@ public class DBQueryRow extends HashMap<Class<?>, DBRow> {
 	/**
 	 * Returns the all DBRow instances contained within this DBQueryRow.
 	 *
-	 * <p style="color: #F90;">Support DBvolution at
-	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
-	 *
 	 * @return all DBRow instances that are in this DBQueryRow instance
 	 */
 	public List<DBRow> getAll() {
-		final ArrayList<DBRow> arrayList = new ArrayList<DBRow>();
+		final ArrayList<DBRow> arrayList = new ArrayList<>();
 		arrayList.addAll(this.values());
 		return arrayList;
 	}
@@ -108,8 +94,8 @@ public class DBQueryRow extends HashMap<Class<?>, DBRow> {
 	 * @param ps ps
 	 * @param columns columns
 	 */
-	public void print(PrintStream ps, QueryableDatatype... columns) {
-		for (QueryableDatatype qdt : columns) {
+	public void print(PrintStream ps, QueryableDatatype<?>... columns) {
+		for (QueryableDatatype<?> qdt : columns) {
 			ps.print("" + qdt + " ");
 		}
 		ps.println();
@@ -121,17 +107,19 @@ public class DBQueryRow extends HashMap<Class<?>, DBRow> {
 	 * @param ps	ps
 	 */
 	public void print(PrintStream ps) {
-		for (DBRow row : values()) {
-			ps.print("" + row);
-		}
+		values().forEach(row -> ps.print("" + row));
 	}
 
-	void addExpressionColumnValue(Object key, QueryableDatatype expressionQDT) {
+	public void addExpressionColumnValue(Object key, QueryableDatatype<?> expressionQDT) {
 		expressionColumnValues.put(key, expressionQDT);
 	}
 
-	QueryableDatatype getExpressionColumnValue(Object key) {
+	public QueryableDatatype<?> getExpressionColumnValue(Object key) {
 		return expressionColumnValues.get(key);
+	}
+
+	public Map<Object, QueryableDatatype<?>> getExpressionColumns() {
+		return expressionColumnValues;
 	}
 
 	/**
@@ -148,9 +136,6 @@ public class DBQueryRow extends HashMap<Class<?>, DBRow> {
 	 * Please note this is a crude instrument for accessing the data in this
 	 * DBQueryRow. You should probably be using {@link DBQueryRow#get(nz.co.gregs.dbvolution.DBRow)
 	 * } and using the fields and methods of the individual DBRow classes.
-	 *
-	 * <p style="color: #F90;">Support DBvolution at
-	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
 	 *
 	 * @return a list of field names.
 	 */
@@ -178,9 +163,6 @@ public class DBQueryRow extends HashMap<Class<?>, DBRow> {
 	 * } and using the fields and methods of the individual DBRow classes.
 	 *
 	 * @param dateFormat format that date should be formatted to.
-	 * <p style="color: #F90;">Support DBvolution at
-	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
-	 *
 	 * @return a list of field names.
 	 *
 	 */
@@ -193,7 +175,7 @@ public class DBQueryRow extends HashMap<Class<?>, DBRow> {
 				returnList.addAll(actualRow.getFieldValues(dateFormat));
 			} else {
 				for (String returnList1 : tab.getFieldNames()) {
-					returnList.add("");
+					returnList.add(returnList1);
 				}
 			}
 		}
@@ -209,9 +191,6 @@ public class DBQueryRow extends HashMap<Class<?>, DBRow> {
 	 * and post-processing.
 	 *
 	 * @param separatorToUseBetweenValues	separatorToUseBetweenValues
-	 * <p style="color: #F90;">Support DBvolution at
-	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
-	 *
 	 * @return a list of all the fields in the DBQueryRow separated by the
 	 * supplied value
 	 */
@@ -234,9 +213,6 @@ public class DBQueryRow extends HashMap<Class<?>, DBRow> {
 	 * and post-processing.
 	 *
 	 * @param separatorToUseBetweenValues	separatorToUseBetweenValues
-	 * <p style="color: #F90;">Support DBvolution at
-	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
-	 *
 	 * @return a list of all the values in the DBQueryRow formatted for a TSV or
 	 * CSV file
 	 */
@@ -253,9 +229,6 @@ public class DBQueryRow extends HashMap<Class<?>, DBRow> {
 	 *
 	 * @param separatorToUseBetweenValues	separatorToUseBetweenValues
 	 * @param dateFormat format that dates should be formatted to.
-	 * <p style="color: #F90;">Support DBvolution at
-	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
-	 *
 	 * @return a list of all the values in the DBQueryRow formatted for a TSV or
 	 * CSV file
 	 */
@@ -277,9 +250,6 @@ public class DBQueryRow extends HashMap<Class<?>, DBRow> {
 	 * The line separator is not included in the results, to allow for portability
 	 * and post-processing.
 	 *
-	 * <p style="color: #F90;">Support DBvolution at
-	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
-	 *
 	 * @return a list of all the fields in the DBQueryRow formatted for a CSV file
 	 */
 	public String toCSVHeader() {
@@ -292,9 +262,6 @@ public class DBQueryRow extends HashMap<Class<?>, DBRow> {
 	 * <p>
 	 * The line separator is not included in the results, to allow for portability
 	 * and post-processing.
-	 *
-	 * <p style="color: #F90;">Support DBvolution at
-	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
 	 *
 	 * @return a list of all the values in the DBQueryRow formatted for a CSV file
 	 */
@@ -310,9 +277,6 @@ public class DBQueryRow extends HashMap<Class<?>, DBRow> {
 	 * and post-processing.
 	 *
 	 * @param dateFormat	dateFormat
-	 * <p style="color: #F90;">Support DBvolution at
-	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
-	 *
 	 * @return a list of all the values in the DBQueryRow formatted for a CSV file
 	 */
 	public String toCSVLine(SimpleDateFormat dateFormat) {
@@ -327,9 +291,6 @@ public class DBQueryRow extends HashMap<Class<?>, DBRow> {
 	 * The line separator is not included in the results, to allow for portability
 	 * and post-processing.
 	 *
-	 * <p style="color: #F90;">Support DBvolution at
-	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
-	 *
 	 * @return a list of all the fields in the DBQueryRow formatted for a TSV file
 	 */
 	public String toTabbedHeader() {
@@ -343,9 +304,6 @@ public class DBQueryRow extends HashMap<Class<?>, DBRow> {
 	 * The line separator is not included in the results, to allow for portability
 	 * and post-processing.
 	 *
-	 * <p style="color: #F90;">Support DBvolution at
-	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
-	 *
 	 * @return a list of all the values in the DBQueryRow formatted for a TSV file
 	 * @throws java.lang.IllegalAccessException java.lang.IllegalAccessException
 	 *
@@ -356,6 +314,40 @@ public class DBQueryRow extends HashMap<Class<?>, DBRow> {
 
 	@Override
 	public DBQueryRow clone() {
-		return (DBQueryRow) super.clone(); //To change body of generated methods, choose Tools | Templates.
+		return (DBQueryRow) super.clone();
+	}
+
+	@Override
+	public String toString() {
+		Encoder encoder = Builder
+            .forSeparator(", ")
+            .withKeyValueSeparator("=")
+            .withPrefix("{")
+            .withSuffix("}")
+            .useWhenEmpty("{}")
+            .encoder();
+
+		var entrySet = entrySet();
+		ArrayList<Entry<Class<? extends DBRow>, DBRow>> entryList = new ArrayList<>(entrySet);
+		entryList.sort((original, other) -> {
+			return original.getKey().getCanonicalName().compareTo(other.getKey().getCanonicalName());
+		});
+		for (Entry<Class<? extends DBRow>, DBRow> entry : entryList) {
+			encoder.add(entry.getKey().toString(),entry.getValue().toString());
+		}
+
+		var entrySet2 = expressionColumnValues.entrySet();
+		ArrayList<Entry<Object, QueryableDatatype<?>>> entryList2 = new ArrayList<>(entrySet2);
+		entryList2.sort((original, other) -> {
+			return original.getKey().toString().compareTo(other.getKey().toString());
+		});
+		for (Entry<Object, QueryableDatatype<?>> entry2 : entryList2) {
+			encoder.add(entry2.getKey().toString(),entry2.getValue().toString());
+		}
+
+
+
+		final String toString = encoder.toString();
+		return toString;
 	}
 }

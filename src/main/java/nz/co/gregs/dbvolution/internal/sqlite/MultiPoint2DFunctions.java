@@ -15,20 +15,14 @@
  */
 package nz.co.gregs.dbvolution.internal.sqlite;
 
-import com.vividsolutions.jts.geom.Geometry;
-import com.vividsolutions.jts.geom.LineString;
-import com.vividsolutions.jts.geom.MultiPoint;
-import com.vividsolutions.jts.geom.Point;
-import com.vividsolutions.jts.geom.Polygon;
-import com.vividsolutions.jts.io.WKTReader;
 import java.sql.Connection;
 import java.sql.SQLException;
+import com.vividsolutions.jts.geom.*;
+import com.vividsolutions.jts.io.ParseException;
+import com.vividsolutions.jts.io.WKTReader;
 import org.sqlite.Function;
 
 /**
- *
- * <p style="color: #F90;">Support DBvolution at
- * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
  *
  * @author gregory.graham
  */
@@ -37,71 +31,70 @@ public class MultiPoint2DFunctions {
 	/**
 	 *
 	 */
-	public static String CREATE_FROM_COORDS_FUNCTION = "DBV_CREATE_MPOINT2D_FROM_COORDS";
+	public final static String CREATE_FROM_COORDS_FUNCTION = "DBV_CREATE_MPOINT2D_FROM_COORDS";
 
 	/**
 	 *
 	 */
-	public static String EQUALS_FUNCTION = "DBV_MPOINT2D_EQUALS";
+	public final static String EQUALS_FUNCTION = "DBV_MPOINT2D_EQUALS";
 
 	/**
 	 *
 	 */
-	public static String GETMAXX_FUNCTION = "DBV_MPOINT2D_GETMAXX";
+	public final static String GETMAXX_FUNCTION = "DBV_MPOINT2D_GETMAXX";
 
 	/**
 	 *
 	 */
-	public static String GETMAXY_FUNCTION = "DBV_MPOINT2D_GETMAXY";
+	public final static String GETMAXY_FUNCTION = "DBV_MPOINT2D_GETMAXY";
 
 	/**
 	 *
 	 */
-	public static String GETMINX_FUNCTION = "DBV_MPOINT2D_GETMINX";
+	public final static String GETMINX_FUNCTION = "DBV_MPOINT2D_GETMINX";
 
 	/**
 	 *
 	 */
-	public static String GETMINY_FUNCTION = "DBV_MPOINT2D_GETMINY";
+	public final static String GETMINY_FUNCTION = "DBV_MPOINT2D_GETMINY";
 
 	/**
 	 *
 	 */
-	public static String GETDIMENSION_FUNCTION = "DBV_MPOINT2D_GETDIMENSION";
+	public final static String GETDIMENSION_FUNCTION = "DBV_MPOINT2D_GETDIMENSION";
 
 	/**
 	 *
 	 */
-	public static String GETBOUNDINGBOX_FUNCTION = "DBV_MPOINT2D_GETBOUNDINGBOX";
+	public final static String GETBOUNDINGBOX_FUNCTION = "DBV_MPOINT2D_GETBOUNDINGBOX";
 
 	/**
 	 *
 	 */
-	public static String GETNUMBEROFPOINTS_FUNCTION = "DBV_MPOINT2D_GETNUMBEROFPOINTS";
+	public final static String GETNUMBEROFPOINTS_FUNCTION = "DBV_MPOINT2D_GETNUMBEROFPOINTS";
 
 	/**
 	 *
 	 */
-	public static String GETPOINTATINDEX_FUNCTION = "DBV_MPOINT2D_GETPOINTATINDEX";
+	public final static String GETPOINTATINDEX_FUNCTION = "DBV_MPOINT2D_GETPOINTATINDEX";
 
 	/**
 	 *
 	 */
-	public static String ASTEXT_FUNCTION = "DBV_MPOINT2D_ASTEXT";
+	public final static String ASTEXT_FUNCTION = "DBV_MPOINT2D_ASTEXT";
 
 	/**
 	 *
 	 */
-	public static String ASLINE2D = "DBV_MPOINT2D_ASLINE2D";
-//	public static String ASPOLYGON2D = "DBV_MPOINT2D_ASPOLYGON2D";
+	public final static String ASLINE2D = "DBV_MPOINT2D_ASLINE2D";
 
 	private MultiPoint2DFunctions() {
 	}
 
 	/**
 	 *
-	 * @param connection
-	 * @throws SQLException
+	 * @param connection the connection that needs functions added
+	 * @throws SQLException database errors
 	 */
 	public static void addFunctions(Connection connection) throws SQLException {
 		Function.create(connection, CREATE_FROM_COORDS_FUNCTION, new CreateFromCoords());
@@ -128,16 +121,16 @@ public class MultiPoint2DFunctions {
 			if (numberOfArguments == 0) {
 				result();
 			} else {
-				String resultStr = "MULTIPOINT (";
+				StringBuilder resultStr = new StringBuilder("MULTIPOINT (");
 				String sep = "";
 				for (int i = 0; i < numberOfArguments; i += 2) {
 					Double x = value_double(i);
 					Double y = value_double(i + 1);
-					resultStr += sep + x + " " + y;
+					resultStr.append(sep).append(x).append(" ").append(y);
 					sep = ", ";
 				}
-				resultStr += ")";
-				result(resultStr);
+				resultStr.append(")");
+				result(resultStr.toString());
 			}
 		}
 	}
@@ -341,52 +334,19 @@ public class MultiPoint2DFunctions {
 
 		@Override
 		protected void xFunc() throws SQLException {
+			if(value_text(0)==null){
+				result();
+				return;
+			}
 			String multipoint = value_text(0);
 			String line = multipoint.replace("), (", ", ").replace("MULTIPOINT", "LINESTRING").replace("((", "(").replace("))", ")");
 			result(line);
 		}
 	}
 
-//	private static class AsPolygon2D extends PolygonFunction {
-//
-//		@Override
-//		protected void xFunc() throws SQLException {
-//			try {
-//				String mpointStr = value_text(0);
-//				if (mpointStr == null) {
-//					result();
-//				} else {
-//					MultiPoint mPoint = getMultiPoint(mpointStr);
-//					if (mPoint == null) {
-//						result();
-//					} else {
-//						Polygon poly = null;
-//						int numPoints = mPoint.getNumPoints();
-//						if (numPoints < 3) {
-//							result();
-//						} else {
-//							Coordinate[] coordinates = mPoint.getCoordinates();
-//							if (coordinates[0].equals2D(coordinates[coordinates.length - 1])) {
-//								poly = (Polygon) mPoint.convexHull();
-//							} else {
-//								List<Coordinate> asList = Arrays.asList(coordinates);
-//								asList.add(coordinates[0]);
-//								final GeometryFactory geometryFactory = new GeometryFactory();
-//								poly = geometryFactory.createPolygon(asList.toArray(coordinates));
-//							}
-//							result(poly.toText());
-//						}
-//					}
-//				}
-//			} catch (ParseException ex) {
-//				Logger.getLogger(MultiPoint2DFunctions.class.getName()).log(Level.SEVERE, null, ex);
-//			}
-//		}
-//	}
-
 	private static abstract class PolygonFunction extends Function {
 
-		Polygon getPolygon(String possiblePoly) throws com.vividsolutions.jts.io.ParseException {
+		Polygon getPolygon(String possiblePoly) throws ParseException {
 			WKTReader wktReader = new WKTReader();
 			Geometry firstGeom = wktReader.read(possiblePoly);
 			if (firstGeom instanceof Polygon) {
@@ -395,7 +355,7 @@ public class MultiPoint2DFunctions {
 			return null;
 		}
 
-		LineString getLineString(String possiblePoly) throws com.vividsolutions.jts.io.ParseException {
+		LineString getLineString(String possiblePoly) throws ParseException {
 			WKTReader wktReader = new WKTReader();
 			Geometry firstGeom = wktReader.read(possiblePoly);
 			if (firstGeom instanceof LineString) {
@@ -404,7 +364,7 @@ public class MultiPoint2DFunctions {
 			return null;
 		}
 
-		Point getPoint(String possiblePoly) throws com.vividsolutions.jts.io.ParseException {
+		Point getPoint(String possiblePoly) throws ParseException {
 			WKTReader wktReader = new WKTReader();
 			Geometry firstGeom = wktReader.read(possiblePoly);
 			if (firstGeom instanceof Point) {
@@ -413,7 +373,7 @@ public class MultiPoint2DFunctions {
 			return null;
 		}
 
-		MultiPoint getMultiPoint(String possiblePoly) throws com.vividsolutions.jts.io.ParseException {
+		MultiPoint getMultiPoint(String possiblePoly) throws ParseException {
 			WKTReader wktReader = new WKTReader();
 			Geometry firstGeom = wktReader.read(possiblePoly);
 			if (firstGeom instanceof MultiPoint) {

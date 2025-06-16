@@ -17,10 +17,16 @@ package nz.co.gregs.dbvolution.datatypes;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.Comparator;
 import java.util.HashSet;
 import java.util.Set;
-import nz.co.gregs.dbvolution.DBDatabase;
 import nz.co.gregs.dbvolution.DBRow;
+import nz.co.gregs.dbvolution.columns.ColumnProvider;
+import nz.co.gregs.dbvolution.columns.UntypedColumn;
+import nz.co.gregs.dbvolution.databases.definitions.DBDefinition;
+import nz.co.gregs.dbvolution.exceptions.IncorrectRowProviderInstanceSuppliedException;
+import nz.co.gregs.dbvolution.query.RowDefinition;
+import nz.co.gregs.dbvolution.utility.comparators.HashCodeComparator;
 
 /**
  *
@@ -32,7 +38,7 @@ import nz.co.gregs.dbvolution.DBRow;
  *
  * @author Gregory Graham
  */
-public class DBUnknownDatatype extends QueryableDatatype {
+public class DBUnknownDatatype extends QueryableDatatype<Object> {
 
 	private static final long serialVersionUID = 1L;
 
@@ -48,17 +54,17 @@ public class DBUnknownDatatype extends QueryableDatatype {
 
 	@Override
 	public String getSQLDatatype() {
-		throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+		throw new UnsupportedOperationException("DBUnknownDatatype does not support getSQLDatatype() yet."); //To change body of generated methods, choose Tools | Templates.
 	}
 
 	@Override
-	public String formatValueForSQLStatement(DBDatabase db) {
-		throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+	public String formatValueForSQLStatement(DBDefinition db) {
+		throw new UnsupportedOperationException("DBUnknownDatatype does not support formatValueForSQLStatement(DBDefinition) yet."); //To change body of generated methods, choose Tools | Templates.
 	}
 
 	@Override
-	void setValue(Object newLiteralValue) {
-		throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+	public void setValue(Object newLiteralValue) {
+		throw new UnsupportedOperationException("DBUnknownDatatype does not support setValue(Object) yet."); //To change body of generated methods, choose Tools | Templates.
 	}
 
 	@Override
@@ -73,37 +79,27 @@ public class DBUnknownDatatype extends QueryableDatatype {
 
 	@Override
 	public Set<DBRow> getTablesInvolved() {
-		return new HashSet<DBRow>();
+		return new HashSet<>();
 	}
 
-//	@Override
-//	public void setFromResultSet(DBDatabase database, ResultSet resultSet, String resultSetColumnName) throws SQLException {
-//		removeConstraints();
-//		if (resultSet == null || resultSetColumnName == null) {
-//			this.setToNull();
-//		} else {
-//			String dbValue;
-//			try {
-//				dbValue = resultSet.getString(resultSetColumnName);
-//				if (resultSet.wasNull()) {
-//					dbValue = null;
-//				}
-//			} catch (SQLException ex) {
-//				// Probably means the column wasn't selected.
-//				dbValue = null;
-//			}
-//			if (dbValue == null) {
-//				this.setToNull();
-//			} else {
-//				this.setLiteralValue(dbValue);
-//			}
-//		}
-//		setUnchanged();
-//		setDefined(true);
-//		propertyWrapper = null;
-//	}
 	@Override
-	protected Object getFromResultSet(DBDatabase database, ResultSet resultSet, String fullColumnName) throws SQLException {
+	protected Object getFromResultSet(DBDefinition defn, ResultSet resultSet, String fullColumnName) throws SQLException {
 		return resultSet.getString(fullColumnName);
 	}
+
+	@Override
+	protected void setValueFromStandardStringEncoding(String encodedValue) {
+		throw new UnsupportedOperationException("DBUnknownDatatype does not support setValueFromStandardStringEncoding(String) yet."); //To change body of generated methods, choose Tools | Templates.
+	}
+
+	@Override
+	public ColumnProvider getColumn(RowDefinition row) throws IncorrectRowProviderInstanceSuppliedException {
+		return new UntypedColumn(row, this);
+	}
+
+	@Override
+	public Comparator<Object> getComparator() {
+		return unknownDatatypeComparator;
+	}
+	private static final HashCodeComparator<Object> unknownDatatypeComparator = new HashCodeComparator<Object>();
 }

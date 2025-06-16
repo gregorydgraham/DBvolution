@@ -15,7 +15,7 @@
  */
 package nz.co.gregs.dbvolution.databases.definitions;
 
-import nz.co.gregs.dbvolution.query.QueryOptions;
+import nz.co.gregs.dbvolution.internal.query.QueryOptions;
 
 /**
  *
@@ -24,12 +24,13 @@ import nz.co.gregs.dbvolution.query.QueryOptions;
  *
  * @author gregory.graham
  */
-public class Informix11DBDefinition extends InformixDBDefinition{
-	
+public class Informix11DBDefinition extends InformixDBDefinition {
 
+	public static final long serialVersionUID = 1L;
+	
 	@Override
 	public boolean supportsPagingNatively(QueryOptions options) {
 		return true;
 	}
-	
+
 }

@@ -17,52 +17,52 @@ package nz.co.gregs.dbvolution.internal.h2;
 
 import java.sql.SQLException;
 import java.sql.Statement;
+import nz.co.gregs.dbvolution.exceptions.ExceptionDuringDatabaseFeatureSetup;
 
 /**
  *
- * <p style="color: #F90;">Support DBvolution at
- * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
  *
  * @author gregorygraham
  */
-public enum DataTypes implements DBVFeature{
+public enum DataTypes implements DBVFeature {
 
 	/**
 	 *
 	 */
-	DATEREPEAT("DBV_DATEREPEAT", "VARCHAR(100)", DateRepeatFunctions.values()),	
-
+//	INTEGER("BIGINT", "INT8", new DBVFeature[]{}),
 	/**
 	 *
 	 */
-	POINT2D("DBV_POINT2D", "VARCHAR(2000)", Point2DFunctions.values()),
-
+	DATEREPEAT("DBV_DATEREPEAT", "VARCHAR(100)", "DATEREPEAT", DateRepeatFunctions.values()),
 	/**
 	 *
 	 */
-	LINE2D("DBV_LINE2D", "VARCHAR(2001)", Line2DFunctions.values()),
-
+	POINT2D("DBV_POINT2D", "VARCHAR(2000)", "POINT", Point2DFunctions.values()),
 	/**
 	 *
 	 */
-	LINESEGMENT2D("DBV_LINESEGMENT2D", "VARCHAR(2001)", LineSegment2DFunctions.values()),
-
+	LINE2D("DBV_LINE2D", "VARCHAR(2001)", "LINESTRING", Line2DFunctions.values()),
 	/**
 	 *
 	 */
-	POLYGON2D("DBV_POLYGON2D", "VARCHAR(2002)", Polygon2DFunctions.values()), 
-
+	LINESEGMENT2D("DBV_LINESEGMENT2D", "VARCHAR(2001)", "LINESTRING", LineSegment2DFunctions.values()),
 	/**
 	 *
 	 */
-	MULTIPOINT2D("DBV_MULTIPOINT2D", "VARCHAR(2003)", MultiPoint2DFunctions.values());
+	POLYGON2D("DBV_POLYGON2D", "VARCHAR(2002)", "POLYGON", Polygon2DFunctions.values()),
+	/**
+	 *
+	 */
+	MULTIPOINT2D("DBV_MULTIPOINT2D", "VARCHAR(2003)", "MULTIPOINT", MultiPoint2DFunctions.values());
 	private final String datatype;
 	private final String actualType;
+	private final String conceptualType;
 //	private final DBVFeature[] functions;
 
-	DataTypes(String datatype, String actualType, DBVFeature[] functions) {
+	DataTypes(String datatype, String actualType, String conceptualType, DBVFeature[] functions) {
 		this.datatype = datatype;
 		this.actualType = actualType;
+		this.conceptualType = conceptualType;
 //		this.functions = functions;
 	}
 
@@ -73,35 +73,24 @@ public enum DataTypes implements DBVFeature{
 
 	/**
 	 *
-	 * @param stmt
-	 * @throws SQLException
+	 * @param stmt the database statement to add the datatype to.
+	 * @throws SQLException database errors
 	 */
 	@Override
 	public void add(Statement stmt) throws SQLException {
-//		try {
-//			stmt.execute("DROP DOMAIN " + datatype + "; ");
-//		} catch (SQLException sqlex) {
-//			; // I don't care.
-//		}
 		stmt.execute("CREATE DOMAIN IF NOT EXISTS " + datatype + " AS " + actualType + "; ");
-
-//		for (DBVFeature function : functions) {
-//			function.add(stmt);
-//		}
 	}
-	
+
 	/**
 	 *
-	 * @param stmt
-	 * @throws SQLException
+	 * @param stmt the database statement to add the datatype to.
+	 * @throws ExceptionDuringDatabaseFeatureSetup database errors
 	 */
-	public static void addAll(Statement stmt) throws SQLException{
+	public static void addAll(Statement stmt) throws ExceptionDuringDatabaseFeatureSetup {
 	}
 
 	/**
 	 *
-	 * <p style="color: #F90;">Support DBvolution at
-	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
 	 *
 	 * @return the DBvolution data type of this abstracted datatype
 	 */
@@ -111,14 +100,26 @@ public enum DataTypes implements DBVFeature{
 
 	/**
 	 *
-	 * <p style="color: #F90;">Support DBvolution at
-	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
 	 *
 	 * @return the DBvolution data type as a String
 	 */
 	@Override
 	public String alias() {
 		return toString();
+	}
+
+	/**
+	 * @return the actualType
+	 */
+	public String getActualType() {
+		return actualType;
+	}
+
+	/**
+	 * @return the conceptualType
+	 */
+	public String getConceptualType() {
+		return conceptualType;
 	}
 
 }

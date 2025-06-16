@@ -19,16 +19,13 @@ import com.vividsolutions.jts.geom.Coordinate;
 import com.vividsolutions.jts.geom.GeometryFactory;
 import com.vividsolutions.jts.geom.Point;
 import nz.co.gregs.dbvolution.generic.AbstractTest;
+import static org.hamcrest.MatcherAssert.assertThat;
 import org.hamcrest.Matchers;
-import org.junit.Assert;
+import static org.junit.Assert.assertEquals;
+
 import org.junit.Test;
-import static org.junit.Assert.*;
 
 /**
- *
- * <p style="color: #F90;">Support DBvolution at
- * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
- *
  * @author gregorygraham
  */
 public class DBPoint2DTest extends AbstractTest {
@@ -39,20 +36,18 @@ public class DBPoint2DTest extends AbstractTest {
 
 	@Test
 	public void testSetValue() {
-		System.out.println("setValue");
 		Coordinate coordinate = new Coordinate(2, 3);
 		GeometryFactory geomFactory = new GeometryFactory();
 		Point point = geomFactory.createPoint(coordinate);
 		DBPoint2D instance = new DBPoint2D();
 		instance.setValue(point);
 		Point value = instance.getValue();
-		Assert.assertThat(value.getCoordinates()[0].x, Matchers.is(2.0));
-		Assert.assertThat(value.getCoordinates()[0].y, Matchers.is(3.0));
+		assertThat(value.getCoordinates()[0].x, Matchers.is(2.0));
+		assertThat(value.getCoordinates()[0].y, Matchers.is(3.0));
 	}
 
 	@Test
 	public void testGetSQLDatatype() {
-		System.out.println("getSQLDatatype");
 		DBPoint2D instance = new DBPoint2D();
 		String expResult = " POINT ";
 		String result = instance.getSQLDatatype();
@@ -61,7 +56,6 @@ public class DBPoint2DTest extends AbstractTest {
 
 	@Test
 	public void testIsAggregator() {
-		System.out.println("isAggregator");
 		DBPoint2D instance = new DBPoint2D();
 		boolean expResult = false;
 		boolean result = instance.isAggregator();
@@ -70,7 +64,6 @@ public class DBPoint2DTest extends AbstractTest {
 
 	@Test
 	public void testGetIncludesNull() {
-		System.out.println("getIncludesNull");
 		DBPoint2D instance = new DBPoint2D();
 		boolean expResult = false;
 		boolean result = instance.getIncludesNull();

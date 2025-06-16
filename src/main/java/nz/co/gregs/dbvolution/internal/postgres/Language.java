@@ -28,12 +28,10 @@ public enum Language {
 	 *
 	 */
 	sql,
-
 	/**
 	 *
 	 */
 	plpgsql,
-
 	/**
 	 *
 	 */

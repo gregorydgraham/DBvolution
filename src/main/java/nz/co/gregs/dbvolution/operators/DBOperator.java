@@ -16,7 +16,7 @@
 package nz.co.gregs.dbvolution.operators;
 
 import java.io.Serializable;
-import nz.co.gregs.dbvolution.DBDatabase;
+import nz.co.gregs.dbvolution.databases.definitions.DBDefinition;
 import nz.co.gregs.dbvolution.expressions.DBExpression;
 import nz.co.gregs.dbvolution.datatypes.QueryableDatatypeSyncer.DBSafeInternalQDTAdaptor;
 import nz.co.gregs.dbvolution.expressions.BooleanExpression;
@@ -37,7 +37,6 @@ abstract public class DBOperator implements Serializable {
 	private DBExpression firstValue;
 	private DBExpression secondValue;
 	private DBExpression thirdValue;
-	private BooleanExpression expression;
 
 	/**
 	 * Create a DBOperator with all NULL values.
@@ -91,7 +90,7 @@ abstract public class DBOperator implements Serializable {
 	 * <p>
 	 * Basically switches the operator from, for instance, "==" to "!=".
 	 *
-	 * @param invertOperator
+	 * @param invertOperator set this to true to not the operator
 	 */
 	public void invertOperator(Boolean invertOperator) {
 		this.invertOperator = invertOperator;
@@ -110,15 +109,16 @@ abstract public class DBOperator implements Serializable {
 
 	/**
 	 * Makes this operator treat NULL values as if they match the operator.
-	 * 
+	 *
 	 * <p>
-	 * Basically this means an equals operation becomes an (equals or null) operation.
+	 * Basically this means an equals operation becomes an (equals or null)
+	 * operation.
 	 *
 	 */
 	public void includeNulls() {
 		includeNulls = true;
 	}
-	
+
 	@Override
 	public int hashCode() {
 		return super.hashCode();
@@ -145,7 +145,6 @@ abstract public class DBOperator implements Serializable {
 	 * @param typeAdaptor
 	 * <p style="color: #F90;">Support DBvolution at
 	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
-	 *
 	 * @return the type adapted operator
 	 */
 	abstract public DBOperator copyAndAdapt(DBSafeInternalQDTAdaptor typeAdaptor);
@@ -153,14 +152,13 @@ abstract public class DBOperator implements Serializable {
 	/**
 	 * Create the expression to be used in the query generation.
 	 *
-	 * @param db
-	 * @param column
+	 * @param db the database definition
+	 * @param column the expression to be turn into an SQL WHERE expression
 	 * <p style="color: #F90;">Support DBvolution at
 	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
-	 *
 	 * @return a boolean expression
 	 */
-	abstract public BooleanExpression generateWhereExpression(DBDatabase db, DBExpression column);
+	abstract public BooleanExpression generateWhereExpression(DBDefinition db, DBExpression column);
 
 	/**
 	 * <p style="color: #F90;">Support DBvolution at

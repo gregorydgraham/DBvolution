@@ -16,7 +16,8 @@
 package nz.co.gregs.dbvolution.databases.definitions;
 
 import nz.co.gregs.dbvolution.databases.Oracle12DB;
-import nz.co.gregs.dbvolution.query.QueryOptions;
+import nz.co.gregs.dbvolution.internal.query.QueryOptions;
+import nz.co.gregs.dbvolution.internal.query.QueryState;
 
 /**
  * Defines the features of the Oracle 12 database that differ from the standard
@@ -33,8 +34,10 @@ import nz.co.gregs.dbvolution.query.QueryOptions;
  */
 public class Oracle12DBDefinition extends OracleSpatialDBDefinition {
 
+	public static final long serialVersionUID = 1L;
+	
 	@Override
-	public Object getLimitRowsSubClauseAfterWhereClause(QueryOptions options) {
+	public String getLimitRowsSubClauseAfterWhereClause(QueryState state, QueryOptions options) {
 		int rowLimit = options.getRowLimit();
 		Integer pageNumber = options.getPageIndex();
 		if (rowLimit < 1) {

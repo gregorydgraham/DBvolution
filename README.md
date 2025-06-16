@@ -1,5 +1,5 @@
-# DBvolution
-DBvolution is a java library that reduces SQL access to simple java calls.
+# DBvolution10
+DBvolution10 is a java library that reduces SQL access to simple java calls optimized for Java10.
 
 Advanced Library to Remove Object Relational Impedance. 
 

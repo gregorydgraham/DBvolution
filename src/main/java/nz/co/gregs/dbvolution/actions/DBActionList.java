@@ -19,7 +19,7 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import nz.co.gregs.dbvolution.DBDatabase;
+import nz.co.gregs.dbvolution.databases.DBDatabase;
 import nz.co.gregs.dbvolution.DBScript;
 import nz.co.gregs.dbvolution.transactions.DBTransaction;
 
@@ -41,7 +41,7 @@ import nz.co.gregs.dbvolution.transactions.DBTransaction;
  *
  * <p>
  * DBActionList are designed to provide a revert script for actions performed or
- * to accumulate actions that are executed as a batch with {@link DBActionList#execute(nz.co.gregs.dbvolution.DBDatabase)
+ * to accumulate actions that are executed as a batch with {@link DBActionList#execute(nz.co.gregs.dbvolution.databases.DBDatabase)
  * }.
  *
  * <p style="color: #F90;">Support DBvolution at
@@ -60,7 +60,7 @@ public class DBActionList extends ArrayList<DBAction> {
 	 * @param actions the list of actions to include in this DBActionList
 	 */
 	public DBActionList(DBAction... actions) {
-		super();
+		super(0);
 		this.addAll(Arrays.asList(actions));
 	}
 
@@ -70,7 +70,6 @@ public class DBActionList extends ArrayList<DBAction> {
 	 * @param db the target database.
 	 * <p style="color: #F90;">Support DBvolution at
 	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
-	 *
 	 * @return a List of SQL statements appropriate to the actions of this
 	 * DBActionList and the database.
 	 */
@@ -88,14 +87,13 @@ public class DBActionList extends ArrayList<DBAction> {
 	 * @param database the target database.
 	 * <p style="color: #F90;">Support DBvolution at
 	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
-	 *
 	 * @return a new DBActionList containing the DBActions after execution.
 	 * @throws SQLException Database actions may throw SQLException
 	 */
 	public synchronized DBActionList execute(DBDatabase database) throws SQLException {
 		DBActionList executed = new DBActionList();
 		for (DBAction action : this) {
-			executed.addAll(action.execute(database));
+			executed.addAll(database.executeDBAction(action));
 		}
 		return executed;
 	}

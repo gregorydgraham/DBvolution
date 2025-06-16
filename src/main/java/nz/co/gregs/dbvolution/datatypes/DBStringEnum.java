@@ -17,16 +17,15 @@ package nz.co.gregs.dbvolution.datatypes;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
-import nz.co.gregs.dbvolution.DBDatabase;
+import java.util.*;
 import nz.co.gregs.dbvolution.DBRow;
+import nz.co.gregs.dbvolution.columns.StringColumn;
+import nz.co.gregs.dbvolution.databases.definitions.DBDefinition;
+import nz.co.gregs.dbvolution.exceptions.IncorrectRowProviderInstanceSuppliedException;
 import nz.co.gregs.dbvolution.expressions.StringExpression;
-import nz.co.gregs.dbvolution.results.StringResult;
 import nz.co.gregs.dbvolution.operators.*;
+import nz.co.gregs.dbvolution.query.RowDefinition;
+import nz.co.gregs.dbvolution.utility.comparators.ComparableComparator;
 
 /**
  * Like {@link DBString} except that the database value can be easily
@@ -40,11 +39,43 @@ import nz.co.gregs.dbvolution.operators.*;
  * Conversion to the enumeration type is done lazily so that it's possible to
  * handle the case where a database has an invalid value or a new value that
  * isn't in the enumeration.
+ * 
+ * <p>
+ * Normally declared as something like:</p>
+ * <pre>
+ * {@literal @}DBColumn
+ * DBStringEnum state = new DBStringEnum&lt;MyEnumValue&gt;();
+ *
+ *
+ * public static enum MyEnumValue implements DBEnumValue&lt;String&gt; {
+ *
+ * STATE_ONE(1, "One"),
+ * STATE_TWO(2, "Two"),
+ * STATE_THREE(3, "Three");
+ * private final String literalValue;
+ * private final String displayName;
+ *
+ * private GenericEnumType(String code, String displayName) {
+ * this.literalValue = code;
+ * this.displayName = displayName;
+ * }
+ *
+ * public String getCode() {
+ * return literalValue;
+ * }
+ *
+ * public String getDisplayName() {
+ * return displayName;
+ * }
+ * }
+ * </pre>
+ *
+ *
  *
  * @param <E> an enumeration class that implements the {@link DBEnumValue}
  * interface for String values.
  */
-public class DBStringEnum<E extends Enum<E> & DBEnumValue<String>> extends DBEnum<E> {
+public class DBStringEnum<E extends Enum<E> & DBEnumValue<String>> extends DBEnum<E, String> {
 
 	private static final long serialVersionUID = 1L;
 
@@ -130,7 +161,7 @@ public class DBStringEnum<E extends Enum<E> & DBEnumValue<String>> extends DBEnu
 
 	@Override
 	public Set<DBRow> getTablesInvolved() {
-		return new HashSet<DBRow>();
+		return new HashSet<>();
 	}
 
 	/**
@@ -146,7 +177,8 @@ public class DBStringEnum<E extends Enum<E> & DBEnumValue<String>> extends DBEnu
 	 *
 	 * @return a String[] of the enums values.
 	 */
-	private String[] convertToLiteralString(E... enumValues) {
+	@SafeVarargs
+	private final String[] convertToLiteralString(E... enumValues) {
 		String[] result = new String[enumValues.length];
 		for (int i = 0; i < enumValues.length; i++) {
 			E enumValue = enumValues[i];
@@ -160,7 +192,7 @@ public class DBStringEnum<E extends Enum<E> & DBEnumValue<String>> extends DBEnu
 	 *
 	 */
 	private String[] convertToLiteralString(Collection<E> enumValues) {
-		ArrayList<String> result = new ArrayList<String>();
+		ArrayList<String> result = new ArrayList<>();
 		for (E e : enumValues) {
 			result.add(convertToLiteralString(e));
 		}
@@ -186,15 +218,15 @@ public class DBStringEnum<E extends Enum<E> & DBEnumValue<String>> extends DBEnu
 		}
 	}
 
-	/**
-	 * Reduces the rows returned from a query to only those matching the provided
-	 * objects.
-	 *
-	 * @param permitted	permitted
-	 */
-	public void permittedValues(String... permitted) {
-		this.setOperator(new DBPermittedValuesOperator((Object[]) permitted));
-	}
+//	/**
+//	 * Reduces the rows returned from a query to only those matching the provided
+//	 * objects.
+//	 *
+//	 * @param permitted	permitted
+//	 */
+//	public void permittedValues(String... permitted) {
+//		this.setOperator(new DBPermittedValuesOperator<String>(permitted));
+//	}
 
 	/**
 	 * Reduces the rows returned from a query to only those matching the provided
@@ -319,23 +351,23 @@ public class DBStringEnum<E extends Enum<E> & DBEnumValue<String>> extends DBEnu
 		negateOperator();
 	}
 
-	/**
-	 * Reduces the rows returned from a query by excluding those matching the
-	 * provided objects.
-	 *
-	 * <p>
-	 * The case, upper or lower, will be ignored.
-	 *
-	 * <p>
-	 * Defining case for Unicode characters is complicated and may not work as
-	 * expected.
-	 *
-	 * @param excluded	excluded
-	 */
-	public void excludedValues(String... excluded) {
-		this.setOperator(new DBPermittedValuesOperator((Object[]) excluded));
-		negateOperator();
-	}
+//	/**
+//	 * Reduces the rows returned from a query by excluding those matching the
+//	 * provided objects.
+//	 *
+//	 * <p>
+//	 * The case, upper or lower, will be ignored.
+//	 *
+//	 * <p>
+//	 * Defining case for Unicode characters is complicated and may not work as
+//	 * expected.
+//	 *
+//	 * @param excluded	excluded
+//	 */
+//	public void excludedValues(String... excluded) {
+//		this.setOperator(new DBPermittedValuesOperator<String>(excluded));
+//		negateOperator();
+//	}
 
 	/**
 	 * Performs searches based on a range.
@@ -358,7 +390,7 @@ public class DBStringEnum<E extends Enum<E> & DBEnumValue<String>> extends DBEnu
 	 * @param upperBound upperBound
 	 */
 	public void permittedRange(String lowerBound, String upperBound) {
-		setOperator(new DBPermittedRangeOperator(lowerBound, upperBound));
+		setOperator(new DBPermittedRangeOperator<String>(lowerBound, upperBound));
 	}
 
 	/**
@@ -432,7 +464,7 @@ public class DBStringEnum<E extends Enum<E> & DBEnumValue<String>> extends DBEnu
 	 * @param upperBound upperBound
 	 */
 	public void excludedRange(String lowerBound, String upperBound) {
-		setOperator(new DBPermittedRangeOperator(lowerBound, upperBound));
+		setOperator(new DBPermittedRangeOperator<String>(lowerBound, upperBound));
 		negateOperator();
 	}
 
@@ -562,14 +594,21 @@ public class DBStringEnum<E extends Enum<E> & DBEnumValue<String>> extends DBEnu
 		this.negateOperator();
 	}
 
-	/**
-	 *
-	 * reduces the rows to only the object, Set, List, Array, or vararg of objects
-	 *
-	 * @param permitted	permitted
-	 */
-	public void permittedValues(E... permitted) {
-		this.setOperator(new DBPermittedValuesOperator(convertToLiteral(permitted)));
+//	/**
+//	 *
+//	 * reduces the rows to only the object, Set, List, Array, or vararg of objects
+//	 *
+//	 * @param permitted	permitted
+//	 */
+//	@SafeVarargs
+//	public final void permittedValues(E... permitted) {
+//		this.setOperator(new DBPermittedValuesOperator<String>(convertToLiteral(permitted)));
+//	}
+
+	@Override
+	@SafeVarargs
+	protected final String[] convertToLiteral(E... enumValues) {
+		return convertToLiteralString(enumValues);
 	}
 
 	/**
@@ -579,8 +618,9 @@ public class DBStringEnum<E extends Enum<E> & DBEnumValue<String>> extends DBEnu
 	 *
 	 * @param permitted	permitted
 	 */
-	public void permittedValuesIgnoreCase(E... permitted) {
-		this.setOperator(new DBPermittedValuesIgnoreCaseOperator((String[]) convertToLiteral(permitted)));
+	@SafeVarargs
+	public final void permittedValuesIgnoreCase(E... permitted) {
+		this.setOperator(new DBPermittedValuesIgnoreCaseOperator(convertToLiteral(permitted)));
 	}
 
 	/**
@@ -589,7 +629,8 @@ public class DBStringEnum<E extends Enum<E> & DBEnumValue<String>> extends DBEnu
 	 *
 	 * @param excluded	excluded
 	 */
-	public void excludedValuesIgnoreCase(E... excluded) {
+	@SafeVarargs
+	public final void excludedValuesIgnoreCase(E... excluded) {
 		setOperator(new DBPermittedValuesIgnoreCaseOperator(convertToLiteralString(excluded)));
 		negateOperator();
 	}
@@ -605,17 +646,18 @@ public class DBStringEnum<E extends Enum<E> & DBEnumValue<String>> extends DBEnu
 		negateOperator();
 	}
 
-	/**
-	 *
-	 * excludes the object, Set, List, Array, or vararg of objects
-	 *
-	 *
-	 * @param excluded	excluded
-	 */
-	public void excludedValues(E... excluded) {
-		this.setOperator(new DBPermittedValuesOperator((Object[]) convertToLiteralString(excluded)));
-		negateOperator();
-	}
+//	/**
+//	 *
+//	 * excludes the object, Set, List, Array, or vararg of objects
+//	 *
+//	 *
+//	 * @param excluded	excluded
+//	 */
+//	@SafeVarargs
+//	public final void excludedValues(E... excluded) {
+//		this.setOperator(new DBPermittedValuesOperator<String>(convertToLiteralString(excluded)));
+//		negateOperator();
+//	}
 
 	/**
 	 * Performs searches based on a range.
@@ -638,7 +680,7 @@ public class DBStringEnum<E extends Enum<E> & DBEnumValue<String>> extends DBEnu
 	 * @param upperBound upperBound
 	 */
 	public void permittedRange(E lowerBound, E upperBound) {
-		setOperator(new DBPermittedRangeOperator(convertToLiteralString(lowerBound), convertToLiteralString(upperBound)));
+		setOperator(new DBPermittedRangeOperator<String>(convertToLiteralString(lowerBound), convertToLiteralString(upperBound)));
 	}
 
 	/**
@@ -711,7 +753,7 @@ public class DBStringEnum<E extends Enum<E> & DBEnumValue<String>> extends DBEnu
 	 * @param upperBound upperBound
 	 */
 	public void excludedRange(E lowerBound, E upperBound) {
-		setOperator(new DBPermittedRangeOperator(convertToLiteralString(lowerBound), convertToLiteralString(upperBound)));
+		setOperator(new DBPermittedRangeOperator<String>(convertToLiteralString(lowerBound), convertToLiteralString(upperBound)));
 		negateOperator();
 	}
 
@@ -779,34 +821,23 @@ public class DBStringEnum<E extends Enum<E> & DBEnumValue<String>> extends DBEnu
 		}
 	}
 
-//	@Override
-//	public void setFromResultSet(DBDatabase database, ResultSet resultSet, String resultSetColumnName) throws SQLException {
-//		removeConstraints();
-//		if (resultSet == null || resultSetColumnName == null) {
-//			this.setToNull();
-//		} else {
-//			String dbValue;
-//			try {
-//				dbValue = resultSet.getString(resultSetColumnName);
-//				if (resultSet.wasNull()) {
-//					dbValue = null;
-//				}
-//			} catch (SQLException ex) {
-//				// Probably means the column wasn't selected.
-//				dbValue = null;
-//			}
-//			if (dbValue == null) {
-//				this.setToNull();
-//			} else {
-//				this.setLiteralValue(dbValue);
-//			}
-//		}
-//		setUnchanged();
-//		setDefined(true);
-//		propertyWrapper = null;
-//	}
 	@Override
-	protected Object getFromResultSet(DBDatabase database, ResultSet resultSet, String fullColumnName) throws SQLException {
+	protected String getFromResultSet(DBDefinition database, ResultSet resultSet, String fullColumnName) throws SQLException {
 		return resultSet.getString(fullColumnName);
+	}
+
+	@Override
+	protected void setValueFromStandardStringEncoding(String encodedValue) {
+		setValue(encodedValue);
+	}
+
+	@Override
+	public StringColumn getColumn(RowDefinition row) throws IncorrectRowProviderInstanceSuppliedException {
+		return new StringColumn(row, this);
+	}
+
+	@Override
+	public Comparator<String> getComparator() {
+		return ComparableComparator.forClass(String.class);
 	}
 }

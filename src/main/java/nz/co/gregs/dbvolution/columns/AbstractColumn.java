@@ -15,16 +15,16 @@
  */
 package nz.co.gregs.dbvolution.columns;
 
-import java.lang.reflect.Constructor;
-import java.lang.reflect.InvocationTargetException;
+import java.io.Serializable;
 import java.util.HashSet;
 import java.util.Set;
-import nz.co.gregs.dbvolution.DBDatabase;
+import nz.co.gregs.dbvolution.databases.DBDatabase;
 import nz.co.gregs.dbvolution.DBRow;
+import nz.co.gregs.dbvolution.databases.definitions.DBDefinition;
 import nz.co.gregs.dbvolution.datatypes.QueryableDatatype;
-import nz.co.gregs.dbvolution.exceptions.DBRuntimeException;
 import nz.co.gregs.dbvolution.exceptions.IncorrectRowProviderInstanceSuppliedException;
 import nz.co.gregs.dbvolution.expressions.DBExpression;
+import nz.co.gregs.dbvolution.expressions.SortProvider;
 import nz.co.gregs.dbvolution.internal.properties.PropertyWrapper;
 import nz.co.gregs.dbvolution.query.RowDefinition;
 
@@ -40,14 +40,13 @@ import nz.co.gregs.dbvolution.query.RowDefinition;
  * Also allows PropertyWrapper to be passed around without confusing the public
  * interface.
  *
- * <p style="color: #F90;">Support DBvolution at
- * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
- *
  * @author greg
  */
-public class AbstractColumn implements DBExpression {
+public class AbstractColumn implements DBExpression, Serializable {
 
-	private final PropertyWrapper propertyWrapper;
+	private static final long serialVersionUID = 1l;
+
+	private final transient PropertyWrapper<?, ?, ?> propertyWrapper;
 	private final RowDefinition dbrow;
 	private final Object field;
 	private boolean useTableAlias = true;
@@ -68,55 +67,66 @@ public class AbstractColumn implements DBExpression {
 	public AbstractColumn(RowDefinition row, Object field) throws IncorrectRowProviderInstanceSuppliedException {
 		this.dbrow = row;
 		this.field = field;
-		this.propertyWrapper = row.getPropertyWrapperOf(field);
-		if (propertyWrapper == null) {
-			throw IncorrectRowProviderInstanceSuppliedException.newMultiRowInstance(field);
+		if (row != null) {
+			this.propertyWrapper = row.getPropertyWrapperOf(field);
+			if (propertyWrapper == null) {
+				throw IncorrectRowProviderInstanceSuppliedException.newMultiRowInstance(field);
+			}
+		} else {
+			propertyWrapper = null;
 		}
 	}
 
 	@Override
-	public String toSQLString(DBDatabase db) {
+	public String toSQLString(DBDefinition db) {
+		String result = "";
 		RowDefinition rowDefn = this.getRowDefinition();
 		if ((field instanceof QueryableDatatype) && ((QueryableDatatype) field).hasColumnExpression()) {
-			final QueryableDatatype qdtField = (QueryableDatatype) field;
+			final QueryableDatatype<?> qdtField = (QueryableDatatype) field;
 			DBExpression[] columnExpressions = qdtField.getColumnExpression();
-			String toSQLString="";
+			StringBuilder toSQLString = new StringBuilder();
 			for (DBExpression columnExpression : columnExpressions) {
-				toSQLString += columnExpression.toSQLString(db);
+				toSQLString.append(columnExpression.toSQLString(db));
 			}
-			return toSQLString;
+			result = toSQLString.toString();
 		} else {
-			String formattedName = "";
+			String formattedColumnName = "";
 			if (useTableAlias) {
-				formattedName = db.getDefinition().formatTableAliasAndColumnName(rowDefn, propertyWrapper.columnName());
+				formattedColumnName = db.formatTableAliasAndColumnName(rowDefn, propertyWrapper.columnName());
 			} else if (rowDefn instanceof DBRow) {
 				DBRow dbRow = (DBRow) rowDefn;
-				formattedName = db.getDefinition().formatTableAndColumnName(dbRow, propertyWrapper.columnName());
+				formattedColumnName = db.formatTableAndColumnName(dbRow, propertyWrapper.columnName());
 			}
-			return propertyWrapper.getDefinition().getQueryableDatatype(dbrow).formatColumnForSQLStatementQuery(db, formattedName);
-//        return "";
+			result = propertyWrapper.getPropertyWrapperDefinition().getQueryableDatatype(this.dbrow).formatColumnForSQLStatement(db, formattedColumnName);
 		}
+		if (needsToConvertNullToEmptyString(db)) {
+			result = db.convertNullToEmptyString(result);
+		}
+		return result;
+	}
+
+	public boolean hasExpression() {
+		if (field instanceof QueryableDatatype) {
+			return ((QueryableDatatype) field).hasColumnExpression();
+		}
+		return false;
+	}
+
+	public DBExpression getExpression() {
+		if (field instanceof QueryableDatatype) {
+			final QueryableDatatype<?> qdt = (QueryableDatatype) field;
+			if (qdt.hasColumnExpression()) {
+				return qdt.getColumnExpression()[0];
+			}
+		}
+		return null;
 	}
 
 	@Override
 	public AbstractColumn copy() {
-		try {
-			Constructor<? extends AbstractColumn> constructor = this.getClass().getConstructor(RowDefinition.class, Object.class);
-			AbstractColumn newInstance = constructor.newInstance(getRowDefinition(), getField());
-			return newInstance;
-		} catch (NoSuchMethodException ex) {
-			throw new DBRuntimeException("Unable To Copy " + this.getClass().getSimpleName() + ": please ensure it has a public " + this.getClass().getSimpleName() + "(DBRow, Object) constructor.", ex);
-		} catch (SecurityException ex) {
-			throw new DBRuntimeException("Unable To Copy " + this.getClass().getSimpleName() + ": please ensure it has a public " + this.getClass().getSimpleName() + "(DBRow, Object) constructor.", ex);
-		} catch (InstantiationException ex) {
-			throw new DBRuntimeException("Unable To Copy " + this.getClass().getSimpleName() + ": please ensure it has a public " + this.getClass().getSimpleName() + "(DBRow, Object) constructor.", ex);
-		} catch (IllegalAccessException ex) {
-			throw new DBRuntimeException("Unable To Copy " + this.getClass().getSimpleName() + ": please ensure it has a public " + this.getClass().getSimpleName() + "(DBRow, Object) constructor.", ex);
-		} catch (IllegalArgumentException ex) {
-			throw new DBRuntimeException("Unable To Copy " + this.getClass().getSimpleName() + ": please ensure it has a public " + this.getClass().getSimpleName() + "(DBRow, Object) constructor.", ex);
-		} catch (InvocationTargetException ex) {
-			throw new DBRuntimeException("Unable To Copy " + this.getClass().getSimpleName() + ": please ensure it has a public " + this.getClass().getSimpleName() + "(DBRow, Object) constructor.", ex);
-		}
+		final DBRow row = getInstanceOfRow();
+		AbstractColumn newInstance = new AbstractColumn(row, getAppropriateQDTFromRow(row));
+		return newInstance;
 	}
 
 	/**
@@ -125,7 +135,7 @@ public class AbstractColumn implements DBExpression {
 	 *
 	 * @return the propertyWrapperOfQDT
 	 */
-	public PropertyWrapper getPropertyWrapper() {
+	public PropertyWrapper<?, ?, ?> getPropertyWrapper() {
 		return propertyWrapper;
 	}
 
@@ -147,23 +157,44 @@ public class AbstractColumn implements DBExpression {
 	}
 
 	@Override
-	public QueryableDatatype getQueryableDatatypeForExpressionValue() {
+	public QueryableDatatype<?> getQueryableDatatypeForExpressionValue() {
 		return QueryableDatatype.getQueryableDatatypeForObject(getField());
 	}
 
 	@Override
 	public boolean isAggregator() {
-		return false;
+		boolean aggregator = false;
+		if ((field instanceof QueryableDatatype) && ((QueryableDatatype) field).hasColumnExpression()) {
+			final QueryableDatatype<?> qdtField = (QueryableDatatype) field;
+			DBExpression[] columnExpressions = qdtField.getColumnExpression();
+			for (DBExpression columnExpression : columnExpressions) {
+				aggregator = aggregator || columnExpression.isAggregator();
+			}
+		}
+		return aggregator;
+	}
+
+	@Override
+	public boolean isWindowingFunction() {
+		boolean windower = false;
+		if ((field instanceof QueryableDatatype) && ((QueryableDatatype) field).hasColumnExpression()) {
+			final QueryableDatatype<?> qdtField = (QueryableDatatype) field;
+			DBExpression[] columnExpressions = qdtField.getColumnExpression();
+			for (DBExpression columnExpression : columnExpressions) {
+				windower = windower || columnExpression.isWindowingFunction();
+			}
+		}
+		return windower;
 	}
 
 	@Override
 	public boolean isPurelyFunctional() {
-		return getTablesInvolved().size() == 0;
+		return getTablesInvolved().isEmpty();
 	}
 
 	@Override
 	public Set<DBRow> getTablesInvolved() {
-		HashSet<DBRow> hashSet = new HashSet<DBRow>();
+		HashSet<DBRow> hashSet = new HashSet<>();
 		if (DBRow.class.isAssignableFrom(getRowDefinition().getClass())) {
 			hashSet.add((DBRow) getRowDefinition());
 		}
@@ -186,7 +217,7 @@ public class AbstractColumn implements DBExpression {
 	 *
 	 * @return the field
 	 */
-	protected Object getField() {
+	public Object getField() {
 		return field;
 	}
 
@@ -202,11 +233,10 @@ public class AbstractColumn implements DBExpression {
 	 * QueryableDatatype that is appropriate
 	 * <p style="color: #F90;">Support DBvolution at
 	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
-	 *
 	 * @return the QDT version of the field on the DBRow
 	 */
-	public QueryableDatatype getAppropriateQDTFromRow(RowDefinition row) {
-		return this.getPropertyWrapper().getDefinition().getQueryableDatatype(row);
+	public QueryableDatatype<?> getAppropriateQDTFromRow(RowDefinition row) {
+		return this.getPropertyWrapper().getPropertyWrapperDefinition().getQueryableDatatype(row);
 	}
 
 	/**
@@ -221,11 +251,10 @@ public class AbstractColumn implements DBExpression {
 	 * field (may be a QueryableDatatype)
 	 * <p style="color: #F90;">Support DBvolution at
 	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
-	 *
 	 * @return the actual field on the DBRow object referenced by this column.
 	 */
 	public Object getAppropriateFieldFromRow(RowDefinition row) {
-		return this.getPropertyWrapper().getDefinition().rawJavaValue(row);
+		return this.getPropertyWrapper().getPropertyWrapperDefinition().rawJavaValue(row);
 	}
 
 	/**
@@ -272,5 +301,81 @@ public class AbstractColumn implements DBExpression {
 	 */
 	public Class<? extends DBRow> getClassReferencedByForeignKey() {
 		return this.getPropertyWrapper().referencedClass();
+	}
+
+	@Override
+	public String createSQLForFromClause(DBDatabase database) {
+		DBDefinition defn = database.getDefinition();
+		String result = toSQLString(database.getDefinition());
+		if (needsToConvertNullToEmptyString(defn)) {
+			result = defn.convertNullToEmptyString(result);
+		}
+		return result;
+	}
+
+	private boolean needsToConvertNullToEmptyString(DBDefinition defn) {
+		if (field instanceof QueryableDatatype) {
+			var qdt = (QueryableDatatype) field;
+			return (qdt.getCouldProduceEmptyStringForNull()) 
+					&& (defn.requiredToProduceEmptyStringsForNull() 
+					&& defn.supportsDifferenceBetweenNullAndEmptyStringNatively());
+		} else {
+			return false;
+		}
+	}
+
+	@Override
+	public boolean isComplexExpression() {
+		return false;
+	}
+
+	@Override
+	public String createSQLForGroupByClause(DBDatabase database) {
+		return "";
+	}
+
+	/**
+	 * Returns the sort order configured on the column.
+	 *
+	 * @return {@link QueryableDatatype#SORT_ASCENDING} or
+	 * {@link QueryableDatatype#SORT_DESCENDING}
+	 */
+	public boolean getSortDirection() {
+		if (this.field instanceof QueryableDatatype) {
+			QueryableDatatype<?> qdt = (QueryableDatatype) field;
+			return qdt.getSortOrder();
+		} else {
+			return QueryableDatatype.SORT_ASCENDING;
+		}
+	}
+
+	/**
+	 * Returns the sort order configured on the column.
+	 *
+	 * @return {@link QueryableDatatype#SORT_ASCENDING} or
+	 * {@link QueryableDatatype#SORT_DESCENDING}
+	 */
+	public SortProvider.Column getSortProvider() {
+		return new SortProvider.Column(this);
+	}
+
+	/**
+	 * Returns the sort order configured on the column.
+	 *
+	 * @return {@link QueryableDatatype#SORT_ASCENDING} or
+	 * {@link QueryableDatatype#SORT_DESCENDING}
+	 */
+	public SortProvider ascending() {
+		return getSortProvider().ascending();
+	}
+
+	/**
+	 * Returns the sort order configured on the column.
+	 *
+	 * @return {@link QueryableDatatype#SORT_ASCENDING} or
+	 * {@link QueryableDatatype#SORT_DESCENDING}
+	 */
+	public SortProvider descending() {
+		return getSortProvider().descending();
 	}
 }

@@ -16,8 +16,13 @@
 package nz.co.gregs.dbvolution.datatypes;
 
 import java.beans.PropertyEditorSupport;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 
 /**
+ * Uses the default formatting provided in DBDate or the
+ * {@link SimpleDateFormat} format provided.
  *
  * <p style="color: #F90;">Support DBvolution at
  * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
@@ -26,7 +31,7 @@ import java.beans.PropertyEditorSupport;
  */
 public class DBDateEditor extends PropertyEditorSupport {
 
-	private String format;
+	private String format = null;
 
 	/**
 	 *
@@ -42,7 +47,18 @@ public class DBDateEditor extends PropertyEditorSupport {
 	 */
 	@Override
 	public void setAsText(String text) {
-		DBDate type = new DBDate(text);
-		setValue(type);
+		if (format != null) {
+			try {
+				Date parse = new SimpleDateFormat(format).parse(text);
+				DBDate type = new DBDate(parse);
+				setValue(type);
+			} catch (ParseException ex) {
+				DBDate type = new DBDate(text);
+				setValue(type);
+			}
+		} else {
+			DBDate type = new DBDate(text);
+			setValue(type);
+		}
 	}
 }

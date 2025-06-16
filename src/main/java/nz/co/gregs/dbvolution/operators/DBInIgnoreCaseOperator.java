@@ -18,18 +18,17 @@ package nz.co.gregs.dbvolution.operators;
 import java.util.ArrayList;
 import java.util.List;
 
-import nz.co.gregs.dbvolution.DBDatabase;
+import nz.co.gregs.dbvolution.databases.definitions.DBDefinition;
 import nz.co.gregs.dbvolution.datatypes.QueryableDatatypeSyncer.DBSafeInternalQDTAdaptor;
 import nz.co.gregs.dbvolution.expressions.BooleanExpression;
 import nz.co.gregs.dbvolution.expressions.DBExpression;
+import nz.co.gregs.dbvolution.expressions.InExpression;
 import nz.co.gregs.dbvolution.expressions.StringExpression;
 import nz.co.gregs.dbvolution.results.StringResult;
 
 /**
  * Implements a case-insensitive version of IN for Strings.
  *
- * <p style="color: #F90;">Support DBvolution at
- * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
  *
  * @author gregorygraham
  */
@@ -40,7 +39,8 @@ public class DBInIgnoreCaseOperator extends DBInOperator {
 	/**
 	 * Implements a case-insensitive version of IN for Strings.
 	 *
-	 * @param listOfPossibleValues
+	 * @param listOfPossibleValues the values that all the database values are to
+	 * compared with
 	 */
 	public DBInIgnoreCaseOperator(List<DBExpression> listOfPossibleValues) {
 		super(listOfPossibleValues);
@@ -56,7 +56,7 @@ public class DBInIgnoreCaseOperator extends DBInOperator {
 	@Override
 	public DBInIgnoreCaseOperator copyAndAdapt(DBSafeInternalQDTAdaptor typeAdaptor) {
 		ArrayList<DBExpression> list = new ArrayList<DBExpression>();
-		for (DBExpression item : getListOfPossibleValues()) {
+		for (DBExpression item : listOfPossibleValues) {
 			list.add(typeAdaptor.convert(item));
 		}
 		DBInIgnoreCaseOperator op = new DBInIgnoreCaseOperator(list);
@@ -66,12 +66,15 @@ public class DBInIgnoreCaseOperator extends DBInOperator {
 	}
 
 	@Override
-	public BooleanExpression generateWhereExpression(DBDatabase db, DBExpression column) {
+	public BooleanExpression generateWhereExpression(DBDefinition db, DBExpression column) {
 		DBExpression genericExpression = column;
 		BooleanExpression op = BooleanExpression.trueExpression();
 		if (genericExpression instanceof StringExpression) {
 			StringExpression stringExpression = (StringExpression) genericExpression;
-			op = stringExpression.bracket().isInIgnoreCase(getListOfPossibleStrings().toArray(new StringResult[]{}));
+			op = stringExpression.bracket().isInIgnoreCase(listOfPossibleStrings.toArray(new StringResult[]{}));
+		} else if (genericExpression instanceof InExpression) {
+			InExpression expr = (InExpression) genericExpression;
+			op = expr.isIn(getFirstValue());
 		}
 		return this.invertOperator ? op.not() : op;
 	}

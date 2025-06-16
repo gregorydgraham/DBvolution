@@ -19,9 +19,12 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Comparator;
 import java.util.List;
-import nz.co.gregs.dbvolution.DBDatabase;
+import nz.co.gregs.dbvolution.columns.IntegerColumn;
 import nz.co.gregs.dbvolution.databases.definitions.DBDefinition;
+import nz.co.gregs.dbvolution.exceptions.IncorrectRowProviderInstanceSuppliedException;
+import nz.co.gregs.dbvolution.expressions.IntegerExpression;
 import nz.co.gregs.dbvolution.expressions.NumberExpression;
 import nz.co.gregs.dbvolution.expressions.StringExpression;
 import nz.co.gregs.dbvolution.results.NumberResult;
@@ -29,6 +32,10 @@ import nz.co.gregs.dbvolution.operators.DBPermittedRangeExclusiveOperator;
 import nz.co.gregs.dbvolution.operators.DBPermittedRangeInclusiveOperator;
 import nz.co.gregs.dbvolution.operators.DBPermittedRangeOperator;
 import nz.co.gregs.dbvolution.operators.DBPermittedValuesOperator;
+import nz.co.gregs.dbvolution.query.RowDefinition;
+import nz.co.gregs.dbvolution.results.IntegerResult;
+import nz.co.gregs.dbvolution.utility.StringCheck;
+import nz.co.gregs.dbvolution.utility.comparators.ComparableComparator;
 
 /**
  * Encapsulates database values that are Integers.
@@ -50,7 +57,7 @@ import nz.co.gregs.dbvolution.operators.DBPermittedValuesOperator;
  *
  * @author Gregory Graham
  */
-public class DBInteger extends QueryableDatatype implements NumberResult {
+public class DBInteger extends QueryableDatatype<Long> implements IntegerResult {
 
 	private static final long serialVersionUID = 1L;
 
@@ -69,7 +76,7 @@ public class DBInteger extends QueryableDatatype implements NumberResult {
 	 * @param value	value
 	 */
 	public DBInteger(Integer value) {
-		super(value);
+		super(Long.valueOf(value));
 	}
 
 	/**
@@ -95,8 +102,20 @@ public class DBInteger extends QueryableDatatype implements NumberResult {
 	 *
 	 * @param value	value
 	 */
-	public DBInteger(NumberExpression value) {
+	public DBInteger(IntegerExpression value) {
 		super(value);
+	}
+
+	/**
+	 * Create a DBInteger as a column expression.
+	 *
+	 * <p>
+	 * Only the integer part of the number will be represented.
+	 *
+	 * @param value	value
+	 */
+	public DBInteger(NumberExpression value) {
+		super(value.integerPart());
 	}
 
 	/**
@@ -115,30 +134,6 @@ public class DBInteger extends QueryableDatatype implements NumberResult {
 		return "INTEGER";
 	}
 
-//	@Override
-//	public void setFromResultSet(DBDatabase database, ResultSet resultSet, String fullColumnName) {
-//		removeConstraints();
-//		if (resultSet == null || fullColumnName == null) {
-//			this.setToNull();
-//		} else {
-//			Long dbValue;
-//			try {
-//				dbValue = resultSet.getLong(fullColumnName);
-//				if (resultSet.wasNull()) {
-//					dbValue = null;
-//				}
-//			} catch (SQLException ex) {
-//				dbValue = null;
-//			}
-//			if (dbValue == null) {
-//				this.setToNull();
-//			} else {
-//				this.setValue(dbValue);
-//			}
-//		}
-//		setUnchanged();
-//		setDefined(true);
-//	}
 	/**
 	 * Returns a Long of the database value or NULL if the database value is null
 	 *
@@ -149,13 +144,7 @@ public class DBInteger extends QueryableDatatype implements NumberResult {
 	 */
 	@Override
 	public Long getValue() {
-		if (this.getLiteralValue() instanceof Long) {
-			return (Long) this.getLiteralValue();
-		} else if (this.getLiteralValue() == null) {
-			return null;
-		} else {
-			return Long.parseLong(this.getLiteralValue().toString());
-		}
+		return this.getLiteralValue();
 	}
 
 	/**
@@ -191,7 +180,17 @@ public class DBInteger extends QueryableDatatype implements NumberResult {
 	 * @param permitted	permitted
 	 */
 	public void permittedValues(Long... permitted) {
-		this.setOperator(new DBPermittedValuesOperator((Object[]) permitted));
+		this.setOperator(new DBPermittedValuesOperator<Long>(permitted));
+	}
+
+	/**
+	 *
+	 * reduces the rows to only the object, Set, List, Array, or vararg of objects
+	 *
+	 * @param permitted	permitted
+	 */
+	public void permittedValues(IntegerResult... permitted) {
+		this.setOperator(new DBPermittedValuesOperator<IntegerResult>(permitted));
 	}
 
 	/**
@@ -201,7 +200,11 @@ public class DBInteger extends QueryableDatatype implements NumberResult {
 	 * @param permitted	permitted
 	 */
 	public void permittedValues(NumberResult... permitted) {
-		this.setOperator(new DBPermittedValuesOperator((Object[]) permitted));
+		List<IntegerResult> list = new ArrayList<>();
+		for (NumberResult num : permitted) {
+			list.add(new NumberExpression(num).integerResult());
+		}
+		this.setOperator(new DBPermittedValuesOperator<IntegerResult>(list.toArray(new IntegerResult[]{})));
 	}
 
 	/**
@@ -211,12 +214,12 @@ public class DBInteger extends QueryableDatatype implements NumberResult {
 	 * @param permitted	permitted
 	 */
 	public void permittedValues(Number... permitted) {
-		List<Long> ints = new ArrayList<Long>();
+		List<Long> ints = new ArrayList<>();
 		for (Number dbint : permitted) {
 			ints.add(dbint.longValue());
 		}
 		final Long[] longArray = ints.toArray(new Long[]{});
-		this.setOperator(new DBPermittedValuesOperator((Object[]) longArray));
+		this.setOperator(new DBPermittedValuesOperator<Long>(longArray));
 	}
 
 	/**
@@ -226,12 +229,12 @@ public class DBInteger extends QueryableDatatype implements NumberResult {
 	 * @param permitted	permitted
 	 */
 	public void permittedValues(DBInteger... permitted) {
-		List<Long> ints = new ArrayList<Long>();
+		List<Long> ints = new ArrayList<>();
 		for (DBInteger dbint : permitted) {
 			ints.add(dbint.getValue());
 		}
 		final Long[] longArray = ints.toArray(new Long[]{});
-		this.setOperator(new DBPermittedValuesOperator((Object[]) longArray));
+		this.setOperator(new DBPermittedValuesOperator<Long>(longArray));
 	}
 
 	/**
@@ -241,12 +244,12 @@ public class DBInteger extends QueryableDatatype implements NumberResult {
 	 * @param permitted	permitted
 	 */
 	public void permittedValues(DBNumber... permitted) {
-		List<Long> ints = new ArrayList<Long>();
+		List<Long> ints = new ArrayList<>();
 		for (DBNumber dbint : permitted) {
 			ints.add(dbint.getValue().longValue());
 		}
 		final Long[] longArray = ints.toArray(new Long[]{});
-		this.setOperator(new DBPermittedValuesOperator((Object[]) longArray));
+		this.setOperator(new DBPermittedValuesOperator<Long>(longArray));
 	}
 
 	/**
@@ -256,7 +259,7 @@ public class DBInteger extends QueryableDatatype implements NumberResult {
 	 * @param permitted	permitted
 	 */
 	public void permittedValues(Collection<Long> permitted) {
-		this.setOperator(new DBPermittedValuesOperator(permitted));
+		this.setOperator(new DBPermittedValuesOperator<Long>(permitted));
 	}
 
 	/**
@@ -266,7 +269,17 @@ public class DBInteger extends QueryableDatatype implements NumberResult {
 	 * @param permitted	permitted
 	 */
 	public void permittedValuesInteger(Collection<Integer> permitted) {
-		this.setOperator(new DBPermittedValuesOperator(permitted));
+		this.setOperator(new DBPermittedValuesOperator<Integer>(permitted));
+	}
+
+	/**
+	 *
+	 * reduces the rows to only the object, Set, List, Array, or vararg of objects
+	 *
+	 * @param permitted	permitted
+	 */
+	public void permittedValuesLong(Collection<Long> permitted) {
+		permittedValues(permitted);
 	}
 
 	/**
@@ -276,7 +289,7 @@ public class DBInteger extends QueryableDatatype implements NumberResult {
 	 * @param permitted	permitted
 	 */
 	public void permittedValues(Integer... permitted) {
-		this.setOperator(new DBPermittedValuesOperator((Object[]) permitted));
+		this.setOperator(new DBPermittedValuesOperator<Integer>(permitted));
 	}
 
 	/**
@@ -287,7 +300,7 @@ public class DBInteger extends QueryableDatatype implements NumberResult {
 	 * @param excluded	excluded
 	 */
 	public void excludedValues(Long... excluded) {
-		this.setOperator(new DBPermittedValuesOperator((Object[]) excluded));
+		this.setOperator(new DBPermittedValuesOperator<Long>(excluded));
 		negateOperator();
 	}
 
@@ -299,7 +312,7 @@ public class DBInteger extends QueryableDatatype implements NumberResult {
 	 * @param excluded	excluded
 	 */
 	public void excludedValues(DBInteger... excluded) {
-		this.setOperator(new DBPermittedValuesOperator((Object[]) excluded));
+		this.setOperator(new DBPermittedValuesOperator<DBInteger>(excluded));
 		negateOperator();
 	}
 
@@ -311,7 +324,7 @@ public class DBInteger extends QueryableDatatype implements NumberResult {
 	 * @param excluded	excluded
 	 */
 	public void excludedValues(Integer... excluded) {
-		this.setOperator(new DBPermittedValuesOperator((Object[]) excluded));
+		this.setOperator(new DBPermittedValuesOperator<Integer>(excluded));
 		negateOperator();
 	}
 
@@ -323,7 +336,7 @@ public class DBInteger extends QueryableDatatype implements NumberResult {
 	 * @param excluded	excluded
 	 */
 	public void excludedValuesLong(List<Long> excluded) {
-		this.setOperator(new DBPermittedValuesOperator(excluded));
+		this.setOperator(new DBPermittedValuesOperator<Long>(excluded));
 		negateOperator();
 	}
 
@@ -335,7 +348,7 @@ public class DBInteger extends QueryableDatatype implements NumberResult {
 	 * @param excluded	excluded
 	 */
 	public void excludedValuesInteger(List<Integer> excluded) {
-		this.setOperator(new DBPermittedValuesOperator(excluded));
+		this.setOperator(new DBPermittedValuesOperator<Integer>(excluded));
 		negateOperator();
 	}
 
@@ -360,7 +373,7 @@ public class DBInteger extends QueryableDatatype implements NumberResult {
 	 * @param upperBound upperBound
 	 */
 	public void permittedRange(Long lowerBound, Long upperBound) {
-		setOperator(new DBPermittedRangeOperator(lowerBound, upperBound));
+		setOperator(new DBPermittedRangeOperator<Long>(lowerBound, upperBound));
 	}
 
 	/**
@@ -384,7 +397,7 @@ public class DBInteger extends QueryableDatatype implements NumberResult {
 	 * @param upperBound upperBound
 	 */
 	public void permittedRange(Integer lowerBound, Integer upperBound) {
-		setOperator(new DBPermittedRangeOperator(lowerBound, upperBound));
+		setOperator(new DBPermittedRangeOperator<Integer>(lowerBound, upperBound));
 	}
 
 	/**
@@ -504,7 +517,7 @@ public class DBInteger extends QueryableDatatype implements NumberResult {
 	 * @param upperBound upperBound
 	 */
 	public void excludedRange(Long lowerBound, Long upperBound) {
-		setOperator(new DBPermittedRangeOperator(lowerBound, upperBound));
+		setOperator(new DBPermittedRangeOperator<Long>(lowerBound, upperBound));
 		negateOperator();
 	}
 
@@ -529,7 +542,7 @@ public class DBInteger extends QueryableDatatype implements NumberResult {
 	 * @param upperBound upperBound
 	 */
 	public void excludedRange(Integer lowerBound, Integer upperBound) {
-		setOperator(new DBPermittedRangeOperator(lowerBound, upperBound));
+		setOperator(new DBPermittedRangeOperator<Integer>(lowerBound, upperBound));
 		negateOperator();
 	}
 
@@ -633,24 +646,6 @@ public class DBInteger extends QueryableDatatype implements NumberResult {
 		negateOperator();
 	}
 
-	@Override
-	void setValue(Object newLiteralValue) {
-		if (newLiteralValue == null) {
-			super.setLiteralValue(null);
-		} else if (newLiteralValue.toString().isEmpty()) {
-			super.setLiteralValue(null);
-		} else {
-			try {
-				Double parseDouble = Double.parseDouble(newLiteralValue.toString());
-				Long literalLong = parseDouble.longValue();
-//				Long literalLong = Long.parseLong(newLiteralValue.toString());
-				setLiteralValue(literalLong);
-			} catch (NumberFormatException noFormat) {
-				setLiteralValue(null);
-			}
-		}
-	}
-
 	/**
 	 * Sets the value of this DBInteger to the value provided.
 	 *
@@ -658,6 +653,19 @@ public class DBInteger extends QueryableDatatype implements NumberResult {
 	 */
 	public void setValue(DBNumber newLiteralValue) {
 		setValue(newLiteralValue.getValue());
+	}
+
+	/**
+	 * Sets the value of this DBInteger to the value provided.
+	 *
+	 * <p>
+	 * Convenience method that uses {@link  Long#Long(java.lang.String)} to set the
+	 * value
+	 *
+	 * @param newLiteralValue	newLiteralValue
+	 */
+	public void setValue(String newLiteralValue) {
+		setValue(Long.valueOf(StringCheck.checkNotNullOrEmpty(newLiteralValue,null,null)));
 	}
 
 	/**
@@ -687,6 +695,7 @@ public class DBInteger extends QueryableDatatype implements NumberResult {
 	 *
 	 * @param newLiteralValue	newLiteralValue
 	 */
+	@Override
 	public void setValue(Long newLiteralValue) {
 		if (newLiteralValue == null) {
 			super.setLiteralValue(null);
@@ -710,19 +719,17 @@ public class DBInteger extends QueryableDatatype implements NumberResult {
 
 	/**
 	 *
-	 * @param db	db
+	 * @param defn
 	 * <p style="color: #F90;">Support DBvolution at
 	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
-	 *
 	 * @return the underlying number formatted for a SQL statement
 	 */
 	@Override
-	public String formatValueForSQLStatement(DBDatabase db) {
-		DBDefinition defn = db.getDefinition();
+	public String formatValueForSQLStatement(DBDefinition defn) {
 		if (isNull()) {
 			return defn.getNull();
 		}
-		return defn.beginNumberValue() + getLiteralValue().toString() + defn.endNumberValue();
+		return defn.beginNumberValue() + getLiteralValue() + defn.endNumberValue();
 	}
 
 	@Override
@@ -731,7 +738,7 @@ public class DBInteger extends QueryableDatatype implements NumberResult {
 	}
 
 	@Override
-	protected Object getFromResultSet(DBDatabase database, ResultSet resultSet, String fullColumnName) throws SQLException {
+	protected Long getFromResultSet(DBDefinition database, ResultSet resultSet, String fullColumnName) throws SQLException {
 		return resultSet.getLong(fullColumnName);
 	}
 
@@ -747,6 +754,133 @@ public class DBInteger extends QueryableDatatype implements NumberResult {
 
 	@Override
 	public StringExpression stringResult() {
-		return NumberExpression.value(this).stringResult();
+		return IntegerExpression.value(this).stringResult();
+	}
+
+	@Override
+	protected void setValueFromStandardStringEncoding(String encodedValue) {
+		if (encodedValue.isEmpty()) {
+			super.setLiteralValue(null);
+		} else {
+			try {
+				Double parseDouble = Double.valueOf(StringCheck.checkNotNullOrEmpty(encodedValue,null,null));
+				Long literalLong = parseDouble.longValue();
+				setLiteralValue(literalLong);
+			} catch (NumberFormatException noFormat) {
+				setLiteralValue(null);
+			}
+		}
+	}
+
+	@Override
+	public IntegerColumn getColumn(RowDefinition row) throws IncorrectRowProviderInstanceSuppliedException {
+		return new IntegerColumn(row, this);
+	}
+
+	public void excludeNotNull() {
+		this.permittedValues((Long) null);
+	}
+
+	public void excludeNull() {
+		this.excludedValues((Long) null);
+	}
+
+	public void permitOnlyNull() {
+		excludeNotNull();
+	}
+
+	public void permitOnlyNotNull() {
+		excludeNull();
+	}
+
+	/**
+	 * Set the value to be inserted when no value has been set, using
+	 * {@link #setValue(java.lang.Object) setValue(...)}, for the QDT.
+	 *
+	 * <p>
+	 * The value is only used during the initial insert and does not effect the
+	 * definition of the column within the database.</p>
+	 *
+	 * <p>
+	 * Care should be taken when using this as some "obvious" uses are better
+	 * handled using the
+	 * {@link #setDefaultInsertValue(nz.co.gregs.dbvolution.results.AnyResult) expression version}.
+	 * In particular, setDefaultInsertValue(new Date()) is probably NOT what you
+	 * want, setDefaultInsertValue(DateExpression.currentDate()) will produce a
+	 * correct creation date value.</p>
+	 *
+	 * @param value the value to use during insertion when no particular value has
+	 * been specified.
+	 * @return This QDT
+	 */
+	@Override
+	public synchronized DBInteger setDefaultInsertValue(Long value) {
+		super.setDefaultInsertValue(value);
+		return this;
+	}
+
+	/**
+	 * Set the value to be inserted when no value has been set, using
+	 * {@link #setValue(java.lang.Object) setValue(...)}, for the QDT.
+	 *
+	 * <p>
+	 * The value is only used during the initial insert and does not effect the
+	 * definition of the column within the database.</p>
+	 *
+	 * @param value the value to use during insertion when no particular value has
+	 * been specified.
+	 * @return This QDT
+	 */
+	public synchronized DBInteger setDefaultInsertValue(IntegerResult value) {
+		super.setDefaultInsertValue(value);
+		return this;
+	}
+
+	/**
+	 * Set the value to be used during an update when no value has been set, using
+	 * {@link #setValue(java.lang.Object) setValue(...)}, for the QDT.
+	 *
+	 * <p>
+	 * The value is only used during updates and does not effect the definition of
+	 * the column within the database nor the initial value of the column.</p>
+	 *
+	 * <p>
+	 * Care should be taken when using this as some "obvious" uses are better
+	 * handled using the
+	 * {@link #setDefaultUpdateValue(nz.co.gregs.dbvolution.results.AnyResult) expression version}.
+	 * In particular, setDefaultUpdateValue(new Date()) is probably NOT what you
+	 * want, setDefaultUpdateValue(DateExpression.currentDate()) will produce a
+	 * correct update time value.</p>
+	 *
+	 * @param value the value to use during update when no particular value has
+	 * been specified.
+	 * @return This QDT
+	 */
+	@Override
+	public synchronized DBInteger setDefaultUpdateValue(Long value) {
+		super.setDefaultUpdateValue(value);
+		return this;
+	}
+
+	/**
+	 * Set the value to be used during an update when no value has been set, using
+	 * {@link #setValue(java.lang.Object) setValue(...)}, for the QDT.
+	 *
+	 * <p>
+	 * The value is only used during updates and does not effect the definition of
+	 * the column within the database nor the initial value of the column.</p>
+	 *
+	 * @param value the value to use during update when no particular value has
+	 * been specified.
+	 * @return This QDT
+	 */
+	public synchronized DBInteger setDefaultUpdateValue(IntegerResult value) {
+		super.setDefaultUpdateValue(value);
+		return this;
+	}
+
+	@Override
+	public Comparator<Long> getComparator() {
+		return ComparableComparator.forClass(Long.class);
 	}
 }

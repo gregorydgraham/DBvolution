@@ -22,10 +22,12 @@ import nz.co.gregs.dbvolution.internal.oracle.aws.Line2DFunctions;
 import java.sql.SQLException;
 import java.sql.Statement;
 import javax.sql.DataSource;
-import nz.co.gregs.dbvolution.DBDatabase;
-import nz.co.gregs.dbvolution.DBRow;
+import nz.co.gregs.dbvolution.databases.settingsbuilders.AbstractOracleSettingsBuilder;
 import nz.co.gregs.dbvolution.databases.definitions.DBDefinition;
+import nz.co.gregs.dbvolution.databases.definitions.OracleAWSDBDefinition;
+import nz.co.gregs.dbvolution.databases.settingsbuilders.OracleAWS11SettingsBuilder;
 import nz.co.gregs.dbvolution.databases.supports.SupportsPolygonDatatype;
+import nz.co.gregs.dbvolution.exceptions.ExceptionDuringDatabaseFeatureSetup;
 
 /**
  * Super class for connecting the different versions of the AWS Oracle DB.
@@ -42,30 +44,50 @@ import nz.co.gregs.dbvolution.databases.supports.SupportsPolygonDatatype;
  */
 public abstract class OracleAWSDB extends OracleDB implements SupportsPolygonDatatype {
 
-	/**
+	public static final long serialVersionUID = 1l;
 
-	 * Provides a convenient constructor for DBDatabases that have configuration
-	 * details hardwired or are able to automatically retrieve the details.
+	/**
+	 * Creates an Oracle connection for the DatabaseConnectionSettings.
 	 *
-	 * <p>
-	 * This constructor creates an empty DBDatabase with only the default
-	 * settings, in particular with no driver, URL, username, password, or
-	 * {@link DBDefinition}
-	 * 
-	 * <p>
-	 * Most programmers should not call this constructor directly. Check the
-	 * subclasses in {@code nz.co.gregs.dbvolution.databases} for your particular
-	 * database.
+	 * @param dcs	dcs
+	 * @throws java.sql.SQLException database errors
+	 */
+	public OracleAWSDB(DatabaseConnectionSettings dcs) throws SQLException {
+		this(new OracleAWSDBDefinition(), dcs);
+	}
+
+	/**
+	 * Creates an Oracle connection for the DatabaseConnectionSettings.
 	 *
-	 * <p>
-	 * DBDatabase encapsulates the knowledge of the database, in particular the
-	 * syntax of the database in the DBDefinition and the connection details from
-	 * a DataSource.
+	 * @param dcs	dcs
+	 * @throws java.sql.SQLException database errors
+	 */
+	public OracleAWSDB(AbstractOracleSettingsBuilder<?,?> dcs) throws SQLException {
+		this(new OracleAWSDBDefinition(), dcs);
+	}
+
+	/**
+	 * Creates an Oracle connection for the DatabaseConnectionSettings.
 	 *
-	 * @see DBDefinition
-	 * @see OracleAWS11DB
-	 * @see OracleAWSDB
-	 */	protected OracleAWSDB() {
+	 * @param dcs	dcs
+	 * @param defn the oracle database definition
+	 * @throws java.sql.SQLException database errors
+	 */
+	@Deprecated
+	public OracleAWSDB(OracleAWSDBDefinition defn, DatabaseConnectionSettings dcs) throws SQLException {
+		super(defn, dcs);
+	}
+
+	/**
+	 * Creates an Oracle connection for the DatabaseConnectionSettings.
+	 *
+	 * @param dcs	dcs
+	 * @param defn the oracle database definition
+	 * @throws java.sql.SQLException database errors
+	 */
+	@Deprecated
+	public OracleAWSDB(OracleAWSDBDefinition defn, AbstractOracleSettingsBuilder<?,?> dcs) throws SQLException {
+		super(defn, dcs);
 	}
 
 	/**
@@ -81,8 +103,10 @@ public abstract class OracleAWSDB extends OracleDB implements SupportsPolygonDat
 	 * @param jdbcURL jdbcURL
 	 * @param driverName driverName
 	 * @param username username
+	 * @throws java.sql.SQLException database errors
 	 */
-	public OracleAWSDB(DBDefinition definition, String driverName, String jdbcURL, String username, String password) {
+	@Deprecated
+	public OracleAWSDB(DBDefinition definition, String driverName, String jdbcURL, String username, String password) throws SQLException {
 		super(definition, driverName, jdbcURL, username, password);
 	}
 
@@ -91,9 +115,12 @@ public abstract class OracleAWSDB extends OracleDB implements SupportsPolygonDat
 	 *
 	 * @param dbDefinition an oracle database definition instance
 	 * @param dataSource a data source to an Oracle database
+	 * @throws java.sql.SQLException database errors
 	 */
-	public OracleAWSDB(DBDefinition dbDefinition, DataSource dataSource) {
-		super(dbDefinition, dataSource);
+	public OracleAWSDB(DBDefinition dbDefinition, DataSource dataSource) throws SQLException {
+		super(
+				new OracleAWS11SettingsBuilder().setDataSource(dataSource)
+		);
 	}
 
 	@Override
@@ -101,21 +128,8 @@ public abstract class OracleAWSDB extends OracleDB implements SupportsPolygonDat
 		return super.clone();
 	}
 
-	/**
-	 * Oracle does not differentiate between NULL and an empty string.
-	 *
-	 * <p style="color: #F90;">Support DBvolution at
-	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
-	 *
-	 * @return FALSE.
-	 */
 	@Override
-	public Boolean supportsDifferenceBetweenNullAndEmptyString() {
-		return false;
-	}
-
-	@Override
-	protected void addDatabaseSpecificFeatures(Statement statement) throws SQLException {
+	public void addDatabaseSpecificFeatures(Statement statement) throws ExceptionDuringDatabaseFeatureSetup {
 		super.addDatabaseSpecificFeatures(statement);
 
 		for (Line2DFunctions fn : Line2DFunctions.values()) {
@@ -130,10 +144,6 @@ public abstract class OracleAWSDB extends OracleDB implements SupportsPolygonDat
 		for (MultiPoint2DFunctions fn : MultiPoint2DFunctions.values()) {
 			fn.add(statement);
 		}
-	}
-
-	@Override
-	protected <TR extends DBRow> void removeSpatialMetadata(TR tableRow) throws SQLException {
 	}
 
 }

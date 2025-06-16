@@ -17,25 +17,43 @@ package nz.co.gregs.dbvolution.databases;
 
 import java.sql.SQLException;
 import javax.sql.DataSource;
-import nz.co.gregs.dbvolution.DBDatabase;
+import nz.co.gregs.dbvolution.databases.settingsbuilders.MySQLMXJDBSettingsBuilder;
 
 /**
  * DBDatabase tweaked for the MySQL MXJ Database.
- *
- * <p style="color: #F90;">Support DBvolution at
- * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
  *
  * @author Gregory Graham
  */
 public class MySQLMXJDB extends MySQLDB {
 
+	public static final long serialVersionUID = 1l;
+
 	/**
 	 * Creates a {@link DBDatabase } instance for the data source.
 	 *
 	 * @param ds	ds
+	 * @throws java.sql.SQLException database errors
 	 */
-	public MySQLMXJDB(DataSource ds) {
+	public MySQLMXJDB(DataSource ds) throws SQLException {
 		super(ds);
+	}
+	/**
+	 * Creates a {@link DBDatabase } instance for the data source.
+	 *
+	 * @param ds	ds
+	 * @throws java.sql.SQLException database errors
+	 */
+	public MySQLMXJDB(MySQLMXJDBSettingsBuilder ds) throws SQLException {
+		super(ds);
+	}
+	/**
+	 * Creates a {@link DBDatabase } instance for the data source.
+	 *
+	 * @param dcs	dcs
+	 * @throws java.sql.SQLException database errors
+	 */
+	public MySQLMXJDB(DatabaseConnectionSettings dcs) throws SQLException {
+		this(new MySQLMXJDBSettingsBuilder().fromSettings(dcs));
 	}
 
 	/**
@@ -44,9 +62,10 @@ public class MySQLMXJDB extends MySQLDB {
 	 * @param jdbcURL jdbcURL
 	 * @param username username
 	 * @param password password
+	 * @throws java.sql.SQLException database errors
 	 */
-	public MySQLMXJDB(String jdbcURL, String username, String password) {
-		super(jdbcURL, username, password);
+	public MySQLMXJDB(String jdbcURL, String username, String password) throws SQLException {
+		this(new MySQLMXJDBSettingsBuilder().fromJDBCURL(jdbcURL, username, password));
 	}
 
 	/**
@@ -58,19 +77,26 @@ public class MySQLMXJDB extends MySQLDB {
 	 * @param databaseDir where to set the data files on the server.
 	 * @param username the user to login as.
 	 * @param password the password required to login successfully.
+	 * @throws java.sql.SQLException database errors
 	 */
-	public MySQLMXJDB(String server, long port, String databaseName, String databaseDir, String username, String password) {
-		super("jdbc:mysql:mxj://" + server + ":" + port + "/" + databaseName
-				+ "?" + "server.basedir=" + databaseDir
-				+ "&" + "createDatabaseIfNotExist=true"
-				+ "&" + "server.initialize-user=true",
-				username,
-				password);
-		setDatabaseName(databaseName);
+	public MySQLMXJDB(String server, long port, String databaseName, String databaseDir, String username, String password) throws SQLException {
+		this(new MySQLMXJDBSettingsBuilder()
+						.setHost(server)
+						.setPort(port)
+						.setDatabaseName(databaseName)
+						.addExtra("server.basedir", databaseDir)
+						.setUsername(username)
+						.setPassword(password)
+						);
 	}
 
 	@Override
 	public DBDatabase clone() throws CloneNotSupportedException {
 		return super.clone(); //To change body of generated methods, choose Tools | Templates.
+	}
+
+	@Override
+	public MySQLMXJDBSettingsBuilder getURLInterpreter() {
+		return new MySQLMXJDBSettingsBuilder();
 	}
 }

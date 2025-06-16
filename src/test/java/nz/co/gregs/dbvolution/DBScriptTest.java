@@ -15,6 +15,7 @@
  */
 package nz.co.gregs.dbvolution;
 
+import nz.co.gregs.dbvolution.databases.DBDatabase;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
@@ -25,7 +26,7 @@ import nz.co.gregs.dbvolution.actions.DBActionList;
 import nz.co.gregs.dbvolution.example.Marque;
 import nz.co.gregs.dbvolution.generic.AbstractTest;
 import org.junit.*;
-import org.junit.Assert;
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.*;
 
 import nz.co.gregs.dbvolution.annotations.DBAutoIncrement;
@@ -33,11 +34,9 @@ import nz.co.gregs.dbvolution.annotations.DBColumn;
 import nz.co.gregs.dbvolution.annotations.DBPrimaryKey;
 import nz.co.gregs.dbvolution.datatypes.DBInteger;
 import nz.co.gregs.dbvolution.datatypes.DBString;
+import nz.co.gregs.dbvolution.exceptions.ExceptionThrownDuringTransaction;
 
 /**
- *
- * <p style="color: #F90;">Support DBvolution at
- * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
  *
  * @author Gregory Graham
  */
@@ -50,16 +49,31 @@ public class DBScriptTest extends AbstractTest {
 	/**
 	 * Test of implement method, of class DBScript.
 	 *
-	 * @throws java.lang.Exception
+	 * @throws java.lang.Exception anything could happen
 	 */
 	@Test
 	public void testImplement() throws Exception {
-		System.out.println("test");
 		List<Marque> allMarques = database.getDBTable(new Marque()).setBlankQueryAllowed(true).getAllRows();
 		DBScript script = new ScriptThatAdds2Marques();
 		DBActionList result = script.implement(database);
 		List<Marque> allMarques2 = database.getDBTable(new Marque()).setBlankQueryAllowed(true).getAllRows();
-		Assert.assertThat(
+		assertThat(
+				allMarques2.size(),
+				is(allMarques.size() + 2));
+	}
+
+	/**
+	 * Test of implement method, of class DBScript.
+	 *
+	 * @throws java.lang.Exception anything could happen
+	 */
+	@Test
+	public void testImplementOfDBDatabase() throws Exception {
+		List<Marque> allMarques = database.getDBTable(new Marque()).setBlankQueryAllowed(true).getAllRows();
+		DBScript script = new ScriptThatAdds2Marques();
+		DBActionList result = database.implement(script);
+		List<Marque> allMarques2 = database.getDBTable(new Marque()).setBlankQueryAllowed(true).getAllRows();
+		assertThat(
 				allMarques2.size(),
 				is(allMarques.size() + 2));
 	}
@@ -67,28 +81,15 @@ public class DBScriptTest extends AbstractTest {
 	/**
 	 * Test of test method, of class DBScript.
 	 *
-	 * @throws java.lang.Exception
+	 * @throws java.lang.Exception anything could happen
 	 */
 	@Test
 	public void testTest() throws Exception {
-		System.out.println("test");
 		List<Marque> allMarques = database.getDBTable(new Marque()).setBlankQueryAllowed(true).getAllRows();
 		DBScript script = new ScriptThatAdds2Marques();
 		DBActionList result = script.test(database);
 		List<Marque> allMarques2 = database.getDBTable(new Marque()).setBlankQueryAllowed(true).getAllRows();
-		Assert.assertThat(
-				allMarques2.size(),
-				is(allMarques.size()));
-	}
-
-	@Test(expected = IndexOutOfBoundsException.class)
-	public void testExceptionThrowing() throws Exception {
-		System.out.println("test");
-		List<Marque> allMarques = database.getDBTable(new Marque()).setBlankQueryAllowed(true).getAllRows();
-		DBScript script = new ScriptThatThrowsAnException(new IndexOutOfBoundsException("Correct Exception"));
-		DBActionList result = script.test(database);
-		List<Marque> allMarques2 = database.getDBTable(new Marque()).setBlankQueryAllowed(true).getAllRows();
-		Assert.assertThat(
+		assertThat(
 				allMarques2.size(),
 				is(allMarques.size()));
 	}
@@ -96,7 +97,40 @@ public class DBScriptTest extends AbstractTest {
 	/**
 	 * Test of test method, of class DBScript.
 	 *
-	 * @throws java.lang.Exception
+	 * @throws java.lang.Exception anything could happen
+	 */
+	@Test
+	public void testTestOfDBDatabase() throws Exception {
+		List<Marque> allMarques = database.getDBTable(new Marque()).setBlankQueryAllowed(true).getAllRows();
+		DBScript script = new ScriptThatAdds2Marques();
+		DBActionList result = database.test(script);
+		List<Marque> allMarques2 = database.getDBTable(new Marque()).setBlankQueryAllowed(true).getAllRows();
+		assertThat(
+				allMarques2.size(),
+				is(allMarques.size()));
+	}
+
+	@Test
+	public void testExceptionThrowing() throws Exception {
+		DBScript script = new ScriptThatThrowsAnException();
+		ExceptionThrownDuringTransaction assertThrows = Assert.assertThrows(ExceptionThrownDuringTransaction.class, ()->script.test(database));
+		assertThat(assertThrows.getCause(), is(instanceOf(IndexOutOfBoundsException.class)));
+		
+//		List<Marque> allMarques = database.getDBTable(new Marque()).setBlankQueryAllowed(true).getAllRows();
+//
+//		thrown.expect(ExceptionThrownDuringTransaction.class);
+//		DBScript script = new ScriptThatThrowsAnException();
+//		DBActionList result = script.test(database);
+//		List<Marque> allMarques2 = database.getDBTable(new Marque()).setBlankQueryAllowed(true).getAllRows();
+//		assertThat(
+//				allMarques2.size(),
+//				is(allMarques.size()));
+	}
+
+	/**
+	 * Test of test method, of class DBScript.
+	 *
+	 * @throws java.lang.Exception anything could happen
 	 */
 	@Test
 	public void testTestTransactionsAreIsolated() throws Exception {
@@ -107,22 +141,19 @@ public class DBScriptTest extends AbstractTest {
 		database.createTable(scriptTestTable);
 		List<ScriptTestTable> origRows = table.setBlankQueryAllowed(true).getAllRows();
 
-//		ParallelTaskGroup<DBActionList> taskGroup;
-//		taskGroup = new ParallelTaskGroup<DBActionList>();
 		ExecutorService threadpool = Executors.newFixedThreadPool(10);
 		ArrayList<Callable<DBActionList>> taskGroup = new ArrayList<Callable<DBActionList>>();
-		taskGroup.add(new CallableTestScript<DBActionList>(database));
-		taskGroup.add(new CallableTestScript<DBActionList>(database));
-		taskGroup.add(new CallableTestScript<DBActionList>(database));
-		taskGroup.add(new CallableTestScript<DBActionList>(database));
-		taskGroup.add(new CallableTestScript<DBActionList>(database));
-		taskGroup.add(new CallableTestScript<DBActionList>(database));
-		taskGroup.add(new CallableTestScript<DBActionList>(database));
-//		TaskExecutor.execute(taskGroup);
+		taskGroup.add(new CallableTestScript<>(database));
+		taskGroup.add(new CallableTestScript<>(database));
+		taskGroup.add(new CallableTestScript<>(database));
+		taskGroup.add(new CallableTestScript<>(database));
+		taskGroup.add(new CallableTestScript<>(database));
+		taskGroup.add(new CallableTestScript<>(database));
+		taskGroup.add(new CallableTestScript<>(database));
 		threadpool.invokeAll(taskGroup);
 
 		List<ScriptTestTable> allRows = table.setBlankQueryAllowed(true).getAllRows();
-		Assert.assertThat(allRows.size(), is(origRows.size()));
+		assertThat(allRows.size(), is(origRows.size()));
 		database.preventDroppingOfTables(false);
 		database.dropTableNoExceptions(scriptTestTable);
 	}
@@ -137,36 +168,34 @@ public class DBScriptTest extends AbstractTest {
 		List<ScriptTestTable> origRows = table.setBlankQueryAllowed(true).getAllRows();
 
 		ExecutorService threadpool = Executors.newFixedThreadPool(10);
-		ArrayList<Callable<DBActionList>> taskGroup = new ArrayList<Callable<DBActionList>>();
-		taskGroup.add(new CallableImplementScript<DBActionList>(database));
-		taskGroup.add(new CallableImplementScript<DBActionList>(database));
-		taskGroup.add(new CallableImplementScript<DBActionList>(database));
-		taskGroup.add(new CallableImplementScript<DBActionList>(database));
-		taskGroup.add(new CallableImplementScript<DBActionList>(database));
-		taskGroup.add(new CallableImplementScript<DBActionList>(database));
-		taskGroup.add(new CallableImplementScript<DBActionList>(database));
+		ArrayList<Callable<DBActionList>> taskGroup = new ArrayList<>();
+		taskGroup.add(new CallableImplementScript<>(database));
+		taskGroup.add(new CallableImplementScript<>(database));
+		taskGroup.add(new CallableImplementScript<>(database));
+		taskGroup.add(new CallableImplementScript<>(database));
+		taskGroup.add(new CallableImplementScript<>(database));
+		taskGroup.add(new CallableImplementScript<>(database));
+		taskGroup.add(new CallableImplementScript<>(database));
 		threadpool.invokeAll(taskGroup);
 
 		List<ScriptTestTable> allRows = table.setBlankQueryAllowed(true).getAllRows();
-		Assert.assertThat(allRows.size(), is(origRows.size()));
+		assertThat(allRows.size(), is(origRows.size()));
 		database.preventDroppingOfTables(false);
 		database.dropTableNoExceptions(scriptTestTable);
 	}
 
 	public class ScriptThatThrowsAnException extends DBScript {
 
-		private Exception exc;
-
-		public ScriptThatThrowsAnException(Exception exception) {
-			this.exc = exception;
+		public ScriptThatThrowsAnException() {
 		}
 
 		@Override
 		public DBActionList script(DBDatabase db) throws Exception {
-			if (exc != null) {
-				throw exc;
-			}
-			return new DBActionList();
+			final IndexOutOfBoundsException indexOutOfBoundsException = new IndexOutOfBoundsException("Correct Exception");
+			StackTraceElement[] stackTrace = indexOutOfBoundsException.getStackTrace();
+			indexOutOfBoundsException.setStackTrace(new StackTraceElement[]{stackTrace[0]});
+
+			throw indexOutOfBoundsException;
 		}
 	}
 
@@ -182,7 +211,6 @@ public class DBScriptTest extends AbstractTest {
 			myTableRow.getNumericCode().setValue(10);
 			actions.addAll(marques.insert(myTableRow));
 			marques.setBlankQueryAllowed(true).getAllRows();
-			marques.print();
 
 			List<Marque> myTableRows = new ArrayList<Marque>();
 			myTableRows.add(new Marque(3, "False", 1246974, "", 3, "UV", "TVR", "", "Y", new Date(), 4, null));
@@ -190,7 +218,6 @@ public class DBScriptTest extends AbstractTest {
 			actions.addAll(marques.insert(myTableRows));
 
 			marques.getAllRows();
-			marques.print();
 			return actions;
 		}
 	}
@@ -198,7 +225,7 @@ public class DBScriptTest extends AbstractTest {
 	public class ScriptThatAddsAndRemoves2Rows extends DBScript {
 
 		@Override
-		public DBActionList script(DBDatabase db) throws Exception {
+		public synchronized DBActionList script(DBDatabase db) throws Exception {
 			DBActionList actions = new DBActionList();
 			ArrayList<ScriptTestTable> myTableRows = new ArrayList<ScriptTestTable>();
 
@@ -212,23 +239,23 @@ public class DBScriptTest extends AbstractTest {
 			actions.addAll(table.insert(myTableRow));
 
 			List<ScriptTestTable> allRows = table.setBlankQueryAllowed(true).getAllRows();
-			table.print();
-			Assert.assertThat(allRows.size(), is(origRows.size() + 1));
+
+			assertThat(allRows.size(), is(origRows.size() + 1));
 			final ScriptTestTable newRow = new ScriptTestTable("False");
 			myTableRows.add(newRow);
 
 			actions.addAll(table.insert(newRow));
 
 			allRows = table.setBlankQueryAllowed(true).getAllRows();
-			table.print();
-			Assert.assertThat(allRows.size(), is(origRows.size() + 2));
+
+			assertThat(allRows.size(), is(origRows.size() + 2));
 
 			table.getAllRows();
-			table.print();
+
 			table.delete(myTableRows);
 			allRows = table.setBlankQueryAllowed(true).getAllRows();
-			table.print();
-			Assert.assertThat(allRows.size(), is(origRows.size()));
+
+			assertThat(allRows.size(), is(origRows.size()));
 
 			return actions;
 		}
@@ -280,9 +307,9 @@ public class DBScriptTest extends AbstractTest {
 		@DBColumn
 		DBString name = new DBString();
 
-		public ScriptTestTable(String aFalse) {
+		public ScriptTestTable(String name) {
 			super();
-			name.setValue(aFalse);
+			this.name.setValue(name);
 		}
 
 		public ScriptTestTable() {

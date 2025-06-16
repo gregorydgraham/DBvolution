@@ -22,13 +22,14 @@ import nz.co.gregs.dbvolution.annotations.DBColumn;
 import nz.co.gregs.dbvolution.annotations.DBPrimaryKey;
 import nz.co.gregs.dbvolution.generic.AbstractTest;
 import static org.hamcrest.Matchers.*;
+import static org.hamcrest.MatcherAssert.assertThat;
 import org.junit.After;
 import org.junit.AfterClass;
-import org.junit.Assert;
+import static org.junit.Assert.assertEquals;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
-import static org.junit.Assert.*;
+
 //import org.junit.Ignore;
 
 /**
@@ -65,9 +66,8 @@ public class DBBooleanArrayTest extends AbstractTest {
 	 */
 	@Test
 	public void testEquals() {
-		System.out.println("equals");
 		final Boolean[] trueFalseTrueArray = new Boolean[]{true, false, true};
-		QueryableDatatype other = new DBBooleanArray(trueFalseTrueArray);
+		QueryableDatatype<?> other = new DBBooleanArray(trueFalseTrueArray);
 		final Boolean[] allTrueArray = new Boolean[]{true, true, true};
 		DBBooleanArray instance = new DBBooleanArray(allTrueArray);
 		boolean expResult = false;
@@ -85,7 +85,6 @@ public class DBBooleanArrayTest extends AbstractTest {
 	 */
 	@Test
 	public void testGetSQLDatatype() {
-		System.out.println("getSQLDatatype");
 		DBBooleanArray instance = new DBBooleanArray();
 		String expResult = "ARRAY";
 		String result = instance.getSQLDatatype();
@@ -97,22 +96,10 @@ public class DBBooleanArrayTest extends AbstractTest {
 	 */
 	@Test
 	public void testSetValue_Object() {
-		System.out.println("setValue");
-		Object newLiteralValue = new Boolean[]{true, false, true};
+		Boolean[] newLiteralValue = new Boolean[]{true, false, true};
 		DBBooleanArray instance = new DBBooleanArray();
 		instance.setValue(newLiteralValue);
-		Assert.assertThat(instance.booleanArrayValue(), is(newLiteralValue));
-	}
-
-	/**
-	 * Test of setValue method, of class DBBooleanArray.
-	 */
-	@Test(expected = ClassCastException.class)
-	public void testSetValue_BadObject() {
-
-		Object newLiteralValue = 5;
-		DBBooleanArray instance = new DBBooleanArray();
-		instance.setValue(newLiteralValue);
+		assertThat(instance.booleanArrayValue(), is(newLiteralValue));
 	}
 
 	/**
@@ -121,17 +108,17 @@ public class DBBooleanArrayTest extends AbstractTest {
 //	@Ignore
 	@Test
 	public void testFormatValueForSQLStatement() {
-		System.out.println("formatValueForSQLStatement");
 		DBBooleanArray instance = new DBBooleanArray();
 		Boolean[] expResult = new Boolean[]{false, true, true};
 		instance.setValue(expResult);
-		String result = instance.formatValueForSQLStatement(database);
-		Assert.assertThat(
+		String result = instance.formatValueForSQLStatement(database.getDefinition());
+		assertThat(
 				result,
 				anyOf(
 						is("'011'"), //MS SQLServer
 						is("b'110'"), //MySQL
-						is("(FALSE,TRUE,TRUE)"), //H2
+						is("(FALSE,TRUE,TRUE)"), //H2v1
+						is("ARRAY[FALSE, TRUE, TRUE]"), //H2v2
 						is("'{0,1,1}'") // Postgres
 				)
 		);
@@ -142,12 +129,11 @@ public class DBBooleanArrayTest extends AbstractTest {
 	 */
 	@Test
 	public void testByteArrayValue() {
-		System.out.println("byteArrayValue");
 		DBBooleanArray instance = new DBBooleanArray();
 		Boolean[] tftArray = new Boolean[]{true, false, true};
 		instance.setValue(tftArray);
 		Boolean[] result = instance.booleanArrayValue();
-		Assert.assertThat(result, is(tftArray));
+		assertThat(result, is(tftArray));
 	}
 
 	/**
@@ -155,11 +141,10 @@ public class DBBooleanArrayTest extends AbstractTest {
 	 */
 	@Test
 	public void testCopy() {
-		System.out.println("copy");
 		Boolean[] tftArray = new Boolean[]{true, false, true};
 		DBBooleanArray instance = new DBBooleanArray(tftArray);
 		DBBooleanArray result = instance.copy();
-		Assert.assertThat(result.booleanArrayValue(), is(instance.booleanArrayValue()));
+		assertThat(result.booleanArrayValue(), is(instance.booleanArrayValue()));
 	}
 
 	/**
@@ -167,13 +152,12 @@ public class DBBooleanArrayTest extends AbstractTest {
 	 */
 	@Test
 	public void testGetValue() {
-		System.out.println("getValue");
 		final String theValueStr = "The Value";
 		Boolean[] tftArray = new Boolean[]{true, false, true};
 		DBBooleanArray instance = new DBBooleanArray(tftArray);
 		Boolean[] expResult = tftArray;
 		Boolean[] result = instance.getValue();
-		Assert.assertThat(result, is(expResult));
+		assertThat(result, is(expResult));
 	}
 
 	/**
@@ -182,7 +166,6 @@ public class DBBooleanArrayTest extends AbstractTest {
 	 */
 	@Test
 	public void testGetQueryableDatatypeForExpressionValue() {
-		System.out.println("getQueryableDatatypeForExpressionValue");
 		DBBooleanArray instance = new DBBooleanArray();
 		DBBooleanArray result = instance.getQueryableDatatypeForExpressionValue();
 		assertEquals(instance.getClass(), result.getClass());
@@ -193,7 +176,6 @@ public class DBBooleanArrayTest extends AbstractTest {
 	 */
 	@Test
 	public void testIsAggregator() {
-		System.out.println("isAggregator");
 		DBBooleanArray instance = new DBBooleanArray();
 		boolean expResult = false;
 		boolean result = instance.isAggregator();
@@ -205,7 +187,6 @@ public class DBBooleanArrayTest extends AbstractTest {
 	 */
 	@Test
 	public void testGetTablesInvolved() {
-		System.out.println("getTablesInvolved");
 		DBBooleanArray instance = new DBBooleanArray();
 		Set<DBRow> result = instance.getTablesInvolved();
 		assertEquals(0, result.size());
@@ -216,7 +197,6 @@ public class DBBooleanArrayTest extends AbstractTest {
 	 */
 	@Test
 	public void testGetIncludesNull() {
-		System.out.println("getIncludesNull");
 		DBBooleanArray instance = new DBBooleanArray();
 		boolean expResult = false;
 		boolean result = instance.getIncludesNull();
@@ -226,12 +206,11 @@ public class DBBooleanArrayTest extends AbstractTest {
 	/**
 	 * Test of getFromResultSet method, of class DBBooleanArray.
 	 *
-	 * @throws java.lang.Exception
+	 * @throws java.lang.Exception anything could happen
 	 */
 //	@Ignore
 	@Test
 	public void testGetFromResultSet() throws Exception {
-		System.out.println("getFromResultSet");
 		final BooleanArrayTable boolArrayTable = new BooleanArrayTable();
 		database.preventDroppingOfTables(false);
 		database.dropTableNoExceptions(boolArrayTable);
@@ -240,7 +219,7 @@ public class DBBooleanArrayTest extends AbstractTest {
 		boolArrayTable.boolArrayColumn.setValue(theValue);
 		database.insert(boolArrayTable);
 		BooleanArrayTable bitsRow = database.getDBQuery(boolArrayTable).getOnlyInstanceOf(boolArrayTable);
-		Assert.assertThat(bitsRow.boolArrayColumn.booleanArrayValue(), is(theValue));
+		assertThat(bitsRow.boolArrayColumn.booleanArrayValue(), is(theValue));
 	}
 
 	public static class BooleanArrayTable extends DBRow {

@@ -15,16 +15,16 @@
  */
 package nz.co.gregs.dbvolution.internal.querygraph;
 
-import java.util.Set;
-import nz.co.gregs.dbvolution.DBRow;
+import nz.co.gregs.dbvolution.internal.query.DBRowClass;
 import nz.co.gregs.dbvolution.example.CarCompany;
 import nz.co.gregs.dbvolution.example.Marque;
 import org.junit.After;
 import org.junit.AfterClass;
+import static org.junit.Assert.assertEquals;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
-import static org.junit.Assert.*;
+
 
 /**
  *
@@ -59,8 +59,7 @@ public class QueryGraphNodeTest {
 	 */
 	@Test
 	public void testToString() {
-		System.out.println("toString");
-		QueryGraphNode instance = new QueryGraphNode(new Marque().getClass());
+		QueryGraphNode instance = new QueryGraphNode(new DBRowClass(new Marque()));
 		String expResult = "Marque";
 		String result = instance.toString();
 		assertEquals(expResult, result);
@@ -71,14 +70,13 @@ public class QueryGraphNodeTest {
 	 */
 	@Test
 	public void testEquals() {
-		System.out.println("equals");
-		Object o = new QueryGraphNode(new CarCompany().getClass());
-		QueryGraphNode instance = new QueryGraphNode(new Marque().getClass());
+		Object o = new QueryGraphNode(new DBRowClass(new CarCompany()));
+		QueryGraphNode instance = new QueryGraphNode(new DBRowClass(new Marque()));
 		boolean expResult = false;
 		boolean result = instance.equals(o);
 		assertEquals(expResult, result);
 
-		o = new QueryGraphNode(new Marque().getClass());
+		o = new QueryGraphNode(new DBRowClass(new Marque()));
 		expResult = true;
 		result = instance.equals(o);
 		assertEquals(expResult, result);

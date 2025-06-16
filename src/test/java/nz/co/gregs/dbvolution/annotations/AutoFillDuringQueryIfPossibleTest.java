@@ -22,14 +22,11 @@ import nz.co.gregs.dbvolution.DBQuery;
 import nz.co.gregs.dbvolution.example.CarCompany;
 import nz.co.gregs.dbvolution.example.Marque;
 import nz.co.gregs.dbvolution.generic.AbstractTest;
-import org.junit.Assert;
 import org.junit.Test;
 import static org.hamcrest.Matchers.*;
+import static org.hamcrest.MatcherAssert.assertThat;
 
 /**
- *
- * <p style="color: #F90;">Support DBvolution at
- * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
  *
  * @author gregorygraham
  */
@@ -44,52 +41,61 @@ public class AutoFillDuringQueryIfPossibleTest extends AbstractTest {
 		DBQuery query = database.getDBQuery(new FilledMarque(), new CarCompany()).setBlankQueryAllowed(true);
 		query.getAllRows();
 		List<FilledMarque> instances = query.getAllInstancesOf(new FilledMarque());
-		database.print(instances);
+
 		for (FilledMarque instance : instances) {
-			System.out.println("" + instance.actualCarCo);
-			final CarCompany relatedCarCo = instance.getRelatedInstancesFromQuery(query, new CarCompany()).get(0);
+			final CarCompany relatedCarCo = query.getQueryDetails().getRelatedInstancesFromQuery(instance, new CarCompany()).get(0);
 			final CarCompany actualCarCo = instance.actualCarCo;
 			if (actualCarCo == null) {
-				Assert.assertThat(relatedCarCo, nullValue());
+				assertThat(relatedCarCo, nullValue());
 			} else {
-				Assert.assertThat(relatedCarCo.name.stringValue(), is(actualCarCo.name.stringValue()));
+				assertThat(relatedCarCo.name.stringValue(), is(actualCarCo.name.stringValue()));
 			}
 		}
 	}
 
 	@Test
-	public void testFillingArray() throws SQLException {
+	public void testFillingSimpleFieldInOptionalTable() throws SQLException {
+		DBQuery query = database.getDBQuery(new FilledMarque()).addOptional(new CarCompany()).setBlankQueryAllowed(true);
+		query.getAllRows();
+		List<FilledMarque> instances = query.getAllInstancesOf(new FilledMarque());
+
+		for (FilledMarque instance : instances) {
+			final CarCompany relatedCarCo = query.getQueryDetails().getRelatedInstancesFromQuery(instance, new CarCompany()).get(0);
+			final CarCompany actualCarCo = instance.actualCarCo;
+			if (actualCarCo == null) {
+				assertThat(relatedCarCo, nullValue());
+			} else {
+				assertThat(relatedCarCo.name.stringValue(), is(actualCarCo.name.stringValue()));
+			}
+		}
+	}
+
+	@Test
+	public void testFillingArray() throws SQLException, Exception {
 		DBQuery query = database.getDBQuery(new FilledCarCoWithArray(), new Marque()).setBlankQueryAllowed(true);
 		query.getAllRows();
 		List<FilledCarCoWithArray> instances = query.getAllInstancesOf(new FilledCarCoWithArray());
-		database.print(instances);
+
 		for (FilledCarCoWithArray instance : instances) {
 			if (instance.marques != null) {
-				for (Marque marq : instance.marques) {
-					System.out.println("" + marq);
-				}
-				final List<Marque> relateds = instance.getRelatedInstancesFromQuery(query, new Marque());
+				final List<Marque> relateds = query.getQueryDetails().getRelatedInstancesFromQuery(instance, new Marque());
 				final Marque[] actuals = instance.marques;
-				Assert.assertThat(relateds, contains(actuals));
+				assertThat(relateds, contains(actuals));
 			} else {
-				System.out.println("No Marques Found For " + instance.name);
+				throw new Exception("Marque should have been found for " + instance.name);
 			}
 		}
 	}
 
 	@Test
-	public void testFillingList() throws SQLException {
+	public void testFillingList() throws SQLException, Exception {
 		final FilledCarCoWithList testExample = new FilledCarCoWithList();
 		DBQuery query = database.getDBQuery(testExample, new Marque()).setBlankQueryAllowed(true);
 		query.getAllRows();
 		List<FilledCarCoWithList> instances = query.getAllInstancesOf(testExample);
-		database.print(instances);
 		for (FilledCarCoWithList instance : instances) {
 			if (instance.marques != null) {
-				for (Marque marq : instance.marques) {
-					System.out.println("" + marq);
-				}
-				final List<Marque> relateds = instance.getRelatedInstancesFromQuery(query, new Marque());
+				final List<Marque> relateds = query.getQueryDetails().getRelatedInstancesFromQuery(instance, new Marque());
 				List<String> relatedNames = new ArrayList<String>();
 				List<String> actualNames = new ArrayList<String>();
 				for (Marque related : relateds) {
@@ -99,9 +105,9 @@ public class AutoFillDuringQueryIfPossibleTest extends AbstractTest {
 				for (Marque actual : actuals) {
 					actualNames.add(actual.name.stringValue());
 				}
-				Assert.assertThat(relatedNames, contains(actualNames.toArray(new String[]{})));
+				assertThat(relatedNames, contains(actualNames.toArray(new String[]{})));
 			} else {
-				System.out.println("No Marques Found For " + instance.name);
+				throw new Exception("Marque should have been found for " + instance.name);
 			}
 		}
 	}

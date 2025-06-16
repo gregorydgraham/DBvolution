@@ -15,15 +15,19 @@
  */
 package nz.co.gregs.dbvolution.operators;
 
-import nz.co.gregs.dbvolution.DBDatabase;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
+import nz.co.gregs.dbvolution.databases.definitions.DBDefinition;
 import nz.co.gregs.dbvolution.datatypes.QueryableDatatypeSyncer;
 import nz.co.gregs.dbvolution.expressions.BooleanExpression;
 import nz.co.gregs.dbvolution.expressions.DBExpression;
 import nz.co.gregs.dbvolution.expressions.DateExpression;
+import nz.co.gregs.dbvolution.expressions.IntegerExpression;
 import nz.co.gregs.dbvolution.results.DateResult;
 import nz.co.gregs.dbvolution.expressions.NumberExpression;
+import nz.co.gregs.dbvolution.expressions.RangeExpression;
 import nz.co.gregs.dbvolution.results.NumberResult;
 import nz.co.gregs.dbvolution.expressions.StringExpression;
+import nz.co.gregs.dbvolution.results.IntegerResult;
 import nz.co.gregs.dbvolution.results.StringResult;
 
 /**
@@ -43,9 +47,12 @@ public class DBBetweenInclusiveOperator extends DBOperator {
 	 * Implements a type agnostic comparison that finds items between the 2 values
 	 * including the values themselves.
 	 *
-	 * @param lowValue
-	 * @param highValue
+	 * @param lowValue the low value
+	 * @param highValue the high value
 	 */
+	@SuppressFBWarnings(
+			value = "NP_LOAD_OF_KNOWN_NULL_VALUE",
+			justification = "Null is a valid value in databases")
 	public DBBetweenInclusiveOperator(DBExpression lowValue, DBExpression highValue) {
 		super(lowValue == null ? lowValue : lowValue.copy(),
 				highValue == null ? highValue : highValue.copy());
@@ -60,7 +67,7 @@ public class DBBetweenInclusiveOperator extends DBOperator {
 	}
 
 	@Override
-	public BooleanExpression generateWhereExpression(DBDatabase db, DBExpression column) {
+	public BooleanExpression generateWhereExpression(DBDefinition db, DBExpression column) {
 		DBExpression genericExpression = column;
 		BooleanExpression betweenOp = BooleanExpression.trueExpression();
 		if (genericExpression instanceof StringExpression) {
@@ -70,12 +77,18 @@ public class DBBetweenInclusiveOperator extends DBOperator {
 			if (getFirstValue() instanceof NumberResult) {
 				NumberResult numberResult = (NumberResult) getFirstValue();
 				firstStringExpr = new NumberExpression(numberResult).stringResult();
+			} else if (getFirstValue() instanceof IntegerResult) {
+				NumberResult numberResult = (NumberResult) getFirstValue();
+				firstStringExpr = new NumberExpression(numberResult).stringResult();
 			} else if (getFirstValue() instanceof StringResult) {
 				firstStringExpr = (StringResult) getFirstValue();
 			}
 			if (getSecondValue() instanceof NumberResult) {
 				NumberResult numberResult = (NumberResult) getSecondValue();
 				secondStringExpr = new NumberExpression(numberResult).stringResult();
+			} else if (getSecondValue() instanceof IntegerResult) {
+				IntegerResult numberResult = (IntegerResult) getSecondValue();
+				secondStringExpr = new IntegerExpression(numberResult).stringResult();
 			} else if (getSecondValue() instanceof StringResult) {
 				secondStringExpr = (StringResult) getSecondValue();
 			}
@@ -87,11 +100,19 @@ public class DBBetweenInclusiveOperator extends DBOperator {
 				&& (getSecondValue() instanceof NumberResult)) {
 			NumberExpression numberExpression = (NumberExpression) genericExpression;
 			betweenOp = numberExpression.isBetweenInclusive((NumberResult) getFirstValue(), (NumberResult) getSecondValue());
+		} else if ((genericExpression instanceof IntegerExpression)
+				&& (getFirstValue() instanceof IntegerResult)
+				&& (getSecondValue() instanceof IntegerResult)) {
+			IntegerExpression numberExpression = (IntegerExpression) genericExpression;
+			betweenOp = numberExpression.isBetweenInclusive((IntegerResult) getFirstValue(), (IntegerResult) getSecondValue());
 		} else if ((genericExpression instanceof DateExpression)
 				&& (getFirstValue() instanceof DateResult)
 				&& (getSecondValue() instanceof DateResult)) {
 			DateExpression dateExpression = (DateExpression) genericExpression;
 			betweenOp = dateExpression.isBetweenInclusive((DateResult) getFirstValue(), (DateResult) getSecondValue());
+		} else if (genericExpression instanceof RangeExpression) {
+			RangeExpression dateExpression = (RangeExpression) genericExpression;
+			betweenOp = dateExpression.isBetweenInclusive(getFirstValue(), getSecondValue());
 		}
 		return this.invertOperator ? betweenOp.not() : betweenOp;
 	}

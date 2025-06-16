@@ -16,33 +16,32 @@
 package nz.co.gregs.dbvolution.expressions;
 
 import nz.co.gregs.dbvolution.results.LargeObjectResult;
-import java.util.HashSet;
-import java.util.Set;
-import nz.co.gregs.dbvolution.DBDatabase;
-import nz.co.gregs.dbvolution.DBQuery;
-import nz.co.gregs.dbvolution.DBRow;
-import nz.co.gregs.dbvolution.datatypes.DBByteArray;
-import nz.co.gregs.dbvolution.datatypes.DBLargeObject;
+import nz.co.gregs.dbvolution.databases.DBDatabase;
+import nz.co.gregs.dbvolution.databases.definitions.DBDefinition;
+import nz.co.gregs.dbvolution.datatypes.QueryableDatatype;
+import nz.co.gregs.dbvolution.results.AnyComparable;
+import nz.co.gregs.dbvolution.results.AnyResult;
 
 /**
  * LargeObjectExpression exposes database expressions for manipulating BLOBs,
  * CLOBs, and JavaObjects.
  *
- * <p style="color: #F90;">Support DBvolution at
- * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
- *
  * @author gregorygraham
+ * @param <BASETYPE> the fundamental Java type used with this LargeObjectExpression
+ * @param <RESULT> the Result class used to represent this kind of LargeObjectExpression
+ * @param <QDT> the QDT used to represent this values of this LargeObjectExpression
  */
-public class LargeObjectExpression implements LargeObjectResult, ExpressionColumn<DBByteArray> {
+public abstract class LargeObjectExpression<BASETYPE extends Object, RESULT extends AnyResult<BASETYPE>, QDT extends QueryableDatatype<BASETYPE>>
+		extends AnyExpression<BASETYPE, RESULT, QDT>
+		implements LargeObjectResult<BASETYPE>, AnyComparable<BASETYPE, RESULT> {
 
-	private final LargeObjectResult blobResult;
-	private boolean nullProtectionRequired = false;
+	private final static long serialVersionUID = 1l;
 
 	/**
 	 * Default Constructor.
 	 */
 	protected LargeObjectExpression() {
-		blobResult = new DBByteArray();
+		super();
 	}
 
 	/**
@@ -51,85 +50,27 @@ public class LargeObjectExpression implements LargeObjectResult, ExpressionColum
 	 *
 	 * @param originalBlob	originalBlob
 	 */
-	public LargeObjectExpression(LargeObjectResult originalBlob) {
-		blobResult = originalBlob;
-		if (originalBlob == null || originalBlob.getIncludesNull()) {
-			nullProtectionRequired = true;
-		}
+	public LargeObjectExpression(RESULT originalBlob) {
+		super(originalBlob);
 	}
 
 	@Override
-	public String toSQLString(DBDatabase db) {
-		return blobResult.toSQLString(db);
+	public String toSQLString(DBDefinition db) {
+		return getInnerResult().toSQLString(db);
 	}
 
 	@Override
-	public LargeObjectExpression copy() {
-		return new LargeObjectExpression(blobResult.copy());
+	public String createSQLForFromClause(DBDatabase database) {
+		throw new UnsupportedOperationException("LargeObjectExpresssion does not support createSQLForFromClause(DBDatabase) yet."); //To change body of generated methods, choose Tools | Templates.
 	}
 
 	@Override
-	public DBByteArray getQueryableDatatypeForExpressionValue() {
-		return new DBByteArray();
-	}
-
-	@Override
-	public boolean isAggregator() {
-		return blobResult.isAggregator();
-	}
-
-	@Override
-	public Set<DBRow> getTablesInvolved() {
-		HashSet<DBRow> hashSet = new HashSet<DBRow>();
-		if (blobResult != null) {
-			hashSet.addAll(blobResult.getTablesInvolved());
-		}
-		return hashSet;
-	}
-
-	/**
-	 * Tests the LargeObjectExpression to see if it is not NULL in the database.
-	 *
-	 * <p style="color: #F90;">Support DBvolution at
-	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
-	 *
-	 * @return a BooleanExpression to use in {@link DBQuery#addCondition(nz.co.gregs.dbvolution.expressions.BooleanExpression)
-	 * }
-	 */
-	public BooleanExpression isNotNull() {
-		return BooleanExpression.isNotNull(this);
-	}
-
-	/**
-	 * Tests the LargeObjectExpression to see if it is NULL in the database.
-	 *
-	 * <p style="color: #F90;">Support DBvolution at
-	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
-	 *
-	 * @return a BooleanExpression to use in {@link DBQuery#addCondition(nz.co.gregs.dbvolution.expressions.BooleanExpression)
-	 * }
-	 */
-	public BooleanExpression isNull() {
-		return BooleanExpression.isNull(this);
-	}
-
-	@Override
-	public boolean getIncludesNull() {
-		return nullProtectionRequired;
+	public boolean isComplexExpression() {
+		return false;
 	}
 
 	@Override
 	public boolean isPurelyFunctional() {
-		if (blobResult == null) {
-			return true; // this should never occur, just sayin'
-		} else {
-			return blobResult.isPurelyFunctional();
-		}
+		return getTablesInvolved().isEmpty();
 	}
-
-	@Override
-	public DBByteArray asExpressionColumn() {
-		return new DBByteArray(this);
-	}
-
 }

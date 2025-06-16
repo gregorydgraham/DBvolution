@@ -40,7 +40,6 @@ public enum StringFunctions {
 			+ "         RETURN '';\n"
 			+ "   END CASE;\n"
 			+ "END;"),
-
 	/**
 	 *
 	 */
@@ -75,12 +74,7 @@ public enum StringFunctions {
 	public String toString() {
 		return "DBV_STRINGFN_" + name();
 	}
-
-	/**
-	 *
-	 * @param stmt
-	 * @throws SQLException
-	 */
+	
 	public void add(Statement stmt) throws SQLException {
 		try {
 			stmt.execute("DROP FUNCTION " + this + "(" + parameters + ");");

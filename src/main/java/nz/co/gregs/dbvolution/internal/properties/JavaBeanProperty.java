@@ -16,35 +16,40 @@
 package nz.co.gregs.dbvolution.internal.properties;
 
 import java.beans.PropertyDescriptor;
+import java.io.Serializable;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Type;
 import java.util.ArrayList;
 import java.util.List;
-import nz.co.gregs.dbvolution.exceptions.DBPebkacException;
 import nz.co.gregs.dbvolution.exceptions.DBRuntimeException;
 import nz.co.gregs.dbvolution.exceptions.DBThrownByEndUserCodeException;
+import nz.co.gregs.dbvolution.exceptions.ReferenceToUndefinedPrimaryKeyException;
 
 /**
  * Implementation over bean properties.
+ * @param <BASETYPE> the base type of the Java bean
  */
-public class JavaBeanProperty implements JavaProperty {
+public class JavaBeanProperty<BASETYPE> implements JavaProperty<BASETYPE>, Serializable {
+
+	private static final long serialVersionUID = 1l;
 
 	private final String name;
-	private final Class<?> type;
+	private final Class<BASETYPE> type;
 	private Type genericType;
-	private final Method getter;
-	private final Method setter;
+	private transient final Method getter;
+	private transient final Method setter;
 
 	/**
 	 * Create a new JavaBeanProperty from the supplied descriptor.
 	 *
 	 * @param descriptor	descriptor
 	 */
+	@SuppressWarnings("unchecked")
 	public JavaBeanProperty(PropertyDescriptor descriptor) {
 		this.name = descriptor.getName();
-		this.type = descriptor.getPropertyType();
+		this.type = (Class<BASETYPE>) descriptor.getPropertyType();
 		this.getter = descriptor.getReadMethod();
 		this.setter = descriptor.getWriteMethod();
 		if (this.getter != null) {
@@ -93,7 +98,6 @@ public class JavaBeanProperty implements JavaProperty {
 	 * @param obj the other object to compare to.
 	 * <p style="color: #F90;">Support DBvolution at
 	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
-	 *
 	 * @return TRUE if the two objects are the same, otherwise FALSE
 	 */
 	@Override
@@ -107,7 +111,8 @@ public class JavaBeanProperty implements JavaProperty {
 		if (!(obj instanceof JavaBeanProperty)) {
 			return false;
 		}
-		JavaBeanProperty other = (JavaBeanProperty) obj;
+		@SuppressWarnings("unchecked")
+		JavaBeanProperty<BASETYPE> other = (JavaBeanProperty<BASETYPE>) obj;
 		if (getter == null) {
 			if (other.getter != null) {
 				return false;
@@ -158,7 +163,7 @@ public class JavaBeanProperty implements JavaProperty {
 	}
 
 	@Override
-	public Class<?> type() {
+	public Class<BASETYPE> type() {
 		return type;
 	}
 
@@ -245,7 +250,7 @@ public class JavaBeanProperty implements JavaProperty {
 		if (getterAnnotation != null && setterAnnotation != null) {
 			if (!annotationsEqual(getterAnnotation, setterAnnotation)) {
 				String name = annotationClass.getSimpleName();
-				throw new DBPebkacException("@" + name + " different on " + qualifiedName() + " getter and setter ");
+				throw new ReferenceToUndefinedPrimaryKeyException("@" + name + " different on " + qualifiedName() + " getter and setter ");
 			}
 		}
 		if (getterAnnotation != null) {
@@ -264,7 +269,6 @@ public class JavaBeanProperty implements JavaProperty {
 	 * @param ann2 ann2
 	 * <p style="color: #F90;">Support DBvolution at
 	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
-	 *
 	 * @return TRUE if the annotations are semantically identical, otherwise
 	 * FALSE.
 	 */
@@ -281,7 +285,6 @@ public class JavaBeanProperty implements JavaProperty {
 	 * @param annotation annotation
 	 * <p style="color: #F90;">Support DBvolution at
 	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
-	 *
 	 * @return a list of the values associated with the annotation.
 	 */
 	protected static <A extends Annotation> List<Object> getAnnotationValues(A annotation) {

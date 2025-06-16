@@ -15,47 +15,98 @@
  */
 package nz.co.gregs.dbvolution.databases;
 
-import nz.co.gregs.dbvolution.DBDatabase;
 import java.sql.SQLException;
+import java.sql.Statement;
 import javax.sql.DataSource;
+import nz.co.gregs.dbvolution.databases.settingsbuilders.InformixSettingsBuilder;
 import nz.co.gregs.dbvolution.databases.definitions.DBDefinition;
 import nz.co.gregs.dbvolution.databases.definitions.InformixDBDefinition;
+import nz.co.gregs.dbvolution.databases.settingsbuilders.AbstractInformixSettingsBuilder;
+import nz.co.gregs.dbvolution.exceptions.ExceptionDuringDatabaseFeatureSetup;
 
 /**
  * A version of DBDatabase tweaked for Informix 7 and higher.
  *
- * <p style="color: #F90;">Support DBvolution at
- * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
- *
  * @author Gregory Graham
  */
-public class InformixDB extends DBDatabase {
+public class InformixDB extends DBDatabaseImplementation {
 
 	private final static String INFORMIXDRIVERNAME = "com.informix.jdbc.IfxDriver";
+	public static final long serialVersionUID = 1l;
+	public static final int DEFAULT_PORT = 1526;
+	private String derivedURL;
 
 	/**
-	 * Create a database object for a Informix 7+ database using the supplied definition and datasource.
+	 * Create a database object for a Informix 7+ database using the supplied
+	 * definition and datasource.
 	 *
-	 * @param definition the DBDefiition that should be used with this database. Usually this will be a {@link InformixDBDefinition} but other definitions can be supplied.
+	 * @param definition the DBDefiition that should be used with this database.
+	 * Usually this will be a {@link InformixDBDefinition} but other definitions
+	 * can be supplied.
 	 * @param ds the data source that defines the connection to the database.
+	 * @throws java.sql.SQLException database errors
 	 */
-	protected InformixDB(DBDefinition definition, DataSource ds) {
-		super(definition, ds);
+	protected InformixDB(DBDefinition definition, DataSource ds) throws SQLException {
+		super(
+				new InformixSettingsBuilder()
+						.setDataSource(ds)
+						.setDefinition(definition)
+		);
 		// Informix causes problems when using batched statements :(
 		setBatchSQLStatementsWhenPossible(false);
 	}
 
 	/**
-	 * Create a database object for a Informix 7+ database using the supplied definition and connection details.
+	 * Create a database object for a Informix 7+ database using the supplied
+	 * definition and connection details.
 	 *
-	 * @param definition the DBDefiition that should be used with this database. Usually this will be a {@link InformixDBDefinition} but other definitions can be supplied.
+	 * @param definition the DBDefiition that should be used with this database.
+	 * Usually this will be a {@link InformixDBDefinition} but other definitions
+	 * can be supplied.
 	 * @param driverName the name of the driver class to use with this database.
 	 * @param jdbcURL the JDBC URL to the database
 	 * @param username the username to use when connecting to the database
 	 * @param password the password to use when connecting
+	 * @throws java.sql.SQLException database errors
 	 */
-	protected InformixDB(DBDefinition definition, String driverName, String jdbcURL, String username, String password) {
-		super(definition, driverName, jdbcURL, username, password);
+	protected InformixDB(DBDefinition definition, String driverName, String jdbcURL, String username, String password) throws SQLException {
+		this(definition, driverName,
+				new InformixSettingsBuilder()
+						.fromJDBCURL(jdbcURL)
+						.setUsername(username)
+						.setPassword(password)
+						.toSettings()
+		);
+		// Informix causes problems when using batched statements :(
+		setBatchSQLStatementsWhenPossible(false);
+	}
+
+	/**
+	 * Create a database object for a Informix 7+ database using the supplied
+	 * definition and connection details.
+	 *
+	 * @param definition the DBDefiition that should be used with this database.
+	 * Usually this will be a {@link InformixDBDefinition} but other definitions
+	 * can be supplied.
+	 * @param driverName the name of the driver class to use with this database.
+	 * @param settings settings required to connect to the Informix server
+	 * @throws java.sql.SQLException database errors
+	 */
+	protected InformixDB(DBDefinition definition, String driverName, DatabaseConnectionSettings settings) throws SQLException {
+		super(new InformixSettingsBuilder().fromSettings(settings));
+		// Informix causes problems when using batched statements :(
+		setBatchSQLStatementsWhenPossible(false);
+	}
+
+	/**
+	 * Create a database object for a Informix 7+ database using the supplied
+	 * definition and connection details.
+	 *
+	 * @param settings settings required to connect to the Informix server
+	 * @throws java.sql.SQLException database errors
+	 */
+	public InformixDB(DatabaseConnectionSettings settings) throws SQLException {
+		this(new InformixDBDefinition(), INFORMIXDRIVERNAME, settings);
 		// Informix causes problems when using batched statements :(
 		setBatchSQLStatementsWhenPossible(false);
 	}
@@ -67,19 +118,18 @@ public class InformixDB extends DBDatabase {
 	 * <p>
 	 * Remember to include the Informix JDBC driver in your classpath.
 	 *
-	 *
-	 *
-	 *
-	 *
 	 * - Database exceptions may be thrown
 	 *
 	 * @param jdbcURL jdbcURL the JDBC URL to use to connect to the database
 	 * @param username username the username used for the connection
-	 * @param password password the password required to connect the user to the database
+	 * @param password password the password required to connect the user to the
+	 * database
+	 * @throws java.sql.SQLException database errors
 	 */
-	public InformixDB(String jdbcURL, String username, String password) {
+	public InformixDB(String jdbcURL, String username, String password) throws SQLException {
 		this(new InformixDBDefinition(), INFORMIXDRIVERNAME, jdbcURL, username, password);
 	}
+
 	/**
 	 * Creates a DBDatabase configured for Informix for the given data source.
 	 *
@@ -91,13 +141,53 @@ public class InformixDB extends DBDatabase {
 	 * 1 Database exceptions may be thrown
 	 *
 	 * @param dataSource dataSource
+	 * @throws java.sql.SQLException database errors
 	 */
-	public InformixDB(DataSource dataSource) {
+	public InformixDB(DataSource dataSource) throws SQLException {
 		this(new InformixDBDefinition(), dataSource);
+	}
+
+	/**
+	 * Creates a DBDatabase configured for Informix for the given data source.
+	 *
+	 * @param builder settings required to connect to the Informix server
+	 * @throws SQLException the database may throw exceptions during initialization
+	 */
+	protected InformixDB(AbstractInformixSettingsBuilder<?, ?> builder) throws SQLException {
+		super(builder);
+	}
+
+	/**
+	 * 
+	 * Creates a DBDatabase configured for Informix for the given data source.
+	 *
+	 *
+	 * @param builder settings required to connect to the Informix server
+	 * @throws SQLException database errors during initialization
+	 */
+	public InformixDB(InformixSettingsBuilder builder) throws SQLException {
+		super(builder);
 	}
 
 	@Override
 	public DBDatabase clone() throws CloneNotSupportedException {
-		return super.clone(); //To change body of generated methods, choose Tools | Templates.
+		return super.clone(); 
 	}
+
+	@Override
+	public void addDatabaseSpecificFeatures(Statement statement) throws ExceptionDuringDatabaseFeatureSetup {
+		// none implemented so far
+		;
+	}
+
+	@Override
+	public Integer getDefaultPort() {
+		return 1526;
+	}
+
+	@Override
+	public AbstractInformixSettingsBuilder<?, ?> getURLInterpreter() {
+		return new InformixSettingsBuilder();
+	}
+
 }

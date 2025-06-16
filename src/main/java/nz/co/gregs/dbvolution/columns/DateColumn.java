@@ -17,8 +17,8 @@ package nz.co.gregs.dbvolution.columns;
 
 import java.util.Date;
 import java.util.Set;
-import nz.co.gregs.dbvolution.DBDatabase;
 import nz.co.gregs.dbvolution.DBRow;
+import nz.co.gregs.dbvolution.databases.definitions.DBDefinition;
 import nz.co.gregs.dbvolution.datatypes.DBDate;
 import nz.co.gregs.dbvolution.expressions.*;
 import nz.co.gregs.dbvolution.query.RowDefinition;
@@ -48,6 +48,8 @@ import nz.co.gregs.dbvolution.query.RowDefinition;
  */
 public class DateColumn extends DateExpression implements ColumnProvider {
 
+	private static final long serialVersionUID = 1l;
+
 	private AbstractColumn column;
 
 	private DateColumn() {
@@ -60,7 +62,7 @@ public class DateColumn extends DateExpression implements ColumnProvider {
 	 * @param field the field defining the column
 	 */
 	public DateColumn(RowDefinition row, Date field) {
-		this.column = new AbstractColumn(row, field);
+		this.column = new AbstractColumn(row, new DBDate(field));
 	}
 
 	/**
@@ -74,22 +76,23 @@ public class DateColumn extends DateExpression implements ColumnProvider {
 	}
 
 	@Override
-	public String toSQLString(DBDatabase db) {
+	public String toSQLString(DBDefinition db) {
 		return column.toSQLString(db);
 	}
 
 	@Override
 	public synchronized DateColumn copy() {
-		try {
-			DateColumn newInstance = this.getClass().newInstance();
-			newInstance.column = this.column;
-			return newInstance;
-		} catch (InstantiationException ex) {
-			throw new RuntimeException(ex);
-		} catch (IllegalAccessException ex) {
-			throw new RuntimeException(ex);
-		}
-
+		final AbstractColumn col = getColumn();
+		final DBRow row = col.getInstanceOfRow();
+		DateColumn newInstance = new DateColumn(row, (DBDate) col.getAppropriateQDTFromRow(row));
+		return newInstance;
+//		try {
+//			DateColumn newInstance = this.getClass().newInstance();
+//			newInstance.column = this.column.copy();
+//			return newInstance;
+//		} catch (InstantiationException | IllegalAccessException ex) {
+//			throw new RuntimeException(ex);
+//		}
 	}
 
 	@Override
@@ -112,6 +115,11 @@ public class DateColumn extends DateExpression implements ColumnProvider {
 		return getTablesInvolved().isEmpty();
 	}
 
+	@Override
+	public boolean isAggregator() {
+		return column.isAggregator();
+	}
+
 	/**
 	 * Create an expression to compare this column to the other column using
 	 * EQUALS.
@@ -119,10 +127,14 @@ public class DateColumn extends DateExpression implements ColumnProvider {
 	 * @param dateColumn an instance to compare to
 	 * <p style="color: #F90;">Support DBvolution at
 	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
-	 *
 	 * @return a BooleanExpression
 	 */
 	public BooleanExpression is(DBDate dateColumn) {
 		return super.is(dateColumn);
+	}
+
+	@Override
+	public SortProvider.Column getSortProvider() {
+		return column.getSortProvider();
 	}
 }

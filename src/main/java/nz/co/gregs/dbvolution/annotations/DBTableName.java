@@ -22,13 +22,10 @@ import java.lang.annotation.Target;
  * benefits of DBvolution.
  *
  * <p>
- * This annotation is inherited by subclasses.
+ * This annotation is inherited by subclasses.</p>
  *
  * <p>
- * DBTableName is generated automatically by DBTableClassGenerator.
- *
- * <p style="color: #F90;">Support DBvolution at
- * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+ * DBTableName is generated automatically by DBTableClassGenerator.</p>
  *
  * @author Gregory Graham
  */
@@ -40,19 +37,15 @@ public @interface DBTableName {
 	/**
 	 * The raw table name as stored in the database.
 	 *
-	 * <p style="color: #F90;">Support DBvolution at
-	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
-	 *
 	 * @return the table name.
 	 */
 	String value();
+
 	/**
-	 * The raw table name as stored in the database.
+	 * The raw schema name as stored in the database.
 	 *
-	 * <p style="color: #F90;">Support DBvolution at
-	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
-	 *
-	 * @return the table name.
+	 * @return the schema name.
 	 */
 	String schema() default "";
+
 }

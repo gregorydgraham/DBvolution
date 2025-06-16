@@ -15,15 +15,20 @@
  */
 package nz.co.gregs.dbvolution.datatypes;
 
+import nz.co.gregs.dbvolution.utility.comparators.NumberComparator;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.Collection;
+import java.util.Comparator;
 import java.util.HashSet;
 import java.util.Set;
-import nz.co.gregs.dbvolution.DBDatabase;
+import nz.co.gregs.dbvolution.databases.DBDatabase;
 import nz.co.gregs.dbvolution.DBReport;
 import nz.co.gregs.dbvolution.DBRow;
+import nz.co.gregs.dbvolution.columns.NumberColumn;
 import nz.co.gregs.dbvolution.databases.definitions.DBDefinition;
+import nz.co.gregs.dbvolution.exceptions.IncorrectRowProviderInstanceSuppliedException;
+import nz.co.gregs.dbvolution.expressions.IntegerExpression;
 import nz.co.gregs.dbvolution.expressions.NumberExpression;
 import nz.co.gregs.dbvolution.expressions.StringExpression;
 import nz.co.gregs.dbvolution.results.NumberResult;
@@ -31,6 +36,8 @@ import nz.co.gregs.dbvolution.operators.DBPermittedRangeExclusiveOperator;
 import nz.co.gregs.dbvolution.operators.DBPermittedRangeInclusiveOperator;
 import nz.co.gregs.dbvolution.operators.DBPermittedRangeOperator;
 import nz.co.gregs.dbvolution.operators.DBPermittedValuesOperator;
+import nz.co.gregs.dbvolution.query.RowDefinition;
+import nz.co.gregs.dbvolution.utility.StringCheck;
 
 /**
  * Encapsulates database values that are Numbers.
@@ -52,7 +59,7 @@ import nz.co.gregs.dbvolution.operators.DBPermittedValuesOperator;
  *
  * @author Gregory Graham
  */
-public class DBNumber extends QueryableDatatype implements NumberResult {
+public class DBNumber extends QueryableDatatype<Number> implements NumberResult {
 
 	private static final long serialVersionUID = 1;
 
@@ -98,29 +105,13 @@ public class DBNumber extends QueryableDatatype implements NumberResult {
 		super(aNumber);
 	}
 
+	public DBNumber(IntegerExpression integerExpression) {
+		this(integerExpression.numberResult());
+	}
+
 	@Override
 	public DBNumber copy() {
 		return (DBNumber) super.copy();
-	}
-
-	/**
-	 * Sets the value of this DBNumber to the value of the object provided.
-	 *
-	 * <p>
-	 * You probably want {@link #setValue(java.lang.Number)} or {@link #setValue(nz.co.gregs.dbvolution.datatypes.DBNumber)
-	 * }
-	 *
-	 *
-	 */
-	@Override
-	void setValue(Object newLiteralValue) {
-		if (newLiteralValue instanceof Number) {
-			setValue((Number) newLiteralValue);
-		} else if (newLiteralValue instanceof DBNumber) {
-			setValue((DBNumber) newLiteralValue);
-		} else {
-			throw new ClassCastException(this.getClass().getSimpleName() + ".setValue() Called With A " + newLiteralValue.getClass().getSimpleName() + ": Use only Numbers with this class");
-		}
 	}
 
 	/**
@@ -157,12 +148,42 @@ public class DBNumber extends QueryableDatatype implements NumberResult {
 	 *
 	 * @param newLiteralValue	newLiteralValue
 	 */
+	@Override
 	public void setValue(Number newLiteralValue) {
 		if (newLiteralValue == null) {
 			super.setLiteralValue(null);
 		} else {
 			super.setLiteralValue(newLiteralValue.doubleValue());
 		}
+	}
+
+	/**
+	 * Set the value of this DBNumber to the Double, Long, Integer, or other
+	 * number provided.
+	 *
+	 * <p>
+	 * A convenience method the uses Double.parseDouble(String) to create a number
+	 * from the string.
+	 *
+	 * <p>
+	 * This is probably the method you want to use to set or change the value of
+	 * this DBNumber. When creating a new row or updating an existing row use this
+	 * method or {@link #setValue(nz.co.gregs.dbvolution.datatypes.DBNumber)} to
+	 * correctly set the value.
+	 *
+	 * <p>
+	 * Remember:</p>
+	 *
+	 * <ul>
+	 * <li>Set the column to NULL using setValue((Number)null)</li>
+	 * <li>Use {@link DBDatabase#insert(nz.co.gregs.dbvolution.DBRow...) } or {@link DBDatabase#update(nz.co.gregs.dbvolution.DBRow...)
+	 * } to make the changes permanent.</li>
+	 * </ul>
+	 *
+	 * @param newLiteralValue	newLiteralValue
+	 */
+	public void setValue(String newLiteralValue) {
+		setValue(Double.valueOf(StringCheck.checkNotNullOrEmpty(newLiteralValue, null, null)));
 	}
 
 	/**
@@ -175,20 +196,43 @@ public class DBNumber extends QueryableDatatype implements NumberResult {
 	 */
 	@Override
 	public String getSQLDatatype() {
-		return "NUMERIC(15,5)";
+		return "NUMERIC(" + getNumericPrecision() + "," + getNumericScale() + ")";
+	}
+
+	/**
+	 * The number of decimal places supported by DBNumber.
+	 *
+	 * <p>
+	 * Theoretically 16 decimals is the maximum accuracy of floating point
+	 * numbers. given the max precision(28) of pre-2012 MS SQL Server, 16 decimals
+	 * seems as accurate as is reasonable</p>
+	 *
+	 * @return 16
+	 */
+	public static int getNumericScale() {
+		return 16;
+	}
+
+	/**
+	 * The number of integer digits supported by DBNumber.
+	 *
+	 * <p>
+	 * 28 is the maximum precision for MS SQL Server pre-2012, other databases
+	 * seem not to be limited. 38 is the maximum for MSSQLServer 2012+</p>
+	 *
+	 * @return 28
+	 */
+	public static int getNumericPrecision() {
+		return 28;
 	}
 
 	/**
 	 *
-	 * @param db	db
-	 * <p style="color: #F90;">Support DBvolution at
-	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
-	 *
+	 * @param defn the DBDefinition to used in formatting the value
 	 * @return the underlying number formatted for a SQL statement
 	 */
 	@Override
-	public String formatValueForSQLStatement(DBDatabase db) {
-		DBDefinition defn = db.getDefinition();
+	public String formatValueForSQLStatement(DBDefinition defn) {
 		if (isNull()) {
 			return defn.getNull();
 		}
@@ -224,9 +268,9 @@ public class DBNumber extends QueryableDatatype implements NumberResult {
 		if (getLiteralValue() == null) {
 			return null;
 		} else if (getLiteralValue() instanceof Number) {
-			return (Number) getLiteralValue();
+			return getLiteralValue().doubleValue();
 		} else {
-			return Double.parseDouble(getLiteralValue().toString());
+			return Double.valueOf(StringCheck.checkNotNullOrEmpty(getLiteralValue().toString(), null, null));
 		}
 	}
 
@@ -242,10 +286,8 @@ public class DBNumber extends QueryableDatatype implements NumberResult {
 	public Double doubleValue() {
 		if (getLiteralValue() == null) {
 			return null;
-		} else if (getLiteralValue() instanceof Number) {
-			return ((Number) getLiteralValue()).doubleValue();
 		} else {
-			return Double.parseDouble(getLiteralValue().toString());
+			return getLiteralValue().doubleValue();
 		}
 	}
 
@@ -261,12 +303,8 @@ public class DBNumber extends QueryableDatatype implements NumberResult {
 	public Long longValue() {
 		if (getLiteralValue() == null) {
 			return null;
-		} else if (getLiteralValue() instanceof Long) {
-			return (Long) getLiteralValue();
-		} else if (getLiteralValue() instanceof Number) {
-			return ((Number) getLiteralValue()).longValue();
 		} else {
-			return Long.parseLong(getLiteralValue().toString());
+			return getLiteralValue().longValue();
 		}
 	}
 
@@ -283,10 +321,8 @@ public class DBNumber extends QueryableDatatype implements NumberResult {
 	public Integer intValue() {
 		if (getLiteralValue() == null) {
 			return null;
-		} else if (getLiteralValue() instanceof Number) {
-			return ((Number) getLiteralValue()).intValue();
 		} else {
-			return Integer.parseInt(getLiteralValue().toString());
+			return getLiteralValue().intValue();
 		}
 	}
 
@@ -302,7 +338,7 @@ public class DBNumber extends QueryableDatatype implements NumberResult {
 
 	@Override
 	public Set<DBRow> getTablesInvolved() {
-		return new HashSet<DBRow>();
+		return new HashSet<>();
 	}
 
 	/**
@@ -312,7 +348,7 @@ public class DBNumber extends QueryableDatatype implements NumberResult {
 	 * @param permitted	permitted
 	 */
 	public void permittedValues(Number... permitted) {
-		this.setOperator(new DBPermittedValuesOperator((Object[]) permitted));
+		this.setOperator(new DBPermittedValuesOperator<Number>(permitted));
 	}
 
 	/**
@@ -322,7 +358,7 @@ public class DBNumber extends QueryableDatatype implements NumberResult {
 	 * @param permitted	permitted
 	 */
 	public void permittedValues(Collection<Number> permitted) {
-		this.setOperator(new DBPermittedValuesOperator(permitted));
+		this.setOperator(new DBPermittedValuesOperator<Number>(permitted));
 	}
 
 	/**
@@ -332,7 +368,7 @@ public class DBNumber extends QueryableDatatype implements NumberResult {
 	 * @param permitted	permitted
 	 */
 	public void permittedValues(NumberResult... permitted) {
-		this.setOperator(new DBPermittedValuesOperator((Object[]) permitted));
+		this.setOperator(new DBPermittedValuesOperator<NumberResult>(permitted));
 	}
 
 	/**
@@ -343,7 +379,7 @@ public class DBNumber extends QueryableDatatype implements NumberResult {
 	 * @param excluded	excluded
 	 */
 	public void excludedValues(Number... excluded) {
-		this.setOperator(new DBPermittedValuesOperator((Object[]) excluded));
+		this.setOperator(new DBPermittedValuesOperator<Number>(excluded));
 		negateOperator();
 	}
 
@@ -355,7 +391,7 @@ public class DBNumber extends QueryableDatatype implements NumberResult {
 	 * @param excluded	excluded
 	 */
 	public void excludedValues(Collection<Number> excluded) {
-		this.setOperator(new DBPermittedValuesOperator(excluded));
+		this.setOperator(new DBPermittedValuesOperator<Number>(excluded));
 		negateOperator();
 	}
 
@@ -367,7 +403,7 @@ public class DBNumber extends QueryableDatatype implements NumberResult {
 	 * @param excluded	excluded
 	 */
 	public void excludedValues(NumberResult... excluded) {
-		this.setOperator(new DBPermittedValuesOperator((Object[]) excluded));
+		this.setOperator(new DBPermittedValuesOperator<NumberResult>(excluded));
 		negateOperator();
 	}
 
@@ -392,7 +428,7 @@ public class DBNumber extends QueryableDatatype implements NumberResult {
 	 * @param upperBound upperBound
 	 */
 	public void permittedRange(Number lowerBound, Number upperBound) {
-		setOperator(new DBPermittedRangeOperator(lowerBound, upperBound));
+		setOperator(new DBPermittedRangeOperator<Number>(lowerBound, upperBound));
 	}
 
 	/**
@@ -416,7 +452,7 @@ public class DBNumber extends QueryableDatatype implements NumberResult {
 	 * @param upperBound upperBound
 	 */
 	public void permittedRange(NumberResult lowerBound, NumberResult upperBound) {
-		setOperator(new DBPermittedRangeOperator(lowerBound, upperBound));
+		setOperator(new DBPermittedRangeOperator<NumberResult>(lowerBound, upperBound));
 	}
 
 	/**
@@ -536,7 +572,7 @@ public class DBNumber extends QueryableDatatype implements NumberResult {
 	 * @param upperBound upperBound
 	 */
 	public void excludedRange(Number lowerBound, Number upperBound) {
-		setOperator(new DBPermittedRangeOperator(lowerBound, upperBound));
+		setOperator(new DBPermittedRangeOperator<Number>(lowerBound, upperBound));
 		negateOperator();
 	}
 
@@ -561,7 +597,7 @@ public class DBNumber extends QueryableDatatype implements NumberResult {
 	 * @param upperBound upperBound
 	 */
 	public void excludedRange(NumberResult lowerBound, NumberResult upperBound) {
-		setOperator(new DBPermittedRangeOperator(lowerBound, upperBound));
+		setOperator(new DBPermittedRangeOperator<NumberResult>(lowerBound, upperBound));
 		negateOperator();
 	}
 
@@ -671,7 +707,7 @@ public class DBNumber extends QueryableDatatype implements NumberResult {
 	}
 
 	@Override
-	protected Number getFromResultSet(DBDatabase database, ResultSet resultSet, String fullColumnName) throws SQLException {
+	protected Number getFromResultSet(DBDefinition defn, ResultSet resultSet, String fullColumnName) throws SQLException {
 		try {
 			return resultSet.getBigDecimal(fullColumnName);
 		} catch (SQLException ex) {
@@ -687,4 +723,122 @@ public class DBNumber extends QueryableDatatype implements NumberResult {
 	public StringExpression stringResult() {
 		return NumberExpression.value(this).stringResult();
 	}
+
+	@Override
+	protected void setValueFromStandardStringEncoding(String encodedValue) {
+		setValue(Double.valueOf(StringCheck.checkNotNullOrEmpty(encodedValue, null, null)));
+	}
+
+	@Override
+	public NumberColumn getColumn(RowDefinition row) throws IncorrectRowProviderInstanceSuppliedException {
+		return new NumberColumn(row, this);
+	}
+
+	public void excludeNotNull() {
+		this.permittedValues((Number) null);
+	}
+
+	public void excludeNull() {
+		this.excludedValues((Number) null);
+	}
+
+	public void permitOnlyNull() {
+		excludeNotNull();
+	}
+
+	public void permitOnlyNotNull() {
+		excludeNull();
+	}
+
+	/**
+	 * Set the value to be inserted when no value has been set, using
+	 * {@link #setValue(java.lang.Object) setValue(...)}, for the QDT.
+	 *
+	 * <p>
+	 * The value is only used during the initial insert and does not effect the
+	 * definition of the column within the database.</p>
+	 *
+	 * <p>
+	 * Care should be taken when using this as some "obvious" uses are better
+	 * handled using the
+	 * {@link #setDefaultInsertValue(nz.co.gregs.dbvolution.results.AnyResult) expression version}.
+	 * In particular, setDefaultInsertValue(new Date()) is probably NOT what you
+	 * want, setDefaultInsertValue(DateExpression.currentDate()) will produce a
+	 * correct creation date value.</p>
+	 *
+	 * @param value the value to use during insertion when no particular value has
+	 * been specified.
+	 * @return This QDT
+	 */
+	@Override
+	public synchronized DBNumber setDefaultInsertValue(Number value) {
+		super.setDefaultInsertValue(value.longValue());
+		return this;
+	}
+
+	/**
+	 * Set the value to be inserted when no value has been set, using
+	 * {@link #setValue(java.lang.Object) setValue(...)}, for the QDT.
+	 *
+	 * <p>
+	 * The value is only used during the initial insert and does not effect the
+	 * definition of the column within the database.</p>
+	 *
+	 * @param value the value to use during insertion when no particular value has
+	 * been specified.
+	 * @return This QDT
+	 */
+	public synchronized DBNumber setDefaultInsertValue(NumberResult value) {
+		super.setDefaultInsertValue(value);
+		return this;
+	}
+
+	/**
+	 * Set the value to be used during an update when no value has been set, using
+	 * {@link #setValue(java.lang.Object) setValue(...)}, for the QDT.
+	 *
+	 * <p>
+	 * The value is only used during updates and does not effect the definition of
+	 * the column within the database nor the initial value of the column.</p>
+	 *
+	 * <p>
+	 * Care should be taken when using this as some "obvious" uses are better
+	 * handled using the
+	 * {@link #setDefaultUpdateValue(nz.co.gregs.dbvolution.results.AnyResult) expression version}.
+	 * In particular, setDefaultUpdateValue(new Date()) is probably NOT what you
+	 * want, setDefaultUpdateValue(DateExpression.currentDate()) will produce a
+	 * correct update time value.</p>
+	 *
+	 * @param value the value to use during update when no particular value has
+	 * been specified.
+	 * @return This QDT
+	 */
+	@Override
+	public synchronized DBNumber setDefaultUpdateValue(Number value) {
+		super.setDefaultUpdateValue(value.longValue());
+		return this;
+	}
+
+	/**
+	 * Set the value to be used during an update when no value has been set, using
+	 * {@link #setValue(java.lang.Object) setValue(...)}, for the QDT.
+	 *
+	 * <p>
+	 * The value is only used during updates and does not effect the definition of
+	 * the column within the database nor the initial value of the column.</p>
+	 *
+	 * @param value the value to use during update when no particular value has
+	 * been specified.
+	 * @return This QDT
+	 */
+	public synchronized DBNumber setDefaultUpdateValue(NumberResult value) {
+		super.setDefaultUpdateValue(value);
+		return this;
+	}
+
+	@Override
+	public Comparator<Number> getComparator() {
+		return new NumberComparator();
+	}
+
 }

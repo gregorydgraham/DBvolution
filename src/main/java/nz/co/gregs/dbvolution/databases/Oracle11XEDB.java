@@ -15,23 +15,18 @@
  */
 package nz.co.gregs.dbvolution.databases;
 
-import java.sql.Connection;
 import java.sql.SQLException;
 import java.sql.Statement;
 import javax.sql.DataSource;
-import nz.co.gregs.dbvolution.DBDatabase;
-import nz.co.gregs.dbvolution.DBRow;
 import nz.co.gregs.dbvolution.databases.definitions.Oracle11XEDBDefinition;
-import nz.co.gregs.dbvolution.databases.definitions.DBDefinition;
 import nz.co.gregs.dbvolution.databases.definitions.Oracle12DBDefinition;
 import nz.co.gregs.dbvolution.databases.definitions.OracleDBDefinition;
+import nz.co.gregs.dbvolution.databases.settingsbuilders.Oracle11XESettingsBuilder;
+import nz.co.gregs.dbvolution.exceptions.ExceptionDuringDatabaseFeatureSetup;
 import nz.co.gregs.dbvolution.internal.oracle.xe.*;
 
 /**
  * Implements support for version 11 and prior of the Oracle database.
- *
- * <p style="color: #F90;">Support DBvolution at
- * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
  *
  * @author Gregory Graham
  * @see OracleDB
@@ -41,8 +36,10 @@ import nz.co.gregs.dbvolution.internal.oracle.xe.*;
  * @see Oracle12DBDefinition
  */
 public class Oracle11XEDB extends OracleDB {
-	
-/**
+
+	public static final long serialVersionUID = 1l;
+
+	/**
 	 *
 	 * Provides a convenient constructor for DBDatabases that have configuration
 	 * details hardwired or are able to automatically retrieve the details.
@@ -64,17 +61,51 @@ public class Oracle11XEDB extends OracleDB {
 	 *
 	 * @see DBDefinition
 	 */
-	public Oracle11XEDB() {
-		super();
-	}
-	
+//	public Oracle11XEDB() {
+//		super();
+//	}
 	/**
 	 * Creates a DBDatabase instance tweaked for Oracle 11 and above.
 	 *
 	 * @param dataSource a datasource to an Oracle database
+	 * @throws java.sql.SQLException database errors
 	 */
-	public Oracle11XEDB(DataSource dataSource) {
-		super(new Oracle11XEDBDefinition(), dataSource);
+	public Oracle11XEDB(DataSource dataSource) throws SQLException {
+		super(
+				new Oracle11XESettingsBuilder().setDataSource(dataSource)
+		);
+//		super(new Oracle11XEDBDefinition(), dataSource);
+	}
+
+	/**
+	 * Creates an Oracle connection for the DatabaseConnectionSettings.
+	 *
+	 * @param dcs	dcs
+	 * @throws java.sql.SQLException database errors
+	 */
+	public Oracle11XEDB(DatabaseConnectionSettings dcs) throws SQLException {
+		this(new Oracle11XESettingsBuilder().fromSettings(dcs));
+	}
+
+	/**
+	 * Creates an Oracle connection for the DatabaseConnectionSettings.
+	 *
+	 * @param dcs	dcs
+	 * @throws java.sql.SQLException database errors
+	 */
+	public Oracle11XEDB(Oracle11XESettingsBuilder dcs) throws SQLException {
+		super(dcs);
+	}
+
+	/**
+	 * Creates an Oracle connection for the DatabaseConnectionSettings.
+	 *
+	 * @param dcs	dcs
+	 * @param defn the oracle database definition
+	 * @throws java.sql.SQLException database errors
+	 */
+	public Oracle11XEDB(Oracle11XEDBDefinition defn, DatabaseConnectionSettings dcs) throws SQLException {
+		this(new Oracle11XESettingsBuilder().fromSettings(dcs).setDefinition(defn));
 	}
 
 	/**
@@ -84,9 +115,11 @@ public class Oracle11XEDB extends OracleDB {
 	 * @param jdbcURL jdbcURL
 	 * @param driverName driverName
 	 * @param password password
-	 * @param username username
+	 * @param username the database account's username
+	 * @throws java.sql.SQLException database errors
 	 */
-	public Oracle11XEDB(OracleDBDefinition definition, String driverName, String jdbcURL, String username, String password) {
+	@Deprecated
+	public Oracle11XEDB(OracleDBDefinition definition, String driverName, String jdbcURL, String username, String password) throws SQLException {
 		super(definition, driverName, jdbcURL, username, password);
 	}
 
@@ -97,8 +130,10 @@ public class Oracle11XEDB extends OracleDB {
 	 * @param jdbcURL jdbcURL
 	 * @param username username
 	 * @param password password
+	 * @throws java.sql.SQLException database errors
 	 */
-	public Oracle11XEDB(String driverName, String jdbcURL, String username, String password) {
+	@Deprecated
+	public Oracle11XEDB(String driverName, String jdbcURL, String username, String password) throws SQLException {
 		super(new Oracle11XEDBDefinition(), driverName, jdbcURL, username, password);
 	}
 
@@ -108,9 +143,10 @@ public class Oracle11XEDB extends OracleDB {
 	 * @param jdbcURL jdbcURL
 	 * @param username username
 	 * @param password password
+	 * @throws java.sql.SQLException database errors
 	 */
-	public Oracle11XEDB(String jdbcURL, String username, String password) {
-		super(new Oracle11XEDBDefinition(), "oracle.jdbc.driver.OracleDriver", jdbcURL, username, password);
+	public Oracle11XEDB(String jdbcURL, String username, String password) throws SQLException {
+		this(new Oracle11XESettingsBuilder().fromJDBCURL(jdbcURL, username, password));
 	}
 
 	/**
@@ -121,26 +157,11 @@ public class Oracle11XEDB extends OracleDB {
 	 * @param serviceName serviceName
 	 * @param password password
 	 * @param username username
+	 * @throws java.sql.SQLException database errors
 	 */
-	public Oracle11XEDB(String host, int port, String serviceName, String username, String password) {
+	@Deprecated
+	public Oracle11XEDB(String host, int port, String serviceName, String username, String password) throws SQLException {
 		super(new Oracle11XEDBDefinition(), "oracle.jdbc.driver.OracleDriver", "jdbc:oracle:thin:@//" + host + ":" + port + "/" + serviceName, username, password);
-	}
-
-	@Override
-	protected <TR extends DBRow> void dropAnyAssociatedDatabaseObjects(TR tableRow) throws SQLException {
-
-		if (tableRow.getPrimaryKey() != null) {
-			DBDefinition definition = getDefinition();
-			final DBStatement dbStatement = getDBStatement();
-			final String formattedTableName = definition.formatTableName(tableRow);
-			final String formattedColumnName = definition.formatColumnName(tableRow.getPrimaryKeyColumnName());
-			try {
-				dbStatement.execute("DROP SEQUENCE " + definition.getPrimaryKeySequenceName(formattedTableName, formattedColumnName));
-			} finally {
-				dbStatement.close();
-			}
-		}
-		super.dropAnyAssociatedDatabaseObjects(tableRow);
 	}
 
 	@Override
@@ -149,15 +170,12 @@ public class Oracle11XEDB extends OracleDB {
 	}
 
 	@Override
-	protected Connection getConnectionFromDriverManager() throws SQLException {
-		return super.getConnectionFromDriverManager(); //To change body of generated methods, choose Tools | Templates.
-	}	
-	
-	@Override
-	protected void addDatabaseSpecificFeatures(Statement statement) throws SQLException {
+	public void addDatabaseSpecificFeatures(Statement statement) throws ExceptionDuringDatabaseFeatureSetup {
 		super.addDatabaseSpecificFeatures(statement);
-		
 		for (GeometryFunctions fn : GeometryFunctions.values()) {
+			fn.add(statement);
+		}
+		for (Point2DFunctions fn : Point2DFunctions.values()) {
 			fn.add(statement);
 		}
 		for (MultiPoint2DFunctions fn : MultiPoint2DFunctions.values()) {
@@ -168,6 +186,9 @@ public class Oracle11XEDB extends OracleDB {
 		}
 	}
 
-
+	@Override
+	public Oracle11XESettingsBuilder getURLInterpreter() {
+		return new Oracle11XESettingsBuilder();
+	}
 
 }

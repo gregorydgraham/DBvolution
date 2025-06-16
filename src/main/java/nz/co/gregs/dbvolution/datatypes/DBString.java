@@ -17,19 +17,17 @@ package nz.co.gregs.dbvolution.datatypes;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Date;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
-import nz.co.gregs.dbvolution.DBDatabase;
+import java.util.*;
 import nz.co.gregs.dbvolution.DBReport;
 import nz.co.gregs.dbvolution.DBRow;
+import nz.co.gregs.dbvolution.columns.StringColumn;
 import nz.co.gregs.dbvolution.databases.definitions.DBDefinition;
+import nz.co.gregs.dbvolution.exceptions.IncorrectRowProviderInstanceSuppliedException;
 import nz.co.gregs.dbvolution.expressions.StringExpression;
 import nz.co.gregs.dbvolution.results.StringResult;
 import nz.co.gregs.dbvolution.operators.*;
+import nz.co.gregs.dbvolution.query.RowDefinition;
+import nz.co.gregs.dbvolution.utility.comparators.ComparableComparator;
 
 /**
  * Encapsulates database values that are strings of characters.
@@ -51,7 +49,7 @@ import nz.co.gregs.dbvolution.operators.*;
  *
  * @author Gregory Graham
  */
-public class DBString extends QueryableDatatype implements StringResult {
+public class DBString extends QueryableDatatype<String> implements StringResult {
 
 	private static final long serialVersionUID = 1L;
 	private boolean isDBEmptyString = false;
@@ -63,15 +61,29 @@ public class DBString extends QueryableDatatype implements StringResult {
 	 * @param dbStrings	dbStrings
 	 * <p style="color: #F90;">Support DBvolution at
 	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
-	 *
 	 * @return the defined values of all the DBStrings.
 	 */
 	public static List<String> toStringList(List<DBString> dbStrings) {
-		ArrayList<String> strings = new ArrayList<String>();
+		ArrayList<String> strings = new ArrayList<>();
 		for (DBString dBString : dbStrings) {
 			strings.add(dBString.stringValue());
 		}
 		return strings;
+	}
+
+	/**
+	 * Utility function to return the values of a list of Strings in a list of
+	 * DBStrings.
+	 *
+	 * @param strings the strings to transformed into DBStrings
+	 * @return the defined values of all the DBStrings.
+	 */
+	public static ArrayList<DBString> toDBStringList(List<String> strings) {
+		ArrayList<DBString> dbStrings = new ArrayList<>();
+		for (String string : strings) {
+			dbStrings.add(new DBString(string));
+		}
+		return dbStrings;
 	}
 
 	/**
@@ -112,20 +124,12 @@ public class DBString extends QueryableDatatype implements StringResult {
 		super(stringExpression);
 	}
 
-	@Override
-	void setValue(Object newLiteralValue) {
-		if (newLiteralValue instanceof String) {
-			setValue((String) newLiteralValue);
-		} else {
-			throw new ClassCastException(this.getClass().getSimpleName() + ".setValue() Called With A Non-String: Use only Strings with this class");
-		}
-	}
-
 	/**
 	 * Sets the value of this DBString to the value provided.
 	 *
 	 * @param str	str
 	 */
+	@Override
 	public void setValue(String str) {
 		super.setLiteralValue(str);
 	}
@@ -148,15 +152,11 @@ public class DBString extends QueryableDatatype implements StringResult {
 	}
 
 	@Override
-	public String formatValueForSQLStatement(DBDatabase db) {
-		DBDefinition defn = db.getDefinition();
-
-		if (getLiteralValue() instanceof Date) {
-			return defn.getDateFormattedForQuery((Date) getLiteralValue());
-		} else if (getLiteralValue().equals("")) {
+	public String formatValueForSQLStatement(DBDefinition defn) {
+		if (getLiteralValue().isEmpty()) {
 			return defn.getEmptyString();
 		} else {
-			String unsafeValue = getLiteralValue().toString();
+			String unsafeValue = getLiteralValue();
 			return defn.beginStringValue() + defn.safeString(unsafeValue) + defn.endStringValue();
 		}
 	}
@@ -178,7 +178,7 @@ public class DBString extends QueryableDatatype implements StringResult {
 
 	@Override
 	public Set<DBRow> getTablesInvolved() {
-		return new HashSet<DBRow>();
+		return new HashSet<>();
 	}
 
 	/**
@@ -188,7 +188,7 @@ public class DBString extends QueryableDatatype implements StringResult {
 	 * @param permitted	permitted
 	 */
 	public void permittedValues(String... permitted) {
-		this.setOperator(new DBPermittedValuesOperator((Object[]) permitted));
+		this.setOperator(new DBPermittedValuesOperator<String>(permitted));
 	}
 
 	/**
@@ -198,7 +198,7 @@ public class DBString extends QueryableDatatype implements StringResult {
 	 * @param permitted	permitted
 	 */
 	public void permittedValues(Object... permitted) {
-		this.setOperator(new DBPermittedValuesOperator(permitted));
+		this.setOperator(new DBPermittedValuesOperator<Object>(permitted));
 	}
 
 	/**
@@ -208,7 +208,7 @@ public class DBString extends QueryableDatatype implements StringResult {
 	 * @param permitted	permitted
 	 */
 	public void permittedValues(Collection<String> permitted) {
-		this.setOperator(new DBPermittedValuesOperator(permitted));
+		this.setOperator(new DBPermittedValuesOperator<String>(permitted));
 	}
 
 	/**
@@ -304,7 +304,7 @@ public class DBString extends QueryableDatatype implements StringResult {
 	 * @param excluded	excluded
 	 */
 	public void excludedValues(String... excluded) {
-		this.setOperator(new DBPermittedValuesOperator((Object[]) excluded));
+		this.setOperator(new DBPermittedValuesOperator<String>(excluded));
 		negateOperator();
 	}
 
@@ -316,7 +316,7 @@ public class DBString extends QueryableDatatype implements StringResult {
 	 * @param excluded	excluded
 	 */
 	public void excludedValues(Collection<String> excluded) {
-		this.setOperator(new DBPermittedValuesOperator(excluded));
+		this.setOperator(new DBPermittedValuesOperator<String>(excluded));
 		negateOperator();
 	}
 
@@ -341,7 +341,7 @@ public class DBString extends QueryableDatatype implements StringResult {
 	 * @param upperBound upperBound
 	 */
 	public void permittedRange(String lowerBound, String upperBound) {
-		setOperator(new DBPermittedRangeOperator(lowerBound, upperBound));
+		setOperator(new DBPermittedRangeOperator<String>(lowerBound, upperBound));
 	}
 
 	/**
@@ -413,7 +413,7 @@ public class DBString extends QueryableDatatype implements StringResult {
 	 * @param upperBound upperBound
 	 */
 	public void excludedRange(String lowerBound, String upperBound) {
-		setOperator(new DBPermittedRangeOperator(lowerBound, upperBound));
+		setOperator(new DBPermittedRangeOperator<String>(lowerBound, upperBound));
 		negateOperator();
 	}
 
@@ -548,7 +548,7 @@ public class DBString extends QueryableDatatype implements StringResult {
 	 * @param permitted	permitted
 	 */
 	public void permittedValues(StringExpression... permitted) {
-		this.setOperator(new DBPermittedValuesOperator((Object[]) permitted));
+		this.setOperator(new DBPermittedValuesOperator<StringExpression>(permitted));
 	}
 
 	/**
@@ -559,7 +559,7 @@ public class DBString extends QueryableDatatype implements StringResult {
 	 * @param excluded	excluded
 	 */
 	public void excludedValues(StringExpression... excluded) {
-		this.setOperator(new DBPermittedValuesOperator((Object[]) excluded));
+		this.setOperator(new DBPermittedValuesOperator<StringExpression>(excluded));
 		negateOperator();
 	}
 
@@ -584,7 +584,7 @@ public class DBString extends QueryableDatatype implements StringResult {
 	 * @param upperBound upperBound
 	 */
 	public void permittedRange(StringExpression lowerBound, StringExpression upperBound) {
-		setOperator(new DBPermittedRangeOperator(lowerBound, upperBound));
+		setOperator(new DBPermittedRangeOperator<StringExpression>(lowerBound, upperBound));
 	}
 
 	/**
@@ -656,7 +656,7 @@ public class DBString extends QueryableDatatype implements StringResult {
 	 * @param upperBound upperBound
 	 */
 	public void excludedRange(StringExpression lowerBound, StringExpression upperBound) {
-		setOperator(new DBPermittedRangeOperator(lowerBound, upperBound));
+		setOperator(new DBPermittedRangeOperator<StringExpression>(lowerBound, upperBound));
 		negateOperator();
 	}
 
@@ -736,18 +736,21 @@ public class DBString extends QueryableDatatype implements StringResult {
 	 * FALSE.
 	 */
 	public boolean isEmptyString() {
-		return isDBEmptyString;
+		return isDBEmptyString || (getLiteralValue() != null && getLiteralValue().isEmpty());
 	}
 
 	@Override
-	protected Object getFromResultSet(DBDatabase database, ResultSet resultSet, String fullColumnName) throws SQLException {
+	protected String getFromResultSet(DBDefinition defn, ResultSet resultSet, String fullColumnName) throws SQLException {
 		String gotString = resultSet.getString(fullColumnName);
-		if (!database.supportsDifferenceBetweenNullAndEmptyString()) {
-			if (gotString != null && gotString.isEmpty()) {
+		if (resultSet.wasNull() || gotString == null) {
+			if (defn.requiredToProduceEmptyStringsForNull()) {
+				return "";
+			} else {
 				return null;
 			}
+		} else {
+			return gotString;
 		}
-		return gotString;
 	}
 
 	/**
@@ -770,8 +773,8 @@ public class DBString extends QueryableDatatype implements StringResult {
 	}
 
 	@Override
-	protected DBOperator setToNull(DBDatabase database) {
-		if (!database.supportsDifferenceBetweenNullAndEmptyString()) {
+	protected DBOperator setToNull(DBDefinition database) {
+		if (!database.canProduceNullStrings()) {
 			this.isDBEmptyString = true;
 		}
 		return setToNull();
@@ -786,6 +789,147 @@ public class DBString extends QueryableDatatype implements StringResult {
 	 * @return TRUE if the database value is "" or NULL, otherwise FALSE.
 	 */
 	public boolean isEmptyOrNullString() {
-		return isEmptyString() || isNull();
+		return isNull() || isEmptyString();
+	}
+
+	@Override
+	protected void setValueFromStandardStringEncoding(String encodedValue) {
+		setValue(encodedValue);
+	}
+
+	@Override
+	public StringColumn getColumn(RowDefinition row) throws IncorrectRowProviderInstanceSuppliedException {
+		return new StringColumn(row, this);
+	}
+
+	@Override
+	public StringExpression stringResult() {
+		return new StringExpression(this).stringResult();
+	}
+
+	public void excludeNotNull() {
+		this.permittedValues((String) null);
+	}
+
+	public void excludeNull() {
+		this.excludedValues((String) null);
+	}
+
+	public void permitOnlyNull() {
+		excludeNotNull();
+	}
+
+	public void permitOnlyNotNull() {
+		excludeNull();
+	}
+
+	/**
+	 * Set the value to be inserted when no value has been set, using
+	 * {@link #setValue(java.lang.Object) setValue(...)}, for the QDT.
+	 *
+	 * <p>
+	 * The value is only used during the initial insert and does not effect the
+	 * definition of the column within the database.</p>
+	 *
+	 * <p>
+	 * Care should be taken when using this as some "obvious" uses are better
+	 * handled using the
+	 * {@link #setDefaultInsertValue(nz.co.gregs.dbvolution.results.AnyResult) expression version}.
+	 * In particular, setDefaultInsertValue(new Date()) is probably NOT what you
+	 * want, setDefaultInsertValue(DateExpression.currentDate()) will produce a
+	 * correct creation date value.</p>
+	 *
+	 * @param value the value to use during insertion when no particular value has
+	 * been specified.
+	 * @return This QDT
+	 */
+	@Override
+	public synchronized DBString setDefaultInsertValue(String value) {
+		super.setDefaultInsertValue(value);
+		return this;
+	}
+
+	/**
+	 * Set the value to be inserted when no value has been set, using
+	 * {@link #setValue(java.lang.Object) setValue(...)}, for the QDT.
+	 *
+	 * <p>
+	 * The value is only used during the initial insert and does not effect the
+	 * definition of the column within the database.</p>
+	 *
+	 * @param value the value to use during insertion when no particular value has
+	 * been specified.
+	 * @return This QDT
+	 */
+	public synchronized DBString setDefaultInsertValue(StringResult value) {
+		super.setDefaultInsertValue(value);
+		return this;
+	}
+
+	/**
+	 * Set the value to be used during an update when no value has been set, using
+	 * {@link #setValue(java.lang.Object) setValue(...)}, for the QDT.
+	 *
+	 * <p>
+	 * The value is only used during updates and does not effect the definition of
+	 * the column within the database nor the initial value of the column.</p>
+	 *
+	 * <p>
+	 * Care should be taken when using this as some "obvious" uses are better
+	 * handled using the
+	 * {@link #setDefaultUpdateValue(nz.co.gregs.dbvolution.results.AnyResult) expression version}.
+	 * In particular, setDefaultUpdateValue(new Date()) is probably NOT what you
+	 * want, setDefaultUpdateValue(DateExpression.currentDate()) will produce a
+	 * correct update time value.</p>
+	 *
+	 * @param value the value to use during update when no particular value has
+	 * been specified.
+	 * @return This QDT
+	 */
+	@Override
+	public synchronized DBString setDefaultUpdateValue(String value) {
+		super.setDefaultUpdateValue(value);
+		return this;
+	}
+
+	/**
+	 * Set the value to be used during an update when no value has been set, using
+	 * {@link #setValue(java.lang.Object) setValue(...)}, for the QDT.
+	 *
+	 * <p>
+	 * The value is only used during updates and does not effect the definition of
+	 * the column within the database nor the initial value of the column.</p>
+	 *
+	 * @param value the value to use during update when no particular value has
+	 * been specified.
+	 * @return This QDT
+	 */
+	public synchronized DBString setDefaultUpdateValue(StringResult value) {
+		super.setDefaultUpdateValue(value);
+		return this;
+	}
+
+	@Override
+	protected boolean checkForNullDuringSetFromResultSet() {
+		return false;
+	}
+
+	@Override
+	public Boolean isConsistentWithEmptyRow(DBDefinition defn) {
+		if (defn.canProduceNullStrings()) {
+			return isNull();
+		} else {
+			return isEmptyOrNullString();
+		}
+	}
+
+	@Override
+	public Comparator<String> getComparator() {
+		return ComparableComparator.forClass(String.class);
+	}
+
+	@Override
+	public boolean getCouldProduceEmptyStringForNull() {
+		return true;
 	}
 }

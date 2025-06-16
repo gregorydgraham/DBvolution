@@ -16,10 +16,11 @@
 package nz.co.gregs.dbvolution.columns;
 
 import java.util.Set;
-import nz.co.gregs.dbvolution.DBDatabase;
 import nz.co.gregs.dbvolution.DBRow;
+import nz.co.gregs.dbvolution.databases.definitions.DBDefinition;
+import nz.co.gregs.dbvolution.datatypes.DBEnum;
+import nz.co.gregs.dbvolution.datatypes.DBEnumValue;
 import nz.co.gregs.dbvolution.datatypes.DBString;
-import nz.co.gregs.dbvolution.datatypes.DBStringEnum;
 import nz.co.gregs.dbvolution.expressions.*;
 import nz.co.gregs.dbvolution.query.RowDefinition;
 
@@ -47,6 +48,8 @@ import nz.co.gregs.dbvolution.query.RowDefinition;
  * @see StringExpression
  */
 public class StringColumn extends StringExpression implements ColumnProvider {
+
+	private final static long serialVersionUID = 1l;
 
 	private AbstractColumn column;
 
@@ -77,30 +80,30 @@ public class StringColumn extends StringExpression implements ColumnProvider {
 	/**
 	 * Create a StringColumn for the supplied field of the supplied row
 	 *
+	 * @param <E> an DBEnumValue&lt;String&gt; type
 	 * @param row the row containing the field
 	 * @param field the field defining the column
 	 */
-	public StringColumn(RowDefinition row, DBStringEnum<?> field) {
+	public <E extends Enum<E> & DBEnumValue<String>> StringColumn(RowDefinition row, DBEnum<E, String> field) {
 		this.column = new AbstractColumn(row, field);
 	}
 
 	@Override
-	public String toSQLString(DBDatabase db) {
-		return column.toSQLString(db);
+	public String toSQLString(DBDefinition db) {
+		if (db.requiredToProduceEmptyStringsForNull()&&db.supportsDifferenceBetweenNullAndEmptyStringNatively()) {
+			return db.convertNullToEmptyString(column.toSQLString(db));
+		} else {
+			return column.toSQLString(db);
+		}
 	}
 
 	@Override
 	public synchronized StringColumn copy() {
-		StringColumn newInstance;
-		try {
-			newInstance = this.getClass().newInstance();
-			newInstance.column = column;
-			return newInstance;
-		} catch (InstantiationException ex) {
-			throw new RuntimeException(ex);
-		} catch (IllegalAccessException ex) {
-			throw new RuntimeException(ex);
-		}
+		final AbstractColumn col = getColumn();
+		final DBRow row = col.getInstanceOfRow();
+		StringColumn newInstance = new StringColumn(row, (DBString) col.getAppropriateQDTFromRow(row));
+		return newInstance;
+
 	}
 
 	@Override
@@ -123,6 +126,11 @@ public class StringColumn extends StringExpression implements ColumnProvider {
 		return getTablesInvolved().isEmpty();
 	}
 
+	@Override
+	public boolean isAggregator() {
+		return column.isAggregator();
+	}
+
 	/**
 	 * Create an expression to compare this column to the other column using
 	 * EQUALS.
@@ -130,11 +138,16 @@ public class StringColumn extends StringExpression implements ColumnProvider {
 	 * @param column the value to compare this column's value to.
 	 * <p style="color: #F90;">Support DBvolution at
 	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
-	 *
 	 * @return a BooleanExpression
 	 */
+	@Override
 	public BooleanExpression is(DBString column) {
 		return super.is(column);
+	}
+
+	@Override
+	public SortProvider.Column getSortProvider() {
+		return column.getSortProvider();
 	}
 
 }

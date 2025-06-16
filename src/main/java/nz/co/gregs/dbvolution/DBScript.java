@@ -15,8 +15,11 @@
  */
 package nz.co.gregs.dbvolution;
 
+import java.sql.SQLException;
+import nz.co.gregs.dbvolution.databases.DBDatabase;
 import nz.co.gregs.dbvolution.transactions.DBTransaction;
 import nz.co.gregs.dbvolution.actions.DBActionList;
+import nz.co.gregs.dbvolution.exceptions.ExceptionThrownDuringTransaction;
 
 /**
  * A convenient method of implement a database script in DBvolution.
@@ -27,14 +30,14 @@ import nz.co.gregs.dbvolution.actions.DBActionList;
  *
  * <p>
  * Use {@link DBDatabase#test(nz.co.gregs.dbvolution.DBScript) } or
- * {@link DBScript#test(nz.co.gregs.dbvolution.DBDatabase)} to run the script
+ * {@link DBScript#test(nz.co.gregs.dbvolution.databases.DBDatabase)} to run the script
  * within a Read Only Transaction.
  *
  * <p>
  * Use {@link DBDatabase#implement(nz.co.gregs.dbvolution.DBScript)} or 
- * {@link DBScript#implement(nz.co.gregs.dbvolution.DBDatabase) } to run the
+ * {@link DBScript#implement(nz.co.gregs.dbvolution.databases.DBDatabase) } to run the
  * script within a Committed Transaction.
- * 
+ *
  * <p style="color: #F90;">Support DBvolution at
  * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
  *
@@ -54,9 +57,8 @@ public abstract class DBScript {
 	 * @param db	db
 	 * <p style="color: #F90;">Support DBvolution at
 	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
-	 *
-	 * @return DBActionList
-	 * @throws java.lang.Exception java.lang.Exception
+	 * @return DBActionList the actions performed by the script
+	 * @throws java.lang.Exception any exceptions required to be handled
 	 *
 	 */
 	public abstract DBActionList script(DBDatabase db) throws Exception;
@@ -65,7 +67,7 @@ public abstract class DBScript {
 	 * Run the script in a committed transaction.
 	 *
 	 * <P>
-	 * Implement() wraps the {@link #script(nz.co.gregs.dbvolution.DBDatabase) }
+	 * Implement() wraps the {@link #script(nz.co.gregs.dbvolution.databases.DBDatabase) }
 	 * method in a transaction and commits it.
 	 *
 	 * <P>
@@ -78,7 +80,6 @@ public abstract class DBScript {
 	 * @param db	db
 	 * <p style="color: #F90;">Support DBvolution at
 	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
-	 *
 	 * @return a DBActionList of all the actions performed on the database
 	 * @throws java.lang.Exception java.lang.Exception
 	 *
@@ -92,7 +93,7 @@ public abstract class DBScript {
 	/**
 	 * Run the script in a read-only transaction.
 	 *
-	 * Test() wraps the {@link #script(nz.co.gregs.dbvolution.DBDatabase) }
+	 * Test() wraps the {@link #script(nz.co.gregs.dbvolution.databases.DBDatabase) }
 	 * method in a transaction but rolls it back.
 	 *
 	 * <p>
@@ -104,12 +105,12 @@ public abstract class DBScript {
 	 * @param db	db
 	 * <p style="color: #F90;">Support DBvolution at
 	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
-	 *
 	 * @return a DBActionList of all the actions performed on the database
-	 * @throws java.lang.Exception java.lang.Exception
-	 *
+	 * @throws java.sql.SQLException Database exceptions
+	 * @throws nz.co.gregs.dbvolution.exceptions.ExceptionThrownDuringTransaction DBvolution exceptions
+	 * 
 	 */
-	public final DBActionList test(DBDatabase db) throws Exception {
+	public final DBActionList test(DBDatabase db) throws SQLException, ExceptionThrownDuringTransaction {
 		DBTransaction<DBActionList> trans = getDBTransaction();
 		DBActionList revertScript = db.doReadOnlyTransaction(trans);
 		return revertScript;
@@ -124,11 +125,12 @@ public abstract class DBScript {
 	 * @return the transaction required to run the script.
 	 */
 	public final DBTransaction<DBActionList> getDBTransaction() {
-		return new DBTransaction<DBActionList>() {
-			@Override
-			public DBActionList doTransaction(DBDatabase dbd) throws Exception {
-				DBActionList revertScript = script(dbd);
+		return (DBDatabase db) -> {
+			try {
+				DBActionList revertScript = script(db);
 				return revertScript;
+			} catch (Exception ex) {
+				throw new ExceptionThrownDuringTransaction(ex);
 			}
 		};
 	}

@@ -15,9 +15,9 @@
  */
 package nz.co.gregs.dbvolution.internal.querygraph;
 
+import nz.co.gregs.dbvolution.internal.query.DBRowClass;
 import java.util.HashSet;
 import java.util.Set;
-import nz.co.gregs.dbvolution.DBRow;
 
 /**
  * Nodes (a.k.a. vertexes) of the {@link QueryGraph}
@@ -31,8 +31,8 @@ public class QueryGraphNode {
 
 	private boolean requiredNode = true;
 
-	private final Class<? extends DBRow> table;
-	private final Set<Class<? extends DBRow>> connectedTables = new HashSet<Class<? extends DBRow>>();
+	private final DBRowClass table;
+	private final Set<DBRowClass> connectedTables = new HashSet<DBRowClass>();
 
 	/**
 	 * Create a node for the supplied table.
@@ -40,9 +40,9 @@ public class QueryGraphNode {
 	 * <p>
 	 * The table is assumed to be a required/inner table.
 	 *
-	 * @param table
+	 * @param table the table to base the node on
 	 */
-	public QueryGraphNode(Class<? extends DBRow> table) {
+	public QueryGraphNode(DBRowClass table) {
 		this.table = table;
 	}
 
@@ -50,10 +50,10 @@ public class QueryGraphNode {
 	 * Create a node for the supplied table, with TRUE if the table is a
 	 * required/inner table or FALSE if it is optional/outer.
 	 *
-	 * @param table
-	 * @param requiredTable
+	 * @param table the table to base the node on
+	 * @param requiredTable TRUE if the table is required
 	 */
-	public QueryGraphNode(Class<? extends DBRow> table, boolean requiredTable) {
+	public QueryGraphNode(DBRowClass table, boolean requiredTable) {
 		this.table = table;
 		requiredNode = requiredTable;
 	}
@@ -62,7 +62,7 @@ public class QueryGraphNode {
 	 * Return all connected tables known by this node.
 	 *
 	 * <p>
-	 * Only includes DBRows/tables that have been connected to this node using {@link #connectTable(java.lang.Class)
+	 * Only includes DBRows/tables that have been connected to this node using {@link #connectTable(nz.co.gregs.dbvolution.internal.query.DBRowClass) 
 	 * }.
 	 *
 	 * <p style="color: #F90;">Support DBvolution at
@@ -70,7 +70,7 @@ public class QueryGraphNode {
 	 *
 	 * @return a set of all classes used in this query
 	 */
-	public Set<Class<? extends DBRow>> getConnectedTables() {
+	public Set<DBRowClass> getConnectedTables() {
 		return connectedTables;
 	}
 
@@ -80,21 +80,21 @@ public class QueryGraphNode {
 	 * <p>
 	 * To retrieval all connected tables, use {@link #getConnectedTables() }.
 	 *
-	 * @param table
+	 * @param table add a connection to this table
 	 */
-	public void connectTable(Class<? extends DBRow> table) {
+	public void connectTable(DBRowClass table) {
 		connectedTables.add(table);
 	}
 
 	/**
 	 * Retrieves the table that this node contains.
-	 * 
+	 *
 	 * <p style="color: #F90;">Support DBvolution at
 	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
 	 *
 	 * @return the table
 	 */
-	public Class<? extends DBRow> getTable() {
+	public DBRowClass getTable() {
 		return table;
 	}
 
@@ -122,7 +122,8 @@ public class QueryGraphNode {
 	}
 
 	/**
-	 * Specifies whether this node represents a required/inner table, or an optional/outer table.
+	 * Specifies whether this node represents a required/inner table, or an
+	 * optional/outer table.
 	 *
 	 * <p style="color: #F90;">Support DBvolution at
 	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>

@@ -19,10 +19,7 @@ import java.sql.SQLException;
 import java.sql.Statement;
 
 /**
- *
- * <p style="color: #F90;">Support DBvolution at
- * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
- *
+ * 
  * @author gregorygraham
  */
 public enum Line2DFunctions implements DBVFeature {
@@ -50,7 +47,6 @@ public enum Line2DFunctions implements DBVFeature {
 			+ "				resultStr += \")\";\n"
 			+ "				return resultStr;\n"
 			+ "			}"),
-
 	/**
 	 *
 	 */
@@ -60,7 +56,6 @@ public enum Line2DFunctions implements DBVFeature {
 			+ "			} else {\n"
 			+ "				return firstLine.equals(secondLine);\n"
 			+ "			}"),
-
 	/**
 	 *
 	 */
@@ -78,7 +73,6 @@ public enum Line2DFunctions implements DBVFeature {
 			+ "				}\n"
 			+ "				return maxX;\n"
 			+ "			}"),
-
 	/**
 	 *
 	 */
@@ -96,7 +90,6 @@ public enum Line2DFunctions implements DBVFeature {
 			+ "				}\n"
 			+ "				return maxY;\n"
 			+ "			}"),
-
 	/**
 	 *
 	 */
@@ -114,7 +107,6 @@ public enum Line2DFunctions implements DBVFeature {
 			+ "				}\n"
 			+ "				return maxX;\n"
 			+ "			}"),
-
 	/**
 	 *
 	 */
@@ -132,7 +124,6 @@ public enum Line2DFunctions implements DBVFeature {
 			+ "				}\n"
 			+ "				return maxY;\n"
 			+ "			}"),
-
 	/**
 	 *
 	 */
@@ -164,17 +155,14 @@ public enum Line2DFunctions implements DBVFeature {
 			+ "				String resultString = \"POLYGON ((\" + minX+\" \"+minY + \", \" + maxX+\" \"+minY + \", \" + maxX+\" \"+maxY + \", \" + minX+\" \"+maxY + \", \" + minX+\" \"+minY + \"))\";\n"
 			+ "				return resultString;\n"
 			+ "			}"),
-
 	/**
 	 *
 	 */
 	DIMENSION("DBV_LINE2D_DIMENSION", "Integer", "String firstLine", "return 1;"),
-
 	/**
 	 *
 	 */
 	ASTEXT("DBV_LINE2D_ASTEXT", "String", "String firstLine", "return firstLine;"),
-
 	/**
 	 *
 	 */
@@ -221,7 +209,6 @@ public enum Line2DFunctions implements DBVFeature {
 			+ "			}\n"
 			+ "		}\n"
 			+ "		return false;"),
-
 	/**
 	 *
 	 */
@@ -267,8 +254,7 @@ public enum Line2DFunctions implements DBVFeature {
 			+ "				}\n"
 			+ "			}\n"
 			+ "		}\n"
-			+ "		return null;"), 
-
+			+ "		return null;"),
 	/**
 	 *
 	 */
@@ -333,11 +319,6 @@ public enum Line2DFunctions implements DBVFeature {
 		return functionName;
 	}
 
-	/**
-	 *
-	 * @param stmt
-	 * @throws SQLException
-	 */
 	@Override
 	public void add(Statement stmt) throws SQLException {
 		try {
@@ -348,52 +329,51 @@ public enum Line2DFunctions implements DBVFeature {
 		stmt.execute("CREATE ALIAS IF NOT EXISTS " + functionName + " DETERMINISTIC AS $$ \n" + "@CODE " + returnType + " " + functionName + "(" + parameters + ") {\n" + code + "} $$;");
 	}
 
-	private Boolean intersects(String firstLine, String secondLine) {
-		//List<String> pointsFound = new ArrayList<String>();
-		if (firstLine == null || secondLine == null) {
-			return null;
-		}
-		String[] split1 = firstLine.split("[ (),]+");
-		String[] split2 = secondLine.split("[ (),]+");
-		for (int index1 = 0; index1 < split1.length - 3; index1 += 2) {
-			double p0x = Double.parseDouble(split1[index1 + 1]);
-			double p0y = Double.parseDouble(split1[index1 + 2]);
-			double p1x = Double.parseDouble(split1[index1 + 3]);
-			double p1y = Double.parseDouble(split1[index1 + 4]);
-
-			for (int index2 = 0; index2 < split2.length - 3; index2 += 2) {
-				double p2x = Double.parseDouble(split2[index2 + 1]);
-				double p2y = Double.parseDouble(split2[index2 + 2]);
-				double p3x = Double.parseDouble(split2[index2 + 3]);
-				double p3y = Double.parseDouble(split2[index2 + 4]);
-
-				double s1_x, s1_y, s2_x, s2_y;
-				double i_x, i_y;
-				s1_x = p1x - p0x;
-				s1_y = p1y - p0y;
-				s2_x = p3x - p2x;
-				s2_y = p3y - p2y;
-
-				double s, t;
-
-				s = (-s1_y * (p0x - p2x) + s1_x * (p0y - p2y)) / (-s2_x * s1_y + s1_x * s2_y);
-				t = (s2_x * (p0y - p2y) - s2_y * (p0x - p2x)) / (-s2_x * s1_y + s1_x * s2_y);
-
-				if (s >= 0 && s <= 1 && t >= 0 && t <= 1) {
-					// Collision detected
-					return true;
-					//i_x = p0x + (t * s1_x);
-					//i_y = p0y + (t * s1_y);
-					//pointsFound.add("POINT (" + i_x + " " + i_y + ")");
-				} else {
-					// No collision
-					//return null;
-				}
-			}
-		}
-		return false;
-	}
-	
+//	private Boolean intersects(String firstLine, String secondLine) {
+//		//List<String> pointsFound = new ArrayList<String>();
+//		if (firstLine == null || secondLine == null) {
+//			return null;
+//		}
+//		String[] split1 = firstLine.split("[ (),]+");
+//		String[] split2 = secondLine.split("[ (),]+");
+//		for (int index1 = 0; index1 < split1.length - 3; index1 += 2) {
+//			double p0x = Double.parseDouble(split1[index1 + 1]);
+//			double p0y = Double.parseDouble(split1[index1 + 2]);
+//			double p1x = Double.parseDouble(split1[index1 + 3]);
+//			double p1y = Double.parseDouble(split1[index1 + 4]);
+//
+//			for (int index2 = 0; index2 < split2.length - 3; index2 += 2) {
+//				double p2x = Double.parseDouble(split2[index2 + 1]);
+//				double p2y = Double.parseDouble(split2[index2 + 2]);
+//				double p3x = Double.parseDouble(split2[index2 + 3]);
+//				double p3y = Double.parseDouble(split2[index2 + 4]);
+//
+//				double s1_x, s1_y, s2_x, s2_y;
+//				double i_x, i_y;
+//				s1_x = p1x - p0x;
+//				s1_y = p1y - p0y;
+//				s2_x = p3x - p2x;
+//				s2_y = p3y - p2y;
+//
+//				double s, t;
+//
+//				s = (-s1_y * (p0x - p2x) + s1_x * (p0y - p2y)) / (-s2_x * s1_y + s1_x * s2_y);
+//				t = (s2_x * (p0y - p2y) - s2_y * (p0x - p2x)) / (-s2_x * s1_y + s1_x * s2_y);
+//
+//				if (s >= 0 && s <= 1 && t >= 0 && t <= 1) {
+//					// Collision detected
+//					return true;
+//					//i_x = p0x + (t * s1_x);
+//					//i_y = p0y + (t * s1_y);
+//					//pointsFound.add("POINT (" + i_x + " " + i_y + ")");
+//				} else {
+//					// No collision
+//					//return null;
+//				}
+//			}
+//		}
+//		return false;
+//	}
 	@Override
 	public String alias() {
 		return toString();

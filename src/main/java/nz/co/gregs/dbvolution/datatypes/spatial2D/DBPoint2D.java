@@ -15,19 +15,26 @@
  */
 package nz.co.gregs.dbvolution.datatypes.spatial2D;
 
+import com.vividsolutions.jts.geom.Coordinate;
+import com.vividsolutions.jts.geom.GeometryFactory;
 import com.vividsolutions.jts.geom.Point;
 import com.vividsolutions.jts.io.ParseException;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.Comparator;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import nz.co.gregs.dbvolution.DBDatabase;
+import nz.co.gregs.dbvolution.columns.Point2DColumn;
+import nz.co.gregs.dbvolution.databases.definitions.DBDefinition;
 import nz.co.gregs.dbvolution.datatypes.QueryableDatatype;
 import nz.co.gregs.dbvolution.exceptions.IncorrectGeometryReturnedForDatatype;
+import nz.co.gregs.dbvolution.exceptions.IncorrectRowProviderInstanceSuppliedException;
 import nz.co.gregs.dbvolution.exceptions.ParsingSpatialValueException;
-import nz.co.gregs.dbvolution.expressions.Point2DExpression;
+import nz.co.gregs.dbvolution.expressions.spatial2D.Point2DExpression;
 import nz.co.gregs.dbvolution.expressions.StringExpression;
+import nz.co.gregs.dbvolution.query.RowDefinition;
 import nz.co.gregs.dbvolution.results.Point2DResult;
+import nz.co.gregs.dbvolution.utility.comparators.ComparableComparator;
 
 /**
  * Represents database columns and values that are a 2 dimensional point: an
@@ -47,7 +54,7 @@ import nz.co.gregs.dbvolution.results.Point2DResult;
  *
  * @author Gregory Graham
  */
-public class DBPoint2D extends QueryableDatatype implements Point2DResult {
+public class DBPoint2D extends QueryableDatatype<Point> implements Point2DResult {
 
 	private static final long serialVersionUID = 1L;
 
@@ -57,6 +64,10 @@ public class DBPoint2D extends QueryableDatatype implements Point2DResult {
 	 *
 	 */
 	public DBPoint2D() {
+	}
+
+	public DBPoint2D(Double xValue, Double yValue) {
+		this(new GeometryFactory().createPoint(new Coordinate(xValue, yValue)));
 	}
 
 	/**
@@ -77,7 +88,7 @@ public class DBPoint2D extends QueryableDatatype implements Point2DResult {
 		if (!isDefined() || isNull()) {
 			return null;
 		} else {
-			return (Point) getLiteralValue();
+			return getLiteralValue();
 		}
 	}
 
@@ -97,15 +108,15 @@ public class DBPoint2D extends QueryableDatatype implements Point2DResult {
 	}
 
 	/**
-	 * Create a DBPoint2D with the column expression specified.
+	 * Create a DBPoint2D with the column value specified.
 	 *
 	 * <p>
-	 * When retrieving this object from the database the expression will be
-	 * evaluated to provide the value.
+	 * When retrieving this object from the database the value will be evaluated
+	 * to provide the value.
 	 *
-	 * @param columnExpression
+	 * @param columnExpression the expression to use to fill this field during a query
 	 */
-	public DBPoint2D(nz.co.gregs.dbvolution.expressions.Point2DExpression columnExpression) {
+	public DBPoint2D(Point2DExpression columnExpression) {
 		super(columnExpression);
 	}
 
@@ -115,7 +126,7 @@ public class DBPoint2D extends QueryableDatatype implements Point2DResult {
 	 * <p>
 	 * Equivalent to {code point2D = new DBPoint2D(); point2D.setValue(aPoint);}
 	 *
-	 * @param point
+	 * @param point the value to set this field to
 	 */
 	public DBPoint2D(Point point) {
 		super(point);
@@ -127,18 +138,18 @@ public class DBPoint2D extends QueryableDatatype implements Point2DResult {
 	}
 
 	@Override
-	protected String formatValueForSQLStatement(DBDatabase db) {
+	protected String formatValueForSQLStatement(DBDefinition db) {
 		Point point = getValue();
 		if (point == null) {
-			return db.getDefinition().getNull();
+			return db.getNull();
 		} else {
-			String str = db.getDefinition().transformPoint2DIntoDatabaseFormat(point);
+			String str = db.transformPoint2DIntoDatabaseFormat(point);
 			return str;
 		}
 	}
 
 	@Override
-	protected Object getFromResultSet(DBDatabase database, ResultSet resultSet, String fullColumnName) throws SQLException, IncorrectGeometryReturnedForDatatype {
+	protected Point getFromResultSet(DBDefinition database, ResultSet resultSet, String fullColumnName) throws SQLException, IncorrectGeometryReturnedForDatatype {
 
 		Point point = null;
 		String string = resultSet.getString(fullColumnName);
@@ -146,10 +157,14 @@ public class DBPoint2D extends QueryableDatatype implements Point2DResult {
 			return null;
 		} else {
 			try {
-				point = database.getDefinition().transformDatabasePoint2DValueToJTSPoint(string);
+				if (string.equals("GEOMETRYCOLLECTION()")) {
+					point = (new GeometryFactory()).createPoint(new Coordinate());
+				} else {
+					point = database.transformDatabasePoint2DValueToJTSPoint(string);
+				}
 			} catch (ParseException ex) {
 				Logger.getLogger(DBPoint2D.class.getName()).log(Level.SEVERE, null, ex);
-				throw new ParsingSpatialValueException(fullColumnName, string,ex);
+				throw new ParsingSpatialValueException(fullColumnName, string, ex);
 			}
 			return point;
 		}
@@ -165,34 +180,25 @@ public class DBPoint2D extends QueryableDatatype implements Point2DResult {
 		return false;
 	}
 
-//	@Override
-//	public NumberExpression measurableDimensions() {
-//		return NumberExpression.value(0);
-//	}
-//
-//	@Override
-//	public NumberExpression spatialDimensions() {
-//		return NumberExpression.value(2);
-//	}
-//
-//	@Override
-//	public BooleanExpression hasMagnitude() {
-//		return BooleanExpression.falseExpression();
-//	}
-//
-//	@Override
-//	public NumberExpression magnitude() {
-//		return NumberExpression.value((Number)null);
-//	}
-//
-//	@Override
-//	public StringExpression toWKTFormat(){
-//		return StringExpression.value(jtsPointValue().toText());
-//	}
-
 	@Override
 	public StringExpression stringResult() {
 		return Point2DExpression.value(this).stringResult();
+	}
+
+	@Override
+	protected void setValueFromStandardStringEncoding(String encodedValue) {
+		throw new UnsupportedOperationException("DBPoint2D does not support setValueFromStandardStringEncoding(String) yet."); //To change body of generated methods, choose Tools | Templates.
+	}
+
+	@Override
+	public Point2DColumn getColumn(RowDefinition row) throws IncorrectRowProviderInstanceSuppliedException {
+		return new Point2DColumn(row, this);
+	}
+
+	@Override
+	@SuppressWarnings("unchecked")
+	public Comparator<Point> getComparator() {
+		return ComparableComparator.forClass(Point.class);
 	}
 
 }

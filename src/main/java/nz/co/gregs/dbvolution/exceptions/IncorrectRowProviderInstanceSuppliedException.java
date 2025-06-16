@@ -37,7 +37,7 @@ import nz.co.gregs.dbvolution.query.RowDefinition;
  *
  * @author Gregory Graham
  */
-public class IncorrectRowProviderInstanceSuppliedException extends RuntimeException {
+public class IncorrectRowProviderInstanceSuppliedException extends DBRuntimeException {
 
 	private static final long serialVersionUID = 1L;
 
@@ -47,6 +47,20 @@ public class IncorrectRowProviderInstanceSuppliedException extends RuntimeExcept
 	 */
 	public IncorrectRowProviderInstanceSuppliedException() {
 		super("The Field Supplied Is Not A Field Of This Instance: use only fields from this instance.");
+	}
+
+	/**
+	 * Thrown when the current object needs the supplied variable to be a field of
+	 * the object, but it isn't.
+	 *
+	 * <p>
+	 * This method helps construct the exception when the incorrect value supplied
+	 * is null.</p>
+	 *
+	 * @param row row
+	 */
+	public IncorrectRowProviderInstanceSuppliedException(RowDefinition row) {
+		super(constructMessage(row, null));
 	}
 
 	/**
@@ -67,7 +81,6 @@ public class IncorrectRowProviderInstanceSuppliedException extends RuntimeExcept
 	 * @param qdt	qdt
 	 * <p style="color: #F90;">Support DBvolution at
 	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
-	 *
 	 * @return an IncorrectRowProviderInstanceSuppliedException
 	 */
 	public static IncorrectRowProviderInstanceSuppliedException newMultiRowInstance(Object qdt) {

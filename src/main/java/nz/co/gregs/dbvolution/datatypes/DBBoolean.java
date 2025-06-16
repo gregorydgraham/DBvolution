@@ -15,17 +15,24 @@
  */
 package nz.co.gregs.dbvolution.datatypes;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import nz.co.gregs.dbvolution.DBDatabase;
+import java.util.Arrays;
+import java.util.Comparator;
+import java.util.List;
 import nz.co.gregs.dbvolution.DBReport;
 import nz.co.gregs.dbvolution.DBRow;
+import nz.co.gregs.dbvolution.columns.BooleanColumn;
 import nz.co.gregs.dbvolution.databases.definitions.DBDefinition;
+import nz.co.gregs.dbvolution.exceptions.IncorrectRowProviderInstanceSuppliedException;
 import nz.co.gregs.dbvolution.expressions.BooleanExpression;
 import nz.co.gregs.dbvolution.expressions.StringExpression;
 import nz.co.gregs.dbvolution.results.BooleanResult;
 import nz.co.gregs.dbvolution.operators.DBBooleanPermittedValuesOperator;
 import nz.co.gregs.dbvolution.operators.DBPermittedValuesOperator;
+import nz.co.gregs.dbvolution.query.RowDefinition;
+import nz.co.gregs.dbvolution.utility.comparators.ComparableComparator;
 
 /**
  * Encapsulates database values that are Booleans.
@@ -48,7 +55,7 @@ import nz.co.gregs.dbvolution.operators.DBPermittedValuesOperator;
  *
  * @author Gregory Graham
  */
-public class DBBoolean extends QueryableDatatype implements BooleanResult {
+public class DBBoolean extends QueryableDatatype<Boolean> implements BooleanResult {
 
 	private static final long serialVersionUID = 1L;
 
@@ -100,7 +107,6 @@ public class DBBoolean extends QueryableDatatype implements BooleanResult {
 	 * @param other	other
 	 * <p style="color: #F90;">Support DBvolution at
 	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
-	 *
 	 * @return TRUE if this object is the same as the other, otherwise FALSE.
 	 */
 	@Override
@@ -117,15 +123,8 @@ public class DBBoolean extends QueryableDatatype implements BooleanResult {
 		return "BIT(1)";
 	}
 
-	@Override
-	void setValue(Object newLiteralValue) {
-		if (newLiteralValue instanceof Boolean) {
-			setValue((Boolean) newLiteralValue);
-		} else if (newLiteralValue instanceof DBBoolean) {
-			setValue(((DBBoolean) newLiteralValue).getValue());
-		} else {
-			throw new ClassCastException(this.getClass().getSimpleName() + ".setValue() Called With A Non-Boolean: Use only Booleans with this class");
-		}
+	void setValue(DBBoolean newLiteralValue) {
+		setValue(newLiteralValue.getValue());
 	}
 
 	/**
@@ -133,24 +132,16 @@ public class DBBoolean extends QueryableDatatype implements BooleanResult {
 	 *
 	 * @param newLiteralValue	newLiteralValue
 	 */
+	@Override
 	public void setValue(Boolean newLiteralValue) {
 		super.setLiteralValue(newLiteralValue);
 	}
 
 	@Override
-	public String formatValueForSQLStatement(DBDatabase db) {
-		DBDefinition defn = db.getDefinition();
+	public String formatValueForSQLStatement(DBDefinition defn) {
 		if (getLiteralValue() instanceof Boolean) {
-			Boolean boolValue = (Boolean) getLiteralValue();
-//			if (boolValue==null){
-//				return defn.getNull();
-//			} else if (boolValue) {
-//				return defn.getTrueOperation();
-//			} else {
-//				return defn.getFalseOperation();
-//			}
+			Boolean boolValue = getLiteralValue();
 			return defn.doBooleanValueTransform(boolValue);
-//			return defn.beginNumberValue() + (boolValue ? 1 : 0) + defn.endNumberValue();
 		}
 		return defn.getNull();
 	}
@@ -159,16 +150,20 @@ public class DBBoolean extends QueryableDatatype implements BooleanResult {
 	 * Returns the defined or set value of this DBBoolean as an actual Boolean.
 	 *
 	 * <p>
-	 * May return a null.
+	 * May return NULL.
 	 *
 	 * <p style="color: #F90;">Support DBvolution at
 	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
 	 *
 	 * @return the value of this QDT as a boolean.
 	 */
+	@SuppressFBWarnings(
+			value = "NP_BOOLEAN_RETURN_NULL",
+			justification = "Null is a valid value in databases"
+	)
 	public Boolean booleanValue() {
 		if (this.getLiteralValue() instanceof Boolean) {
-			return (Boolean) this.getLiteralValue();
+			return this.getLiteralValue();
 		} else {
 			return null;
 		}
@@ -212,7 +207,7 @@ public class DBBoolean extends QueryableDatatype implements BooleanResult {
 	 * @param excluded	excluded
 	 */
 	public void excludedValues(Boolean excluded) {
-		this.setOperator(new DBPermittedValuesOperator(excluded));
+		this.setOperator(new DBPermittedValuesOperator<>(excluded));
 		negateOperator();
 	}
 
@@ -223,7 +218,7 @@ public class DBBoolean extends QueryableDatatype implements BooleanResult {
 	 * @param permitted	permitted
 	 */
 	public void permittedValues(BooleanExpression permitted) {
-		this.setOperator(new DBPermittedValuesOperator(permitted));
+		this.setOperator(new DBPermittedValuesOperator<>(permitted));
 	}
 
 	/**
@@ -234,7 +229,7 @@ public class DBBoolean extends QueryableDatatype implements BooleanResult {
 	 * @param excluded	excluded
 	 */
 	public void excludedValues(BooleanExpression excluded) {
-		this.setOperator(new DBPermittedValuesOperator(excluded));
+		this.setOperator(new DBPermittedValuesOperator<>(excluded));
 		negateOperator();
 	}
 
@@ -252,7 +247,7 @@ public class DBBoolean extends QueryableDatatype implements BooleanResult {
 	}
 
 	@Override
-	protected Boolean getFromResultSet(DBDatabase database, ResultSet resultSet, String fullColumnName) throws SQLException {
+	protected Boolean getFromResultSet(DBDefinition database, ResultSet resultSet, String fullColumnName) throws SQLException {
 		Boolean dbValue = resultSet.getBoolean(fullColumnName);
 		if (resultSet.wasNull()) {
 			dbValue = null;
@@ -271,6 +266,142 @@ public class DBBoolean extends QueryableDatatype implements BooleanResult {
 			return true;
 		}
 		return hasColumnExpression();
+	}
+
+	private final String[] trueValuesArray = new String[]{"YES", "TRUE", "1"};
+	private final List<String> trueValues = Arrays.asList(trueValuesArray);
+
+	@Override
+	protected void setValueFromStandardStringEncoding(String encodedValue) {
+		final String upper = encodedValue.toUpperCase();
+		if (upper.equals("NULL")) {
+			setValue((Boolean) null);
+		} else if (trueValues.contains(encodedValue)) {
+			setValue(true);
+		} else {
+			setValue(false);
+		}
+
+	}
+
+	@Override
+	public BooleanColumn getColumn(RowDefinition row) throws IncorrectRowProviderInstanceSuppliedException {
+		return new BooleanColumn(row, this);
+	}
+
+	public void excludeNotNull() {
+		this.permittedValues((Boolean) null);
+	}
+
+	public void excludeNull() {
+		this.excludedValues((Boolean) null);
+	}
+
+	public void permitOnlyNull() {
+		excludeNotNull();
+	}
+
+	public void permitOnlyNotNull() {
+		excludeNull();
+	}
+
+	/**
+	 * Set the value to be inserted when no value has been set, using
+	 * {@link #setValue(java.lang.Object) setValue(...)}, for the QDT.
+	 *
+	 * <p>
+	 * The value is only used during the initial insert and does not effect the
+	 * definition of the column within the database.</p>
+	 *
+	 * <p>
+	 * Care should be taken when using this as some "obvious" uses are better
+	 * handled using the
+	 * {@link #setDefaultInsertValue(nz.co.gregs.dbvolution.results.AnyResult) expression version}.
+	 * In particular, setDefaultInsertValue(new Date()) is probably NOT what you
+	 * want, setDefaultInsertValue(DateExpression.currentDate()) will produce a
+	 * correct creation date value.</p>
+	 *
+	 * @param value the value to use during insertion when no particular value has
+	 * been specified.
+	 * @return This QDT
+	 */
+	@Override
+	public synchronized DBBoolean setDefaultInsertValue(Boolean value) {
+		super.setDefaultInsertValue(value);
+		return this;
+	}
+
+	/**
+	 * Set the value to be inserted when no value has been set, using
+	 * {@link #setValue(java.lang.Object) setValue(...)}, for the QDT.
+	 *
+	 * <p>
+	 * The value is only used during the initial insert and does not effect the
+	 * definition of the column within the database.</p>
+	 *
+	 * @param value the value to use during insertion when no particular value has
+	 * been specified.
+	 * @return This QDT
+	 */
+	public synchronized DBBoolean setDefaultInsertValue(DBBoolean value) {
+		super.setDefaultInsertValue(value);
+		return this;
+	}
+
+	/**
+	 * Set the value to be used during an update when no value has been set, using
+	 * {@link #setValue(java.lang.Object) setValue(...)}, for the QDT.
+	 *
+	 * <p>
+	 * The value is only used during updates and does not effect the definition of
+	 * the column within the database nor the initial value of the column.</p>
+	 *
+	 * <p>
+	 * Care should be taken when using this as some "obvious" uses are better
+	 * handled using the
+	 * {@link #setDefaultUpdateValue(nz.co.gregs.dbvolution.results.AnyResult) expression version}.
+	 * In particular, setDefaultUpdateValue(new Date()) is probably NOT what you
+	 * want, setDefaultUpdateValue(DateExpression.currentDate()) will produce a
+	 * correct update time value.</p>
+	 *
+	 * @param value the value to use during update when no particular value has
+	 * been specified.
+	 * @return This QDT
+	 */
+	@Override
+	public synchronized DBBoolean setDefaultUpdateValue(Boolean value) {
+		super.setDefaultUpdateValue(value);
+		return this;
+	}
+
+	/**
+	 * Set the value to be used during an update when no value has been set, using
+	 * {@link #setValue(java.lang.Object) setValue(...)}, for the QDT.
+	 *
+	 * <p>
+	 * The value is only used during updates and does not effect the definition of
+	 * the column within the database nor the initial value of the column.</p>
+	 *
+	 * <p>
+	 * Care should be taken when using this as some "obvious" uses are better
+	 * handled using the
+	 * {@link #setDefaultUpdateValue(nz.co.gregs.dbvolution.results.AnyResult) expression version}.
+	 * In particular, setDefaultUpdateValue(new Date()) is probably NOT what you
+	 * want, setDefaultUpdateValue(DateExpression.currentDate()) will produce a
+	 * correct update time value.</p>
+	 *
+	 * @param value the value to use during update when no particular value has
+	 * been specified.
+	 * @return This QDT
+	 */
+	public synchronized DBBoolean setDefaultUpdateValue(DBBoolean value) {
+		super.setDefaultUpdateValue(value);
+		return this;
+	}
+
+	@Override
+	public Comparator<Boolean> getComparator() {
+		return ComparableComparator.forClass(Boolean.class);
 	}
 
 }

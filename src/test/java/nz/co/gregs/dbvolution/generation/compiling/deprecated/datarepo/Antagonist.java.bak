@@ -1,0 +1,25 @@
+package nz.co.gregs.dbvolution.generation.compiling.deprecated.datarepo;
+
+import nz.co.gregs.dbvolution.*;
+import nz.co.gregs.dbvolution.datatypes.*;
+import nz.co.gregs.dbvolution.datatypes.spatial2D.*;
+import nz.co.gregs.dbvolution.annotations.*;
+
+@DBTableName("Antagonist") 
+public class Antagonist extends DBRow {
+
+    public static final long serialVersionUID = 1L;
+
+    @DBColumn("antagonistID")
+    @DBPrimaryKey
+    @DBAutoIncrement
+    public DBInteger antagonistid = new DBInteger();
+
+    @DBColumn("name")
+    public DBString name = new DBString();
+
+    @DBColumn("npc")
+    public DBBoolean npc = new DBBoolean();
+
+}
+

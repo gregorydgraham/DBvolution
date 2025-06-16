@@ -34,7 +34,7 @@ public class UnableToInstantiateDBMigrationSubclassException extends RuntimeExce
 	 * Please ensure all DBReports have a public, argument-less, default
 	 * constructor.
 	 *
-	 * @param aMapping  aMapping
+	 * @param aMapping aMapping
 	 * @param ex ex
 	 */
 	public UnableToInstantiateDBMigrationSubclassException(Object aMapping, Exception ex) {

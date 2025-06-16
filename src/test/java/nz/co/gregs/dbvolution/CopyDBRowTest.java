@@ -19,7 +19,7 @@ import java.sql.SQLException;
 import nz.co.gregs.dbvolution.example.Marque;
 import nz.co.gregs.dbvolution.generic.AbstractTest;
 import static org.hamcrest.Matchers.*;
-import org.junit.Assert;
+import static org.hamcrest.MatcherAssert.assertThat;
 import org.junit.Test;
 
 public class CopyDBRowTest extends AbstractTest {
@@ -34,14 +34,13 @@ public class CopyDBRowTest extends AbstractTest {
 		marqs.setBlankQueryAllowed(true);
 		Marque first = marqs.getAllRows().get(0);
 		Marque firstCopy = DBRow.copyDBRow(first);
-		System.out.println(first);
-		System.out.println(firstCopy);
-		Assert.assertThat(firstCopy, is(not(first)));
-		Assert.assertThat(firstCopy.name, not(sameInstance(first.name)));
-		Assert.assertThat(firstCopy.name, is(first.name));
-		Assert.assertThat(firstCopy.carCompany.getValue(), is(equalTo(first.carCompany.getValue())));
-		Assert.assertThat(firstCopy.name.getValue(), is(equalTo(first.name.getValue())));
-		Assert.assertThat(firstCopy.creationDate.getValue(), is(equalTo(first.creationDate.getValue())));
+
+		assertThat(firstCopy, is(not(first)));
+		assertThat(firstCopy.name, not(sameInstance(first.name)));
+		assertThat(firstCopy.name, is(first.name));
+		assertThat(firstCopy.carCompany.getValue(), is(equalTo(first.carCompany.getValue())));
+		assertThat(firstCopy.name.getValue(), is(equalTo(first.name.getValue())));
+		assertThat(firstCopy.creationDate.getValue(), is(equalTo(first.creationDate.getValue())));
 	}
 
 }

@@ -16,11 +16,12 @@
 package nz.co.gregs.dbvolution.columns;
 
 import java.util.Set;
-import nz.co.gregs.dbvolution.DBDatabase;
 import nz.co.gregs.dbvolution.DBRow;
+import nz.co.gregs.dbvolution.databases.definitions.DBDefinition;
 import nz.co.gregs.dbvolution.datatypes.DBDateRepeat;
 import nz.co.gregs.dbvolution.expressions.BooleanExpression;
 import nz.co.gregs.dbvolution.expressions.DateRepeatExpression;
+import nz.co.gregs.dbvolution.expressions.SortProvider;
 import nz.co.gregs.dbvolution.query.RowDefinition;
 import org.joda.time.Period;
 
@@ -34,6 +35,8 @@ import org.joda.time.Period;
  */
 public class DateRepeatColumn extends DateRepeatExpression implements ColumnProvider {
 
+	private final static long serialVersionUID = 1l;
+
 	private AbstractColumn column;
 
 	private DateRepeatColumn() {
@@ -46,7 +49,7 @@ public class DateRepeatColumn extends DateRepeatExpression implements ColumnProv
 	 * @param field the field defining the column
 	 */
 	public DateRepeatColumn(RowDefinition row, Period field) {
-		this.column = new AbstractColumn(row, field);
+		this.column = new AbstractColumn(row, new DBDateRepeat(field));
 	}
 
 	/**
@@ -60,22 +63,16 @@ public class DateRepeatColumn extends DateRepeatExpression implements ColumnProv
 	}
 
 	@Override
-	public String toSQLString(DBDatabase db) {
+	public String toSQLString(DBDefinition db) {
 		return column.toSQLString(db);
 	}
 
 	@Override
 	public synchronized DateRepeatColumn copy() {
-		try {
-			DateRepeatColumn newInstance = this.getClass().newInstance();
-			newInstance.column = this.column;
-			return newInstance;
-		} catch (InstantiationException ex) {
-			throw new RuntimeException(ex);
-		} catch (IllegalAccessException ex) {
-			throw new RuntimeException(ex);
-		}
-
+		final AbstractColumn col = getColumn();
+		final DBRow row = col.getInstanceOfRow();
+		DateRepeatColumn newInstance = new DateRepeatColumn(row, (DBDateRepeat) col.getAppropriateQDTFromRow(row));
+		return newInstance;
 	}
 
 	@Override
@@ -98,17 +95,27 @@ public class DateRepeatColumn extends DateRepeatExpression implements ColumnProv
 		return getTablesInvolved().isEmpty();
 	}
 
+	@Override
+	public boolean isAggregator() {
+		return column.isAggregator();
+	}
+
 	/**
 	 * Create an expression to compare this column to the other column using
 	 * EQUALS.
 	 *
-	 * @param intervalColumn return TRUE if this expression and intervalColumn are the same value.
+	 * @param intervalColumn return TRUE if this expression and intervalColumn are
+	 * the same value.
 	 * <p style="color: #F90;">Support DBvolution at
 	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
-	 *
 	 * @return a BooleanExpression
 	 */
 	public BooleanExpression is(DBDateRepeat intervalColumn) {
 		return super.is(intervalColumn);
+	}
+
+	@Override
+	public SortProvider.Column getSortProvider() {
+		return column.getSortProvider();
 	}
 }

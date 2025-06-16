@@ -15,6 +15,7 @@
  */
 package nz.co.gregs.dbvolution.internal.querygraph;
 
+import nz.co.gregs.dbvolution.internal.query.DBRowClass;
 import edu.uci.ics.jung.graph.SparseMultigraph;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -60,16 +61,16 @@ import nz.co.gregs.dbvolution.expressions.DBExpression;
  */
 public class QueryGraph {
 
-	private final Map<Class<? extends DBRow>, QueryGraphNode> nodes = new LinkedHashMap<Class<? extends DBRow>, QueryGraphNode>();
-	private final Map<Class<? extends DBRow>, DBRow> rows = new LinkedHashMap<Class<? extends DBRow>, DBRow>();
-	private edu.uci.ics.jung.graph.Graph<QueryGraphNode, DBExpression> jungGraph = new SparseMultigraph<QueryGraphNode, DBExpression>();
+	private final Map<DBRowClass, QueryGraphNode> nodes = new LinkedHashMap<>();
+	private final Map<DBRowClass, DBRow> rows = new LinkedHashMap<>();
+	private edu.uci.ics.jung.graph.Graph<QueryGraphNode, DBExpression> jungGraph = new SparseMultigraph<>();
 
 	/**
 	 * Create a graph of the tables and connections for all the DBRows and
 	 * BooleanExpressions provided.
 	 *
-	 * @param allQueryTables
-	 * @param expressions
+	 * @param allQueryTables all the tables in the query
+	 * @param expressions the boolean expressions that connect the tables
 	 */
 	public QueryGraph(List<DBRow> allQueryTables, List<BooleanExpression> expressions) {
 		addAndConnectToRelevant(allQueryTables, expressions);
@@ -77,9 +78,6 @@ public class QueryGraph {
 
 	/**
 	 * Removes all state and prepares the graph for re-initialization.
-	 *
-	 * <p style="color: #F90;">Support DBvolution at
-	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
 	 *
 	 * @return this QueryGraph.
 	 */
@@ -94,8 +92,8 @@ public class QueryGraph {
 	 * Add the provided DBRows/tables and expressions to this QueryGraph,
 	 * generating new nodes and edges as required.
 	 *
-	 * @param otherTables
-	 * @param expressions
+	 * @param otherTables the tables to add to the query
+	 * @param expressions the expressions that connect the tables
 	 */
 	public final void addAndConnectToRelevant(List<DBRow> otherTables, List<BooleanExpression> expressions) {
 		addAndConnectToRelevant(otherTables, expressions, true);
@@ -109,8 +107,8 @@ public class QueryGraph {
 	 * The DBrows/tables will be added as optional (that is "outer join" tables)
 	 * and displayed as such.
 	 *
-	 * @param otherTables
-	 * @param expressions
+	 * @param otherTables the tables to add to the query
+	 * @param expressions the expressions that connect the tables
 	 */
 	public final void addOptionalAndConnectToRelevant(List<DBRow> otherTables, List<BooleanExpression> expressions) {
 		addAndConnectToRelevant(otherTables, expressions, false);
@@ -124,26 +122,27 @@ public class QueryGraph {
 	 * The DBrows/tables will be added as optional (that is "outer join" tables)
 	 * if requiredTables is FALSE.
 	 *
-	 * @param otherTables
-	 * @param expressions
-	 * @param requiredTables
+	 * @param otherTables the tables to add to the query
+	 * @param expressions the expressions that connect the tables
+	 * @param requiredTables TRUE if the tables are requires, FALSE if the tables
+	 * are optional
 	 */
 	public final void addAndConnectToRelevant(List<DBRow> otherTables, List<BooleanExpression> expressions, boolean requiredTables) {
 
-		List<DBRow> tablesAdded = new ArrayList<DBRow>();
-		List<DBRow> tablesRemaining = new ArrayList<DBRow>();
+		List<DBRow> tablesAdded = new ArrayList<>();
+		List<DBRow> tablesRemaining = new ArrayList<>();
 		tablesRemaining.addAll(rows.values());
 		tablesRemaining.addAll(otherTables);
 		clearDisplayGraph();
 
 		while (tablesRemaining.size() > 0) {
 			DBRow table1 = tablesRemaining.get(0);
-			Class<? extends DBRow> table1Class = table1.getClass();
+			DBRowClass table1Class = new DBRowClass(table1);
 			QueryGraphNode node1 = getOrCreateNode(table1, table1Class, requiredTables);
 			for (DBRow table2 : tablesAdded) {
-				if (!table1.getClass().equals(table2.getClass())) {
+				if (table1 != null && table2 != null && !table1.getClass().equals(table2.getClass())) {
 					if (table1.willBeConnectedTo(table2)) {
-						Class<? extends DBRow> table2Class = table2.getClass();
+						DBRowClass table2Class = new DBRowClass(table2);
 						QueryGraphNode node2 = getOrCreateNode(table2, table2Class, requiredTables);
 						node1.connectTable(table2Class);
 						node2.connectTable(table1Class);
@@ -159,13 +158,13 @@ public class QueryGraph {
 			Set<DBRow> tables = expr.getTablesInvolved();
 			if (tables.size() > 0) {
 				DBRow table1 = tables.iterator().next();
-				Set<DBRow> tablesToConnectTo = new HashSet<DBRow>(tables);
+				Set<DBRow> tablesToConnectTo = new HashSet<>(tables);
 				tablesToConnectTo.remove(table1);
-				final Class<? extends DBRow> table1Class = table1.getClass();
+				final DBRowClass table1Class = new DBRowClass(table1);
 				final QueryGraphNode node1 = getOrCreateNode(table1, table1Class, requiredTables);
 				addNodeToDisplayGraph(node1);
 				for (DBRow table2 : tablesToConnectTo) {
-					final Class<? extends DBRow> table2Class = table2.getClass();
+					final DBRowClass table2Class = new DBRowClass(table2);
 					final QueryGraphNode node2 = getOrCreateNode(table2, table2Class, requiredTables);
 					node1.connectTable(table2Class);
 					node2.connectTable(table1Class);
@@ -176,7 +175,7 @@ public class QueryGraph {
 		}
 	}
 
-	private QueryGraphNode getOrCreateNode(DBRow table1, Class<? extends DBRow> table1Class, boolean requiredTables) {
+	private QueryGraphNode getOrCreateNode(DBRow table1, DBRowClass table1Class, boolean requiredTables) {
 		QueryGraphNode node1 = nodes.get(table1Class);
 		if (node1 == null) {
 			node1 = new QueryGraphNode(table1Class, requiredTables);
@@ -202,7 +201,6 @@ public class QueryGraph {
 	}
 
 	private void addEdgeToDisplayGraph(QueryGraphNode node1, QueryGraphNode node2, DBExpression fk) {
-//		DBRelationship fk = DBRelationship.get(table1, table1.getPrimaryKey(), table2, table2.getPrimaryKey());
 
 		if (!jungGraph.containsEdge(fk)) {
 			jungGraph.addEdge(fk, node1, node2);
@@ -220,12 +218,11 @@ public class QueryGraph {
 	 * a cartesian join to occur.
 	 */
 	public boolean willCreateCartesianJoin() {
-		Set<DBRow> returnTables = new HashSet<DBRow>();
+		Set<DBRow> returnTables = new HashSet<>();
 		returnTables.addAll(toList());
 
 		for (DBRow row : rows.values()) {
 			if (!returnTables.contains(row)) {
-				System.err.println("COULD NOT FIND TABLE: " + row.getClass().getSimpleName());
 				return true;
 			}
 		}
@@ -234,9 +231,6 @@ public class QueryGraph {
 
 	/**
 	 * Scans the QueryGraph to detect full outer join.
-	 *
-	 * <p style="color: #F90;">Support DBvolution at
-	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
 	 *
 	 * @return TRUE contains only optional tables, FALSE otherwise.
 	 */
@@ -258,14 +252,12 @@ public class QueryGraph {
 	 * over an optional, or "outer join", table. It also prefers tables with
 	 * actual conditions to unaltered join or leaf tables.
 	 *
-	 * <p style="color: #F90;">Support DBvolution at
-	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
 	 *
 	 * @return the class of a DBRow from which to start a traversal.
 	 */
-	private Class<? extends DBRow> getStartTable() {
-		List<QueryGraphNode> innerNodes = new ArrayList<QueryGraphNode>();
-		List<QueryGraphNode> outerNodes = new ArrayList<QueryGraphNode>();
+	private DBRowClass getStartTable() {
+		List<QueryGraphNode> innerNodes = new ArrayList<>();
+		List<QueryGraphNode> outerNodes = new ArrayList<>();
 
 		for (QueryGraphNode node : nodes.values()) {
 			if (node.isRequiredNode()) {
@@ -281,7 +273,7 @@ public class QueryGraph {
 		}
 
 		for (QueryGraphNode queryGraphNode : nodesToCheck) {
-			final Class<? extends DBRow> tableClass = queryGraphNode.getTable();
+			final DBRowClass tableClass = queryGraphNode.getTable();
 			final DBRow table = rows.get(tableClass);
 			if (table.hasConditionsSet()) {
 				return tableClass;
@@ -309,22 +301,47 @@ public class QueryGraph {
 	 * creating mid-query cartesian join that could have been avoided by including
 	 * a related required/inner table first.
 	 *
-	 * <p style="color: #F90;">Support DBvolution at
-	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
 	 *
 	 * @return a list of all DBRows in this QueryGraph in a smart an order as
 	 * possible.
 	 */
 	public List<DBRow> toList() {
-		return toList(getStartTable());
+		return toList(getStartTable(), false);
+	}
+
+	/**
+	 * Return tables in the QueryGraph as a list.
+	 *
+	 * <p>
+	 * Starting from a semi-random table (see {@link #getStartTable() }) traverse
+	 * the graph and add all nodes found to the list.
+	 *
+	 * <p>
+	 * This method does not check for discontinuities. If there is a cartesian
+	 * join/discontinuity present only some of the nodes will be returned. Use {@link #toListIncludingCartesian()
+	 * } if you need to span a discontinuity.
+	 *
+	 * <p>
+	 * Some optimization is attempted, by trying to include all the required/inner
+	 * tables first before adding the optional/outer tables. This avoids a common
+	 * problem of a query that spans the intersection of 2 optional/outer tables,
+	 * creating mid-query cartesian join that could have been avoided by including
+	 * a related required/inner table first.
+	 *
+	 * @param reversed TRUE if the list should be reversed, FALSE otherwise
+	 * @return a list of all DBRows in this QueryGraph in a smart an order as
+	 * possible.
+	 */
+	public List<DBRow> toListReversable(boolean reversed) {
+		return toList(getStartTable(), reversed);
 	}
 
 	@SuppressWarnings("unchecked")
-	private List<DBRow> toList(Class<? extends DBRow> startFrom) {
-		LinkedHashSet<Class<? extends DBRow>> sortedInnerTables = new LinkedHashSet<Class<? extends DBRow>>();
-		LinkedHashSet<Class<? extends DBRow>> sortedAllTables = new LinkedHashSet<Class<? extends DBRow>>();
-		List<Class<? extends DBRow>> addedInnerTables = new ArrayList<Class<? extends DBRow>>();
-		List<Class<? extends DBRow>> addedAllTables = new ArrayList<Class<? extends DBRow>>();
+	private List<DBRow> toList(DBRowClass startFrom, boolean reverse) {
+		LinkedHashSet<DBRowClass> sortedInnerTables = new LinkedHashSet<>();
+		LinkedHashSet<DBRowClass> sortedAllTables = new LinkedHashSet<>();
+		List<DBRowClass> addedInnerTables = new ArrayList<>();
+		List<DBRowClass> addedAllTables = new ArrayList<>();
 		QueryGraphNode nodeA = nodes.get(startFrom);
 		sortedAllTables.add(nodeA.getTable());
 		int sortedAllBeforeLoop = 0;
@@ -337,15 +354,15 @@ public class QueryGraph {
 				sortedInnerBeforeLoop = sortedInnerTables.size();
 				addedInnerTables.clear();
 				// Reverse the list to make it a depth first search
-				Class<?>[] dummyArray = new Class<?>[]{};
-				Class<? extends DBRow>[] sortedArray = (Class<? extends DBRow>[]) sortedInnerTables.toArray(dummyArray);
-				List<Class<? extends DBRow>> reversedList = Arrays.asList(sortedArray);
+				DBRowClass[] dummyArray = new DBRowClass[]{};
+				DBRowClass[] sortedArray = sortedInnerTables.toArray(dummyArray);
+				List<DBRowClass> reversedList = Arrays.asList(sortedArray);
 				Collections.reverse(reversedList);
-				for (Class<? extends DBRow> row : reversedList) {
+				for (DBRowClass row : reversedList) {
 					nodeA = nodes.get(row);
-					for (Class<? extends DBRow> table : nodeA.getConnectedTables()) {
+					for (DBRowClass table : nodeA.getConnectedTables()) {
 						QueryGraphNode nodeToAdd = nodes.get(table);
-						final Class<? extends DBRow> nodeTable = nodeToAdd.getTable();
+						final DBRowClass nodeTable = nodeToAdd.getTable();
 						if (nodeToAdd.isRequiredNode()) {
 							addedInnerTables.add(nodeTable);
 						}
@@ -356,9 +373,12 @@ public class QueryGraph {
 			}
 			sortedAllTables.addAll(addedAllTables);
 		}
-		List<DBRow> returnTables = new ArrayList<DBRow>();
-		for (Class<? extends DBRow> rowClass : sortedInnerTables) {
+		List<DBRow> returnTables = new ArrayList<>();
+		for (DBRowClass rowClass : sortedInnerTables) {
 			returnTables.add(rows.get(rowClass));
+		}
+		if (reverse) {
+			Collections.reverse(returnTables);
 		}
 		return returnTables;
 	}
@@ -382,14 +402,39 @@ public class QueryGraph {
 	 * creating mid-query cartesian join that could have been avoided by including
 	 * a related required/inner table first.
 	 *
-	 * <p style="color: #F90;">Support DBvolution at
-	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
-	 *
 	 * @return a list of all DBRows in this QueryGraph in a smart an order as
 	 * possible.
 	 */
 	public List<DBRow> toListIncludingCartesian() {
-		Set<DBRow> returnTables = new HashSet<DBRow>();
+		return toListIncludingCartesianReversable(false);
+	}
+
+	/**
+	 * Return all tables in the QueryGraph as a list.
+	 *
+	 * <p>
+	 * Starting from a semi-random table (see {@link #getStartTable() }) traverse
+	 * the graph and add all nodes found to the list.
+	 *
+	 * <p>
+	 * This method scans across discontinuities. If there is a cartesian
+	 * join/discontinuity present all of the nodes will be returned. Use {@link #toList()
+	 * } if you need to avoid spanning a discontinuity.
+	 *
+	 * <p>
+	 * Some optimization is attempted, by trying to include all the required/inner
+	 * tables first before adding the optional/outer tables. This avoids a common
+	 * problem of a query that spans the intersection of 2 optional/outer tables,
+	 * creating mid-query cartesian join that could have been avoided by including
+	 * a related required/inner table first.
+	 *
+	 * @param reverse TRUE if the list needs to be reversed, FALSE otherwise
+	 *
+	 * @return a list of all DBRows in this QueryGraph in a smart an order as
+	 * possible.
+	 */
+	public List<DBRow> toListIncludingCartesianReversable(Boolean reverse) {
+		Set<DBRow> returnTables = new HashSet<>();
 
 		returnTables.addAll(toList());
 		boolean changed = true;
@@ -398,13 +443,16 @@ public class QueryGraph {
 			for (DBRow row : rows.values()) {
 				changed = false;
 				if (!returnTables.contains(row)) {
-					returnTables.addAll(toList(row.getClass()));
+					returnTables.addAll(toList(new DBRowClass(row), false));
 					changed = true;
 				}
 			}
 		}
-		final List<DBRow> returnList = new ArrayList<DBRow>();
+		final List<DBRow> returnList = new ArrayList<>();
 		returnList.addAll(returnTables);
+		if (reverse) {
+			Collections.reverse(returnList);
+		}
 		return returnList;
 	}
 
@@ -414,8 +462,6 @@ public class QueryGraph {
 	 * <p>
 	 * Other graphs are available but we use {@link edu.uci.ics.jung.graph.Graph}.
 	 *
-	 * <p style="color: #F90;">Support DBvolution at
-	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
 	 *
 	 * @return a Jung Graph.
 	 */
@@ -424,7 +470,7 @@ public class QueryGraph {
 	}
 
 	private void clearDisplayGraph() {
-		jungGraph = new SparseMultigraph<QueryGraphNode, DBExpression>();
+		jungGraph = new SparseMultigraph<>();
 	}
 
 }

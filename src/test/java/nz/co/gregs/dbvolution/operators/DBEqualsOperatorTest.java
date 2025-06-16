@@ -15,20 +15,12 @@
  */
 package nz.co.gregs.dbvolution.operators;
 
-import nz.co.gregs.dbvolution.DBDatabase;
-import nz.co.gregs.dbvolution.datatypes.DBByteArray;
-import nz.co.gregs.dbvolution.datatypes.QueryableDatatypeSyncer;
+import nz.co.gregs.dbvolution.datatypes.DBLargeBinary;
 import nz.co.gregs.dbvolution.exceptions.ComparisonBetweenTwoDissimilarTypes;
 import nz.co.gregs.dbvolution.exceptions.IncomparableTypeUsedInComparison;
-import nz.co.gregs.dbvolution.expressions.BooleanExpression;
-import nz.co.gregs.dbvolution.expressions.DBExpression;
-import nz.co.gregs.dbvolution.expressions.DateExpression;
-import nz.co.gregs.dbvolution.expressions.LargeObjectExpression;
-import nz.co.gregs.dbvolution.results.LargeObjectResult;
-import nz.co.gregs.dbvolution.expressions.StringExpression;
+import nz.co.gregs.dbvolution.expressions.*;
 import nz.co.gregs.dbvolution.generic.AbstractTest;
 import org.junit.Test;
-import static org.junit.Assert.*;
 
 /**
  *
@@ -45,26 +37,23 @@ public class DBEqualsOperatorTest extends AbstractTest {
 
 	@Test(expected = ComparisonBetweenTwoDissimilarTypes.class)
 	public void testGenerateWhereExpressionThrowsDissimilarComparisonExceptionDateAndString() {
-		System.out.println("generateWhereExpression");
-		DBExpression column = new StringExpression("a string");
+		DBExpression column = StringExpression.value("a string");
 		DBEqualsOperator instance = new DBEqualsOperator(new DateExpression(april2nd2011));
-		BooleanExpression result = instance.generateWhereExpression(database, column);
+		BooleanExpression result = instance.generateWhereExpression(database.getDefinition(), column);
 	}
 
 	@Test(expected = ComparisonBetweenTwoDissimilarTypes.class)
 	public void testGenerateWhereExpressionThrowsDissimilarComparisonExceptionStringAndDate() {
-		System.out.println("generateWhereExpression");
 		DBExpression column = new DateExpression(april2nd2011);
-		DBEqualsOperator instance = new DBEqualsOperator(new StringExpression("a string"));
-		BooleanExpression result = instance.generateWhereExpression(database, column);
+		DBEqualsOperator instance = new DBEqualsOperator(StringExpression.value("a string"));
+		BooleanExpression result = instance.generateWhereExpression(database.getDefinition(), column);
 	}
 
 	@Test(expected = IncomparableTypeUsedInComparison.class)
 	public void testGenerateWhereExpressionThrowsDissimilarComparisonExceptionNotEqualsComparable() {
-		System.out.println("generateWhereExpression");
-		DBExpression column = new LargeObjectExpression(new DBByteArray());
-		DBEqualsOperator instance = new DBEqualsOperator(new StringExpression("a string"));
-		BooleanExpression result = instance.generateWhereExpression(database, column);
+		DBExpression column = new LargeBinaryExpression(new DBLargeBinary());
+		DBEqualsOperator instance = new DBEqualsOperator(StringExpression.value("a string"));
+		BooleanExpression result = instance.generateWhereExpression(database.getDefinition(), column);
 	}
 
 }

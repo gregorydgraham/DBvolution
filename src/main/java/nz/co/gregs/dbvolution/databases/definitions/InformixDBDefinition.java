@@ -19,7 +19,8 @@ import java.text.SimpleDateFormat;
 import java.util.Date;
 import nz.co.gregs.dbvolution.DBRow;
 import nz.co.gregs.dbvolution.databases.InformixDB;
-import nz.co.gregs.dbvolution.query.QueryOptions;
+import nz.co.gregs.dbvolution.internal.query.QueryOptions;
+import nz.co.gregs.dbvolution.internal.query.QueryState;
 
 /**
  * Defines the features of the Informix database that differ from the standard
@@ -29,22 +30,15 @@ import nz.co.gregs.dbvolution.query.QueryOptions;
  * This DBDefinition is automatically included in {@link InformixDB} instances,
  * and you should not need to use it directly.
  *
- * <p style="color: #F90;">Support DBvolution at
- * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
- *
  * @author Gregory Graham
  */
 public class InformixDBDefinition extends DBDefinition {
 
-	private final String DATE_FORMAT = "yyyy-MM-dd HH:mm:ss.SSS";
-	//TO_DATE("1998-07-07 10:24",   "%Y-%m-%d %H:%M")
-	private final String informixDateFormat = "%Y-%m-%d %H:%M:%S%F3";
+	public static final long serialVersionUID = 1L;
+	
+	private static final String DATE_FORMAT = "yyyy-MM-dd HH:mm:ss.SSS";
+	private static final String INFORMIX_DATE_FORMAT = "%Y-%m-%d %H:%M:%S%F3";
 	private final SimpleDateFormat dateFormat = new SimpleDateFormat(DATE_FORMAT);
-
-	@Override
-	public boolean prefersIndexBasedGroupByClause() {
-		return true;
-	}
 
 	@Override
 	public boolean prefersIndexBasedOrderByClause() {
@@ -53,16 +47,25 @@ public class InformixDBDefinition extends DBDefinition {
 
 	@Override
 	public String getDateFormattedForQuery(Date date) {
-		return "TO_DATE('" + dateFormat.format(date) + "','" + informixDateFormat + "')";
+		return "TO_DATE('" + dateFormat.format(date) + "','" + INFORMIX_DATE_FORMAT + "')";
+	}
+
+	@Override
+	public String getDatePartsFormattedForQuery(String years, String months, String days, String hours, String minutes, String seconds, String subsecond, String timeZoneSign, String timeZoneHourOffset, String timeZoneMinuteOffSet) {
+		return "PARSEDATETIME("
+				+ years
+				+ "||'-'||" + months
+				+ "||'-'||" + days
+				+ "||' '||" + hours
+				+ "||':'||" + minutes
+				+ "||':'||(" + seconds+"+"+subsecond+")"
+				+ ", '" + INFORMIX_DATE_FORMAT + "')";
 	}
 
 	/**
 	 *
 	 * @param table table
 	 * @param columnName columnName
-	 * <p style="color: #F90;">Support DBvolution at
-	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
-	 *
 	 * @return a string of the table and column name for the select clause
 	 */
 	@Override
@@ -71,7 +74,7 @@ public class InformixDBDefinition extends DBDefinition {
 	}
 
 	@Override
-	public Object getLimitRowsSubClauseDuringSelectClause(QueryOptions options) {
+	public String getLimitRowsSubClauseDuringSelectClause(QueryOptions options) {
 		int rowLimit = options.getRowLimit();
 		Integer pageNumber = options.getPageIndex();
 		if (rowLimit < 1) {
@@ -95,7 +98,7 @@ public class InformixDBDefinition extends DBDefinition {
 	}
 
 	@Override
-	public Object getLimitRowsSubClauseAfterWhereClause(QueryOptions options) {
+	public String getLimitRowsSubClauseAfterWhereClause(QueryState state, QueryOptions options) {
 		return "";
 	}
 
@@ -104,9 +107,6 @@ public class InformixDBDefinition extends DBDefinition {
 	 *
 	 * <p>
 	 * Informix provides NVL only.
-	 *
-	 * <p style="color: #F90;">Support DBvolution at
-	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
 	 *
 	 * @return "COALESCE"
 	 */
@@ -135,6 +135,16 @@ public class InformixDBDefinition extends DBDefinition {
 		return "(CURRENT HOUR TO FRACTION(3))";
 	}
 
+	/**
+	 * Defines the function used to get the current timestamp from the database.
+	 *
+	 * @return the default implementation returns " CURRENT_TIMESTAMP "
+	 */
+	@Override
+	protected String getCurrentZonedDateTimeFunction() {
+		return "(CURRENT)";
+	}
+	
 	@Override
 	public String doCurrentDateTimeTransform() {
 		return "(CURRENT)";
@@ -171,42 +181,82 @@ public class InformixDBDefinition extends DBDefinition {
 	}
 
 	@Override
-	public String doAddYearsTransform(String dateValue, String numberOfYears) {
+	public String doDateAddYearsTransform(String dateValue, String numberOfYears) {
 		return "((" + dateValue + ")+ (" + numberOfYears + ") UNITS YEAR)";
 	}
 
 	@Override
-	public String doAddMonthsTransform(String dateValue, String numberOfMonths) {
+	public String doDateAddMonthsTransform(String dateValue, String numberOfMonths) {
 		return "((" + dateValue + ")+ (" + numberOfMonths + ") UNITS MONTH)";
 	}
 
 	@Override
-	public String doAddWeeksTransform(String dateValue, String numberOfWeeks) {
+	public String doDateAddWeeksTransform(String dateValue, String numberOfWeeks) {
 		return "((" + dateValue + ")+ (" + numberOfWeeks + ") UNITS WEEK)";
 	}
 
 	@Override
-	public String doAddHoursTransform(String dateValue, String numberOfHours) {
+	public String doDateAddHoursTransform(String dateValue, String numberOfHours) {
 		return "((" + dateValue + ")+ (" + numberOfHours + ") UNITS HOUR)";
 	}
 
 	@Override
-	public String doAddDaysTransform(String dateValue, String numberOfDays) {
+	public String doDateAddDaysTransform(String dateValue, String numberOfDays) {
 		return "((" + dateValue + ")+ (" + numberOfDays + ") UNITS DAY)";
 	}
 
 	@Override
-	public String doAddMinutesTransform(String dateValue, String numberOfMinutes) {
+	public String doDateAddMinutesTransform(String dateValue, String numberOfMinutes) {
 		return "((" + dateValue + ")+ (" + numberOfMinutes + ") UNITS MINUTE)";
 	}
 
 	@Override
-	public String doAddSecondsTransform(String dateValue, String numberOfSeconds) {
+	public String doDateAddSecondsTransform(String dateValue, String numberOfSeconds) {
+		return "((" + dateValue + ")+ (" + numberOfSeconds + ") UNITS SECOND)";
+	}
+
+	@Override
+	public String doInstantAddYearsTransform(String dateValue, String numberOfYears) {
+		return "((" + dateValue + ")+ (" + numberOfYears + ") UNITS YEAR)";
+	}
+
+	@Override
+	public String doInstantAddMonthsTransform(String dateValue, String numberOfMonths) {
+		return "((" + dateValue + ")+ (" + numberOfMonths + ") UNITS MONTH)";
+	}
+
+	@Override
+	public String doInstantAddWeeksTransform(String dateValue, String numberOfWeeks) {
+		return "((" + dateValue + ")+ (" + numberOfWeeks + ") UNITS WEEK)";
+	}
+
+	@Override
+	public String doInstantAddHoursTransform(String dateValue, String numberOfHours) {
+		return "((" + dateValue + ")+ (" + numberOfHours + ") UNITS HOUR)";
+	}
+
+	@Override
+	public String doInstantAddDaysTransform(String dateValue, String numberOfDays) {
+		return "((" + dateValue + ")+ (" + numberOfDays + ") UNITS DAY)";
+	}
+
+	@Override
+	public String doInstantAddMinutesTransform(String dateValue, String numberOfMinutes) {
+		return "((" + dateValue + ")+ (" + numberOfMinutes + ") UNITS MINUTE)";
+	}
+
+	@Override
+	public String doInstantAddSecondsTransform(String dateValue, String numberOfSeconds) {
 		return "((" + dateValue + ")+ (" + numberOfSeconds + ") UNITS SECOND)";
 	}
 
 	@Override
 	public String doDayOfWeekTransform(String dateSQL) {
+		return " (WEEKDAY(" + dateSQL + ")+1)";
+	}
+
+	@Override
+	public String doInstantDayOfWeekTransform(String dateSQL) {
 		return " (WEEKDAY(" + dateSQL + ")+1)";
 	}
 
@@ -218,5 +268,15 @@ public class InformixDBDefinition extends DBDefinition {
 	@Override
 	public boolean supportsStatementIsClosed() {
 		return false;
+	}
+
+	@Override
+	public boolean supportsDateRepeatDatatypeFunctions() {
+		return false;
+	}
+
+	@Override
+	public GroupByClauseMethod[] preferredGroupByClauseMethod() {
+		return new GroupByClauseMethod[]{GroupByClauseMethod.INDEX};
 	}
 }

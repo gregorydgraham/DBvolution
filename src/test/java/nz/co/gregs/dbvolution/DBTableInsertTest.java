@@ -24,14 +24,12 @@ import nz.co.gregs.dbvolution.actions.DBActionList;
 import nz.co.gregs.dbvolution.actions.DBInsert;
 import nz.co.gregs.dbvolution.example.Marque;
 import nz.co.gregs.dbvolution.generic.AbstractTest;
-import org.hamcrest.Matchers;
-import org.junit.Assert;
+import static org.hamcrest.Matchers.*;
+import static org.hamcrest.MatcherAssert.assertThat;
 import org.junit.Test;
 
 /**
  *
- * <p style="color: #F90;">Support DBvolution at
- * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
  *
  * @author Gregory Graham
  */
@@ -49,16 +47,16 @@ public class DBTableInsertTest extends AbstractTest {
 		myTableRow.getName().setValue("TOYOTA");
 		myTableRow.getNumericCode().setValue(10);
 		marquesTable.insert(myTableRow);
-		marquesTable.setBlankQueryAllowed(true).getAllRows();
-		marquesTable.print();
+		List<Marque> allRows = marquesTable.setBlankQueryAllowed(true).getAllRows();
+		assertThat(allRows.size(), is(23));
 
 		Date creationDate = new Date();
 		List<Marque> myTableRows = new ArrayList<Marque>();
 		myTableRows.add(new Marque(3, "False", 1246974, "", 3, "UV", "TVR", "", "Y", creationDate, 4, null));
 
 		marquesTable.insert(myTableRows);
-		marquesTable.getAllRows();
-		marquesTable.print();
+		allRows = marquesTable.getAllRows();
+		assertThat(allRows.size(), is(24));
 	}
 
 	@Test
@@ -69,14 +67,13 @@ public class DBTableInsertTest extends AbstractTest {
 		marque.getNumericCode().setValue(10);
 		DBActionList insertActions = DBInsert.getInserts(marque);
 		DBAction possibleInsert = insertActions.get(0);
-		Assert.assertThat(possibleInsert.getClass().getSimpleName(), Matchers.is(DBInsert.class.getSimpleName()));
+		assertThat(possibleInsert.getClass().getSimpleName(), is(DBInsert.class.getSimpleName()));
 		if (possibleInsert instanceof DBInsert) {
 			DBInsert insert = (DBInsert) possibleInsert;
 			String sql = insert.getSQLStatements(database).get(0);
-			System.out.println("" + sql);
-			Assert.assertThat(sql.toUpperCase(), Matchers.containsString("NAME"));
-			Assert.assertThat(sql.toUpperCase(), Matchers.not(Matchers.containsString("CREATION_DATE")));
-			Assert.assertThat(sql.toUpperCase(), Matchers.not(Matchers.containsString("FK_CARCOMPANY")));
+			assertThat(sql.toUpperCase(), containsString("NAME"));
+			assertThat(sql.toUpperCase(), not(containsString("CREATION_DATE")));
+			assertThat(sql.toUpperCase(), not(containsString("FK_CARCOMPANY")));
 		}
 	}
 }

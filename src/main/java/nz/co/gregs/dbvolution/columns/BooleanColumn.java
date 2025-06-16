@@ -16,10 +16,11 @@
 package nz.co.gregs.dbvolution.columns;
 
 import java.util.Set;
-import nz.co.gregs.dbvolution.DBDatabase;
 import nz.co.gregs.dbvolution.DBRow;
+import nz.co.gregs.dbvolution.databases.definitions.DBDefinition;
 import nz.co.gregs.dbvolution.datatypes.DBBoolean;
 import nz.co.gregs.dbvolution.expressions.BooleanExpression;
+import nz.co.gregs.dbvolution.expressions.SortProvider;
 import nz.co.gregs.dbvolution.query.RowDefinition;
 
 /**
@@ -47,6 +48,8 @@ import nz.co.gregs.dbvolution.query.RowDefinition;
  */
 public class BooleanColumn extends BooleanExpression implements ColumnProvider {
 
+	private final static long serialVersionUID = 1l;
+
 	private final AbstractColumn column;
 
 	/**
@@ -56,7 +59,7 @@ public class BooleanColumn extends BooleanExpression implements ColumnProvider {
 	 * @param field the field that represents the column
 	 */
 	public BooleanColumn(RowDefinition row, Boolean field) {
-		this.column = new AbstractColumn(row, field);
+		this.column = new AbstractColumn(row, new DBBoolean(field));
 	}
 
 	/**
@@ -70,14 +73,19 @@ public class BooleanColumn extends BooleanExpression implements ColumnProvider {
 	}
 
 	@Override
-	public String toSQLString(DBDatabase db) {
+	public String toSQLString(DBDefinition db) {
 		return column.toSQLString(db);
 	}
 
 	@Override
 	public BooleanColumn copy() {
-		return (BooleanColumn) super.copy();
-		}
+		final AbstractColumn col = getColumn();
+		final DBRow row = col.getInstanceOfRow();
+		BooleanColumn newInstance = new BooleanColumn(row, (DBBoolean) col.getAppropriateQDTFromRow(row));
+		return newInstance;
+
+//		return (BooleanColumn) super.copy();
+	}
 
 	@Override
 	public AbstractColumn getColumn() {
@@ -99,6 +107,11 @@ public class BooleanColumn extends BooleanExpression implements ColumnProvider {
 		return getTablesInvolved().isEmpty();
 	}
 
+	@Override
+	public boolean isAggregator() {
+		return column.isAggregator();
+	}
+
 	/**
 	 * Create an expression to compare this column to the other column using
 	 * EQUALS.
@@ -106,9 +119,9 @@ public class BooleanColumn extends BooleanExpression implements ColumnProvider {
 	 * @param boolColumn an instance to compare to
 	 * <p style="color: #F90;">Support DBvolution at
 	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
-	 *
 	 * @return a BooleanExpression
 	 */
+	@Override
 	public BooleanExpression is(DBBoolean boolColumn) {
 		return super.is(boolColumn);
 	}
@@ -116,5 +129,10 @@ public class BooleanColumn extends BooleanExpression implements ColumnProvider {
 	@Override
 	public boolean isBooleanStatement() {
 		return false;
+	}
+
+	@Override
+	public SortProvider.Column getSortProvider() {
+		return column.getSortProvider();
 	}
 }

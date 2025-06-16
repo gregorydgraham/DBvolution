@@ -18,12 +18,14 @@ package nz.co.gregs.dbvolution.internal.datatypes;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.GregorianCalendar;
+import java.util.Optional;
+import nz.co.gregs.regexi.Regex;
+import nz.co.gregs.regexi.RegexReplacement;
+import nz.co.gregs.regexi.RegexSplitter;
+import nz.co.gregs.regexi.RegexValueFinder;
 import org.joda.time.Period;
 
 /**
- *
- * <p style="color: #F90;">Support DBvolution at
- * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
  *
  * @author gregorygraham
  */
@@ -40,8 +42,6 @@ public class DateRepeatImpl {
 
 	/**
 	 *
-	 * <p style="color: #F90;">Support DBvolution at
-	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
 	 *
 	 * @return the DateRepeat version of Zero
 	 */
@@ -51,10 +51,8 @@ public class DateRepeatImpl {
 
 	/**
 	 *
-	 * @param original
-	 * @param compareTo
-	 * <p style="color: #F90;">Support DBvolution at
-	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 * @param original the first date
+	 * @param compareTo the second date
 	 *
 	 * @return the DateRepeat the represents the difference between these 2 dates
 	 */
@@ -63,23 +61,27 @@ public class DateRepeatImpl {
 		if (original == null || compareTo == null) {
 			return null;
 		}
-		int years = original.getYear() - compareTo.getYear();
-		int months = original.getMonth() - compareTo.getMonth();
-		int days = original.getDate() - compareTo.getDate();
-		int hours = original.getHours() - compareTo.getHours();
-		int minutes = original.getMinutes() - compareTo.getMinutes();
-		int seconds = original.getSeconds() - compareTo.getSeconds();
+		Calendar origCal = GregorianCalendar.getInstance();
+		origCal.setTime(original);
+		Calendar compCal = GregorianCalendar.getInstance();
+		compCal.setTime(compareTo);
 
-		String intervalString = "P" + years + "Y" + months + "M" + days + "D" + hours + "h" + minutes + "n" + seconds + "s";
+		int years = origCal.get(Calendar.YEAR) - compCal.get(Calendar.YEAR);
+		int months = origCal.get(Calendar.MONTH) - compCal.get(Calendar.MONTH);
+		int days = origCal.get(Calendar.DAY_OF_MONTH) - compCal.get(Calendar.DAY_OF_MONTH);
+		int hours = origCal.get(Calendar.HOUR_OF_DAY) - compCal.get(Calendar.HOUR_OF_DAY);
+		int minutes = origCal.get(Calendar.MINUTE) - compCal.get(Calendar.MINUTE);
+		int seconds = origCal.get(Calendar.SECOND) - compCal.get(Calendar.SECOND);
+		int millis = origCal.get(Calendar.MILLISECOND) - compCal.get(Calendar.MILLISECOND);
+
+		String intervalString = "P" + years + "Y" + months + "M" + days + "D" + hours + "h" + minutes + "n" + seconds + "." + millis + "s";
 		return intervalString;
 	}
 
 	/**
+	 * Convenience method to convert Period objects into the string representation of a DateRepeat.
 	 *
-	 * @param interval
-	 * <p style="color: #F90;">Support DBvolution at
-	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
-	 *
+	 * @param interval the Period object to convert to DateRepeat format
 	 * @return the DateRepeat equivalent of the Period value
 	 */
 	public static String getDateRepeatString(Period interval) {
@@ -100,10 +102,8 @@ public class DateRepeatImpl {
 
 	/**
 	 *
-	 * @param original
-	 * @param compareTo
-	 * <p style="color: #F90;">Support DBvolution at
-	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 * @param original the first date
+	 * @param compareTo the second date
 	 *
 	 * @return TRUE if the DateRepeats are the same, otherwise FALSE
 	 */
@@ -113,12 +113,11 @@ public class DateRepeatImpl {
 
 	/**
 	 *
-	 * @param original
-	 * @param compareTo
-	 * <p style="color: #F90;">Support DBvolution at
-	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 * @param original the first date
+	 * @param compareTo the second date
 	 *
-	 * @return TRUE if the first DateRepeat value is greater than the second, otherwise FALSE
+	 * @return TRUE if the first DateRepeat value is greater than the second,
+	 * otherwise FALSE
 	 */
 	public static boolean isGreaterThan(String original, String compareTo) {
 		return compareDateRepeatStrings(original, compareTo) == 1;
@@ -126,34 +125,33 @@ public class DateRepeatImpl {
 
 	/**
 	 *
-	 * @param original
-	 * @param compareTo
-	 * <p style="color: #F90;">Support DBvolution at
-	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 * @param original the first date
+	 * @param compareTo the second date
 	 *
-	 * @return TRUE if the first DateRepeat value is less than the second, otherwise FALSE
+	 * @return TRUE if the first DateRepeat value is less than the second,
+	 * otherwise FALSE
 	 */
 	public static boolean isLessThan(String original, String compareTo) {
 		return compareDateRepeatStrings(original, compareTo) == -1;
 	}
 
+	static final private RegexSplitter DATE_REPEAT_SPLITTER = Regex.empty().beginSetIncluding().includeLetters().endSet().toSplitter();
+
 	/**
 	 *
-	 * @param original
-	 * @param compareTo
-	 * <p style="color: #F90;">Support DBvolution at
-	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 * @param original the first date
+	 * @param compareTo the second date
 	 *
-	 * @return -1 if the first DateRepeat is the smallest, 0 if they are equal, and 1 if the first is the largest.
+	 * @return -1 if the first DateRepeat is the smallest, 0 if they are equal,
+	 * and 1 if the first is the largest.
 	 */
 	public static Integer compareDateRepeatStrings(String original, String compareTo) {
 		if (original == null || compareTo == null) {
 			return null;
 		}
-		String[] splitOriginal = original.split("[A-Za-z]");
-		String[] splitCompareTo = compareTo.split("[A-Za-z]");
+		String[] splitOriginal = DATE_REPEAT_SPLITTER.split(original);
+		String[] splitCompareTo = DATE_REPEAT_SPLITTER.split(compareTo);
 		for (int i = 1; i < splitCompareTo.length; i++) { // Start at 1 because the first split is empty
-			System.out.println("SPLITORIGINAL " + i + ": " + splitOriginal[i]);
 			double intOriginal = Double.parseDouble(splitOriginal[i]);
 			double intCompareTo = Double.parseDouble(splitCompareTo[i]);
 			if (intOriginal > intCompareTo) {
@@ -168,10 +166,8 @@ public class DateRepeatImpl {
 
 	/**
 	 *
-	 * @param original
-	 * @param intervalStr
-	 * <p style="color: #F90;">Support DBvolution at
-	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 * @param original the first date.
+	 * @param intervalStr the DateRepeat to offset the date.
 	 *
 	 * @return the Date value offset by the DateRepeat value.
 	 */
@@ -200,20 +196,21 @@ public class DateRepeatImpl {
 		return cal.getTime();
 	}
 
+	private static final RegexReplacement NORMALISE_DATEREPEAT = Regex.empty().beginSetExcluding().excludeLiterals(".PYMDhns").excludeRange('0', '9').excludeMinus().endSet().oneOrMore().remove();
+
 	/**
 	 *
-	 * @param original
-	 * @param intervalInput
-	 * <p style="color: #F90;">Support DBvolution at
-	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 * @param original the first date.
+	 * @param intervalInput the DateRepeat to offset the date.
 	 *
-	 * @return the Date shift backwards (towards the past) by the DateRepeat value.
+	 * @return the Date shift backwards (towards the past) by the DateRepeat
+	 * value.
 	 */
 	public static Date subtractDateAndDateRepeatString(Date original, String intervalInput) {
 		if (original == null || intervalInput == null || intervalInput.length() == 0) {
 			return null;
 		}
-		String intervalStr = intervalInput.replaceAll("[^-.PYMDhns0-9]+", "");
+		String intervalStr = NORMALISE_DATEREPEAT.replaceAll(intervalInput);
 		Calendar cal = new GregorianCalendar();
 		cal.setTime(original);
 		int years = getYearPart(intervalStr);
@@ -236,9 +233,7 @@ public class DateRepeatImpl {
 
 	/**
 	 *
-	 * @param intervalStr
-	 * <p style="color: #F90;">Support DBvolution at
-	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 * @param intervalStr the DateRepeat to parse
 	 *
 	 * @return the DateRepeat value represented by the String value
 	 */
@@ -246,7 +241,7 @@ public class DateRepeatImpl {
 		if (intervalStr == null || intervalStr.length() == 0) {
 			return null;
 		}
-		System.out.println("DBV INTERVAL: " + intervalStr);
+
 		Period interval = new Period();
 		interval = interval.withYears(getYearPart(intervalStr));
 		interval = interval.withMonths(getMonthPart(intervalStr));
@@ -260,120 +255,169 @@ public class DateRepeatImpl {
 
 	/**
 	 *
-	 * @param intervalStr
-	 * <p style="color: #F90;">Support DBvolution at
-	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 * @param intervalStr the DateRepeat
 	 *
 	 * @return get the fractional seconds to millisecond precision
-	 * @throws NumberFormatException
+	 * @throws NumberFormatException parsing is used to interpret the seconds so a
+	 * NumberFormatException maybe thrown if the intervalStr is malformed
 	 */
 	public static Integer getMillisecondPart(String intervalStr) throws NumberFormatException {
 		if (intervalStr == null || intervalStr.length() == 0) {
 			return null;
 		}
-		final Double secondsDouble = Double.parseDouble(intervalStr.replaceAll(".*n([-0-9.]+)s.*", "$1"));
+		Double secondsDouble = parseValueDouble(FIND_SECOND_VALUE, intervalStr);
 		final int secondsInt = secondsDouble.intValue();
-		final int millis = new Double(secondsDouble * 1000.0 - secondsInt * 1000).intValue();
+		final Double millisDouble = secondsDouble * 1000.0 - secondsInt * 1000;
+		final int millis = millisDouble.intValue();
 		return millis;
 	}
 
 	/**
 	 *
-	 * @param intervalStr
-	 * <p style="color: #F90;">Support DBvolution at
-	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 * @param intervalStr the DateRepeat
 	 *
 	 * @return get the integer and fractional seconds part of the DateRepeat
-	 * @throws NumberFormatException
+	 * @throws NumberFormatException parsing is used to interpret the seconds so a
+	 * NumberFormatException maybe thrown if the intervalStr is malformed
 	 */
 	public static Integer getSecondPart(String intervalStr) throws NumberFormatException {
-		if (intervalStr == null || intervalStr.length() == 0 || !intervalStr.matches(".*n([-0-9.]+)s.*")) {
+		if (intervalStr == null || intervalStr.length() == 0) {
 			return null;
 		}
-		final Double valueOf = Double.valueOf(intervalStr.replaceAll(".*n([-0-9.]+)s.*", "$1"));
-		if (valueOf == null) {
-			return null;
-		}
+		Double valueOf = parseValueDouble(FIND_SECOND_VALUE, intervalStr);
 		return valueOf.intValue();
 	}
 
 	/**
 	 *
-	 * @param intervalStr
-	 * <p style="color: #F90;">Support DBvolution at
-	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 * @param intervalStr the DateRepeat
 	 *
 	 * @return get the minutes part of the DateRepeat
-	 * @throws NumberFormatException
+	 * @throws NumberFormatException parsing is used to interpret the minutes so a
+	 * NumberFormatException maybe thrown if the intervalStr is malformed
 	 */
 	public static Integer getMinutePart(String intervalStr) throws NumberFormatException {
 		if (intervalStr == null || intervalStr.length() == 0) {
 			return null;
 		}
-		return Integer.parseInt(intervalStr.replaceAll(".*h([-0-9.]+)n.*", "$1"));
+		return parseValue(FIND_MINUTE_VALUE, intervalStr);
 	}
 
 	/**
 	 *
-	 * @param intervalStr
-	 * <p style="color: #F90;">Support DBvolution at
-	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 * @param intervalStr the DateRepeat
 	 *
 	 * @return get the hour part of the DateRepeat value
-	 * @throws NumberFormatException
+	 * @throws NumberFormatException parsing is used to interpret the numbers so a
+	 * NumberFormatException maybe thrown if the intervalStr is malformed
 	 */
 	public static Integer getHourPart(String intervalStr) throws NumberFormatException {
 		if (intervalStr == null || intervalStr.length() == 0) {
 			return null;
 		}
-		return Integer.parseInt(intervalStr.replaceAll(".*D([-0-9.]+)h.*", "$1"));
+		return parseValue(FIND_HOUR_VALUE, intervalStr);
 	}
 
 	/**
 	 *
-	 * @param intervalStr
-	 * <p style="color: #F90;">Support DBvolution at
-	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 * @param intervalStr the DateRepeat
 	 *
 	 * @return get the day part of the DateRepeat value
-	 * @throws NumberFormatException
+	 * @throws NumberFormatException parsing is used to interpret the numbers so a
+	 * NumberFormatException maybe thrown if the intervalStr is malformed
 	 */
 	public static Integer getDayPart(String intervalStr) throws NumberFormatException {
 		if (intervalStr == null || intervalStr.length() == 0) {
 			return null;
 		}
-		return Integer.parseInt(intervalStr.replaceAll(".*M([-0-9.]+)D.*", "$1"));
+		return parseValue(FIND_DAY_VALUE, intervalStr);
 	}
 
 	/**
 	 *
-	 * @param intervalStr
-	 * <p style="color: #F90;">Support DBvolution at
-	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 * @param intervalStr the DateRepeat
 	 *
 	 * @return get the month part of the DateRepeat value
-	 * @throws NumberFormatException
+	 * @throws NumberFormatException parsing is used to interpret the numbers so a
+	 * NumberFormatException maybe thrown if the intervalStr is malformed
 	 */
 	public static Integer getMonthPart(String intervalStr) throws NumberFormatException {
 		if (intervalStr == null || intervalStr.length() == 0) {
 			return null;
 		}
-		return Integer.parseInt(intervalStr.replaceAll(".*Y([-0-9.]+)M.*", "$1"));
+		return parseValue(FIND_MONTH_VALUE, intervalStr);
 	}
 
 	/**
 	 *
-	 * @param intervalStr
-	 * <p style="color: #F90;">Support DBvolution at
-	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 * @param intervalStr the DateRepeat
 	 *
 	 * @return get the year part of the DateRepeat value
-	 * @throws NumberFormatException
+	 * @throws NumberFormatException parsing is used to interpret the numbers so a
+	 * NumberFormatException maybe thrown if the intervalStr is malformed
 	 */
 	public static Integer getYearPart(String intervalStr) throws NumberFormatException {
 		if (intervalStr == null || intervalStr.length() == 0) {
 			return null;
 		}
-		return Integer.parseInt(intervalStr.replaceAll(".*P([-0-9.]+)Y.*", "$1"));
+		return parseValue(FIND_YEAR_VALUE, intervalStr);
 	}
+
+	private static Integer parseValue(RegexValueFinder finder, String intervalStr) throws NumberFormatException {
+		Optional<String> value = finder.getValueFrom(intervalStr);
+		return value.isPresent() ? Integer.parseInt(value.get()) : null;
+	}
+
+	private static Double parseValueDouble(RegexValueFinder finder, String intervalStr) throws NumberFormatException {
+		Optional<String> value = finder.getValueFrom(intervalStr);
+		return value.isPresent() ? Double.parseDouble(value.get()) : null;
+	}
+
+	private static final RegexValueFinder FIND_YEAR_VALUE = Regex.startingAnywhere()
+			.literal("P")
+			.beginNamedCapture("value")
+			.numberLike()
+			.oneOrMore()
+			.endNamedCapture()
+			.literal("Y").returnValueFor("value");
+
+	private static final RegexValueFinder FIND_MONTH_VALUE = Regex.startingAnywhere()
+			.literal("Y")
+			.beginNamedCapture("value")
+			.numberLike()
+			.oneOrMore()
+			.endNamedCapture()
+			.literal("M").returnValueFor("value");
+
+	private static final RegexValueFinder FIND_DAY_VALUE = Regex.startingAnywhere()
+			.literal("M")
+			.beginNamedCapture("value")
+			.numberLike()
+			.oneOrMore()
+			.endNamedCapture()
+			.literal("D").returnValueFor("value");
+
+	private static final RegexValueFinder FIND_HOUR_VALUE = Regex.startingAnywhere()
+			.literal("D")
+			.beginNamedCapture("value")
+			.numberLike()
+			.oneOrMore()
+			.endNamedCapture()
+			.literal("h").returnValueFor("value");
+
+	private static final RegexValueFinder FIND_MINUTE_VALUE = Regex.startingAnywhere()
+			.literal("h")
+			.beginNamedCapture("value")
+			.numberLike()
+			.oneOrMore()
+			.endNamedCapture()
+			.literal("n").returnValueFor("value");
+
+	private static final RegexValueFinder FIND_SECOND_VALUE = Regex.startingAnywhere()
+			.literal("n")
+			.beginNamedCapture("value")
+			.numberLike()
+			.oneOrMore()
+			.endNamedCapture()
+			.literal("s").returnValueFor("value");
 }

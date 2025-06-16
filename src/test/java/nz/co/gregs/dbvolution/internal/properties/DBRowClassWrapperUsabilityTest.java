@@ -1,16 +1,12 @@
 package nz.co.gregs.dbvolution.internal.properties;
 
 import java.sql.SQLException;
-import nz.co.gregs.dbvolution.internal.properties.RowDefinitionClassWrapper;
-import nz.co.gregs.dbvolution.internal.properties.RowDefinitionInstanceWrapper;
-import nz.co.gregs.dbvolution.internal.properties.RowDefinitionWrapperFactory;
-import nz.co.gregs.dbvolution.internal.properties.PropertyWrapper;
-import nz.co.gregs.dbvolution.DBDatabase;
+import nz.co.gregs.dbvolution.databases.DBDatabase;
 import nz.co.gregs.dbvolution.DBRow;
 import nz.co.gregs.dbvolution.annotations.DBColumn;
 import nz.co.gregs.dbvolution.annotations.DBPrimaryKey;
 import nz.co.gregs.dbvolution.annotations.DBTableName;
-import nz.co.gregs.dbvolution.databases.H2MemoryDB;
+import nz.co.gregs.dbvolution.databases.settingsbuilders.H2MemorySettingsBuilder;
 import nz.co.gregs.dbvolution.datatypes.DBInteger;
 import nz.co.gregs.dbvolution.datatypes.QueryableDatatype;
 
@@ -20,18 +16,21 @@ import org.junit.Test;
 @SuppressWarnings("unused")
 public class DBRowClassWrapperUsabilityTest {
 
-	private MyExampleTableClass obj = new MyExampleTableClass();
-	private RowDefinitionWrapperFactory factory = new RowDefinitionWrapperFactory();
+	private final MyExampleTableClass obj = new MyExampleTableClass();
+	private final RowDefinitionWrapperFactory factory = new RowDefinitionWrapperFactory();
 	private static DBDatabase database;
 
 	@BeforeClass
 	public static void setup() throws SQLException {
-		database = new H2MemoryDB("dbvolutionTest", "", "", false);
+//		database = new H2MemoryDB("dbvolutionTest", "", "", false);
+		database = new H2MemorySettingsBuilder()
+				.setDatabaseName("dbvolutionTest")
+				.getDBDatabase();
 	}
 
 	@Test
 	public void easyToGetSpecificPropertyValueOnObjectWhenDoingInline() {
-		QueryableDatatype qdt = new RowDefinitionClassWrapper(MyExampleTableClass.class)
+		var qdt = new RowDefinitionClassWrapper<>(MyExampleTableClass.class)
 				.instanceWrapperFor(obj)
 				.getPropertyByColumn(database, "column1")
 				.getQueryableDatatype();
@@ -39,25 +38,25 @@ public class DBRowClassWrapperUsabilityTest {
 
 	@Test
 	public void easyToGetSpecificPropertyValueOnObjectWhenDoingVerbosely() {
-		RowDefinitionClassWrapper classWrapper = new RowDefinitionClassWrapper(MyExampleTableClass.class);
-		RowDefinitionInstanceWrapper objectWrapper = classWrapper.instanceWrapperFor(obj);
-		PropertyWrapper property = objectWrapper.getPropertyByColumn(database, "column1");
+		var classWrapper = new RowDefinitionClassWrapper<>(MyExampleTableClass.class);
+		var objectWrapper = classWrapper.instanceWrapperFor(obj);
+		var property = objectWrapper.getPropertyByColumn(database, "column1");
 		if (property != null) {
-			QueryableDatatype qdt = property.getQueryableDatatype();
+			var qdt = property.getQueryableDatatype();
 			property.setQueryableDatatype(qdt);
 		}
 	}
 
 	@Test
 	public void easyToGetInstanceWrapperGivenObject() {
-		RowDefinitionInstanceWrapper objectWrapper = factory.instanceWrapperFor(obj);
+		var objectWrapper = factory.instanceWrapperFor(obj);
 	}
 
 	@Test
 	public void easyToIterateOverPropertiesUsingFactory() {
-		RowDefinitionInstanceWrapper objectWrapper = factory.instanceWrapperFor(obj);
-		for (PropertyWrapper property : objectWrapper.getColumnPropertyWrappers()) {
-			QueryableDatatype qdt = property.getQueryableDatatype();
+		RowDefinitionInstanceWrapper<?> objectWrapper = factory.instanceWrapperFor(obj);
+		for (var property : objectWrapper.getColumnPropertyWrappers()) {
+			QueryableDatatype<?> qdt = property.getQueryableDatatype();
 			property.columnName();
 			property.isForeignKey();
 			property.isColumn();

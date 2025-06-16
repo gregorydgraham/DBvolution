@@ -49,18 +49,21 @@ public class DBPermittedValuesIgnoreCaseOperator extends DBMetaOperator {
 	 * @param permitted a list of strings that are permitted values.
 	 */
 	public DBPermittedValuesIgnoreCaseOperator(String... permitted) {
-		ArrayList<DBExpression> qdts = new ArrayList<DBExpression>();
-		for (String obj : permitted) {
-			qdts.add(getQueryableDatatypeForObject(obj));
-		}
+
 		if (permitted == null) {
 			operator = new DBIsNullOperator();
-		} else if (qdts.isEmpty()) {
-			operator = new DBIsNullOperator();
-		} else if (qdts.size() == 1) {
-			operator = new DBEqualsIgnoreCaseOperator(qdts.get(0));
 		} else {
-			operator = new DBInIgnoreCaseOperator(qdts);
+			ArrayList<DBExpression> qdts = new ArrayList<DBExpression>();
+			for (String obj : permitted) {
+				qdts.add(getQueryableDatatypeForObject(obj));
+			}
+			if (qdts.isEmpty()) {
+				operator = new DBIsNullOperator();
+			} else if (qdts.size() == 1) {
+				operator = new DBEqualsIgnoreCaseOperator(qdts.get(0));
+			} else {
+				operator = new DBInIgnoreCaseOperator(qdts);
+			}
 		}
 	}
 
@@ -75,18 +78,23 @@ public class DBPermittedValuesIgnoreCaseOperator extends DBMetaOperator {
 	 * @param permitted a list of string expression that are permitted values.
 	 */
 	public DBPermittedValuesIgnoreCaseOperator(StringExpression[] permitted) {
-		ArrayList<DBExpression> qdts = new ArrayList<DBExpression>();
-		for (StringExpression obj : permitted) {
-			qdts.add(getQueryableDatatypeForObject(obj));
-		}
+
 		if (permitted == null) {
 			operator = new DBIsNullOperator();
-		} else if (qdts.isEmpty()) {
-			operator = new DBIsNullOperator();
-		} else if (qdts.size() == 1) {
-			operator = new DBEqualsIgnoreCaseOperator(qdts.get(0));
 		} else {
-			operator = new DBInIgnoreCaseOperator(qdts);
+			{
+				ArrayList<DBExpression> qdts = new ArrayList<DBExpression>();
+				for (StringExpression obj : permitted) {
+					qdts.add(getQueryableDatatypeForObject(obj));
+				}
+				if (qdts.isEmpty()) {
+					operator = new DBIsNullOperator();
+				} else if (qdts.size() == 1) {
+					operator = new DBEqualsIgnoreCaseOperator(qdts.get(0));
+				} else {
+					operator = new DBInIgnoreCaseOperator(qdts);
+				}
+			}
 		}
 	}
 
@@ -101,18 +109,21 @@ public class DBPermittedValuesIgnoreCaseOperator extends DBMetaOperator {
 	 * @param permitted a list of strings that are permitted values.
 	 */
 	public DBPermittedValuesIgnoreCaseOperator(Collection<String> permitted) {
-		ArrayList<DBExpression> qdts = new ArrayList<DBExpression>();
-		for (String obj : permitted) {
-			qdts.add(getQueryableDatatypeForObject(obj));
-		}
+
 		if (permitted == null) {
 			operator = new DBIsNullOperator();
-		} else if (qdts.isEmpty()) {
-			operator = new DBIsNullOperator();
-		} else if (qdts.size() == 1) {
-			operator = new DBEqualsIgnoreCaseOperator(qdts.get(0));
 		} else {
-			operator = new DBInIgnoreCaseOperator(qdts);
+			ArrayList<DBExpression> qdts = new ArrayList<DBExpression>();
+			for (String obj : permitted) {
+				qdts.add(getQueryableDatatypeForObject(obj));
+			}
+			if (qdts.isEmpty()) {
+				operator = new DBIsNullOperator();
+			} else if (qdts.size() == 1) {
+				operator = new DBEqualsIgnoreCaseOperator(qdts.get(0));
+			} else {
+				operator = new DBInIgnoreCaseOperator(qdts);
+			}
 		}
 	}
 

@@ -15,15 +15,14 @@
  */
 package nz.co.gregs.dbvolution.transactions;
 
+import java.sql.SQLException;
 import java.sql.Statement;
-import nz.co.gregs.dbvolution.DBDatabase;
+import nz.co.gregs.dbvolution.databases.DBDatabase;
 import nz.co.gregs.dbvolution.databases.DBStatement;
+import nz.co.gregs.dbvolution.exceptions.ExceptionThrownDuringTransaction;
 
 /**
  * Performs transactions for arbitrary SQL strings.
- *
- * <p style="color: #F90;">Support DBvolution at
- * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
  *
  * @author Gregory Graham
  */
@@ -44,17 +43,14 @@ public class DBRawSQLTransaction implements DBTransaction<Boolean> {
 	 * Perform the SQL on the database within a transaction.
 	 *
 	 * @param dbDatabase dbDatabase
-	 * <p style="color: #F90;">Support DBvolution at
-	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
-	 *
+   * 
 	 * @return TRUE if the transaction succeeded, FALSE otherwise.
-	 * @throws java.lang.Exception java.lang.Exception
 	 *
 	 */
 	@Override
-	public Boolean doTransaction(DBDatabase dbDatabase) throws Exception {
-		DBStatement dbStatement = dbDatabase.getDBStatement();
-		try {
+	public Boolean doTransaction(DBDatabase dbDatabase) throws ExceptionThrownDuringTransaction {
+		try (DBStatement dbStatement = dbDatabase.getDBStatement()) {
+			dbDatabase.printSQLIfRequested(sql);
 			dbStatement.addBatch(sql);
 			int[] executeBatchResults = dbStatement.executeBatch();
 			for (int result : executeBatchResults) {
@@ -62,8 +58,8 @@ public class DBRawSQLTransaction implements DBTransaction<Boolean> {
 					return Boolean.FALSE;
 				}
 			}
-		} finally {
-			dbStatement.close();
+		} catch (SQLException ex) {
+			throw new ExceptionThrownDuringTransaction(ex);
 		}
 		return Boolean.TRUE;
 	}

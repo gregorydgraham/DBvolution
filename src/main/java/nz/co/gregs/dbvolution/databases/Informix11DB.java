@@ -15,22 +15,20 @@
  */
 package nz.co.gregs.dbvolution.databases;
 
-import nz.co.gregs.dbvolution.DBDatabase;
 import java.sql.SQLException;
 import javax.sql.DataSource;
+import nz.co.gregs.dbvolution.databases.settingsbuilders.Informix11SettingsBuilder;
 import nz.co.gregs.dbvolution.databases.definitions.Informix11DBDefinition;
 
 /**
  * A version of DBDatabase tweaked for Informix 11 and higher.
  *
- * <p style="color: #F90;">Support DBvolution at
- * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
- *
  * @author Gregory Graham
  */
 public class Informix11DB extends InformixDB {
 
-	private final static String INFORMIXDRIVERNAME = "com.informix.jdbc.IfxDriver";
+	public static final String INFORMIXDRIVERNAME = "com.informix.jdbc.IfxDriver";
+	private static final long serialVersionUID = 1l;
 
 	/**
 	 * Creates a DBDatabase configured for Informix with the given JDBC URL,
@@ -39,19 +37,38 @@ public class Informix11DB extends InformixDB {
 	 * <p>
 	 * Remember to include the Informix JDBC driver in your classpath.
 	 *
-	 *
-	 *
-	 *
-	 *
 	 * 1 Database exceptions may be thrown
 	 *
 	 * @param jdbcURL jdbcURL
 	 * @param username username
 	 * @param password password
 	 * @throws java.lang.ClassNotFoundException java.lang.ClassNotFoundException
+	 * @throws java.sql.SQLException database errors
 	 */
-	public Informix11DB(String jdbcURL, String username, String password) throws ClassNotFoundException {
-		super(new Informix11DBDefinition(), INFORMIXDRIVERNAME, jdbcURL, username, password);
+	public Informix11DB(String jdbcURL, String username, String password) throws ClassNotFoundException, SQLException {
+		super(new Informix11DBDefinition(), INFORMIXDRIVERNAME,
+				new Informix11SettingsBuilder()
+						.fromJDBCURL(jdbcURL)
+						.setUsername(username)
+						.setPassword(password)
+						.toSettings()
+		);
+	}
+
+	/**
+	 * Creates a DBDatabase configured for Informix with the given JDBC URL,
+	 * username, and password.
+	 *
+	 * <p>
+	 * Remember to include the Informix JDBC driver in your classpath.
+	 * 
+	 * 1 Database exceptions may be thrown
+	 *
+	 * @param dcs the database connection settings
+	 * @throws java.sql.SQLException database errors
+	 */
+	public Informix11DB(DatabaseConnectionSettings dcs) throws SQLException {
+		super(new Informix11DBDefinition(), INFORMIXDRIVERNAME, dcs);
 	}
 
 	/**
@@ -65,15 +82,30 @@ public class Informix11DB extends InformixDB {
 	 * 1 Database exceptions may be thrown
 	 *
 	 * @param dataSource dataSource
-	 * @throws java.lang.ClassNotFoundException java.lang.ClassNotFoundException
-	 * @throws java.sql.SQLException java.sql.SQLException
+	 * @throws java.sql.SQLException database errors
 	 */
-	public Informix11DB(DataSource dataSource) throws ClassNotFoundException, SQLException {
+	public Informix11DB(DataSource dataSource) throws SQLException {
 		super(new Informix11DBDefinition(), dataSource);
+	}
+
+	/**
+	 * Creates a new DBDatabase for Informix11.
+	 *
+	 * @param builder the settings required to connect to the Informix server.
+	 * @throws SQLException database errors
+	 */
+	public Informix11DB(Informix11SettingsBuilder builder) throws SQLException {
+		super(builder);
 	}
 
 	@Override
 	public DBDatabase clone() throws CloneNotSupportedException {
-		return super.clone(); 
+		return super.clone();
 	}
+
+	@Override
+	public Informix11SettingsBuilder getURLInterpreter() {
+		return new Informix11SettingsBuilder();
+	}
+
 }

@@ -17,8 +17,10 @@ package nz.co.gregs.dbvolution.exceptions;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import nz.co.gregs.dbvolution.DBDatabase;
+import nz.co.gregs.dbvolution.columns.ColumnProvider;
+import nz.co.gregs.dbvolution.databases.definitions.DBDefinition;
 import nz.co.gregs.dbvolution.datatypes.QueryableDatatype;
+import nz.co.gregs.dbvolution.query.RowDefinition;
 import org.junit.Test;
 
 /**
@@ -36,10 +38,10 @@ public class UnableInstantiateQueryableDatatypeExceptionTest {
 	@Test(expected = UnableInstantiateQueryableDatatypeException.class)
 	public void testSomeMethod() {
 		AQDT aqdt = new AQDT();
-		QueryableDatatype copy = aqdt.copy();
+		QueryableDatatype<Object> copy = aqdt.copy();
 	}
 
-	public class AQDT extends QueryableDatatype {
+	public class AQDT extends QueryableDatatype<Object> {
 
 		private static final long serialVersionUID = 1L;
 		private final Object undefined = null;
@@ -50,17 +52,27 @@ public class UnableInstantiateQueryableDatatypeExceptionTest {
 		}
 
 		@Override
-		protected String formatValueForSQLStatement(DBDatabase db) {
+		protected String formatValueForSQLStatement(DBDefinition db) {
 			throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
 		}
 
 		@Override
-		protected Object getFromResultSet(DBDatabase database, ResultSet resultSet, String fullColumnName) throws SQLException {
+		protected Object getFromResultSet(DBDefinition database, ResultSet resultSet, String fullColumnName) throws SQLException {
 			throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
 		}
 
 		@Override
 		public boolean isAggregator() {
+			throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+		}
+
+		@Override
+		protected void setValueFromStandardStringEncoding(String encodedValue) {
+			throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+		}
+
+		@Override
+		public ColumnProvider getColumn(RowDefinition row) throws nz.co.gregs.dbvolution.exceptions.IncorrectRowProviderInstanceSuppliedException {
 			throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
 		}
 	}

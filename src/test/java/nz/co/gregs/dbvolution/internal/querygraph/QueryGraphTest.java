@@ -22,11 +22,12 @@ import nz.co.gregs.dbvolution.DBRow;
 import nz.co.gregs.dbvolution.expressions.BooleanExpression;
 import nz.co.gregs.dbvolution.expressions.DBExpression;
 import nz.co.gregs.dbvolution.generic.AbstractTest;
-import nz.co.gregs.dbvolution.query.QueryOptions;
 import static org.hamcrest.Matchers.*;
+import static org.hamcrest.MatcherAssert.assertThat;
 import org.junit.After;
 import org.junit.AfterClass;
-import org.junit.Assert;
+import static org.junit.Assert.assertNotNull;
+
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -53,10 +54,12 @@ public class QueryGraphTest extends AbstractTest {
 	}
 
 	@Before
+	@Override
 	public void setUp() {
 	}
 
 	@After
+	@Override
 	public void tearDown() {
 	}
 
@@ -65,12 +68,11 @@ public class QueryGraphTest extends AbstractTest {
 	 */
 	@Test
 	public void testGetJungGraph() {
-		System.out.println("getJungGraph");
 		QueryGraph instance = new QueryGraph(new ArrayList<DBRow>(), new ArrayList<BooleanExpression>());
 		Graph<QueryGraphNode, DBExpression> expResult = new SparseMultigraph<QueryGraphNode, DBExpression>();
 		Graph<QueryGraphNode, DBExpression> result = instance.getJungGraph();
-		Assert.assertNotNull(result);
-		Assert.assertThat(result.getClass().getSimpleName(), is(expResult.getClass().getSimpleName()));
+		assertThat(result, notNullValue());
+		assertThat(result.getClass().getSimpleName(), is(expResult.getClass().getSimpleName()));
 	}
 
 }

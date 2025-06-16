@@ -20,9 +20,9 @@ import java.util.List;
 import nz.co.gregs.dbvolution.actions.DBActionList;
 import nz.co.gregs.dbvolution.example.Marque;
 import nz.co.gregs.dbvolution.generic.AbstractTest;
-import org.junit.Assert;
 import org.junit.Test;
 import static org.hamcrest.Matchers.is;
+import static org.hamcrest.MatcherAssert.assertThat;
 
 public class TestSQLInjectionPrevention extends AbstractTest {
 
@@ -41,17 +41,15 @@ public class TestSQLInjectionPrevention extends AbstractTest {
 
 		DBActionList changes = database.insert(newMarque1);
 		List<Marque> allRows = marquesTable.setBlankQueryAllowed(true).getAllRows();
-		Assert.assertThat(allRows.size(), is(23));
-		marquesTable.print();
-		
+		assertThat(allRows.size(), is(23));
+
 		newMarque1 = new Marque();
 		newMarque1.uidMarque.permittedValues(newID);
 		List<Marque> allRows1 = database.getDBTable(newMarque1).getAllRows();
-		Assert.assertThat(allRows1.size(), is(1));
-		Assert.assertThat(allRows1.get(0).name.stringValue(), is(nastyString));
-		
-	}
+		assertThat(allRows1.size(), is(1));
+		assertThat(allRows1.get(0).name.stringValue(), is(nastyString));
 
+	}
 
 	@Test
 	public void testSQLInjectionPreventionDuringLIKE() throws SQLException {
@@ -60,13 +58,10 @@ public class TestSQLInjectionPrevention extends AbstractTest {
 		Marque newMarque1 = new Marque();
 		newMarque1.name.permittedPattern(nastyString);
 		List<Marque> allRows1 = database.getDBTable(newMarque1).getAllRows();
-		Assert.assertThat(allRows1.size(), is(0));
+		assertThat(allRows1.size(), is(0));
 
 		List<Marque> allRows = marquesTable.setBlankQueryAllowed(true).getAllRows();
-		Assert.assertThat(allRows.size(), is(22));
-		marquesTable.print();
-		
-		
+		assertThat(allRows.size(), is(22));
 	}
 
 }

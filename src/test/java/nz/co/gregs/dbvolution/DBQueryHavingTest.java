@@ -13,23 +13,8 @@ import nz.co.gregs.dbvolution.example.CarCompany;
 import nz.co.gregs.dbvolution.example.Marque;
 import nz.co.gregs.dbvolution.expressions.NumberExpression;
 import nz.co.gregs.dbvolution.generic.AbstractTest;
-import static org.hamcrest.Matchers.is;
-import org.junit.Assert;
+import static org.hamcrest.MatcherAssert.assertThat;
 import org.junit.Test;
-import static org.hamcrest.Matchers.is;
-import static org.hamcrest.Matchers.is;
-import static org.hamcrest.Matchers.is;
-import static org.hamcrest.Matchers.is;
-import static org.hamcrest.Matchers.is;
-import static org.hamcrest.Matchers.is;
-import static org.hamcrest.Matchers.is;
-import static org.hamcrest.Matchers.is;
-import static org.hamcrest.Matchers.is;
-import static org.hamcrest.Matchers.is;
-import static org.hamcrest.Matchers.is;
-import static org.hamcrest.Matchers.is;
-import static org.hamcrest.Matchers.is;
-import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.is;
 
 /**
@@ -53,35 +38,32 @@ public class DBQueryHavingTest extends AbstractTest {
 		query.setSortOrder(marqueCounter.column(marqueCounter.carCompany));
 
 		List<DBQueryRow> rows = query.getAllRows();
-		database.print(rows);
 
 		rows = database
 				.getDBQuery(new CarCompany(), marqueCounter)
 				.setSortOrder(marqueCounter.column(marqueCounter.carCompany))
-				.getAllRowsHaving(
-						marqueCounter.column(marqueCounter.counted).isGreaterThan(1)
-				);
+				.addCondition(marqueCounter.column(marqueCounter.counted).isGreaterThan(1))
+				.getAllRows();
 
-		database.print(rows);
-		Assert.assertThat(rows.size(), is(3));
+		assertThat(rows.size(), is(3));
 
 		CarCompany currentCarCo = rows.get(0).get(new CarCompany());
 		MarqueCounter currentMarque = rows.get(0).get(new MarqueCounter());
 
-		Assert.assertThat(currentCarCo.name.stringValue(), is("TOYOTA"));
-		Assert.assertThat(currentMarque.counted.intValue(), is(2));
+		assertThat(currentCarCo.name.stringValue(), is("TOYOTA"));
+		assertThat(currentMarque.counted.intValue(), is(2));
 
 		currentCarCo = rows.get(1).get(new CarCompany());
 		currentMarque = rows.get(1).get(new MarqueCounter());
 
-		Assert.assertThat(currentCarCo.name.stringValue(), is("GENERAL MOTORS"));
-		Assert.assertThat(currentMarque.counted.intValue(), is(3));
+		assertThat(currentCarCo.name.stringValue(), is("GENERAL MOTORS"));
+		assertThat(currentMarque.counted.intValue(), is(3));
 
 		currentCarCo = rows.get(2).get(new CarCompany());
 		currentMarque = rows.get(2).get(new MarqueCounter());
 
-		Assert.assertThat(currentCarCo.name.stringValue(), is("OTHER"));
-		Assert.assertThat(currentMarque.counted.intValue(), is(16));
+		assertThat(currentCarCo.name.stringValue(), is("OTHER"));
+		assertThat(currentMarque.counted.intValue(), is(16));
 	}
 
 	private static class MarqueCounter extends Marque {

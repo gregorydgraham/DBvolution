@@ -1,10 +1,10 @@
 package nz.co.gregs.dbvolution.internal.properties;
 
+import java.io.Serializable;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Modifier;
 import java.util.Date;
-
 import nz.co.gregs.dbvolution.annotations.DBAdaptType;
 import nz.co.gregs.dbvolution.annotations.DBColumn;
 import nz.co.gregs.dbvolution.datatypes.DBBoolean;
@@ -12,6 +12,7 @@ import nz.co.gregs.dbvolution.datatypes.DBDate;
 import nz.co.gregs.dbvolution.datatypes.DBInteger;
 import nz.co.gregs.dbvolution.datatypes.DBNumber;
 import nz.co.gregs.dbvolution.datatypes.DBString;
+import nz.co.gregs.dbvolution.datatypes.DBStringTrimmed;
 import nz.co.gregs.dbvolution.datatypes.DBTypeAdaptor;
 import nz.co.gregs.dbvolution.datatypes.DBUnknownDatatype;
 import nz.co.gregs.dbvolution.datatypes.QueryableDatatype;
@@ -31,52 +32,38 @@ import nz.co.gregs.dbvolution.internal.properties.InterfaceInfo.UnsupportedType;
  *
  * <p>
  * This class handles the majority of the type support logic that is exposed by
- * the {@link DBPropertyDefinition} class, which just delegates to this class.
+ * the {@link PropertyWrapperDefinition} class, which just delegates to this
+ * class.
  *
  * <p>
  * This class behaves correctly when no {@link DBAdaptType} property is present.
  *
- * <p style="color: #F90;">Support DBvolution at
- * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
- *
  * @author Malcolm Lett
  */
-// TODO: this class could also handle implicit type adaptors where the target object's properties
-// are simple types, and we need to automatically convert between DBv data types.
-class PropertyTypeHandler {
+class PropertyTypeHandler<BASETYPE> implements Serializable {
 
-//    private static Log logger = LogFactory.getLog(PropertyTypeHandler.class);
-	private final JavaProperty javaProperty;
-	private final Class<?> genericPropertyType;
-	private final Class<? extends QueryableDatatype> dbvPropertyType;
-	private final DBTypeAdaptor<Object, Object> typeAdaptor;
+	private static final long serialVersionUID = 1l;
+
+	private final JavaProperty<BASETYPE> javaProperty;
+	private final Class<BASETYPE> genericPropertyType;
+	private final Class<? extends QueryableDatatype<BASETYPE>> dbvPropertyType;
+	private transient final DBTypeAdaptor<Object, Object> typeAdaptor;
 	private final QueryableDatatypeSyncer internalQdtSyncer;
 	private final boolean identityOnly;
-	private final DBAdaptType dbAdaptTypeAnnotation;
-	private final DBColumn dbColumnAnnotation;
-//    private static Class<?>[] SUPPORTED_SIMPLE_TYPES = {
-//        String.class,
-//        boolean.class, int.class, long.class, float.class, double.class,
-//        Boolean.class, Integer.class, Long.class, Float.class, Double.class,
-//        Date.class
-//    };
-//    private static Class<?>[][][] SUPPORTED_MAPPINGS = {
-//    	map(implicit(String.class),                 to(DBString.class));
-//    	map(implicit(boolean.class, Boolean.class), to(DBBoolean.class));
-//    	map(null,                                   to(DBJavaObject.class), explicit(instanceoOf(Serializable.class)));
-//    };
+	private transient final DBAdaptType dbAdaptTypeAnnotation;
+	private transient final DBColumn dbColumnAnnotation;
 
 	/**
 	 *
 	 * @param javaProperty the annotated property
 	 */
 	@SuppressWarnings("unchecked")
-	PropertyTypeHandler(JavaProperty javaProperty, boolean processIdentityOnly) {
+	PropertyTypeHandler(JavaProperty<BASETYPE> javaProperty, boolean processIdentityOnly) {
 		this.javaProperty = javaProperty;
 		this.identityOnly = processIdentityOnly;
 		this.dbAdaptTypeAnnotation = javaProperty.getAnnotation(DBAdaptType.class);
 		this.dbColumnAnnotation = javaProperty.getAnnotation(DBColumn.class);
-		boolean isColumn = (dbColumnAnnotation!=null);
+		boolean isColumn = (dbColumnAnnotation != null);
 
 		Class<?> typeAdaptorClass = null;
 		if (dbAdaptTypeAnnotation != null) {
@@ -202,7 +189,7 @@ class PropertyTypeHandler {
 			}
 		}
 		if (typeAdaptorExternalType != null && QueryableDatatype.class.isAssignableFrom(javaProperty.type())) {
-			Class<? extends QueryableDatatype> explicitQDTType = (Class<? extends QueryableDatatype>) javaProperty.type();
+			Class<? extends QueryableDatatype<?>> explicitQDTType = (Class<? extends QueryableDatatype<?>>) javaProperty.type();
 			Class<?> inferredQDTType = inferredQDTTypeForSimpleType(typeAdaptorExternalType);
 			if (inferredQDTType == null) {
 				throw new InvalidDeclaredTypeException("Type adaptor's external " + typeAdaptorExternalType.getSimpleName()
@@ -228,7 +215,7 @@ class PropertyTypeHandler {
 			}
 		}
 		if (typeAdaptorInternalType != null && explicitTypeOrNullOf(dbAdaptTypeAnnotation) != null) {
-			Class<? extends QueryableDatatype> explicitQDTType = explicitTypeOrNullOf(dbAdaptTypeAnnotation);
+			Class<? extends QueryableDatatype<?>> explicitQDTType = explicitTypeOrNullOf(dbAdaptTypeAnnotation);
 			Class<?> inferredQDTType = inferredQDTTypeForSimpleType(typeAdaptorInternalType);
 			if (inferredQDTType == null) {
 				throw new InvalidDeclaredTypeException("Type adaptor's internal " + typeAdaptorInternalType.getSimpleName()
@@ -240,73 +227,18 @@ class PropertyTypeHandler {
 			}
 		}
 
-//        // validation: type adaptor's external type must be compatible with simple-type java property
-//        if (typeAdaptorExternalType != null && !QueryableDatatype.class.isAssignableFrom(javaProperty.type())) {
-//            if (!typeAdaptorExternalType.isAssignableFrom(javaProperty.type())) {
-//                throw new DBPebkacException(
-//                        "Type adaptor " + annotation.value().getSimpleName() + " is not compatible "
-//                        + " with " + javaProperty.type().getName() + ", on " + javaProperty);
-//            }
-//        }
-//        // validation: type adaptor's external type must be compatible with actual QDT java property
-//        if (typeAdaptorExternalType != null && QueryableDatatype.class.isAssignableFrom(javaProperty.type())) {
-//            // TODO
-//        }
-//        // validation: type adaptor's internal type must be supported simple type if no explicit type
-//        if (typeAdaptorInternalType != null && explicitTypeOrNullOf(annotation) == null) {
-//            if (!isSupportedSimpleType(typeAdaptorInternalType)) {
-//                throw new DBPebkacException(
-//                        "Type adaptor " + annotation.value().getName() + " internal type "
-//                        + typeAdaptorInternalType.getSimpleName() + " is not supported, on "
-//                        + javaProperty);
-//            }
-//        }
-//        // validation: type adaptor's internal type must be supported simple type, even if explicit type provided
-//        if (typeAdaptorInternalType != null && explicitTypeOrNullOf(annotation) != null) {
-//            boolean supported = false;
-//            for (Class<?> simpleType: SUPPORTED_SIMPLE_TYPES) {
-//                if (simpleType.isAssignableFrom(typeAdaptorInternalType)) {
-//                    supported = true;
-//                }
-//            }
-//            if (!supported) {
-//                throw new DBPebkacException(
-//                        "Type adaptor " + annotation.value().getName() + " internal type "
-//                        + typeAdaptorInternalType.getSimpleName() + " is not supported, on "
-//                        + javaProperty);
-//            }
-//        }
-//        // validation: explicit type must be given if type adaptor's internal type isn't one where
-//        //             implied internal type is supported
-//        if (typeAdaptorInternalType != null && explicitTypeOrNullOf(annotation) == null) {
-//            if (inferredQDTTypeForSimpleType(typeAdaptorInternalType) == null) {
-//                throw new DBPebkacException(
-//                        "Must specify internal type when adapting to type " + typeAdaptorInternalType.getName()
-//                        + ", on " + javaProperty);
-//            }
-//        }
-//        // validation: type adaptor's internal type be compatible with explicit type if specified
-//        if (typeAdaptorInternalType != null && explicitTypeOrNullOf(annotation) != null) {
-//        	Class<? extends QueryableDatatype> inferredQDTType = inferredQDTTypeForSimpleType(typeAdaptorInternalType);
-//        	Class<? extends QueryableDatatype> explicitQDTType = explicitTypeOrNullOf(annotation);
-//        	if (inferredQDTType != null && !inferredQDTType.equals(explicitQDTType)) {
-//        		throw new DBPebkacException(
-//        				"Type adaptor can only be mapped to type "+inferredQDTType.getSimpleName()
-//        				+ ", on "+javaProperty);
-//        	}
-//        }
 		// populate everything
 		this.genericPropertyType = javaProperty.type();
 		if (dbAdaptTypeAnnotation == null) {
 			// populate when no annotation
 			this.typeAdaptor = null;
-			this.dbvPropertyType = (Class<? extends QueryableDatatype>) javaProperty.type();
+			this.dbvPropertyType = (Class<? extends QueryableDatatype<BASETYPE>>) javaProperty.type();
 			this.internalQdtSyncer = null;
 		} else if (identityOnly) {
 			// populate identity-only information when type adaptor declared
-			Class<? extends QueryableDatatype> type = explicitTypeOrNullOf(dbAdaptTypeAnnotation);
+			Class<? extends QueryableDatatype<BASETYPE>> type = (Class<? extends QueryableDatatype<BASETYPE>>) explicitTypeOrNullOf(dbAdaptTypeAnnotation);
 			if (type == null && typeAdaptorInternalType != null) {
-				type = inferredQDTTypeForSimpleType(typeAdaptorInternalType);
+				type = (Class<? extends QueryableDatatype<BASETYPE>>) inferredQDTTypeForSimpleType(typeAdaptorInternalType);
 			}
 			if (type == null) {
 				throw new NullPointerException("null dbvPropertyType, this is an internal bug");
@@ -319,19 +251,19 @@ class PropertyTypeHandler {
 			// initialise type adapting
 			this.typeAdaptor = newTypeAdaptorInstanceGiven(javaProperty, dbAdaptTypeAnnotation);
 
-			Class<? extends QueryableDatatype> type = explicitTypeOrNullOf(dbAdaptTypeAnnotation);
+			Class<? extends QueryableDatatype<?>> type = explicitTypeOrNullOf(dbAdaptTypeAnnotation);
 			if (type == null && typeAdaptorInternalType != null) {
 				type = inferredQDTTypeForSimpleType(typeAdaptorInternalType);
 			}
 			if (type == null) {
 				throw new NullPointerException("null dbvPropertyType, this is an internal bug");
 			}
-			this.dbvPropertyType = type;
+			this.dbvPropertyType = (Class<? extends QueryableDatatype<BASETYPE>>) type;
 
 			Class<?> internalLiteralType = literalTypeOf(type);
 			Class<?> externalLiteralType;
 			if (QueryableDatatype.class.isAssignableFrom(javaProperty.type())) {
-				externalLiteralType = literalTypeOf((Class<? extends QueryableDatatype>) javaProperty.type());
+				externalLiteralType = literalTypeOf((Class<? extends QueryableDatatype<?>>) javaProperty.type());
 			} else {
 				externalLiteralType = javaProperty.type();
 			}
@@ -354,14 +286,9 @@ class PropertyTypeHandler {
 	 * <p>
 	 * Make sure to keep this in sync with {@link #literalTypeOf}.
 	 *
-	 *
-	 * <p style="color: #F90;">Support DBvolution at
-	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
-	 *
 	 * @return a QDT the should work
 	 */
-	// FIXME: change to require exact matches, rather than 'instance of'
-	private static Class<? extends QueryableDatatype> inferredQDTTypeForSimpleType(Class<?> simpleType) {
+	private static Class<? extends QueryableDatatype<?>> inferredQDTTypeForSimpleType(Class<?> simpleType) {
 		if (simpleType.equals(String.class)) {
 			return DBString.class;
 		} else if (Number.class.isAssignableFrom(simpleType)) {
@@ -394,8 +321,10 @@ class PropertyTypeHandler {
 	 *
 	 * @return a standard Java class equivalent to the QDT
 	 */
-	private static Class<?> literalTypeOf(Class<? extends QueryableDatatype> qdtType) {
+	private static Class<?> literalTypeOf(Class<? extends QueryableDatatype<?>> qdtType) {
 		if (qdtType.equals(DBString.class)) {
+			return String.class;
+		} else if (qdtType.equals(DBStringTrimmed.class)) {
 			return String.class;
 		} else if (qdtType.equals(DBNumber.class)) {
 			return Double.class;
@@ -430,7 +359,7 @@ class PropertyTypeHandler {
 	 * @return TRUE if the simple type can be replaced by a QDT
 	 */
 	private static boolean isSimpleTypeSupportedByQDT(Class<?> simpleType,
-			Class<? extends QueryableDatatype> qdtType) {
+			Class<? extends QueryableDatatype<?>> qdtType) {
 		Class<?> inferredQDTType = inferredQDTTypeForSimpleType(simpleType);
 		if (inferredQDTType != null) {
 			if (qdtType.isAssignableFrom(inferredQDTType) || inferredQDTType.isAssignableFrom(qdtType)) {
@@ -449,7 +378,7 @@ class PropertyTypeHandler {
 	 *
 	 * @return A QDT Class
 	 */
-	private static Class<? extends QueryableDatatype> explicitTypeOrNullOf(DBAdaptType annotation) {
+	private static Class<? extends QueryableDatatype<?>> explicitTypeOrNullOf(DBAdaptType annotation) {
 		if (annotation == null) {
 			return null;
 		}
@@ -466,7 +395,7 @@ class PropertyTypeHandler {
 	/**
 	 * Gets the DBv-centric type of the property, possibly after type adaption.
 	 */
-	public Class<? extends QueryableDatatype> getQueryableDatatypeClass() {
+	public Class<? extends QueryableDatatype<?>> getQueryableDatatypeClass() {
 		return dbvPropertyType;
 	}
 
@@ -499,13 +428,13 @@ class PropertyTypeHandler {
 	 * @param target object containing the property
 	 * <p style="color: #F90;">Support DBvolution at
 	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
-	 *
 	 * @return the DBv-centric property value
 	 * @throws DBThrownByEndUserCodeException if any user code throws an exception
 	 * @throws IllegalStateException if the underlying java property is not
 	 * readable
 	 */
-	public QueryableDatatype getJavaPropertyAsQueryableDatatype(Object target) {
+	@SuppressWarnings("unchecked")
+	public QueryableDatatype<BASETYPE> getJavaPropertyAsQueryableDatatype(Object target) {
 		if (identityOnly) {
 			throw new AssertionError("Attempt to read value from identity-only property");
 		}
@@ -516,17 +445,16 @@ class PropertyTypeHandler {
 			Object externalValue = javaProperty.get(target);
 
 			// convert
-			// TODO think this still needs some last-minute type checks
-			return syncer.setInternalQDTFromExternalSimpleValue(externalValue);
+			return (QueryableDatatype<BASETYPE>) syncer.setInternalQDTFromExternalSimpleValue(externalValue);
 		} // get via type adaptor and QDT java property
 		else if (typeAdaptor != null) {
 			Object externalValue = javaProperty.get(target);
 
 			// this should be completely safe by now
-			QueryableDatatype externalQdt = (QueryableDatatype) externalValue;
+			QueryableDatatype<?> externalQdt = (QueryableDatatype<?>) externalValue;
 
 			// convert
-			return internalQdtSyncer.setInternalQDTFromExternalQDT(externalQdt);
+			return (QueryableDatatype<BASETYPE>) internalQdtSyncer.setInternalQDTFromExternalQDT(externalQdt);
 		} // get directly without type adaptor
 		// (note: type checking was performed at creation time)
 		else {
@@ -545,7 +473,7 @@ class PropertyTypeHandler {
 	 * @throws IllegalStateException if the underlying java property is not
 	 * writable
 	 */
-	public void setJavaPropertyAsQueryableDatatype(Object target, QueryableDatatype dbvValue) {
+	public void setJavaPropertyAsQueryableDatatype(Object target, QueryableDatatype<?> dbvValue) {
 		if (identityOnly) {
 			throw new AssertionError("Attempt to write value to identity-only property");
 		}
@@ -556,14 +484,13 @@ class PropertyTypeHandler {
 			syncer.setInternalQueryableDatatype(dbvValue);
 			Object externalValue = syncer.getExternalSimpleValueFromInternalQDT();
 
-			// TODO think this still needs some last-minute type checks
 			javaProperty.set(target, externalValue);
 		} // set via type adaptor and QDT java property
 		else if (typeAdaptor != null) {
 			Object externalValue = javaProperty.get(target);
 
 			// this should be completely safe by now
-			QueryableDatatype externalQdt = (QueryableDatatype) externalValue;
+			QueryableDatatype<?> externalQdt = (QueryableDatatype<?>) externalValue;
 
 			// convert
 			internalQdtSyncer.setInternalQueryableDatatype(dbvValue);
@@ -593,7 +520,7 @@ class PropertyTypeHandler {
 	 * @throws InvalidDeclaredTypeException on errors with the end-user supplied
 	 * code
 	 */
-	private static DBTypeAdaptor<Object, Object> newTypeAdaptorInstanceGiven(JavaProperty property, DBAdaptType annotation) {
+	private static DBTypeAdaptor<Object, Object> newTypeAdaptorInstanceGiven(JavaProperty<?> property, DBAdaptType annotation) {
 		Class<? extends DBTypeAdaptor<?, ?>> adaptorClass = annotation.value();
 		if (adaptorClass == null) {
 			// shouldn't be possible
@@ -611,12 +538,8 @@ class PropertyTypeHandler {
 		}
 
 		try {
-			adaptorClass.newInstance();
-		} catch (InstantiationException e) {
-			throw new InvalidDeclaredTypeException("Type adaptor " + adaptorClass.getName()
-					+ " could not be constructed, on property "
-					+ property.qualifiedName() + ": " + e.getMessage(), e);
-		} catch (IllegalAccessException e) {
+			adaptorClass.getConstructor().newInstance();
+		} catch (InstantiationException | IllegalAccessException | NoSuchMethodException | SecurityException | IllegalArgumentException | InvocationTargetException e) {
 			throw new InvalidDeclaredTypeException("Type adaptor " + adaptorClass.getName()
 					+ " could not be constructed, on property "
 					+ property.qualifiedName() + ": " + e.getMessage(), e);

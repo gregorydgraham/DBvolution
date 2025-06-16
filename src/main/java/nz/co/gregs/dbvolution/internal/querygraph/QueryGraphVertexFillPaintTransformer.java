@@ -40,7 +40,6 @@ public class QueryGraphVertexFillPaintTransformer implements Transformer<QueryGr
 	 * @param i
 	 * <p style="color: #F90;">Support DBvolution at
 	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
-	 *
 	 * @return the Paint used to draw nodes/vertexes
 	 */
 	@Override

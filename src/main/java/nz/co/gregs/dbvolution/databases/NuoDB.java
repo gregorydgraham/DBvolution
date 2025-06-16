@@ -16,38 +16,37 @@
 package nz.co.gregs.dbvolution.databases;
 
 import java.sql.SQLException;
-import java.util.ArrayList;
+import java.sql.Statement;
 import java.util.List;
 import javax.sql.DataSource;
-import nz.co.gregs.dbvolution.DBDatabase;
-import nz.co.gregs.dbvolution.databases.definitions.NuoDBDefinition;
+import nz.co.gregs.dbvolution.databases.settingsbuilders.NuoDBSettingsBuilder;
+import nz.co.gregs.dbvolution.exceptions.ExceptionDuringDatabaseFeatureSetup;
 
 /**
  * DBDatabase tweaked to work best with NuoDB.
  *
- * <p style="color: #F90;">Support DBvolution at
- * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
- *
  * @author Gregory Graham
  */
-public class NuoDB extends DBDatabase {
+public class NuoDB extends DBDatabaseImplementation {
 
-	private static final int NUODB_DEFAULT_PORT = 48004;
-	private static final String NUODB_DRIVER = "com.nuodb.jdbc.Driver";
-	private static final String NUODB_URL_PREFIX = "jdbc:com.nuodb://";
+	public static final String NUODB_DRIVER = "com.nuodb.jdbc.Driver";
+	public static final long serialVersionUID = 1l;
 
 	@Override
 	public DBDatabase clone() throws CloneNotSupportedException {
-		return super.clone(); //To change body of generated methods, choose Tools | Templates.
+		return super.clone(); 
 	}
 
 	/**
 	 * Creates a {@link DBDatabase } instance for the data source.
 	 *
-	 * @param ds	ds
+	 * @param ds	a NuoDB data source
+	 * @throws java.sql.SQLException database errors
 	 */
-	public NuoDB(DataSource ds) {
-		super(new NuoDBDefinition(), ds);
+	public NuoDB(DataSource ds) throws SQLException {
+		super(
+				new NuoDBSettingsBuilder().setDataSource(ds)
+		);
 	}
 
 	/**
@@ -59,23 +58,17 @@ public class NuoDB extends DBDatabase {
 	 * @param databaseName databaseName
 	 * @param password password
 	 * @param username username
+	 * @throws java.sql.SQLException database errors
 	 */
-	public NuoDB(List<String> brokers, String databaseName, String schema, String username, String password) {
-		String hosts = "";
-		String sep = "";
-
-		for (String server : brokers) {
-			int port = NUODB_DEFAULT_PORT;
-			hosts += sep + server + ":" + port;
-			sep = ",";
-		}
-
-		setDriverName(NUODB_DRIVER);
-		setDefinition(new NuoDBDefinition());
-		setJdbcURL(NUODB_URL_PREFIX + hosts + "/" + databaseName + "?schema=" + schema);
-		setUsername(username);
-		setPassword(password);
-		setDatabaseName(databaseName);
+	public NuoDB(List<String> brokers, String databaseName, String schema, String username, String password) throws SQLException {
+		super(
+				new NuoDBSettingsBuilder()
+						.setDatabaseName(databaseName)
+						.setSchema(schema)
+						.setUsername(username)
+						.setPassword(password)
+						.addBrokers(brokers)
+		);
 	}
 
 	/**
@@ -88,13 +81,18 @@ public class NuoDB extends DBDatabase {
 	 * @param schema the schema on the database to be used.
 	 * @param username the user to login as.
 	 * @param password the user's password.
+	 * @throws java.sql.SQLException database errors
 	 */
-	public NuoDB(String broker, Long port, String databaseName, String schema, String username, String password) {
-		List<String> brokers = new ArrayList<String>();
-		List<Long> ports = new ArrayList<Long>();
-		brokers.add(broker);
-		ports.add(port);
-		initNuoDB(brokers, ports, databaseName, schema, username, password);
+	public NuoDB(String broker, Long port, String databaseName, String schema, String username, String password) throws SQLException {
+			super(
+				new NuoDBSettingsBuilder()
+						.setHost(broker)
+						.setPort(port)
+						.setDatabaseName(databaseName)
+						.setSchema(schema)
+						.setUsername(username)
+						.setPassword(password)
+		);
 	}
 
 	/**
@@ -107,38 +105,31 @@ public class NuoDB extends DBDatabase {
 	 * @param schema the schema on the database to be used.
 	 * @param username the user to login as.
 	 * @param password the user's password.
+	 * @throws java.sql.SQLException database errors
 	 */
-	public NuoDB(List<String> brokers, List<Long> ports, String databaseName, String schema, String username, String password) {
-		initNuoDB(brokers, ports, databaseName, schema, username, password);
-	}
-
-	private void initNuoDB(List<String> brokers, List<Long> ports, String databaseName, String schema, String username, String password) {
-		String hosts = "";
-		String sep = "";
-		if (brokers.size() == ports.size()) {
-			for (int i = 0; i < brokers.size(); i++) {
-				String server = brokers.get(i);
-				Long port = ports.get(i);
-				hosts += sep + server + ":" + port;
-				sep = ",";
-			}
-		}
-		setDriverName(NUODB_DRIVER);
-		setDefinition(new NuoDBDefinition());
-		setJdbcURL(NUODB_URL_PREFIX + hosts + "/" + databaseName + "?schema=" + schema);
-		setUsername(username);
-		setPassword(password);
-		setDatabaseName(databaseName);
+	public NuoDB(List<String> brokers, List<Long> ports, String databaseName, String schema, String username, String password) throws SQLException {
+			super(
+				new NuoDBSettingsBuilder()
+						.setDatabaseName(databaseName)
+						.setSchema(schema)
+						.setUsername(username)
+						.setPassword(password)
+						.addBrokers(brokers, ports)
+		);
 	}
 
 	@Override
-	protected boolean supportsFullOuterJoinNatively() {
-		return false;
+	public void addDatabaseSpecificFeatures(Statement statement) throws ExceptionDuringDatabaseFeatureSetup {
+		;
 	}
 
 	@Override
-	public boolean supportsRecursiveQueriesNatively() {
-		return false;
+	public Integer getDefaultPort() {
+		return 8888;
 	}
 
+	@Override
+	public NuoDBSettingsBuilder getURLInterpreter() {
+		return new NuoDBSettingsBuilder();
+	}
 }

@@ -15,10 +15,11 @@
  */
 package nz.co.gregs.dbvolution.exceptions;
 
+import nz.co.gregs.dbvolution.internal.query.QueryDetails;
+
 /**
- *
- * <p style="color: #F90;">Support DBvolution at
- * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+ * Thrown when a query will create a Cartesian Join and cartesian joins have not
+ * been explicitly permitted.
  *
  * @author Gregory Graham
  */
@@ -43,9 +44,9 @@ public class AccidentalCartesianJoinException extends RuntimeException {
 	 * <p>
 	 * Cartesian joins are generally a mistake.
 	 *
-	 * @param sqlString	sqlString
+	 * @param details the query details
 	 */
-	public AccidentalCartesianJoinException(String sqlString) {
-		super("Accidental Cartesian Join Aborted: ensure you have added all the required tables, defined all primary and foreign keys, and are using the correct allowCartesianJoin() setting. SQL => " + sqlString);
+	public AccidentalCartesianJoinException(QueryDetails details) {
+		super("Accidental Cartesian Join Aborted: ensure you have added all the required tables, defined all primary and foreign keys, and are using the correct allowCartesianJoin() setting. SQL => " + details.getSQLQueries());
 	}
 }

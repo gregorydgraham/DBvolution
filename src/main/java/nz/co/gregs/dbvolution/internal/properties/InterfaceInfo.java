@@ -88,7 +88,11 @@ public class InterfaceInfo {
 	 * class does not implement or extend the interface or supertype.
 	 */
 	public ParameterBounds[] getInterfaceParameterValueBounds() {
-		return typeArgumentBounds;
+		if (typeArgumentBounds == null) {
+			return null;
+		} else {
+			return Arrays.copyOf(typeArgumentBounds, typeArgumentBounds.length);
+		}
 	}
 
 	/**
@@ -98,7 +102,6 @@ public class InterfaceInfo {
 	 * @param clazz the class to inspect
 	 * <p style="color: #F90;">Support DBvolution at
 	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
-	 *
 	 * @return the list of known and understood bounds for each parameter; empty
 	 * bounds if the interface has no parameters; null if doesn't extend or
 	 * implement the interface class (directly or indirectly)
@@ -119,7 +122,6 @@ public class InterfaceInfo {
 	 * @param implementationClass the actual implementation class you're testing
 	 * <p style="color: #F90;">Support DBvolution at
 	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
-	 *
 	 * @return the list of known and understood bounds for each parameter; empty
 	 * bounds if the interface has no parameters; null if doesn't extend or
 	 * implement the interface class (directly or indirectly)
@@ -143,7 +145,6 @@ public class InterfaceInfo {
 	 * defined)
 	 * <p style="color: #F90;">Support DBvolution at
 	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
-	 *
 	 * @return null if doesn't implement the interface, empty bounds if the
 	 * interface has no parameters, or the list of known and understood bounds for
 	 * each parameter
@@ -217,13 +218,13 @@ public class InterfaceInfo {
 	private static List<Type> ancestorTypesOf(Class<?> child) {
 		List<Type> ancestors = new ArrayList<Type>();
 
-		// get "extends xxx"
+		// get the class that the child class directly extends
 		Type supertype = child.getGenericSuperclass();
 		if (supertype != null && !Object.class.equals(supertype)) {
 			ancestors.add(supertype);
 		}
 
-		// get all "implements yyy"
+		// get all the interfaces that the class implements
 		Type[] interfaces = child.getGenericInterfaces();
 		if (interfaces != null) {
 			ancestors.addAll(Arrays.asList(interfaces));
@@ -239,7 +240,6 @@ public class InterfaceInfo {
 	 *
 	 * <p style="color: #F90;">Support DBvolution at
 	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
-	 *
 	 * @return the actual Type reference to the interface class or null if not
 	 * implemented/extended
 	 */
@@ -294,7 +294,6 @@ public class InterfaceInfo {
 	 * @param type	type
 	 * <p style="color: #F90;">Support DBvolution at
 	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
-	 *
 	 * @return a String describing the type succinctly
 	 */
 	protected static String descriptionOf(Type type) {
@@ -481,9 +480,9 @@ public class InterfaceInfo {
 		 * upper bound of {@code Object}, and no lower bound.
 		 *
 		 * <p style="color: #F90;">Support DBvolution at
-	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
-	 *
-	 * @return a ParameterBounds
+		 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+		 *
+		 * @return a ParameterBounds
 		 */
 		public static ParameterBounds defaultBounds() {
 			return new ParameterBounds(new Type[]{Object.class}, null);
@@ -509,9 +508,8 @@ public class InterfaceInfo {
 		 * actual specified bounds; must contain values for all type variable
 		 * references; null if none defined
 		 * <p style="color: #F90;">Support DBvolution at
-	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
-	 *
-	 * @return an array of ParameterBounds object.
+		 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+		 * @return an array of ParameterBounds object.
 		 * @throws UnsupportedOperationException if not a class or parameterized
 		 * type
 		 */
@@ -542,9 +540,8 @@ public class InterfaceInfo {
 		 *
 		 * @param parameterizedClass	parameterizedClass
 		 * <p style="color: #F90;">Support DBvolution at
-	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
-	 *
-	 * @return an array of ParameterBounds objects
+		 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+		 * @return an array of ParameterBounds objects
 		 */
 		public static ParameterBounds[] boundsForParametersOf(Class<?> parameterizedClass) {
 			List<ParameterBounds> bounds = new ArrayList<ParameterBounds>();
@@ -571,9 +568,8 @@ public class InterfaceInfo {
 		 * actual specified bounds; must contain values for all type variable
 		 * references
 		 * <p style="color: #F90;">Support DBvolution at
-	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
-	 *
-	 * @return an array of bounds, one item for each type argument
+		 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+		 * @return an array of bounds, one item for each type argument
 		 */
 		public static ParameterBounds[] boundsForParametersOf(ParameterizedType parameterizedType,
 				Map<String, ParameterBounds> paramValuesByTypeVariableName) {
@@ -603,9 +599,8 @@ public class InterfaceInfo {
 		 *
 		 * @param type	type
 		 * <p style="color: #F90;">Support DBvolution at
-	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
-	 *
-	 * @return the single bounds instance created
+		 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+		 * @return the single bounds instance created
 		 */
 		public static ParameterBounds getBoundsOf(Type type) {
 			if (type instanceof Class<?>) {
@@ -646,9 +641,9 @@ public class InterfaceInfo {
 		 * Gets a string representation suitable for debugging.
 		 *
 		 * <p style="color: #F90;">Support DBvolution at
-	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
-	 *
-	 * @return a string of this object.
+		 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+		 *
+		 * @return a string of this object.
 		 */
 		@Override
 		public String toString() {
@@ -690,9 +685,9 @@ public class InterfaceInfo {
 		 * Assumes there's only one upper class and returns it.
 		 *
 		 * <p style="color: #F90;">Support DBvolution at
-	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
-	 *
-	 * @return the non-null upper class (defaults to {@code Object})
+		 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+		 *
+		 * @return the non-null upper class (defaults to {@code Object})
 		 * @throws UnsupportedType if type reference cannot be converted to a class
 		 * @throws IllegalStateException if there's actually more than one class
 		 */
@@ -708,9 +703,9 @@ public class InterfaceInfo {
 		 * Assumes there's only one lower class and returns it.
 		 *
 		 * <p style="color: #F90;">Support DBvolution at
-	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
-	 *
-	 * @return the lower class or null if none
+		 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+		 *
+		 * @return the lower class or null if none
 		 * @throws UnsupportedType if type reference cannot be converted to a class
 		 * @throws IllegalStateException if there's actually more than one class
 		 */
@@ -737,9 +732,9 @@ public class InterfaceInfo {
 		 * {@code Object.class}.
 		 *
 		 * <p style="color: #F90;">Support DBvolution at
-	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
-	 *
-	 * @return non-empty upper bounding types (usually only one)
+		 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+		 *
+		 * @return non-empty upper bounding types (usually only one)
 		 * @throws UnsupportedType if type reference cannot be converted to a class
 		 */
 		public Class<?>[] upperClasses() throws UnsupportedType {
@@ -765,9 +760,9 @@ public class InterfaceInfo {
 		 * If the lower bound has not been specialised, it will be null.
 		 *
 		 * <p style="color: #F90;">Support DBvolution at
-	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
-	 *
-	 * @return null if no lower bound, or non-empty bounding types (usually only
+		 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+		 *
+		 * @return null if no lower bound, or non-empty bounding types (usually only
 		 * one)
 		 * @throws UnsupportedType if type reference cannot be converted to a class
 		 */
@@ -786,9 +781,9 @@ public class InterfaceInfo {
 		 * Assumes there's only one upper type and returns it.
 		 *
 		 * <p style="color: #F90;">Support DBvolution at
-	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
-	 *
-	 * @return the non-null upper type (defaults to {@code Object})
+		 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+		 *
+		 * @return the non-null upper type (defaults to {@code Object})
 		 * @throws IllegalStateException if there's actually more than one type
 		 */
 		public Type upperType() {
@@ -802,9 +797,9 @@ public class InterfaceInfo {
 		 * Assumes there's only one lower type and returns it.
 		 *
 		 * <p style="color: #F90;">Support DBvolution at
-	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
-	 *
-	 * @return the lower type or null if none
+		 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+		 *
+		 * @return the lower type or null if none
 		 * @throws IllegalStateException if there's actually more than one type
 		 */
 		public Type lowerType() {
@@ -828,12 +823,16 @@ public class InterfaceInfo {
 		 * {@code Object.class}.
 		 *
 		 * <p style="color: #F90;">Support DBvolution at
-	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
-	 *
-	 * @return non-empty upper bounding types (usually only one)
+		 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+		 *
+		 * @return non-empty upper bounding types (usually only one)
 		 */
 		public Type[] upperTypes() {
-			return upperTypes;
+			if (upperTypes == null) {
+				return null;
+			} else {
+				return Arrays.copyOf(upperTypes, upperTypes.length);
+			}
 		}
 
 		/**
@@ -847,13 +846,17 @@ public class InterfaceInfo {
 		 * If the lower bound has not been specialised, it will be null.
 		 *
 		 * <p style="color: #F90;">Support DBvolution at
-	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
-	 *
-	 * @return null if no lower bound, or non-empty bounding types (usually only
+		 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+		 *
+		 * @return null if no lower bound, or non-empty bounding types (usually only
 		 * one)
 		 */
 		public Type[] lowerTypes() {
-			return lowerTypes;
+			if (lowerTypes == null) {
+				return null;
+			} else {
+				return Arrays.copyOf(lowerTypes, lowerTypes.length);
+			}
 		}
 	}
 

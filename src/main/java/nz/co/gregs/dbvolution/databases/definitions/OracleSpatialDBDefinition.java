@@ -23,15 +23,17 @@ import com.vividsolutions.jts.geom.Point;
 import com.vividsolutions.jts.geom.Polygon;
 import java.util.ArrayList;
 import java.util.List;
-import nz.co.gregs.dbvolution.DBDatabase;
+import nz.co.gregs.dbvolution.databases.DBDatabase;
 import nz.co.gregs.dbvolution.datatypes.QueryableDatatype;
 import nz.co.gregs.dbvolution.datatypes.spatial2D.DBLine2D;
 import nz.co.gregs.dbvolution.datatypes.spatial2D.DBLineSegment2D;
 import nz.co.gregs.dbvolution.datatypes.spatial2D.DBMultiPoint2D;
 import nz.co.gregs.dbvolution.datatypes.spatial2D.DBPoint2D;
 import nz.co.gregs.dbvolution.datatypes.spatial2D.DBPolygon2D;
-import nz.co.gregs.dbvolution.results.Line2DResult;
+import nz.co.gregs.dbvolution.internal.oracle.xe.Line2DFunctions;
 import nz.co.gregs.dbvolution.results.Spatial2DResult;
+import nz.co.gregs.separatedstring.Builder;
+import nz.co.gregs.separatedstring.Encoder;
 
 /**
  * A subclass of OracleDB that contains definitions of standard Spatial
@@ -44,8 +46,10 @@ import nz.co.gregs.dbvolution.results.Spatial2DResult;
  */
 public class OracleSpatialDBDefinition extends OracleDBDefinition {
 
+	public static final long serialVersionUID = 1L;
+
 	@Override
-	public String getDatabaseDataTypeOfQueryableDatatype(QueryableDatatype qdt) {
+	public String getDatabaseDataTypeOfQueryableDatatype(QueryableDatatype<?> qdt) {
 		if (qdt instanceof Spatial2DResult) {
 			return " SDO_GEOMETRY ";
 //		} else if (qdt instanceof DBLine2D) {
@@ -60,7 +64,7 @@ public class OracleSpatialDBDefinition extends OracleDBDefinition {
 	}
 
 	@Override
-	public String doColumnTransformForSelect(QueryableDatatype qdt, String selectableName) {
+	public String doColumnTransformForSelect(QueryableDatatype<?> qdt, String selectableName) {
 		if (qdt instanceof DBPolygon2D) {
 			return doPolygon2DAsTextTransform(selectableName);
 		} else if (qdt instanceof DBLine2D) {
@@ -72,7 +76,7 @@ public class OracleSpatialDBDefinition extends OracleDBDefinition {
 		} else if (qdt instanceof DBMultiPoint2D) {
 			return doMultiPoint2DAsTextTransform(selectableName);
 		} else {
-			return selectableName;
+			return super.doColumnTransformForSelect(qdt, selectableName);
 		}
 	}
 
@@ -87,9 +91,13 @@ public class OracleSpatialDBDefinition extends OracleDBDefinition {
 			public static final long serialVersionUID = 1;
 
 			{
+				//add("DROP INDEX " + formatNameForDatabase("DBV_" + formatTableName + "_" + formatColumnName + "_sp2didx")+"");
+				add("delete from USER_SDO_GEOM_METADATA "
+						+ "where table_name = '" + formatTableName.toUpperCase() + "' "
+						+ "and column_name = '" + formatColumnName.toUpperCase() + "'");
 				add(
 						"INSERT INTO USER_SDO_GEOM_METADATA \n"
-						+ "  VALUES (\n"
+						+ "  select \n"
 						+ "  '" + formatTableName + "',\n"
 						+ "  '" + formatColumnName + "',\n"
 						+ "  MDSYS.SDO_DIM_ARRAY(\n"
@@ -97,7 +105,10 @@ public class OracleSpatialDBDefinition extends OracleDBDefinition {
 						+ "    MDSYS.SDO_DIM_ELEMENT('Y', -9999999999, 9999999999, 0.0000000001)\n"
 						+ "     ),\n"
 						+ "  NULL   -- SRID\n"
-						+ ")");
+						+ " from dual where not exists ("
+						+ "select * from USER_SDO_GEOM_METADATA  "
+						+ "where table_name = '" + formatTableName.toUpperCase() + "' "
+						+ "and column_name = '" + formatColumnName.toUpperCase() + "')");
 				add("CREATE INDEX " + formatNameForDatabase("DBV_" + formatTableName + "_" + formatColumnName + "_sp2didx") + " ON " + formatTableName + " (" + formatColumnName + ") INDEXTYPE IS MDSYS.SPATIAL_INDEX");
 			}
 		};
@@ -128,7 +139,6 @@ public class OracleSpatialDBDefinition extends OracleDBDefinition {
 ////		return "SDO_GEOMETRY(2003, NULL, SDO_POINT_TYPE(" + coordinate.x + ", " + coordinate.y + ",NULL), NULL, NULL)";
 //		return "SDO_UTIL.FROM_WKTGEOMETRY('" + point.toText() + "')";
 //	}
-
 	@Override
 	public String transformMultiPoint2DToDatabaseMultiPoint2DValue(MultiPoint point) {
 //		final Coordinate coordinate = point.getCoordinate();
@@ -157,23 +167,18 @@ public class OracleSpatialDBDefinition extends OracleDBDefinition {
 
 	@Override
 	public String transformPoint2DArrayToDatabasePolygon2DFormat(List<String> pointSQL) {
-		StringBuilder ordinateArray = new StringBuilder("MDSYS.SDO_ORDINATE_ARRAY(");
-		final String ordinateSep = ", ";
-		String pairSep = "";
-		for (String pointish : pointSQL) {
-			ordinateArray
-					.append(pairSep)
-					.append(doPoint2DGetXTransform(pointish))
-					.append(ordinateSep)
-					.append(doPoint2DGetYTransform(pointish));
-			pairSep = ", ";
-		}
-		//+ lineSegment.p0.x + ", " + lineSegment.p0.y + ", " + lineSegment.p1.x + ", " + lineSegment.p1.y 
-		ordinateArray.append(")");
-		return "MDSYS.SDO_GEOMETRY(2003, NULL, NULL,"
-				+ "MDSYS.SDO_ELEM_INFO_ARRAY(1,2003,1),"
-				+ ordinateArray
-				+ ")";
+		Encoder encoder;
+		encoder = Builder
+				.byCommas()
+				.withPrefix("MDSYS.SDO_GEOMETRY(2003, NULL, NULL,MDSYS.SDO_ELEM_INFO_ARRAY(1,2003,1),MDSYS.SDO_ORDINATE_ARRAY(")
+				.withSuffix("))")
+				.withClosedLoop()
+        .encoder()
+				.addAll(
+						(t)->{return doPoint2DGetXTransform(t) + ", " + doPoint2DGetYTransform(t);}, 
+						pointSQL
+				);
+		return encoder.encode();
 	}
 
 	@Override
@@ -187,9 +192,9 @@ public class OracleSpatialDBDefinition extends OracleDBDefinition {
 					.append(sep)
 					.append(pointish);
 			pairSep = ", ";
-			if (sep.equals(ordinateSep)){
-				sep=pairSep;
-			}else{
+			if (sep.equals(ordinateSep)) {
+				sep = pairSep;
+			} else {
 				sep = ordinateSep;
 			}
 		}
@@ -393,7 +398,7 @@ public class OracleSpatialDBDefinition extends OracleDBDefinition {
 
 	@Override
 	public String doLine2DIntersectionPointWithLine2DTransform(String firstLine, String secondLine) {
-		return "SDO_GEOM.SDO_INTERSECTION(" + firstLine + ", " + secondLine + ", 0.0000005)";
+		return Line2DFunctions.GETPOINTFROMORDARRAY.toString()+"(SDO_GEOM.SDO_INTERSECTION(" + firstLine + ", " + secondLine + ", 0.0000005))";
 	}
 
 	@Override
@@ -461,11 +466,6 @@ public class OracleSpatialDBDefinition extends OracleDBDefinition {
 	@Override
 	public String doPolygon2DGetMagnitudeTransform(String polygon2DSQL) {
 		return super.doPolygon2DGetMagnitudeTransform(polygon2DSQL); //To change body of generated methods, choose Tools | Templates.
-	}
-
-	@Override
-	public String doPolygon2DHasMagnitudeTransform(String polygon2DSQL) {
-		return super.doPolygon2DHasMagnitudeTransform(polygon2DSQL); //To change body of generated methods, choose Tools | Templates.
 	}
 
 	@Override

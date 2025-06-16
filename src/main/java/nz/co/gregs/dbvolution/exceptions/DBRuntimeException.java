@@ -24,7 +24,8 @@ public class DBRuntimeException extends RuntimeException {
 	 * Thrown when unexpected errors occur.
 	 *
 	 */
-	public DBRuntimeException() {
+	protected DBRuntimeException() {
+		fillInStackTrace();
 	}
 
 	/**
@@ -34,6 +35,7 @@ public class DBRuntimeException extends RuntimeException {
 	 */
 	public DBRuntimeException(String message) {
 		super(message);
+		fillInStackTrace();
 	}
 
 	/**
@@ -41,8 +43,9 @@ public class DBRuntimeException extends RuntimeException {
 	 *
 	 * @param cause	cause
 	 */
-	public DBRuntimeException(Throwable cause) {
+	protected DBRuntimeException(Throwable cause) {
 		super(cause);
+		fillInStackTrace();
 	}
 
 	/**
@@ -53,10 +56,6 @@ public class DBRuntimeException extends RuntimeException {
 	 */
 	public DBRuntimeException(String message, Throwable cause) {
 		super(message, cause);
+		Throwable fillInStackTrace = fillInStackTrace();
 	}
-
-//	public DBRuntimeException(String message, Throwable cause,
-//			boolean enableSuppression, boolean writableStackTrace) {
-//		super(message, cause, enableSuppression, writableStackTrace);
-//	}
 }

@@ -15,11 +15,14 @@
  */
 package nz.co.gregs.dbvolution.columns;
 
+import com.vividsolutions.jts.geom.MultiPoint;
+import java.util.Objects;
 import java.util.Set;
-import nz.co.gregs.dbvolution.DBDatabase;
 import nz.co.gregs.dbvolution.DBRow;
+import nz.co.gregs.dbvolution.databases.definitions.DBDefinition;
 import nz.co.gregs.dbvolution.datatypes.spatial2D.DBMultiPoint2D;
-import nz.co.gregs.dbvolution.expressions.MultiPoint2DExpression;
+import nz.co.gregs.dbvolution.expressions.SortProvider;
+import nz.co.gregs.dbvolution.expressions.spatial2D.MultiPoint2DExpression;
 import nz.co.gregs.dbvolution.query.RowDefinition;
 
 /**
@@ -31,6 +34,8 @@ import nz.co.gregs.dbvolution.query.RowDefinition;
  * @author Gregory Graham
  */
 public class MultiPoint2DColumn extends MultiPoint2DExpression implements ColumnProvider {
+
+	private final static long serialVersionUID = 1l;
 
 	private final AbstractColumn column;
 
@@ -45,6 +50,10 @@ public class MultiPoint2DColumn extends MultiPoint2DExpression implements Column
 		this.column = new AbstractColumn(row, field);
 	}
 
+	public MultiPoint2DColumn(RowDefinition row, MultiPoint field) {
+		this.column = new AbstractColumn(row, field);
+	}
+
 	@Override
 	public AbstractColumn getColumn() {
 		return column;
@@ -56,7 +65,7 @@ public class MultiPoint2DColumn extends MultiPoint2DExpression implements Column
 	}
 
 	@Override
-	public String toSQLString(DBDatabase db) {
+	public String toSQLString(DBDefinition db) {
 		return column.toSQLString(db);
 	}
 
@@ -69,4 +78,39 @@ public class MultiPoint2DColumn extends MultiPoint2DExpression implements Column
 	public boolean isPurelyFunctional() {
 		return column.isPurelyFunctional();
 	}
+
+	@Override
+	public boolean isAggregator() {
+		return column.isAggregator();
+	}
+
+	@Override
+	public boolean equals(Object other) {
+		if (other instanceof MultiPoint2DColumn) {
+			return column.equals(((MultiPoint2DColumn) other).column);
+		} else {
+			return false;
+		}
+	}
+
+	@Override
+	public int hashCode() {
+		int hash = 7;
+		hash = 59 * hash + Objects.hashCode(this.column);
+		return hash;
+	}
+
+	@Override
+	public synchronized MultiPoint2DColumn copy() {
+		final AbstractColumn col = getColumn();
+		final DBRow row = col.getInstanceOfRow();
+		MultiPoint2DColumn newInstance = new MultiPoint2DColumn(row, (DBMultiPoint2D) col.getAppropriateQDTFromRow(row));
+		return newInstance;
+	}
+
+	@Override
+	public SortProvider.Column getSortProvider() {
+		return column.getSortProvider();
+	}
+
 }

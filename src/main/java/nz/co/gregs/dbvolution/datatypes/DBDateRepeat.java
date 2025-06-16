@@ -15,11 +15,16 @@
  */
 package nz.co.gregs.dbvolution.datatypes;
 
+import nz.co.gregs.dbvolution.utility.comparators.PeriodComparator;
 import nz.co.gregs.dbvolution.results.DateRepeatResult;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import nz.co.gregs.dbvolution.DBDatabase;
+import java.util.Comparator;
+import nz.co.gregs.dbvolution.columns.DateRepeatColumn;
+import nz.co.gregs.dbvolution.databases.definitions.DBDefinition;
+import nz.co.gregs.dbvolution.exceptions.IncorrectRowProviderInstanceSuppliedException;
 import nz.co.gregs.dbvolution.expressions.*;
+import nz.co.gregs.dbvolution.query.RowDefinition;
 import org.joda.time.Period;
 import org.joda.time.format.PeriodFormat;
 
@@ -44,7 +49,7 @@ import org.joda.time.format.PeriodFormat;
  *
  * @author Gregory Graham
  */
-public class DBDateRepeat extends QueryableDatatype implements DateRepeatResult {
+public class DBDateRepeat extends QueryableDatatype<Period> implements DateRepeatResult {
 
 	private static final long serialVersionUID = 1L;
 
@@ -59,7 +64,7 @@ public class DBDateRepeat extends QueryableDatatype implements DateRepeatResult 
 	/**
 	 * Creates a new DBDateRepeat with the value specified.
 	 *
-	 * @param interval
+	 * @param interval the interval that this QDT will represent
 	 */
 	public DBDateRepeat(Period interval) {
 		super(interval);
@@ -71,7 +76,7 @@ public class DBDateRepeat extends QueryableDatatype implements DateRepeatResult 
 	 * <p>
 	 * Very useful for adding column expressions to a DBRow subclass.
 	 *
-	 * @param interval
+	 * @param interval the interval that this QDT will represent
 	 */
 	public DBDateRepeat(DateRepeatExpression interval) {
 		super(interval);
@@ -83,8 +88,9 @@ public class DBDateRepeat extends QueryableDatatype implements DateRepeatResult 
 	 * <p>
 	 * Use this method before inserting the value into the database.
 	 *
-	 * @param newLiteralValue
+	 * @param newLiteralValue the new value
 	 */
+	@Override
 	public void setValue(Period newLiteralValue) {
 		super.setLiteralValue(newLiteralValue);
 	}
@@ -105,7 +111,7 @@ public class DBDateRepeat extends QueryableDatatype implements DateRepeatResult 
 		if (!isDefined() || isNull()) {
 			return null;
 		} else {
-			return (Period) getLiteralValue();
+			return getLiteralValue();
 		}
 	}
 
@@ -120,23 +126,23 @@ public class DBDateRepeat extends QueryableDatatype implements DateRepeatResult 
 	}
 
 	@Override
-	protected String formatValueForSQLStatement(DBDatabase db) {
-		Period interval = (Period) getLiteralValue();
+	protected String formatValueForSQLStatement(DBDefinition db) {
+		Period interval = getLiteralValue();
 		if (interval == null) {
 			return "NULL";
 		} else {
-			String str = db.getDefinition().transformPeriodIntoDateRepeat(interval);
+			String str = db.transformPeriodIntoDateRepeat(interval);
 			return str;
 		}
 	}
 
 	@Override
-	protected Period getFromResultSet(DBDatabase database, ResultSet resultSet, String fullColumnName) throws SQLException {
+	protected Period getFromResultSet(DBDefinition database, ResultSet resultSet, String fullColumnName) throws SQLException {
 		String intervalStr = resultSet.getString(fullColumnName);
-		if (intervalStr == null || intervalStr.equals("")) {
+		if (intervalStr == null || intervalStr.isEmpty()) {
 			return null;
 		} else {
-			return database.getDefinition().parseDateRepeatFromGetString(intervalStr);
+			return database.parseDateRepeatFromGetString(intervalStr);
 		}
 	}
 
@@ -160,7 +166,7 @@ public class DBDateRepeat extends QueryableDatatype implements DateRepeatResult 
 		if (getLiteralValue() == null) {
 			return super.toString(); //To change body of generated methods, choose Tools | Templates.
 		} else {
-			Period period = (Period) getLiteralValue();
+			Period period = getLiteralValue();
 			return PeriodFormat.getDefault().print(period);
 		}
 	}
@@ -169,4 +175,106 @@ public class DBDateRepeat extends QueryableDatatype implements DateRepeatResult 
 	public StringExpression stringResult() {
 		return DateRepeatExpression.value(this).stringResult();
 	}
+
+	@Override
+	protected void setValueFromStandardStringEncoding(String encodedValue) {
+		throw new UnsupportedOperationException("DBDateRepeat does not support setValueFromStandardStringEncoding(String) yet."); //To change body of generated methods, choose Tools | Templates.
+	}
+
+	@Override
+	public DateRepeatColumn getColumn(RowDefinition row) throws IncorrectRowProviderInstanceSuppliedException {
+		return new DateRepeatColumn(row, this);
+	}
+
+	/**
+	 * Set the value to be inserted when no value has been set, using
+	 * {@link #setValue(java.lang.Object) setValue(...)}, for the QDT.
+	 *
+	 * <p>
+	 * The value is only used during the initial insert and does not effect the
+	 * definition of the column within the database.</p>
+	 *
+	 * <p>
+	 * Care should be taken when using this as some "obvious" uses are better
+	 * handled using the
+	 * {@link #setDefaultInsertValue(nz.co.gregs.dbvolution.results.AnyResult) expression version}.
+	 * In particular, setDefaultInsertValue(new Date()) is probably NOT what you
+	 * want, setDefaultInsertValue(DateExpression.currentDate()) will produce a
+	 * correct creation date value.</p>
+	 *
+	 * @param value the value to use during insertion when no particular value has
+	 * been specified.
+	 * @return This QDT
+	 */
+	@Override
+	public synchronized DBDateRepeat setDefaultInsertValue(Period value) {
+		super.setDefaultInsertValue(value);
+		return this;
+	}
+
+	/**
+	 * Set the value to be inserted when no value has been set, using
+	 * {@link #setValue(java.lang.Object) setValue(...)}, for the QDT.
+	 *
+	 * <p>
+	 * The value is only used during the initial insert and does not effect the
+	 * definition of the column within the database.</p>
+	 *
+	 * @param value the value to use during insertion when no particular value has
+	 * been specified.
+	 * @return This QDT
+	 */
+	public synchronized DBDateRepeat setDefaultInsertValue(DateRepeatResult value) {
+		super.setDefaultInsertValue(value);
+		return this;
+	}
+
+	/**
+	 * Set the value to be used during an update when no value has been set, using
+	 * {@link #setValue(java.lang.Object) setValue(...)}, for the QDT.
+	 *
+	 * <p>
+	 * The value is only used during updates and does not effect the definition of
+	 * the column within the database nor the initial value of the column.</p>
+	 *
+	 * <p>
+	 * Care should be taken when using this as some "obvious" uses are better
+	 * handled using the
+	 * {@link #setDefaultUpdateValue(nz.co.gregs.dbvolution.results.AnyResult) expression version}.
+	 * In particular, setDefaultUpdateValue(new Date()) is probably NOT what you
+	 * want, setDefaultUpdateValue(DateExpression.currentDate()) will produce a
+	 * correct update time value.</p>
+	 *
+	 * @param value the value to use during update when no particular value has
+	 * been specified.
+	 * @return This QDT
+	 */
+	@Override
+	public synchronized DBDateRepeat setDefaultUpdateValue(Period value) {
+		super.setDefaultUpdateValue(value);
+		return this;
+	}
+
+	/**
+	 * Set the value to be used during an update when no value has been set, using
+	 * {@link #setValue(java.lang.Object) setValue(...)}, for the QDT.
+	 *
+	 * <p>
+	 * The value is only used during updates and does not effect the definition of
+	 * the column within the database nor the initial value of the column.</p>
+	 *
+	 * @param value the value to use during update when no particular value has
+	 * been specified.
+	 * @return This QDT
+	 */
+	public synchronized DBDateRepeat setDefaultUpdateValue(DateRepeatResult value) {
+		super.setDefaultUpdateValue(value);
+		return this;
+	}
+
+	@Override
+	public Comparator<Period> getComparator() {
+		return PeriodComparator.getInstance();
+	}
+
 }

@@ -16,10 +16,11 @@
 package nz.co.gregs.dbvolution.databases;
 
 import java.sql.SQLException;
+import java.sql.Statement;
 import java.util.List;
 import javax.sql.DataSource;
-import nz.co.gregs.dbvolution.DBDatabase;
-import nz.co.gregs.dbvolution.databases.definitions.MariaDBDefinition;
+import nz.co.gregs.dbvolution.databases.settingsbuilders.MariaClusterDBSettingsBuilder;
+import nz.co.gregs.dbvolution.exceptions.ExceptionDuringDatabaseFeatureSetup;
 
 /**
  * DBDatabase tweaked for a Maria Cluster Database.
@@ -28,22 +29,44 @@ import nz.co.gregs.dbvolution.databases.definitions.MariaDBDefinition;
  * You should probably be using {@link MariaClusterDB#MariaClusterDB(java.util.List, java.util.List, java.lang.String, java.lang.String, java.lang.String)
  * }
  *
- * <p style="color: #F90;">Support DBvolution at
- * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
- *
  * @author Gregory Graham
  */
-public class MariaClusterDB extends DBDatabase {
+public class MariaClusterDB extends DBDatabaseImplementation {
 
-	private final static String MARIADBDRIVERNAME = "com.mariadb.jdbc.Driver";
+	public final static String MARIADBDRIVERNAME = "com.mariadb.jdbc.Driver";
+	public static final long serialVersionUID = 1l;
 
 	/**
 	 * Creates a {@link DBDatabase } instance for the data source.
 	 *
 	 * @param ds	ds
+	 * @throws java.sql.SQLException database errors
 	 */
-	public MariaClusterDB(DataSource ds) {
-		super(new MariaDBDefinition(), ds);
+	public MariaClusterDB(DataSource ds) throws SQLException {
+		super(
+				new MariaClusterDBSettingsBuilder()
+						.setDataSource(ds)
+		);
+	}
+
+	/**
+	 * Creates a {@link DBDatabase } instance for the data source.
+	 *
+	 * @param ds	ds
+	 * @throws java.sql.SQLException database errors
+	 */
+	public MariaClusterDB(DatabaseConnectionSettings ds) throws SQLException {
+		this(new MariaClusterDBSettingsBuilder().fromSettings(ds));
+	}
+
+	/**
+	 * Creates a {@link DBDatabase } instance for the data source.
+	 *
+	 * @param ds	ds
+	 * @throws java.sql.SQLException database errors
+	 */
+	public MariaClusterDB(MariaClusterDBSettingsBuilder ds) throws SQLException {
+		super(ds);
 	}
 
 	/**
@@ -54,9 +77,10 @@ public class MariaClusterDB extends DBDatabase {
 	 * @param jdbcURL jdbcURL
 	 * @param username username
 	 * @param password password
+	 * @throws java.sql.SQLException database errors
 	 */
-	public MariaClusterDB(String jdbcURL, String username, String password) {
-		super(new MariaDBDefinition(), MARIADBDRIVERNAME, jdbcURL, username, password);
+	public MariaClusterDB(String jdbcURL, String username, String password) throws SQLException {
+		this(new MariaClusterDBSettingsBuilder().fromJDBCURL(jdbcURL, username, password));
 	}
 
 	/**
@@ -72,14 +96,17 @@ public class MariaClusterDB extends DBDatabase {
 	 * @param password password
 	 * @param username username
 	 * @param databaseName databaseName
+	 * @throws java.sql.SQLException database errors
 	 */
-	public MariaClusterDB(String server, long port, String databaseName, String username, String password) {
-		super(new MariaDBDefinition(),
-				MARIADBDRIVERNAME,
-				"jdbc:mariadb://" + server + ":" + port + "/" + databaseName,
-				username,
-				password);
-		this.setDatabaseName(databaseName);
+	public MariaClusterDB(String server, long port, String databaseName, String username, String password) throws SQLException {
+		this(
+				new MariaClusterDBSettingsBuilder()
+						.setHost(server)
+						.setPort(port)
+						.setDatabaseName(databaseName)
+						.setUsername(username)
+						.setPassword(password)
+		);
 	}
 
 	/**
@@ -94,34 +121,35 @@ public class MariaClusterDB extends DBDatabase {
 	 * @param databaseName databaseName
 	 * @param username username
 	 * @param password password
+	 * @throws java.sql.SQLException database errors
 	 */
-	public MariaClusterDB(List<String> servers, List<Long> ports, String databaseName, String username, String password) {
-		String hosts = "";
-		String sep = "";
-		if (servers.size() == ports.size()) {
-			for (int i = 0; i < servers.size(); i++) {
-				String server = servers.get(i);
-				Long port = ports.get(i);
-				hosts += sep + server + ":" + port;
-				sep = ",";
-			}
-		}
-		setDriverName(MARIADBDRIVERNAME);
-		setDefinition(new MariaDBDefinition());
-		setJdbcURL("jdbc:mariadb://" + hosts + "/" + databaseName);
-		setUsername(username);
-		setPassword(password);
-		setDatabaseName(databaseName);
-	}
-
-	@Override
-	public boolean supportsFullOuterJoinNatively() {
-		return false;
+	public MariaClusterDB(List<String> servers, List<Long> ports, String databaseName, String username, String password) throws SQLException {
+		super(
+				new MariaClusterDBSettingsBuilder()
+						.setDatabaseName(databaseName)
+						.setUsername(username)
+						.setPassword(password)
+						.addHosts(servers, ports)
+		);
 	}
 
 	@Override
 	public DBDatabase clone() throws CloneNotSupportedException {
-		return super.clone(); //To change body of generated methods, choose Tools | Templates.
+		return super.clone();
 	}
 
+	@Override
+	public void addDatabaseSpecificFeatures(Statement statement) throws ExceptionDuringDatabaseFeatureSetup {
+		;
+	}
+
+	@Override
+	public Integer getDefaultPort() {
+		return -1;
+	}
+
+	@Override
+	public MariaClusterDBSettingsBuilder getURLInterpreter() {
+		return new MariaClusterDBSettingsBuilder();
+	}
 }

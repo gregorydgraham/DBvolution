@@ -17,32 +17,32 @@ package nz.co.gregs.dbvolution.databases.definitions;
 
 import java.util.ArrayList;
 import java.util.List;
-import nz.co.gregs.dbvolution.DBDatabase;
+import nz.co.gregs.dbvolution.DBRow;
 import nz.co.gregs.dbvolution.databases.OracleAWS11DB;
-import nz.co.gregs.dbvolution.query.QueryOptions;
+import nz.co.gregs.dbvolution.internal.query.QueryOptions;
+import nz.co.gregs.dbvolution.internal.query.QueryState;
 
 /**
- * Defines the features of the Amazon's RDS Oracle 11 database that differ from the standard
- * database.
+ * Defines the features of the Amazon's RDS Oracle 11 database that differ from
+ * the standard database.
  *
  * <p>
- * This DBDefinition is automatically included in {@link OracleAWS11DB} instances,
- * and you should not need to use it directly.
- *
- * <p style="color: #F90;">Support DBvolution at
- * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+ * This DBDefinition is automatically included in {@link OracleAWS11DB}
+ * instances, and you should not need to use it directly.
  *
  * @author Gregory Graham
  */
 public class OracleAWS11DBDefinition extends OracleAWSDBDefinition {
 
+	public static final long serialVersionUID = 1L;
+	
 	@Override
-	public Object getLimitRowsSubClauseDuringSelectClause(QueryOptions options) {
+	public String getLimitRowsSubClauseDuringSelectClause(QueryOptions options) {
 		return " /*+ FIRST_ROWS(" + options.getRowLimit() + ") */ ";
 	}
 
 	@Override
-	public Object getLimitRowsSubClauseAfterWhereClause(QueryOptions options) {
+	public String getLimitRowsSubClauseAfterWhereClause(QueryState state, QueryOptions options) {
 		return "";
 	}
 
@@ -50,7 +50,6 @@ public class OracleAWS11DBDefinition extends OracleAWSDBDefinition {
 //	public boolean supportsPagingNatively(QueryOptions options) {
 //		return true;
 //	}
-
 	@Override
 	public String getColumnAutoIncrementSuffix() {
 		return "";
@@ -62,52 +61,23 @@ public class OracleAWS11DBDefinition extends OracleAWSDBDefinition {
 	}
 
 	@Override
-	public List<String> getTriggerBasedIdentitySQL(DBDatabase DB, String table, String column) {
-//		    CREATE SEQUENCE dept_seq;
-//
-//Create a trigger to populate the ID column if it's not specified in the insert.
-//
-//    CREATE OR REPLACE TRIGGER dept_bir 
-//    BEFORE INSERT ON departments 
-//    FOR EACH ROW
-//    WHEN (new.id IS NULL)
-//    BEGIN
-//      SELECT dept_seq.NEXTVAL
-//      INTO   :new.id
-//      FROM   dual;
-//    END;
-
-		List<String> result = new ArrayList<String>();
-		String sequenceName = getPrimaryKeySequenceName(table, column);
-		result.add("CREATE SEQUENCE " + sequenceName);
-
-		String triggerName = getPrimaryKeyTriggerName(table, column);
-		result.add("CREATE OR REPLACE TRIGGER " + DB.getUsername() + "." + triggerName + " \n"
-				+ "    BEFORE INSERT ON " + DB.getUsername() + "." + table + " \n"
-				+ "    FOR EACH ROW\n"
-				+ "    WHEN (new." + column + " IS NULL)\n"
-				+ "    BEGIN\n"
-				+ "      SELECT " + sequenceName + ".NEXTVAL\n"
-				+ "      INTO   :new." + column + "\n"
-				+ "      FROM   dual;\n"
-				//				+ ":new."+column+" := "+sequenceName+".nextval; \n"
-				+ "    END;\n");
-
+	public List<String> getSQLToDropAnyAssociatedDatabaseObjects(DBRow tableRow) {
+		ArrayList<String> result = new ArrayList<>(0);
+		
+		if (tableRow.getPrimaryKeys() != null) {
+			final String formattedTableName = formatTableName(tableRow);
+			final List<String> primaryKeyColumnNames = tableRow.getPrimaryKeyColumnNames();
+			for (String primaryKeyColumnName : primaryKeyColumnNames) {
+				String sql = getSQLToDropSequence(primaryKeyColumnName, formattedTableName);
+				result.add(sql);
+			}
+		}
 		return result;
 	}
 
-//	@Override
-//	public String getStringLengthFunctionName() {
-//		return "LENGTH";
-//	}
-//
-//	@Override
-//	public String doSubstringTransform(String originalString, String start, String length) {
-//		return " SUBSTR("
-//				+ originalString
-//				+ ", "
-//				+ start
-//				+ (length.trim().isEmpty() ? "" : ", " + length)
-//				+ ") ";
-//	}
+	protected String getSQLToDropSequence(String primaryKeyColumnName, final String formattedTableName) {
+		final String formattedColumnName = formatColumnName(primaryKeyColumnName);
+		final String sql = "DROP SEQUENCE " + getPrimaryKeySequenceName(formattedTableName, formattedColumnName);
+		return sql;
+	}
 }

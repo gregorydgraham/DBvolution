@@ -33,25 +33,36 @@ import nz.co.gregs.dbvolution.datatypes.QueryableDatatype;
  * This DBDefinition is automatically included in {@link NuoDB} instances, and
  * you should not need to use it directly.
  *
- * <p style="color: #F90;">Support DBvolution at
- * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
- *
  * @author Gregory Graham
  */
 public class NuoDBDefinition extends DBDefinition {
 
-	private static final DateFormat DATETIME_FORMAT = new SimpleDateFormat("dd/MM/yyyy HH:mm:ss.SSS");
+	public static final long serialVersionUID = 1L;
+
+	private static final String DB_DATE_FORMAT_STR = "yyyy-M-d HH:mm:ss.SSS";//2017-02-18 18:59:59.000 +10:00
+	private final DateFormat DATETIME_FORMAT = new SimpleDateFormat("dd/MM/yyyy HH:mm:ss.SSS");
 
 	@Override
 	@SuppressWarnings("deprecation")
 	public String getDateFormattedForQuery(Date date) {
-
 		return " DATE_FROM_STR('" + DATETIME_FORMAT.format(date) + "', 'dd/MM/yyyy HH:mm:ss.SSS') ";
-
 	}
 
 	@Override
-	protected String getDatabaseDataTypeOfQueryableDatatype(QueryableDatatype qdt) {
+	public String getDatePartsFormattedForQuery(String years, String months, String days, String hours, String minutes, String seconds, String subsecond, String timeZoneSign, String timeZoneHourOffset, String timeZoneMinuteOffSet) {
+		return "PARSEDATETIME("
+				+ years
+				+ "||'-'||" + months
+				+ "||'-'||" + days
+				+ "||' '||" + hours
+				+ "||':'||" + minutes
+				+ "||':'||(" + seconds + "+" + subsecond + ")"
+				+ ", '" + DB_DATE_FORMAT_STR + "')";
+		//return "PARSEDATETIME('" + years + "','" + H2_DATE_FORMAT_STR + "')";
+	}
+
+	@Override
+	protected String getDatabaseDataTypeOfQueryableDatatype(QueryableDatatype<?> qdt) {
 		if (qdt instanceof DBBoolean) {
 			return " boolean ";
 		} else if (qdt instanceof DBBooleanArray) {
@@ -88,8 +99,8 @@ public class NuoDBDefinition extends DBDefinition {
 	}
 
 	/**
-	 * NuoDB follows the standard, unlike anyone else, and pads the short
-	 * string with spaces before comparing.
+	 * NuoDB follows the standard, unlike anyone else, and pads the short string
+	 * with spaces before comparing.
 	 *
 	 * <p>
 	 * This effectively means strings are trimmed during comparisons whether you
@@ -103,7 +114,6 @@ public class NuoDBDefinition extends DBDefinition {
 	 * @param secondSQLExpression secondSQLExpression
 	 * <p style="color: #F90;">Support DBvolution at
 	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
-	 *
 	 * @return SQL
 	 */
 	@Override
@@ -112,12 +122,12 @@ public class NuoDBDefinition extends DBDefinition {
 	}
 
 	@Override
-	public String doAddHoursTransform(String dateValue, String numberOfHours) {
+	public String doDateAddHoursTransform(String dateValue, String numberOfHours) {
 		return "DATE_ADD(" + dateValue + ", INTERVAL ((" + numberOfHours + ")*60*60) SECOND )";
 	}
 
 	@Override
-	public String doAddMinutesTransform(String dateValue, String numberOfMinutes) {
+	public String doDateAddMinutesTransform(String dateValue, String numberOfMinutes) {
 		return "DATE_ADD(" + dateValue + ", INTERVAL ((" + numberOfMinutes + ")*60) SECOND )";
 	}
 
@@ -160,9 +170,14 @@ public class NuoDBDefinition extends DBDefinition {
 	public String doSecondDifferenceTransform(String dateValue, String otherDateValue) {
 		return "ROUND((CAST(" + otherDateValue + " AS TIMESTAMP) - CAST(" + dateValue + " AS TIMESTAMP))*24*60*60)";
 	}
-	
+
 	@Override
 	public String doDayOfWeekTransform(String dateSQL) {
+		return " DAYOFWEEK(" + dateSQL + ")";
+	}
+
+	@Override
+	public String doInstantDayOfWeekTransform(String dateSQL) {
 		return " DAYOFWEEK(" + dateSQL + ")";
 	}
 
@@ -174,6 +189,21 @@ public class NuoDBDefinition extends DBDefinition {
 	@Override
 	public String doNumberEqualsTransform(String leftHandSide, String rightHandSide) {
 		return "((" + super.doNumberEqualsTransform(leftHandSide, rightHandSide) + ")=true)";
+	}
+
+	@Override
+	public boolean supportsRecursiveQueriesNatively() {
+		return false;
+	}
+
+	@Override
+	public boolean supportsFullOuterJoinNatively() {
+		return false;
+	}
+	
+	@Override
+	public boolean supportsDateRepeatDatatypeFunctions() {
+		return false;
 	}
 
 }

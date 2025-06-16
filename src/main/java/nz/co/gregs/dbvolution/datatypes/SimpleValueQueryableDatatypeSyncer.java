@@ -25,6 +25,8 @@ package nz.co.gregs.dbvolution.datatypes;
  */
 public class SimpleValueQueryableDatatypeSyncer extends QueryableDatatypeSyncer {
 
+	private static final long serialVersionUID = 1l;
+
 	/**
 	 *
 	 * @param propertyName used in error messages
@@ -37,7 +39,7 @@ public class SimpleValueQueryableDatatypeSyncer extends QueryableDatatypeSyncer 
 	 *
 	 *
 	 */
-	public SimpleValueQueryableDatatypeSyncer(String propertyName, Class<? extends QueryableDatatype> internalQdtType,
+	public SimpleValueQueryableDatatypeSyncer(String propertyName, Class<? extends QueryableDatatype<?>> internalQdtType,
 			Class<?> internalQdtLiteralType, Class<?> externalSimpleType, DBTypeAdaptor<Object, Object> typeAdaptor) {
 		super(propertyName, internalQdtType, internalQdtLiteralType, externalSimpleType, typeAdaptor);
 	}
@@ -49,22 +51,19 @@ public class SimpleValueQueryableDatatypeSyncer extends QueryableDatatypeSyncer 
 	 * @param externalValue may be null
 	 * <p style="color: #F90;">Support DBvolution at
 	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
-	 *
 	 * @return the updated internal QDT
 	 */
-	public QueryableDatatype setInternalQDTFromExternalSimpleValue(Object externalValue) {
+	public QueryableDatatype<?> setInternalQDTFromExternalSimpleValue(Object externalValue) {
 		Object internalValue = getToInternalSimpleTypeAdaptor().convert(externalValue);
-		QueryableDatatype internalQDT = getInternalQueryableDatatype();
+		QueryableDatatype<?> internalQDT = getInternalQueryableDatatype();
 		if (internalValue == null) {
-			// TODO complete this
+			internalQDT.setLiteralValue(null);
 			internalQDT.setDefined(false);
 			internalQDT.setOperator(null);
-			internalQDT.literalValue = null;
 			internalQDT.setChanged(false);
 			internalQDT.setPreviousValue(null);
 		} else {
-			// TODO what type checking can/should be done here?
-			internalQDT.setValue(internalValue);
+			setQDTValueUsingDangerousReflection(internalQDT, internalValue);
 		}
 		return internalQDT;
 	}

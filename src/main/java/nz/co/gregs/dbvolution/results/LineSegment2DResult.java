@@ -15,7 +15,7 @@
  */
 package nz.co.gregs.dbvolution.results;
 
-import nz.co.gregs.dbvolution.expressions.DBExpression;
+import com.vividsolutions.jts.geom.LineSegment;
 
 /**
  *
@@ -24,6 +24,6 @@ import nz.co.gregs.dbvolution.expressions.DBExpression;
  *
  * @author gregory.graham
  */
-public interface LineSegment2DResult extends DBExpression, ExpressionCanHaveNullValues, Spatial2DResult {
-	
+public interface LineSegment2DResult extends Spatial2DResult<LineSegment> {
+
 }

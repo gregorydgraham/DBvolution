@@ -1,3 +1,4 @@
+
 /*
  * Copyright 2013 Gregory Graham.
  *
@@ -15,15 +16,21 @@
  */
 package nz.co.gregs.dbvolution.databases;
 
-import java.sql.Connection;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.sql.SQLWarning;
-import java.sql.Statement;
-import nz.co.gregs.dbvolution.DBDatabase;
+import java.sql.*;
+import nz.co.gregs.dbvolution.exceptions.LoopDetectedInRecursiveSQL;
+import java.util.ArrayList;
+import java.util.List;
+import nz.co.gregs.dbvolution.databases.DBDatabaseImplementation.ResponseToException;
+import static nz.co.gregs.dbvolution.databases.DBDatabaseImplementation.ResponseToException.*;
+import nz.co.gregs.dbvolution.databases.connections.DBConnection;
 import nz.co.gregs.dbvolution.databases.definitions.DBDefinition;
 import nz.co.gregs.dbvolution.exceptions.UnableToCreateDatabaseConnectionException;
 import nz.co.gregs.dbvolution.exceptions.UnableToFindJDBCDriver;
+import nz.co.gregs.dbvolution.internal.query.QueryTimeout;
+import nz.co.gregs.dbvolution.internal.query.StatementDetails;
+import nz.co.gregs.dbvolution.utility.StringCheck;
+import nz.co.gregs.regexi.Regex;
+import nz.co.gregs.regexi.internal.PartialRegex;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
@@ -43,86 +50,125 @@ import org.apache.commons.logging.LogFactory;
  * Mostly this is a thin wrapper around DBDatabase, Connection, and Statement
  * objects
  *
- * <p style="color: #F90;">Support DBvolution at
- * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
  *
  * @author Gregory Graham
  */
-public class DBStatement implements Statement {
+public class DBStatement implements AutoCloseable {
 
-	static final private Log log = LogFactory.getLog(DBStatement.class);
+	static final private Log LOG = LogFactory.getLog(DBStatement.class);
 
 	private Statement internalStatement;
-	private boolean batchHasEntries;
 	final DBDatabase database;
-	private Connection connection;
+	private DBConnection connection;
 	private boolean isClosed = false;
+	private final List<String> localBatchList = new ArrayList<>();
+	private final Long TIMEOUT_IN_MILLISECONDS = 10000L;
 
 	/**
 	 * Creates a statement object for the given DBDatabase and Connection.
 	 *
 	 * @param db the target database
 	 * @param connection the connection to the database
-	 * @throws SQLException datbase exceptions
 	 */
-	public DBStatement(DBDatabase db, Connection connection) throws SQLException {
+	public DBStatement(DBDatabase db, DBConnection connection) {
 		this.database = db;
 		this.connection = connection;
-		this.internalStatement = connection.createStatement();
 	}
 
 	/**
 	 * Executes the given SQL statement, which returns a single ResultSet object.
 	 *
-	 * @param string SQL
-	 * <p style="color: #F90;">Support DBvolution at
-	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
-	 *
-	 * @return a ResultSet
+	 * @param details the full details of the query including the SQL to be
+	 * executed
+	 * @return a ResultSet the results, if any, of the query
 	 * @throws SQLException database exceptions
 	 */
-	@Override
-	public ResultSet executeQuery(String string) throws SQLException {
-		final String logSQL = "EXECUTING QUERY: " + string;
+	public ResultSet executeQuery(StatementDetails details) throws SQLException {
+		return executeQueryWithRecovery(details);
+	}
+
+	public ResultSet executeQueryWithRecovery(StatementDetails details) throws SQLException {
+		String sql = details.getSql();
+		String label = details.getLabel();
+		final String logSQL = "EXECUTING QUERY \"" + label + "\" on " + this.database.getJdbcURL() + ": \n" + sql;
 		database.printSQLIfRequested(logSQL);
-		log.debug(logSQL);
 		ResultSet executeQuery = null;
 		try {
-			executeQuery = getInternalStatement().executeQuery(string);
+			executeQuery = executeQueryWithTimeout(details);
 		} catch (SQLException exp) {
 			try {
-				executeQuery = addFeatureAndAttemptQueryAgain(exp, string);
+				var statementDetails = details.copy().withLabel("UNLABELLED QUERY").withException(exp);
+				statementDetails.setIgnoreExceptions(details.isIgnoreExceptions());
+				executeQuery = addFeatureAndAttemptQueryAgain(statementDetails);
+			} catch (LoopDetectedInRecursiveSQL | SQLException loop) {
+				throw loop;
 			} catch (Exception ex) {
-				throw new RuntimeException(ex);
+				throw new SQLException(ex);
 			}
 		}
 		return executeQuery;
 	}
 
-	private ResultSet addFeatureAndAttemptQueryAgain(Exception exp, String string) throws Exception {
-		ResultSet executeQuery;
-		final String ln = System.getProperty("line.separator");
-//		System.out.println("Adding Feature for: " + exp.getMessage() + ln + exp.toString());
-//		for (StackTraceElement el : exp.getStackTrace()) {
-//			System.out.println(""+el);
-//		}
+	private ResultSet executeQueryWithTimeout(StatementDetails details) throws SQLException {
+		final Long timeoutTime = details.getTimeout();
+		QueryTimeout timer = new QueryTimeout(details, timeoutTime);
+
+		ResultSet queryResult = null;
 		try {
-			database.addFeatureToFixException(exp);
-		} catch (Exception ex) {
-			Exception ex1 = exp;
-			while (!ex1.getMessage().equals(ex.getMessage())) {
-				database.addFeatureToFixException(ex);
+			queryResult = executeQueryWithInternalStatement(details);
+			timer.noLongerRequired();
+			if (timer.queryTimedOut()) {
+				throw new SQLTimeoutException("Execution Timed Out");
 			}
-			throw new SQLException(ex);
+		} finally {
+			timer.noLongerRequired();
+		}
+		return queryResult;
+	}
+
+	private ResultSet executeQueryWithInternalStatement(StatementDetails details) throws SQLException {
+		return getInternalStatement().executeQuery(details.getSql());
+	}
+
+	private ResultSet addFeatureAndAttemptQueryAgain(StatementDetails details) throws SQLException, Exception, LoopDetectedInRecursiveSQL {
+		ResultSet executeQuery;
+		final Exception exp = details.getException();
+		final QueryIntention intent = details.getIntention();
+		if (!checkForBrokenConnection(exp)) {
+			try {
+				ResponseToException response = handleResponseFromFixingException(exp, intent, details);
+				if (response.equals(SKIPQUERY)) {
+					return null;
+				}
+			} catch (LoopDetectedInRecursiveSQL loop) {
+				throw loop;
+			} catch (Exception ex) {
+				if (intent.is(QueryIntention.CHECK_TABLE_EXISTS)) {
+					// Checking the table will generate exceptions that we don't need to investigate
+				} else if (details.isIgnoreExceptions()) {
+					// do nothing
+				} else {
+//				LOG.info("REPEATED EXCEPTIONS FROM: " + sql, exp);
+				}
+				Exception ex1 = exp;
+				while (!ex1.getMessage().equals(ex.getMessage())) {
+					ResponseToException response = handleResponseFromFixingException(exp, intent, details);
+					if (response.equals(ResponseToException.SKIPQUERY)) {
+						return null;
+					}
+				}
+				throw new SQLException(ex);
+			}
 		}
 		try {
-			executeQuery = getInternalStatement().executeQuery(string);
+			executeQuery = executeQueryWithTimeout(details);
 			return executeQuery;
 		} catch (SQLException exp2) {
 			if (exp.getMessage().equals(exp2.getMessage())) {
 				throw exp;
 			} else {
-				executeQuery = addFeatureAndAttemptQueryAgain(exp2, string);
+				final StatementDetails statementDetails = details.copy().withLabel("RETRYING FAILED SQL").withException(exp2);
+				executeQuery = addFeatureAndAttemptQueryAgain(statementDetails);
 				return executeQuery;
 			}
 		}
@@ -134,17 +180,16 @@ public class DBStatement implements Statement {
 	 * statement.
 	 *
 	 * @param string	string
-	 * <p style="color: #F90;">Support DBvolution at
-	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
-	 *
 	 * @return either (1) the row count for SQL Data Manipulation Language (DML)
 	 * statements or (2) 0 for SQL statements that return nothing 1 Database
 	 * exceptions may be thrown
 	 * @throws java.sql.SQLException java.sql.SQLException
 	 */
-	@Override
 	public int executeUpdate(String string) throws SQLException {
-		return getInternalStatement().executeUpdate(string);
+		database.printSQLIfRequested(string);
+		int executeUpdate = getInternalStatement().executeUpdate(string);
+
+		return executeUpdate;
 	}
 
 	/**
@@ -163,13 +208,29 @@ public class DBStatement implements Statement {
 		isClosed = true;
 		try {
 			database.unusedConnection(getConnection());
-			getInternalStatement().close();
-		} catch (Exception e) {
+		} catch (SQLException e) {
 			// Someone please tell me how you are supposed to cope 
 			// with an exception during the close method????????
-			log.warn("Exception occurred during close(): " + e.getMessage(), e);
-//			throw e;
-			e.printStackTrace(System.err);
+			LOG.warn("Exception occurred during close(): " + e.getMessage(), e);
+		}
+		closeInternalStatement();
+	}
+
+	private void closeInternalStatement() {
+		Statement statementToClose;
+		synchronized (this) {
+			statementToClose = internalStatement;
+			internalStatement = null;
+		}
+		if (statementToClose != null) {
+			try {
+				statementToClose.close();
+			} catch (SQLException e) {
+				// Someone please tell me how you are supposed to cope 
+				// with an exception during the close method????????
+				LOG.warn("Exception occurred during close(): No action required");
+				LOG.warn("Exception occurred during close(): " + e.getMessage(), e);
+			}
 		}
 	}
 
@@ -180,15 +241,12 @@ public class DBStatement implements Statement {
 	 * VARCHAR, NCHAR, NVARCHAR, LONGNVARCHAR and LONGVARCHAR columns. If the
 	 * limit is exceeded, the excess data is silently discarded.
 	 *
-	 * <p style="color: #F90;">Support DBvolution at
-	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
 	 *
 	 * @return the current column size limit for columns storing character and
 	 * binary values; zero means there is no limit. 1 Database exceptions may be
 	 * thrown
 	 * @throws java.sql.SQLException java.sql.SQLException
 	 */
-	@Override
 	public int getMaxFieldSize() throws SQLException {
 		return getInternalStatement().getMaxFieldSize();
 	}
@@ -207,7 +265,6 @@ public class DBStatement implements Statement {
 	 * @param i i
 	 * @throws java.sql.SQLException java.sql.SQLException
 	 */
-	@Override
 	public void setMaxFieldSize(int i) throws SQLException {
 		getInternalStatement().setMaxFieldSize(i);
 	}
@@ -217,15 +274,12 @@ public class DBStatement implements Statement {
 	 * this Statement object can contain. If this limit is exceeded, the excess
 	 * rows are silently dropped.
 	 *
-	 * <p style="color: #F90;">Support DBvolution at
-	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
 	 *
 	 * @return the current maximum number of rows for a <code>ResultSet</code>
 	 * object produced by this <code>Statement</code> object; zero means there is
 	 * no limit 1 Database exceptions may be thrown
 	 * @throws java.sql.SQLException java.sql.SQLException
 	 */
-	@Override
 	public int getMaxRows() throws SQLException {
 		return getInternalStatement().getMaxRows();
 	}
@@ -241,7 +295,6 @@ public class DBStatement implements Statement {
 	 * @param i i
 	 * @throws java.sql.SQLException java.sql.SQLException
 	 */
-	@Override
 	public void setMaxRows(int i) throws SQLException {
 		getInternalStatement().setMaxRows(i);
 	}
@@ -259,7 +312,6 @@ public class DBStatement implements Statement {
 	 * @param bln bln
 	 * @throws java.sql.SQLException java.sql.SQLException
 	 */
-	@Override
 	public void setEscapeProcessing(boolean bln) throws SQLException {
 		getInternalStatement().setEscapeProcessing(bln);
 	}
@@ -268,14 +320,11 @@ public class DBStatement implements Statement {
 	 * Retrieves the number of seconds the driver will wait for a Statement object
 	 * to execute. If the limit is exceeded, a SQLException is thrown.
 	 *
-	 * <p style="color: #F90;">Support DBvolution at
-	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
 	 *
 	 * @return the current query timeout limit in seconds; zero means there is no
 	 * limit 1 Database exceptions may be thrown
 	 * @throws java.sql.SQLException java.sql.SQLException
 	 */
-	@Override
 	public int getQueryTimeout() throws SQLException {
 		return getInternalStatement().getQueryTimeout();
 	}
@@ -291,27 +340,27 @@ public class DBStatement implements Statement {
 	 * 1 Database exceptions may be thrown
 	 *
 	 * @param i i
-	 * @throws java.sql.SQLException java.sql.SQLException
+	 * @throws java.sql.SQLException Database exceptions may be thrown
 	 */
-	@Override
 	public void setQueryTimeout(int i) throws SQLException {
 		getInternalStatement().setQueryTimeout(i);
 	}
 
 	/**
 	 * Cancels this Statement object if both the DBMS and driver support aborting
-	 * an SQL statement. This method can be used by one thread to cancel a
-	 * statement that is being executed by another thread.
+	 * an SQL statement.This method can be used by one thread to cancel a
+	 * statement that is being executed by another thread. 1 Database exceptions
+	 * may be thrown
 	 *
-	 * 1 Database exceptions may be thrown
-	 *
-	 * @throws java.sql.SQLException java.sql.SQLException
+	 * @throws SQLException Database exceptions may be thrown
 	 */
-	@Override
 	public synchronized void cancel() throws SQLException {
-		getInternalStatement().cancel();
-		if (database.getDefinition().willCloseConnectionOnStatementCancel()) {
-			replaceBrokenConnection();
+		try {
+			getInternalStatement().cancel();
+			if (database.getDefinition().willCloseConnectionOnStatementCancel()) {
+				replaceBrokenConnection();
+			}
+		} catch (SQLException | UnableToCreateDatabaseConnectionException | UnableToFindJDBCDriver ex) {
 		}
 	}
 
@@ -328,14 +377,26 @@ public class DBStatement implements Statement {
 	 * @throws UnableToCreateDatabaseConnectionException may be thrown if there is
 	 * an issue with connecting.
 	 * @throws UnableToFindJDBCDriver may be thrown if the JDBCDriver is not on
-	 * the class path. DBvolution includes several JDBCDrivers already but
-	 * Oracle and MS SQLserver, in particular, need to be added to the path if you
-	 * wish to work with those databases.
+	 * the class path. DBvolution includes several JDBCDrivers already but Oracle
+	 * and MS SQLserver, in particular, need to be added to the path if you wish
+	 * to work with those databases.
 	 */
 	protected synchronized void replaceBrokenConnection() throws SQLException, UnableToCreateDatabaseConnectionException, UnableToFindJDBCDriver {
-		database.discardConnection(connection);
-		connection = database.getConnection();
-		internalStatement = connection.createStatement();
+		try {
+			database.discardConnection(connection);
+			connection = database.getConnection();
+			if (internalStatement != null) {
+				try {
+					internalStatement.close();
+				} catch (SQLException exp) {
+					LOG.debug(this, exp);
+				}
+				internalStatement = null;
+				getInternalStatement();
+			}
+		} catch (SQLException sqlex) {
+			throw sqlex;
+		}
 	}
 
 	/**
@@ -348,14 +409,11 @@ public class DBStatement implements Statement {
 	 * (re)executed. This method may not be called on a closed Statement object;
 	 * doing so will cause an SQLException to be thrown.
 	 *
-	 * <p style="color: #F90;">Support DBvolution at
-	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
 	 *
 	 * @return the first <code>SQLWarning</code> object or <code>null</code> if
 	 * there are no warnings 1 Database exceptions may be thrown
 	 * @throws java.sql.SQLException java.sql.SQLException
 	 */
-	@Override
 	public SQLWarning getWarnings() throws SQLException {
 		return getInternalStatement().getWarnings();
 	}
@@ -369,7 +427,6 @@ public class DBStatement implements Statement {
 	 *
 	 * @throws java.sql.SQLException java.sql.SQLException
 	 */
-	@Override
 	public void clearWarnings() throws SQLException {
 		getInternalStatement().clearWarnings();
 	}
@@ -386,13 +443,9 @@ public class DBStatement implements Statement {
 	 * support updates, the cursor's SELECT statement should have the form SELECT
 	 * FOR UPDATE. If FOR UPDATE is not present, positioned updates may fail.
 	 *
-	 *
-	 * 1 Database exceptions may be thrown
-	 *
 	 * @param string string
 	 * @throws java.sql.SQLException java.sql.SQLException
 	 */
-	@Override
 	public void setCursorName(String string) throws SQLException {
 		getInternalStatement().setCursorName(string);
 	}
@@ -412,49 +465,165 @@ public class DBStatement implements Statement {
 	 * to retrieve the result, and getMoreResults to move to any subsequent
 	 * result(s).
 	 *
-	 * @param string	string
-	 * <p style="color: #F90;">Support DBvolution at
-	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
 	 *
-	 * @return <code>TRUE</code> if the first result is a <code>ResultSet</code>
-	 * object; <code>FALSE</code> if it is an update count or there are no results
-	 * 1 Database exceptions may be thrown
-	 * @throws java.sql.SQLException java.sql.SQLException
+	 * @param label the display name for this execution
+	 * @param queryIntention the expected outcome of this execution
+	 * @param sql the actual SQL to execute
+	 * @throws SQLException Database exceptions may be thrown
 	 */
-	@Override
-	public boolean execute(String string) throws SQLException {
-		final String logSQL = "EXECUTING: " + string;
-		database.printSQLIfRequested(logSQL);
-		log.debug(logSQL);
-		final boolean execute;
-		try {
-			execute = getInternalStatement().execute(string);
-		} catch (Exception exp) {
-			return addFeatureAndAttemptExecuteAgain(exp, string);
-		}
-		return execute;
+	public void execute(String label, QueryIntention queryIntention, String sql) throws SQLException {
+		execute(new StatementDetails(label, queryIntention, sql, this));
 	}
 
-	private boolean addFeatureAndAttemptExecuteAgain(Exception exp, String string) throws SQLException {
-		boolean executeQuery;
-		final String ln = System.getProperty("line.separator");
-//		System.out.println("Adding Feature for: " + exp.getMessage() + ln + exp.toString());
+	/**
+	 * Executes the given SQL statement, which may return multiple results.
+	 *
+	 * <p>
+	 * In some (uncommon) situations, a single SQL statement may return multiple
+	 * result sets and/or update counts. Normally you can ignore this unless you
+	 * are (1) executing a stored procedure that you know may return multiple
+	 * results or (2) you are dynamically executing an unknown SQL string.
+	 *
+	 * <p>
+	 * The execute method executes an SQL statement and indicates the form of the
+	 * first result. You must then use the methods getResultSet or getUpdateCount
+	 * to retrieve the result, and getMoreResults to move to any subsequent
+	 * result(s).
+	 *
+	 *
+	 * @param queryIntention the expected outcome of this execution
+	 * @param sql the actual SQL to execute
+	 * @throws SQLException Database exceptions may be thrown
+	 */
+	public void execute(QueryIntention queryIntention, String sql) throws SQLException {
+		execute(new StatementDetails(queryIntention.toString(), queryIntention, sql, this));
+	}
+
+	/**
+	 * Executes the given SQL statement, which may return multiple results.
+	 *
+	 * <p>
+	 * In some (uncommon) situations, a single SQL statement may return multiple
+	 * result sets and/or update counts. Normally you can ignore this unless you
+	 * are (1) executing a stored procedure that you know may return multiple
+	 * results or (2) you are dynamically executing an unknown SQL string.
+	 *
+	 * <p>
+	 * The execute method executes an SQL statement and indicates the form of the
+	 * first result. You must then use the methods getResultSet or getUpdateCount
+	 * to retrieve the result, and getMoreResults to move to any subsequent
+	 * result(s).
+	 *
+	 * @param details the full details of the query including the SQL to be
+	 * executed
+	 *
+	 * @throws SQLException Database exceptions may be thrown
+	 */
+	public void execute(StatementDetails details) throws SQLException {
+		executeWithRecovery(details);
+	}
+
+	private void executeWithRecovery(StatementDetails details) throws SQLException {
+		details.setDBStatement(this);
+		String sql = details.getSql();
+		final String logSQL = "EXECUTING on " + database.getLabel() + ": " + sql;
+		database.printSQLIfRequested(logSQL);
+		LOG.debug(logSQL);
 		try {
-			database.addFeatureToFixException(exp);
-		} catch (Exception ex) {
-			throw new SQLException(ex);
+			executeWithTimeout(details);
+		} catch (SQLException exp) {
+			StatementDetails statementDetails
+					= details.copy()
+							.withLabel("RETRY EXECUTE")
+							.withException(exp);
+			addFeatureAndAttemptExecuteAgain(statementDetails,new ArrayList<>(0));
 		}
+	}
+
+	private void executeWithTimeout(StatementDetails details) throws SQLException {
+		final Long timeoutTime = this.getTIMEOUT_IN_MILLISECONDS();
+		QueryTimeout timer = new QueryTimeout(details, timeoutTime);
+
 		try {
-			executeQuery = getInternalStatement().execute(string);
-			return executeQuery;
-		} catch (Exception exp2) {
-			if (!exp.getMessage().equals(exp2.getMessage())) {
-				executeQuery = addFeatureAndAttemptExecuteAgain(exp2, string);
-				return executeQuery;
-			} else {
-				throw new SQLException(exp);
+			executeOnInternalStatement(details);
+			timer.noLongerRequired();
+			if (timer.queryTimedOut()) {
+				throw new SQLTimeoutException("Execution Timed Out");
+			}
+		} finally {
+			timer.noLongerRequired();
+		}
+	}
+
+	private void executeOnInternalStatement(StatementDetails details) throws UnableToCreateDatabaseConnectionException, SQLException, UnableToFindJDBCDriver {
+		Statement stmt = getInternalStatement();
+		details.execute(stmt);
+	}
+
+	static final Regex DROP_INTENTION_MATCHER = Regex.startingAnywhere().literal("DROP").toRegex();
+	static final Regex DROP_EXCEPTION_MATCHER = Regex.startingAnywhere().beginCaseInsensitiveSection().anyOf("does not exist", "doesn't exist").endCaseInsensitiveSection().toRegex();
+
+	private void addFeatureAndAttemptExecuteAgain(StatementDetails details, List<String> previousExceptions) throws SQLException {
+		details.setDBStatement(this);
+		String sql = details.getSql();
+		Exception exp = details.getException();
+		QueryIntention intent = details.getIntention();
+		if (DROP_INTENTION_MATCHER.matchesWithinString(details.getIntention().name())
+				&& DROP_EXCEPTION_MATCHER.matchesWithinString(exp.getMessage())) {
+			// discard as we've tried to drop something that doesn't exist and that's ok
+			LOG.info("Attempted to drop an entity that doesn't exist - continuing: " + exp.getMessage());
+		} else {
+			if (!checkForBrokenConnection(exp)) {
+				try {
+					ResponseToException response = handleResponseFromFixingException(exp, intent, details);
+					if (response.equals(ResponseToException.SKIPQUERY)) {
+						return;
+					}
+				} catch (Exception ex) {
+					throw new SQLException("Failed To Add Support On " + database.getJdbcURL() + " For SQL: " + exp.getMessage() + " : Original Query: " + sql, ex);
+				}
+			}
+			try {
+				executeWithTimeout(details);
+      } catch (SQLException exp2) {
+        final String exp2GetMessage = exp2.getMessage();
+        final String exp2GetLocalizedMessage = exp2.getLocalizedMessage();
+				if (!previousExceptions.contains(exp2GetMessage)||!previousExceptions.contains(exp2GetLocalizedMessage)) {
+          previousExceptions.add(exp2GetMessage);
+          previousExceptions.add(exp2GetLocalizedMessage);
+          StatementDetails newDetails
+					= details.copy()
+							.withLabel("RETRY EXECUTE")
+							.withException(exp2);
+					addFeatureAndAttemptExecuteAgain(newDetails,previousExceptions);
+				} else {
+					throw new SQLException(exp);
+				}
 			}
 		}
+	}
+
+	public ResponseToException handleResponseFromFixingException(Exception exp, QueryIntention intent, StatementDetails details) throws Exception {
+		details.setDBStatement(this);
+		try {
+			ResponseToException response = database.addFeatureToFixException(exp, intent, details);
+			switch (response) {
+				case SKIPQUERY:
+					return SKIPQUERY;
+				case REQUERY:
+					return REQUERY;
+				case REPLACECONNECTION:
+					replaceBrokenConnection();
+					return REQUERY;
+				case EMULATE_RECURSIVE_QUERY:
+					throw new LoopDetectedInRecursiveSQL();
+				default:
+					break;
+			}
+		} catch (Exception exc) {
+			throw exc;
+		}
+		return NOT_HANDLED;
 	}
 
 	/**
@@ -463,15 +632,12 @@ public class DBStatement implements Statement {
 	 * <p>
 	 * This method should be called only once per result.
 	 *
-	 * <p style="color: #F90;">Support DBvolution at
-	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
 	 *
 	 * @return the current result as a <code>ResultSet</code> object or
 	 * <code>null</code> if the result is an update count or there are no more
 	 * results 1 Database exceptions may be thrown
 	 * @throws java.sql.SQLException java.sql.SQLException
 	 */
-	@Override
 	public ResultSet getResultSet() throws SQLException {
 		return getInternalStatement().getResultSet();
 	}
@@ -482,15 +648,12 @@ public class DBStatement implements Statement {
 	 * <p>
 	 * This method should be called only once per result.
 	 *
-	 * <p style="color: #F90;">Support DBvolution at
-	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
 	 *
 	 * @return the current result as an update count; -1 if the current result is
 	 * a <code>ResultSet</code> object or there are no more results. 1 Database
 	 * exceptions may be thrown
 	 * @throws java.sql.SQLException java.sql.SQLException
 	 */
-	@Override
 	public int getUpdateCount() throws SQLException {
 		return getInternalStatement().getUpdateCount();
 	}
@@ -507,15 +670,12 @@ public class DBStatement implements Statement {
 	 * (stmt.getUpdateCount() == -1))
 	 * </code>
 	 *
-	 * <p style="color: #F90;">Support DBvolution at
-	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
 	 *
 	 * @return true if the next result is a ResultSet object; false if it is an
 	 * update count or there are no more results 1 Database exceptions may be
 	 * thrown
 	 * @throws java.sql.SQLException java.sql.SQLException
 	 */
-	@Override
 	public boolean getMoreResults() throws SQLException {
 		return getInternalStatement().getMoreResults();
 	}
@@ -532,7 +692,6 @@ public class DBStatement implements Statement {
 	 * @param i i
 	 * @throws java.sql.SQLException java.sql.SQLException
 	 */
-	@Override
 	public void setFetchDirection(int i) throws SQLException {
 		getInternalStatement().setFetchDirection(i);
 	}
@@ -544,14 +703,11 @@ public class DBStatement implements Statement {
 	 * If this Statement object has not set a fetch direction by calling the
 	 * method setFetchDirection, the return value is implementation-specific.
 	 *
-	 * <p style="color: #F90;">Support DBvolution at
-	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
 	 *
 	 * @return the default fetch direction for result sets generated from this
 	 * Statement object 1 Database exceptions may be thrown
 	 * @throws java.sql.SQLException java.sql.SQLException
 	 */
-	@Override
 	public int getFetchDirection() throws SQLException {
 		return getInternalStatement().getFetchDirection();
 	}
@@ -570,7 +726,6 @@ public class DBStatement implements Statement {
 	 * @param i i
 	 * @throws java.sql.SQLException java.sql.SQLException
 	 */
-	@Override
 	public void setFetchSize(int i) throws SQLException {
 		getInternalStatement().setFetchSize(i);
 	}
@@ -582,8 +737,6 @@ public class DBStatement implements Statement {
 	 * If this Statement object has not set a fetch size by calling the method
 	 * setFetchSize, the return value is implementation-specific.
 	 *
-	 * <p style="color: #F90;">Support DBvolution at
-	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
 	 *
 	 * @return the default fetch size for result sets generated from this
 	 * Statement object
@@ -591,7 +744,6 @@ public class DBStatement implements Statement {
 	 * 1 Database exceptions may be thrown
 	 * @throws java.sql.SQLException java.sql.SQLException
 	 */
-	@Override
 	public int getFetchSize() throws SQLException {
 		return getInternalStatement().getFetchSize();
 	}
@@ -600,14 +752,11 @@ public class DBStatement implements Statement {
 	 * Retrieves the result set concurrency for ResultSet objects generated by
 	 * this Statement object.
 	 *
-	 * <p style="color: #F90;">Support DBvolution at
-	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
 	 *
 	 * @return either ResultSet.CONCUR_READ_ONLY or ResultSet.CONCUR_UPDATABLE 1
 	 * Database exceptions may be thrown
 	 * @throws java.sql.SQLException java.sql.SQLException
 	 */
-	@Override
 	public int getResultSetConcurrency() throws SQLException {
 		return getInternalStatement().getResultSetConcurrency();
 	}
@@ -616,15 +765,12 @@ public class DBStatement implements Statement {
 	 * Retrieves the result set type for ResultSet objects generated by this
 	 * Statement object.
 	 *
-	 * <p style="color: #F90;">Support DBvolution at
-	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
 	 *
 	 * @return one of ResultSet.TYPE_FORWARD_ONLY,
 	 * ResultSet.TYPE_SCROLL_INSENSITIVE, or ResultSet.TYPE_SCROLL_SENSITIVE 1
 	 * Database exceptions may be thrown
 	 * @throws java.sql.SQLException java.sql.SQLException
 	 */
-	@Override
 	public int getResultSetType() throws SQLException {
 		return getInternalStatement().getResultSetType();
 	}
@@ -640,10 +786,9 @@ public class DBStatement implements Statement {
 	 * @param string string
 	 * @throws java.sql.SQLException java.sql.SQLException
 	 */
-	@Override
 	public void addBatch(String string) throws SQLException {
+		localBatchList.add(string);
 		getInternalStatement().addBatch(string);
-		setBatchHasEntries(true);
 	}
 
 	/**
@@ -653,10 +798,9 @@ public class DBStatement implements Statement {
 	 *
 	 * @throws java.sql.SQLException java.sql.SQLException
 	 */
-	@Override
 	public void clearBatch() throws SQLException {
+		localBatchList.clear();
 		getInternalStatement().clearBatch();
-		setBatchHasEntries(false);
 	}
 
 	/**
@@ -690,8 +834,6 @@ public class DBStatement implements Statement {
 	 * continuing to process commands in a batch update after a
 	 * BatchUpdateException object has been thrown.
 	 *
-	 * <p style="color: #F90;">Support DBvolution at
-	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
 	 *
 	 * @return an array of update counts containing one element for each command
 	 * in the batch. The elements of the array are ordered according to the order
@@ -699,23 +841,22 @@ public class DBStatement implements Statement {
 	 * thrown
 	 * @throws java.sql.SQLException java.sql.SQLException
 	 */
-	@Override
 	public int[] executeBatch() throws SQLException {
+		if (database.isPrintSQLBeforeExecuting()) {
+			localBatchList.stream().forEach((t) -> database.printSQLIfRequested(t));
+		}
 		return getInternalStatement().executeBatch();
 	}
 
 	/**
 	 * Retrieves the Connection object that produced this Statement object.
 	 *
-	 * <p style="color: #F90;">Support DBvolution at
-	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
 	 *
 	 * @return the connection that produced this statement 1 Database exceptions
 	 * may be thrown
 	 * @throws java.sql.SQLException java.sql.SQLException
 	 */
-	@Override
-	public Connection getConnection() throws SQLException {
+	public DBConnection getConnection() throws SQLException {
 		return connection;
 	}
 
@@ -732,15 +873,11 @@ public class DBStatement implements Statement {
 	 * </code>
 	 *
 	 * @param i	i
-	 * <p style="color: #F90;">Support DBvolution at
-	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
-	 *
 	 * @return true if the next result is a ResultSet object; false if it is an
 	 * update count or there are no more results. 1 Database exceptions may be
 	 * thrown
 	 * @throws java.sql.SQLException java.sql.SQLException
 	 */
-	@Override
 	public boolean getMoreResults(int i) throws SQLException {
 		return getInternalStatement().getMoreResults();
 	}
@@ -752,15 +889,12 @@ public class DBStatement implements Statement {
 	 * If this Statement object did not generate any keys, an empty ResultSet
 	 * object is returned.
 	 *
-	 * <p style="color: #F90;">Support DBvolution at
-	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
 	 *
 	 * @return a ResultSet object containing the auto-generated key(s) generated
 	 * by the execution of this Statement object 1 Database exceptions may be
 	 * thrown
 	 * @throws java.sql.SQLException java.sql.SQLException
 	 */
-	@Override
 	public ResultSet getGeneratedKeys() throws SQLException {
 		return getInternalStatement().getGeneratedKeys();
 	}
@@ -776,16 +910,13 @@ public class DBStatement implements Statement {
 	 *
 	 * @param string string
 	 * @param i i
-	 * <p style="color: #F90;">Support DBvolution at
-	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
-	 *
 	 * @return either (1) the row count for SQL Data Manipulation Language (DML)
 	 * statements or (2) 0 for SQL statements that return nothing 1 Database
 	 * exceptions may be thrown
 	 * @throws java.sql.SQLException java.sql.SQLException
 	 */
-	@Override
 	public int executeUpdate(String string, int i) throws SQLException {
+		database.printSQLIfRequested(string);
 		return getInternalStatement().executeUpdate(string, i);
 	}
 
@@ -802,16 +933,13 @@ public class DBStatement implements Statement {
 	 *
 	 * @param string string
 	 * @param ints ints
-	 * <p style="color: #F90;">Support DBvolution at
-	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
-	 *
 	 * @return either (1) the row count for SQL Data Manipulation Language (DML)
 	 * statements or (2) 0 for SQL statements that return nothing 1 Database
 	 * exceptions may be thrown
 	 * @throws java.sql.SQLException java.sql.SQLException
 	 */
-	@Override
 	public int executeUpdate(String string, int[] ints) throws SQLException {
+		database.printSQLIfRequested(string);
 		return getInternalStatement().executeUpdate(string, ints);
 	}
 
@@ -828,143 +956,26 @@ public class DBStatement implements Statement {
 	 *
 	 * @param string string
 	 * @param strings strings
-	 * <p style="color: #F90;">Support DBvolution at
-	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
-	 *
 	 * @return either the row count for INSERT, UPDATE, or DELETE statements, or 0
 	 * for SQL statements that return nothing 1 Database exceptions may be thrown
 	 * @throws java.sql.SQLException java.sql.SQLException
 	 */
-	@Override
 	public int executeUpdate(String string, String[] strings) throws SQLException {
 		final String logSQL = "EXECUTING UPDATE: " + string;
 		database.printSQLIfRequested(logSQL);
-		log.debug(logSQL);
+		LOG.debug(logSQL);
 		return getInternalStatement().executeUpdate(string, strings);
-	}
-
-	/**
-	 * Executes the given SQL statement, which may return multiple results, and
-	 * signals the driver that any auto-generated keys should be made available
-	 * for retrieval.
-	 * <P>
-	 * The driver will ignore this signal if the SQL statement is not an INSERT
-	 * statement, or an SQL statement able to return auto-generated keys (the list
-	 * of such statements is vendor-specific). In some (uncommon) situations, a
-	 * single SQL statement may return multiple result sets and/or update counts.
-	 * Normally you can ignore this unless you are (1) executing a stored
-	 * procedure that you know may return multiple results or (2) you are
-	 * dynamically executing an unknown SQL string.
-	 * <P>
-	 * The execute method executes an SQL statement and indicates the form of the
-	 * first result. You must then use the methods getResultSet or getUpdateCount
-	 * to retrieve the result, and getMoreResults to move to any subsequent
-	 * result(s).
-	 *
-	 * @param string string
-	 * @param i i
-	 * <p style="color: #F90;">Support DBvolution at
-	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
-	 *
-	 * @return true if the first result is a ResultSet object; false if it is an
-	 * update count or there are no results. 1 Database exceptions may be thrown
-	 * @throws java.sql.SQLException java.sql.SQLException
-	 */
-	@Override
-	public boolean execute(String string, int i) throws SQLException {
-		final String logSQL = "EXECUTING: " + string;
-		database.printSQLIfRequested(logSQL);
-		log.debug(logSQL);
-		return getInternalStatement().execute(string, i);
-	}
-
-	/**
-	 * Executes the given SQL statement, which may return multiple results, and
-	 * signals the driver that the auto-generated keys indicated in the given
-	 * array should be made available for retrieval.
-	 * <P>
-	 * This array contains the indexes of the columns in the target table that
-	 * contain the auto-generated keys that should be made available. The driver
-	 * will ignore the array if the SQL statement is not an INSERT statement, or
-	 * an SQL statement able to return auto-generated keys (the list of such
-	 * statements is vendor-specific). Under some (uncommon) situations, a single
-	 * SQL statement may return multiple result sets and/or update counts.
-	 * Normally you can ignore this unless you are (1) executing a stored
-	 * procedure that you know may return multiple results or (2) you are
-	 * dynamically executing an unknown SQL string.
-	 * <P>
-	 * The execute method executes an SQL statement and indicates the form of the
-	 * first result. You must then use the methods getResultSet or getUpdateCount
-	 * to retrieve the result, and getMoreResults to move to any subsequent
-	 * result(s).
-	 *
-	 * @param string string
-	 * @param ints ints
-	 * <p style="color: #F90;">Support DBvolution at
-	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
-	 *
-	 * @return true if the first result is a ResultSet object; false if it is an
-	 * update count or there are no results 1 Database exceptions may be thrown
-	 * @throws java.sql.SQLException java.sql.SQLException
-	 */
-	@Override
-	public boolean execute(String string, int[] ints) throws SQLException {
-		final String logSQL = "EXECUTING: " + string;
-		database.printSQLIfRequested(logSQL);
-		log.debug(logSQL);
-		return getInternalStatement().execute(string, ints);
-	}
-
-	/**
-	 * Executes the given SQL statement, which may return multiple results, and
-	 * signals the driver that the auto-generated keys indicated in the given
-	 * array should be made available for retrieval.
-	 * <P>
-	 * This array contains the names of the columns in the target table that
-	 * contain the auto-generated keys that should be made available. The driver
-	 * will ignore the array if the SQL statement is not an INSERT statement, or
-	 * an SQL statement able to return auto-generated keys (the list of such
-	 * statements is vendor-specific). In some (uncommon) situations, a single SQL
-	 * statement may return multiple result sets and/or update counts. Normally
-	 * you can ignore this unless you are (1) executing a stored procedure that
-	 * you know may return multiple results or (2) you are dynamically executing
-	 * an unknown SQL string.
-	 * <P>
-	 * The execute method executes an SQL statement and indicates the form of the
-	 * first result. You must then use the methods getResultSet or getUpdateCount
-	 * to retrieve the result, and getMoreResults to move to any subsequent
-	 * result(s).
-	 *
-	 * @param string string
-	 * @param strings strings
-	 * <p style="color: #F90;">Support DBvolution at
-	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
-	 *
-	 * @return true if the next result is a ResultSet object; false if it is an
-	 * update count or there are no more results 1 Database exceptions may be
-	 * thrown
-	 * @throws java.sql.SQLException java.sql.SQLException
-	 */
-	@Override
-	public boolean execute(String string, String[] strings) throws SQLException {
-		final String logSQL = "EXECUTING: " + string;
-		database.printSQLIfRequested(logSQL);
-		log.debug(logSQL);
-		return getInternalStatement().execute(string, strings);
 	}
 
 	/**
 	 * Retrieves the result set holdability for ResultSet objects generated by
 	 * this Statement object.
 	 *
-	 * <p style="color: #F90;">Support DBvolution at
-	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
 	 *
 	 * @return either ResultSet.HOLD_CURSORS_OVER_COMMIT or
 	 * ResultSet.CLOSE_CURSORS_AT_COMMIT 1 Database exceptions may be thrown
 	 * @throws java.sql.SQLException java.sql.SQLException
 	 */
-	@Override
 	public int getResultSetHoldability() throws SQLException {
 		return getInternalStatement().getResultSetHoldability();
 	}
@@ -974,14 +985,11 @@ public class DBStatement implements Statement {
 	 * closed if the method close has been called on it, or if it is automatically
 	 * closed.
 	 *
-	 * <p style="color: #F90;">Support DBvolution at
-	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
 	 *
 	 * @return true if this Statement object is closed; false if it is still open
 	 * 1 Database exceptions may be thrown
 	 * @throws java.sql.SQLException java.sql.SQLException
 	 */
-	@Override
 	public boolean isClosed() throws SQLException {
 		if (database.getDefinition().supportsStatementIsClosed()) {
 			return getInternalStatement().isClosed();
@@ -994,13 +1002,13 @@ public class DBStatement implements Statement {
 	 * Requests that a Statement be pooled or not pooled.
 	 * <P>
 	 * The value specified is a hint to the statement pool implementation
-	 * indicating whether the applicaiton wants the statement to be pooled. It is
+	 * indicating whether the application wants the statement to be pooled. It is
 	 * up to the statement pool manager as to whether the hint is used. The
-	 * poolable value of a statement is applicable to both internal statement
+	 * pool-able value of a statement is applicable to both internal statement
 	 * caches implemented by the driver and external statement caches implemented
 	 * by application servers and other applications.
 	 * <P>
-	 * By default, a Statement is not poolable when created, and a
+	 * By default, a Statement is not pool-able when created, and a
 	 * PreparedStatement and CallableStatement are poolable when created.
 	 *
 	 *
@@ -1009,7 +1017,6 @@ public class DBStatement implements Statement {
 	 * @param bln bln
 	 * @throws java.sql.SQLException java.sql.SQLException
 	 */
-	@Override
 	public void setPoolable(boolean bln) throws SQLException {
 		getInternalStatement().setPoolable(bln);
 	}
@@ -1017,15 +1024,12 @@ public class DBStatement implements Statement {
 	/**
 	 * Returns a value indicating whether the Statement is poolable or not.
 	 *
-	 * <p style="color: #F90;">Support DBvolution at
-	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
 	 *
 	 * @return true if the Statement is poolable; false otherwise
 	 *
 	 * 1 Database exceptions may be thrown
 	 * @throws java.sql.SQLException java.sql.SQLException
 	 */
-	@Override
 	public boolean isPoolable() throws SQLException {
 		return getInternalStatement().isPoolable();
 	}
@@ -1044,14 +1048,10 @@ public class DBStatement implements Statement {
 	 *
 	 * @param iface A Class defining an interface that the result must implement.
 	 * @param <T> the required interface.
-	 * <p style="color: #F90;">Support DBvolution at
-	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
-	 *
 	 * @return an object that implements the interface. May be a proxy for the
 	 * actual implementing object. 1 Database exceptions may be thrown
 	 * @throws java.sql.SQLException java.sql.SQLException
 	 */
-	@Override
 	public <T> T unwrap(Class<T> iface) throws SQLException {
 		return getInternalStatement().unwrap(iface);
 	}
@@ -1069,34 +1069,34 @@ public class DBStatement implements Statement {
 	 * with the same argument should succeed.
 	 *
 	 * @param iface a Class defining an interface.
-	 * <p style="color: #F90;">Support DBvolution at
-	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
-	 *
 	 * @return true if this implements the interface or directly or indirectly
 	 * wraps an object that does.
 	 * @throws java.sql.SQLException if an error occurs while determining whether
 	 * this is a wrapper for an object with the given interface.
 	 * @since 1.6
 	 */
-	@Override
 	public boolean isWrapperFor(Class<?> iface) throws SQLException {
 		return getInternalStatement().isWrapperFor(iface);
-	}
-
-	private void setBatchHasEntries(boolean b) {
-		batchHasEntries = b;
 	}
 
 	/**
 	 * Indicates that a batch has been added.
 	 *
-	 * <p style="color: #F90;">Support DBvolution at
-	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
 	 *
 	 * @return TRUE if the batch has un-executed entries, otherwise FALSE.
 	 */
 	public boolean getBatchHasEntries() {
-		return batchHasEntries;
+		return !getBatchIsEmpty();
+	}
+
+	/**
+	 * Indicates that a batch has been added.
+	 *
+	 *
+	 * @return TRUE if the batch has un-executed entries, otherwise FALSE.
+	 */
+	public boolean getBatchIsEmpty() {
+		return localBatchList.isEmpty();
 	}
 
 	/**
@@ -1107,36 +1107,90 @@ public class DBStatement implements Statement {
 	 * @throws java.sql.SQLException java.sql.SQLException
 	 */
 	public void closeOnCompletion() throws SQLException {
-		throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+		throw new UnsupportedOperationException("DBStatement does not support closeOnCompletion() yet."); //To change body of generated methods, choose Tools | Templates.
 	}
 
 	/**
 	 * Unsupported.
 	 *
-	 * <p style="color: #F90;">Support DBvolution at
-	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
 	 *
 	 * @return unsupported 1 Database exceptions may be thrown
 	 * @throws java.sql.SQLException java.sql.SQLException
 	 */
 	public boolean isCloseOnCompletion() throws SQLException {
-		throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+		throw new UnsupportedOperationException("DBStatement does not support closeOnCompletion() yet."); //To change body of generated methods, choose Tools | Templates.
 	}
 
 	/**
-	 * <p style="color: #F90;">Support DBvolution at
-	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
 	 *
 	 * @return the internalStatement
+	 * @throws java.sql.SQLException database errors
 	 */
-	protected Statement getInternalStatement() {
-		return internalStatement;
+	protected synchronized Statement getInternalStatement() throws SQLException {
+		if (connection == null) {
+			replaceBrokenConnection();
+		}
+		if (connection.isClosed()) {
+			replaceBrokenConnection();
+		}
+		if (this.internalStatement == null) {
+			this.setInternalStatement(connection.getInternalStatement());
+		}
+		return this.internalStatement;
 	}
 
 	/**
 	 * @param realStatement the internalStatement to set
 	 */
-	protected void setInternalStatement(Statement realStatement) {
+	protected synchronized void setInternalStatement(Statement realStatement) {
 		this.internalStatement = realStatement;
+	}
+//Could not create connection to database server
+	private static final PartialRegex COULDNT_CREATE_CONNECTION_REGEX = Regex.empty()
+			.literalCaseInsensitive("create").anyCharacter().zeroOrMore().literalCaseInsensitive("connection");
+	private static final PartialRegex CONNECTION_FAILED_REGEX = Regex.empty()
+			.literalCaseInsensitive("connection").anyCharacter().optionalMany().literalCaseInsensitive("failed");
+	private static final PartialRegex CONNECTION_BROKEN_REGEX = Regex.empty()
+			.literalCaseInsensitive("connection").anyCharacter().optionalMany().literalCaseInsensitive("broken");
+	private static final PartialRegex CONNECTION_CLOSED_REGEX = Regex.empty()
+			.literalCaseInsensitive("connection").anyCharacter().optionalMany().literalCaseInsensitive("closed");
+	private static final PartialRegex CONNECTION_RESET_REGEX = Regex.empty()
+			.literalCaseInsensitive("connection").anyCharacter().optionalMany().literalCaseInsensitive("reset");
+	private static final PartialRegex STATEMENT_BROKEN_REGEX = Regex.empty()
+			.literalCaseInsensitive("statement").anyCharacter().optionalMany().literalCaseInsensitive("broken");
+	private static final PartialRegex STATEMENT_CLOSED_REGEX = Regex.empty()
+			.literalCaseInsensitive("statement").anyCharacter().optionalMany().literalCaseInsensitive("closed");
+	private static final PartialRegex INSUFFICIENT_MEMORY_REGEX = Regex.empty()
+			.literalCaseInsensitive("There is insufficient system memory in resource pool ")
+			.charactersWrappedBy('\'')
+			.literalCaseInsensitive(" to run this query.");
+	private static final Regex ALL_KNOWN_ERRORS = Regex.startOrGroup()
+			.add(CONNECTION_BROKEN_REGEX)
+			.add(CONNECTION_CLOSED_REGEX)
+			.add(CONNECTION_FAILED_REGEX)
+			.add(CONNECTION_RESET_REGEX)
+			.add(COULDNT_CREATE_CONNECTION_REGEX)
+			.add(INSUFFICIENT_MEMORY_REGEX)
+			.add(STATEMENT_BROKEN_REGEX)
+			.add(STATEMENT_CLOSED_REGEX)
+			.endOrGroup().toRegex();
+
+	private boolean checkForBrokenConnection(Exception originalExc) throws SQLException {
+		Throwable exp = originalExc;
+		while (exp != null) {
+			String message = exp.getMessage();
+			if (StringCheck.isNotEmptyNorNull(message)) {
+				if (ALL_KNOWN_ERRORS.matchesWithinString(message)) {
+					replaceBrokenConnection();
+					return true;
+				}
+			}
+			exp = exp.getCause();
+		}
+		return false;
+	}
+
+	private Long getTIMEOUT_IN_MILLISECONDS() {
+		return TIMEOUT_IN_MILLISECONDS;
 	}
 }

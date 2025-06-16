@@ -2,12 +2,12 @@ package nz.co.gregs.dbvolution.internal.properties;
 
 import static nz.co.gregs.dbvolution.internal.properties.PropertyMatchers.*;
 import static org.hamcrest.Matchers.*;
-import static org.junit.Assert.*;
+import static org.hamcrest.MatcherAssert.assertThat;
 
 import java.sql.SQLException;
 import java.util.List;
 
-import nz.co.gregs.dbvolution.DBDatabase;
+import nz.co.gregs.dbvolution.databases.DBDatabase;
 import nz.co.gregs.dbvolution.DBQuery;
 import nz.co.gregs.dbvolution.DBRow;
 import nz.co.gregs.dbvolution.annotations.DBAdaptType;
@@ -35,18 +35,14 @@ public class TypeAdaptorTest {
 
 	@Before
 	public void setup() throws SQLException {
-		this.db = new H2MemoryDB("dbvolutionTest", "", "", false);
-		this.db.setPrintSQLBeforeExecuting(false);
+		this.db = H2MemoryDB.createANewRandomDatabase();
+//		this.db = new H2MemoryDB("dbvolutionTest", "", "", false);
 
 		db.preventDroppingOfTables(false);
 		db.dropTableNoExceptions(new CustomerWithDBInteger());
 		// create tables and add standard records
 		db.createTable(new CustomerWithDBInteger());
 
-//		System.out.println("Threads:");
-//		for(Thread thread: Thread.getAllStackTraces().keySet()) {
-//			System.out.println("  "+thread.getId()+": "+thread.getName());
-//		}
 		CustomerWithDBInteger c = new CustomerWithDBInteger();
 		c.uid.setValue(23);
 		c.year.setValue(2013);
@@ -56,13 +52,10 @@ public class TypeAdaptorTest {
 		c.uid.setValue(22);
 		c.year.setValue(2012);
 		db.insert(c);
-
-		this.db.setPrintSQLBeforeExecuting(true);
 	}
 
 	@After
 	public void tearDown() throws Exception {
-		db.setPrintSQLBeforeExecuting(false);
 		db.preventDroppingOfTables(false);
 		db.dropTable(new CustomerWithDBInteger());
 		try {
@@ -111,7 +104,7 @@ public class TypeAdaptorTest {
 		query.year.permittedRange("25", "3000");
 
 		List<CustomerWithDBStringIntegerTypeAdaptor> rows = db.get(query);
-		List<String> whereClauses = query.getWhereClausesWithoutAliases(db);
+		List<String> whereClauses = query.getWhereClausesWithoutAliases(db.getDefinition());
 		String allClauses = "";
 		for (String clause : whereClauses) {
 			allClauses += " and " + clause;
@@ -127,7 +120,7 @@ public class TypeAdaptorTest {
 		exemplar.year = null;
 
 		DBQuery query = db.getDBQuery(exemplar);
-//        DBQuery query = DBQuery.getInstance(db, exemplar);
+//        DBQuery query = DBQuery.getDatabaseInstance(db, exemplar);
 		query.setBlankQueryAllowed(true);
 
 		List<CustomerWithStringIntegerTypeAdaptor> rows = query.getAllInstancesOf(exemplar);
@@ -155,6 +148,7 @@ public class TypeAdaptorTest {
 		CustomerWithDBInteger q = new CustomerWithDBInteger();
 		q.uid.permittedValues(50);
 		List<CustomerWithDBInteger> rows = db.get(q);
+
 		assertThat(rows.size(), is(1));
 		assertThat(rows.get(0).uid.getValue().intValue(), is(50));
 		assertThat(rows.get(0).year.getValue().intValue(), is(2050));

@@ -1,5 +1,6 @@
 package nz.co.gregs.dbvolution.internal.properties;
 
+import java.io.Serializable;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.lang.reflect.WildcardType;
@@ -21,13 +22,15 @@ import nz.co.gregs.dbvolution.exceptions.InvalidDeclaredTypeException;
  *
  * @author Malcolm Lett
  */
-class EnumTypeHandler {
+class EnumTypeHandler<BASETYPE> implements Serializable{
+
+	private static final long serialVersionUID = 1l;
 
 	private final Class<? extends Enum<?>> enumType; // null if not present on property
 	private final Class<?> enumLiteralValueType; // null if not present or not able to be inferred
 
 	@SuppressWarnings("unchecked")
-	EnumTypeHandler(JavaProperty javaProperty, ColumnHandler columnHandler) {
+	EnumTypeHandler(JavaProperty<BASETYPE> javaProperty, ColumnHandler<?> columnHandler) {
 		Type type = javaProperty.genericType();
 		Class<?> propertyClass = classOf(type);
 		Class<? extends Enum<?>> identifiedEnumType = null;

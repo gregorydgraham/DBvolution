@@ -7,14 +7,14 @@ package nz.co.gregs.dbvolution.datatypes;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import nz.co.gregs.dbvolution.DBDatabase;
+import nz.co.gregs.dbvolution.DBReport;
+import nz.co.gregs.dbvolution.DBRow;
+import nz.co.gregs.dbvolution.databases.definitions.DBDefinition;
+import nz.co.gregs.dbvolution.expressions.IntegerExpression;
 import nz.co.gregs.dbvolution.expressions.NumberExpression;
-import nz.co.gregs.dbvolution.internal.properties.PropertyWrapperDefinition;
+import nz.co.gregs.dbvolution.expressions.SimpleNumericExpression;
 
 /**
- *
- * <p style="color: #F90;">Support DBvolution at
- * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
  *
  * @author gregorygraham
  */
@@ -22,76 +22,165 @@ public class DBNumberStatistics extends DBNumber {
 
 	private static final long serialVersionUID = 1;
 
-	protected NumberExpression originalExpression;
-	protected final DBNumber numberProxy = new DBNumber();
-	protected Number minNumber;
-	protected Number maxNumber;
-	protected Number medianNumber;
-	protected Number averageNumber;
-	protected Number firstQuartileNumber;
-	protected Number thirdQuartileNumber;
-	protected Number countOfRows;
+	private NumberExpression originalExpression;
+	private final DBNumber numberProxy = new DBNumber();
+	private Number minNumber;
+	private Number maxNumber;
+	private Number medianNumber;
+	private Number averageNumber;
+	private Number stdDev;
+	private Number firstQuartileNumber;
+	private Number thirdQuartileNumber;
+	private Number countOfRows;
 	private NumberExpression averageExpression;
 	private NumberExpression maxExpr;
 	private NumberExpression minExpr;
 	private NumberExpression sumExpr;
-	private NumberExpression countExpr;
+	private IntegerExpression countExpr;
+	private NumberExpression stdDevExpression;
 	private Number sumNumber;
 
+	/**
+	 * The default constructor for DBNumberStatistics.
+	 *
+	 * <P>
+	 * Creates an unset undefined DBNumber object.
+	 *
+	 * <p>
+	 * Use {@link #DBNumberStatistics(nz.co.gregs.dbvolution.expressions.NumberExpression)
+	 * } instead.
+	 *
+	 */
 	public DBNumberStatistics() {
+		super();
 	}
 
+	/**
+	 * Creates a column expression with a statistics result from the expression
+	 * provided.
+	 *
+	 * <p>
+	 * Used in {@link DBReport}, and some {@link DBRow}, sub-classes to derive
+	 * data from the database prior to retrieval.
+	 *
+	 * @param numberExpressionToGenerateStatsFrom numberExpression
+	 */
 	public DBNumberStatistics(NumberExpression numberExpressionToGenerateStatsFrom) {
 		super();
-		averageExpression = numberExpressionToGenerateStatsFrom.sum().dividedBy(NumberExpression.countAll());
-		maxExpr=	numberExpressionToGenerateStatsFrom.max();
-		minExpr=	numberExpressionToGenerateStatsFrom.min();
-		sumExpr=	numberExpressionToGenerateStatsFrom.sum();
-		countExpr= NumberExpression.countAll();
+		if (numberExpressionToGenerateStatsFrom != null) {
+			averageExpression = numberExpressionToGenerateStatsFrom.sum().dividedBy(numberExpressionToGenerateStatsFrom.count());
+			maxExpr = numberExpressionToGenerateStatsFrom.max();
+			minExpr = numberExpressionToGenerateStatsFrom.min();
+			sumExpr = numberExpressionToGenerateStatsFrom.sum();
+			countExpr = IntegerExpression.countAll();
+			stdDevExpression = numberExpressionToGenerateStatsFrom.stddev();
 
-		this.setColumnExpression(new NumberExpression[]{
-			averageExpression,
-			maxExpr,
-			minExpr,
-			sumExpr,
-			countExpr
-		});
-		this.originalExpression = numberExpressionToGenerateStatsFrom;
-
+			this.setColumnExpression(new SimpleNumericExpression<?, ?, ?>[]{
+				averageExpression,
+				maxExpr,
+				minExpr,
+				sumExpr,
+				countExpr,
+				stdDevExpression
+			});
+			this.originalExpression = numberExpressionToGenerateStatsFrom;
+		}
 	}
 
+	/**
+	 * Creates a column expression with a statistics result from the expression
+	 * provided.
+	 *
+	 * <p>
+	 * Used in {@link DBReport}, and some {@link DBRow}, sub-classes to derive
+	 * data from the database prior to retrieval.
+	 *
+	 * @param numberExpressionToGenerateStatsFrom numberExpression
+	 */
+	public DBNumberStatistics(IntegerExpression numberExpressionToGenerateStatsFrom) {
+		this(numberExpressionToGenerateStatsFrom.numberResult());
+	}
+
+	/**
+	 * Count of the rows included in this set of statistics
+	 *
+	 * @return the size of the statistics collection
+	 */
 	public Number count() {
 		return this.countOfRows;
 	}
 
+	/**
+	 * Returns the sum of all the numbers in this group.
+	 *
+	 * @return the sum of all values in this grouping
+	 */
 	public Number sum() {
 		return this.sumNumber;
 	}
 
+	/**
+	 *
+	 *
+	 * @return the minimum (smallest) value in this grouping
+	 */
 	public Number min() {
 		return this.minNumber;
 	}
 
+	/**
+	 *
+	 *
+	 * @return the maximum (largest) value in this grouping
+	 */
 	public Number max() {
 		return this.maxNumber;
 	}
 
+	/**
+	 * The middle term in the grouping.
+	 *
+	 *
+	 * @return the uniqueRanking value in this grouping
+	 */
 	public Number median() {
 		return this.medianNumber;
 	}
 
+	/**
+	 * The average value of the grouping.
+	 *
+	 *
+	 * @return the average value of the grouping
+	 */
 	public Number average() {
 		return this.averageNumber;
 	}
 
+	/**
+	 *
+	 *
+	 * @return the middle number between the uniqueRanking and the smallest value.
+	 */
 	public Number firstQuartile() {
 		return this.firstQuartileNumber;
 	}
 
+	/**
+	 *
+	 *
+	 * @return the middle number between the uniqueRanking and the largest value.
+	 */
 	public Number thirdQuartile() {
 		return this.thirdQuartileNumber;
 	}
 
+	/**
+	 * The middle term in the grouping.
+	 *
+	 *
+	 * @return the uniqueRanking value in this grouping
+	 */
 	public Number secondQuartile() {
 		return this.medianNumber;
 	}
@@ -108,21 +197,15 @@ public class DBNumberStatistics extends DBNumber {
 
 	@Override
 	public DBNumberStatistics copy() {
-		DBNumberStatistics copy = (DBNumberStatistics) super.copy();
-		copy.averageNumber = this.averageNumber;
-		copy.countOfRows = this.countOfRows;
-		copy.sumNumber = this.sumNumber;
-		copy.firstQuartileNumber = this.firstQuartileNumber;
-		copy.maxNumber = this.maxNumber;
-		copy.medianNumber = this.medianNumber;
-		copy.minNumber = this.minNumber;
-		copy.thirdQuartileNumber = this.thirdQuartileNumber;
-		copy.originalExpression = this.originalExpression;
-		return copy;
+		if (originalExpression == null) {
+			return new DBNumberStatistics();
+		} else {
+			return new DBNumberStatistics(originalExpression.copy());
+		}
 	}
 
 	@Override
-	protected Number getFromResultSet(DBDatabase database, ResultSet resultSet, String fullColumnName) throws SQLException {
+	protected Number getFromResultSet(DBDefinition database, ResultSet resultSet, String fullColumnName) throws SQLException {
 		try {
 			return resultSet.getBigDecimal(fullColumnName);
 		} catch (SQLException ex) {
@@ -138,13 +221,35 @@ public class DBNumberStatistics extends DBNumber {
 		}
 	}
 
+	protected Number getFromResultSet(DBDefinition database, ResultSet resultSet, String fullColumnName, int offset) throws SQLException {
+		int columnIndex = resultSet.findColumn(fullColumnName) + offset;
+		try {
+			return resultSet.getBigDecimal(columnIndex);
+		} catch (SQLException ex) {
+			try {
+				return resultSet.getDouble(columnIndex);
+			} catch (SQLException ex2) {
+				try {
+					return resultSet.getLong(columnIndex);
+				} catch (SQLException ex3) {
+					return null;
+				}
+			}
+		}
+	}
+
 	@Override
-	public void setFromResultSet(DBDatabase database, ResultSet resultSet, String resultSetColumnName) throws SQLException {
+	public DBNumber getQueryableDatatypeForExpressionValue() {
+		return new DBNumberStatistics();
+	}
+
+	@Override
+	public void setFromResultSet(DBDefinition database, ResultSet resultSet, String resultSetColumnName) throws SQLException {
 		removeConstraints();
 		if (resultSet == null || resultSetColumnName == null) {
 			this.setToNull();
 		} else {
-			Object dbValue;
+			Number dbValue;
 			try {
 				dbValue = getFromResultSet(database, resultSet, resultSetColumnName);
 				if (resultSet.wasNull()) {
@@ -157,18 +262,27 @@ public class DBNumberStatistics extends DBNumber {
 			if (dbValue == null) {
 				this.setToNull(database);
 			} else {
-				PropertyWrapperDefinition propertyWrapperDefinition = getPropertyWrapperDefinition();
-				if (propertyWrapperDefinition!=null && propertyWrapperDefinition.allColumnAspects != null) {
-					final String averageColumnAlias = propertyWrapperDefinition.allColumnAspects.get(0).columnAlias;
-					String maxColumnAlias = propertyWrapperDefinition.allColumnAspects.get(1).columnAlias;
-					String minColumnAlias = propertyWrapperDefinition.allColumnAspects.get(2).columnAlias;
-					String sumColumnAlias = propertyWrapperDefinition.allColumnAspects.get(3).columnAlias;
-					String countColumnAlias = propertyWrapperDefinition.allColumnAspects.get(4).columnAlias;
+				var propertyWrapperDefinition = getPropertyWrapperDefinition();
+				if (propertyWrapperDefinition != null && propertyWrapperDefinition.allColumnAspects != null) {
+					final String averageColumnAlias = propertyWrapperDefinition.allColumnAspects.get(0).getColumnAlias();
+					final String maxColumnAlias = propertyWrapperDefinition.allColumnAspects.get(1).getColumnAlias();
+					final String minColumnAlias = propertyWrapperDefinition.allColumnAspects.get(2).getColumnAlias();
+					final String sumColumnAlias = propertyWrapperDefinition.allColumnAspects.get(3).getColumnAlias();
+					final String countColumnAlias = propertyWrapperDefinition.allColumnAspects.get(4).getColumnAlias();
+					final String stdDevColumnAlias = propertyWrapperDefinition.allColumnAspects.get(5).getColumnAlias();
 					averageNumber = getFromResultSet(database, resultSet, averageColumnAlias);
+					stdDev = getFromResultSet(database, resultSet, stdDevColumnAlias);
 					maxNumber = getFromResultSet(database, resultSet, maxColumnAlias);
 					minNumber = getFromResultSet(database, resultSet, minColumnAlias);
 					sumNumber = getFromResultSet(database, resultSet, sumColumnAlias);
 					countOfRows = getFromResultSet(database, resultSet, countColumnAlias);
+				} else {
+					averageNumber = getFromResultSet(database, resultSet, resultSetColumnName, 0);
+					maxNumber = getFromResultSet(database, resultSet, resultSetColumnName, 1);
+					minNumber = getFromResultSet(database, resultSet, resultSetColumnName, 2);
+					sumNumber = getFromResultSet(database, resultSet, resultSetColumnName, 3);
+					countOfRows = getFromResultSet(database, resultSet, resultSetColumnName, 4);
+					stdDev = getFromResultSet(database, resultSet, resultSetColumnName, 5);
 				}
 				this.setLiteralValue(dbValue);
 			}
@@ -177,12 +291,14 @@ public class DBNumberStatistics extends DBNumber {
 		setDefined(true);
 		propertyWrapperDefn = null;
 	}
-	
 
 	@Override
 	public String toString() {
-		return (averageNumber == null ? "" : "count="+countOfRows+"sum="+sumNumber+"ave="+averageNumber+":max="+maxNumber+":min="+minNumber);
+		return (averageNumber == null ? "" : "count=" + countOfRows + "sum=" + sumNumber + "ave=" + averageNumber + "stdDev=" + stdDev + ":max=" + maxNumber + ":min=" + minNumber + ":stdev=" + stdDev);
 	}
-	
+
+	public Number standardDeviation() {
+		return this.stdDev;
+	}
 
 }

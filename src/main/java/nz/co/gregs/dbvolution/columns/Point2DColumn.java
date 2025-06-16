@@ -15,11 +15,14 @@
  */
 package nz.co.gregs.dbvolution.columns;
 
+import com.vividsolutions.jts.geom.Point;
+import java.util.Objects;
 import java.util.Set;
-import nz.co.gregs.dbvolution.DBDatabase;
 import nz.co.gregs.dbvolution.DBRow;
+import nz.co.gregs.dbvolution.databases.definitions.DBDefinition;
 import nz.co.gregs.dbvolution.datatypes.spatial2D.DBPoint2D;
-import nz.co.gregs.dbvolution.expressions.Point2DExpression;
+import nz.co.gregs.dbvolution.expressions.SortProvider;
+import nz.co.gregs.dbvolution.expressions.spatial2D.Point2DExpression;
 import nz.co.gregs.dbvolution.query.RowDefinition;
 
 /**
@@ -31,6 +34,8 @@ import nz.co.gregs.dbvolution.query.RowDefinition;
  * @author Gregory Graham
  */
 public class Point2DColumn extends Point2DExpression implements ColumnProvider {
+
+	private final static long serialVersionUID = 1l;
 
 	private final AbstractColumn column;
 
@@ -45,6 +50,10 @@ public class Point2DColumn extends Point2DExpression implements ColumnProvider {
 		this.column = new AbstractColumn(row, field);
 	}
 
+	public Point2DColumn(RowDefinition row, Point field) {
+		this.column = new AbstractColumn(row, field);
+	}
+
 	@Override
 	public AbstractColumn getColumn() {
 		return column;
@@ -56,7 +65,7 @@ public class Point2DColumn extends Point2DExpression implements ColumnProvider {
 	}
 
 	@Override
-	public String toSQLString(DBDatabase db) {
+	public String toSQLString(DBDefinition db) {
 		return column.toSQLString(db);
 	}
 
@@ -69,4 +78,39 @@ public class Point2DColumn extends Point2DExpression implements ColumnProvider {
 	public boolean isPurelyFunctional() {
 		return column.isPurelyFunctional();
 	}
+
+	@Override
+	public boolean isAggregator() {
+		return column.isAggregator();
+	}
+
+	@Override
+	public boolean equals(Object other) {
+		if (other instanceof Point2DColumn) {
+			return column.equals(((Point2DColumn) other).column);
+		} else {
+			return false;
+		}
+	}
+
+	@Override
+	public int hashCode() {
+		int hash = 5;
+		hash = 41 * hash + Objects.hashCode(this.column);
+		return hash;
+	}
+
+	@Override
+	public synchronized Point2DColumn copy() {
+		final AbstractColumn col = getColumn();
+		final DBRow row = col.getInstanceOfRow();
+		Point2DColumn newInstance = new Point2DColumn(row, (DBPoint2D) col.getAppropriateQDTFromRow(row));
+		return newInstance;
+	}
+
+	@Override
+	public SortProvider.Column getSortProvider() {
+		return column.getSortProvider();
+	}
+
 }

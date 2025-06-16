@@ -15,13 +15,14 @@
  */
 package nz.co.gregs.dbvolution.operators;
 
-import nz.co.gregs.dbvolution.DBDatabase;
+import nz.co.gregs.dbvolution.databases.definitions.DBDefinition;
 import nz.co.gregs.dbvolution.datatypes.QueryableDatatypeSyncer;
 import nz.co.gregs.dbvolution.expressions.BooleanExpression;
 import nz.co.gregs.dbvolution.expressions.DBExpression;
 
 /**
- * Provides a framework on which to build operators that are combinations of operators.
+ * Provides a framework on which to build operators that are combinations of
+ * operators.
  *
  * <p style="color: #F90;">Support DBvolution at
  * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
@@ -40,7 +41,7 @@ abstract class DBMetaOperator extends DBOperator {
 	}
 
 	@Override
-	public BooleanExpression generateWhereExpression(DBDatabase db, DBExpression column) {
+	public BooleanExpression generateWhereExpression(DBDefinition db, DBExpression column) {
 		return operator.generateWhereExpression(db, column);
 	}
 

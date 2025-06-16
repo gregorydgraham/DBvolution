@@ -16,9 +16,9 @@
 package nz.co.gregs.dbvolution.expressions;
 
 import java.util.Set;
-import nz.co.gregs.dbvolution.DBDatabase;
 import nz.co.gregs.dbvolution.DBReport;
 import nz.co.gregs.dbvolution.DBRow;
+import nz.co.gregs.dbvolution.databases.DBDatabase;
 import nz.co.gregs.dbvolution.datatypes.QueryableDatatype;
 
 /**
@@ -31,7 +31,7 @@ import nz.co.gregs.dbvolution.datatypes.QueryableDatatype;
  *
  * <p>
  * The actual snippet is produced by the
- * {@link #toSQLString(nz.co.gregs.dbvolution.DBDatabase) toSQString method}.
+ * {@link #toSQLString(nz.co.gregs.dbvolution.databases.definitions.DBDefinition) toSQString method}.
  *
  * <p>
  * The {@link #copy() copy() method} allows DBvolution to maintain immutability.
@@ -41,7 +41,7 @@ import nz.co.gregs.dbvolution.datatypes.QueryableDatatype;
  *
  * @author Gregory Graham
  */
-public interface DBExpression {
+public interface DBExpression extends HasSQLString {
 
 	/**
 	 * Provides a blank instance of the {@link QueryableDatatype} used by this
@@ -61,27 +61,7 @@ public interface DBExpression {
 	 * @return the QueryableDatatype subclass that corresponds to the results of
 	 * this expression
 	 */
-	public QueryableDatatype getQueryableDatatypeForExpressionValue();
-
-	/**
-	 * Produces the snippet provided by this class.
-	 *
-	 * <p>
-	 * This is only used internally.
-	 *
-	 * <p>
-	 * If you are extending DBvolution and adding a new function this is the place
-	 * to format the information for use in SQL. A DBDatabase instance is provided
-	 * to supply context and the DBDefinition object so your SQL can used on
-	 * multiple database engines.
-	 *
-	 * @param db the target database
-	 * <p style="color: #F90;">Support DBvolution at
-	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
-	 *
-	 * @return the DBValue formatted as a SQL snippet
-	 */
-	public String toSQLString(DBDatabase db);
+	public QueryableDatatype<?> getQueryableDatatypeForExpressionValue();
 
 	/**
 	 * A Complete Copy Of This DBValue.
@@ -163,4 +143,11 @@ public interface DBExpression {
 	 */
 	public boolean isPurelyFunctional();
 
+	public boolean isComplexExpression();
+
+	public String createSQLForFromClause(DBDatabase database);
+
+	public String createSQLForGroupByClause(DBDatabase database);
+	
+	public boolean isWindowingFunction() ;
 }

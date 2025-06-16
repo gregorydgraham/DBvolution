@@ -15,12 +15,6 @@
  */
 package nz.co.gregs.dbvolution.internal.sqlite;
 
-import com.vividsolutions.jts.geom.Coordinate;
-import com.vividsolutions.jts.geom.Geometry;
-import com.vividsolutions.jts.geom.GeometryFactory;
-import com.vividsolutions.jts.geom.LineString;
-import com.vividsolutions.jts.geom.Point;
-import com.vividsolutions.jts.geom.Polygon;
 import com.vividsolutions.jts.io.WKTReader;
 import java.sql.SQLException;
 import java.text.ParseException;
@@ -29,13 +23,11 @@ import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import nz.co.gregs.dbvolution.databases.SQLiteDB;
-import nz.co.gregs.dbvolution.databases.definitions.SQLiteDefinition;
+import com.vividsolutions.jts.geom.*;
 import org.sqlite.Function;
 
 /**
  *
- * <p style="color: #F90;">Support DBvolution at
- * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
  *
  * @author gregorygraham
  */
@@ -44,100 +36,104 @@ public class Polygon2DFunctions {
 	/**
 	 *
 	 */
-	public static String CREATE_FROM_WKTPOLYGON2D = "DBV_CREATE_POLYGON2D_FROM_WKTPOLYGON";
+	public final static String CREATE_FROM_WKTPOLYGON2D = "DBV_CREATE_POLYGON2D_FROM_WKTPOLYGON";
 
 	/**
 	 *
 	 */
-	public static String CREATE_FROM_POINT2DS = "DBV_CREATE_POLYGON2D_FROM_POINTS2D";
+	public final static String CREATE_FROM_POINT2DS = "DBV_CREATE_POLYGON2D_FROM_POINTS2D";
 
 	/**
 	 *
 	 */
-	public static String EQUALS = "DBV_POLYGON2D_EQUALS";
+	public final static String EQUALS = "DBV_POLYGON2D_EQUALS";
 
 	/**
 	 *
 	 */
-	public static String AREA = "DBV_POLYGON2D_AREA";
+	public final static String AREA = "DBV_POLYGON2D_AREA";
 
 	/**
 	 *
 	 */
-	public static String DIMENSION = "DBV_POLYGON2D_DIMENSION";
+	public final static String DIMENSION = "DBV_POLYGON2D_DIMENSION";
 
 	/**
 	 *
 	 */
-	public static String MIN_Y = "DBV_POLYGON2D_MIN_Y2D_COORD";
+	public final static String MIN_Y = "DBV_POLYGON2D_MIN_Y2D_COORD";
 
 	/**
 	 *
 	 */
-	public static String MAX_Y = "DBV_POLYGON2D_MAX_Y2D_COORD";
+	public final static String MAX_Y = "DBV_POLYGON2D_MAX_Y2D_COORD";
 
 	/**
 	 *
 	 */
-	public static String MAX_X = "DBV_POLYGON2D_MAX_X2D_COORD";
+	public final static String MAX_X = "DBV_POLYGON2D_MAX_X2D_COORD";
 
 	/**
 	 *
 	 */
-	public static String MIN_X = "DBV_POLYGON2D_MIN_X2D_COORD";
+	public final static String MIN_X = "DBV_POLYGON2D_MIN_X2D_COORD";
 
 	/**
 	 *
 	 */
-	public static String BOUNDINGBOX = "DBV_POLYGON2D_BOUNDINGBOX2D";
+	public final static String BOUNDINGBOX = "DBV_POLYGON2D_BOUNDINGBOX2D";
 
 	/**
 	 *
 	 */
-	public static String TOUCHES = "DBV_POLYGON2D_TOUCHES";
+	public final static String TOUCHES = "DBV_POLYGON2D_TOUCHES";
 
 	/**
 	 *
 	 */
-	public static String EXTERIORRING = "DBV_POLYGON2D_EXTERIORRING";
+	public final static String EXTERIORRING = "DBV_POLYGON2D_EXTERIORRING";
 
 	/**
 	 *
 	 */
-	public static String CONTAINS_POLYGON2D = "DBV_POLYGON2D_CONTAINS";
+	public final static String CONTAINS_POLYGON2D = "DBV_POLYGON2D_CONTAINS";
 
 	/**
 	 *
 	 */
-	public static String WITHIN = "DBV_POLYGON2D_WITHIN";
+	public final static String WITHIN = "DBV_POLYGON2D_WITHIN";
 
 	/**
 	 *
 	 */
-	public static String OVERLAPS = "DBV_POLYGON2D_OVERLAPS";
+	public final static String OVERLAPS = "DBV_POLYGON2D_OVERLAPS";
 
 	/**
 	 *
 	 */
-	public static String INTERSECTS = "DBV_POLYGON2D_INTERSECTS";
+	public final static String INTERSECTS = "DBV_POLYGON2D_INTERSECTS";
+	public final static String INTERSECTION = "DBV_POLYGON2D_INTERSECTION";
+	public final static String UNION = "DBV_POLYGON2D_UNION";
 
 	/**
 	 *
 	 */
-	public static String DISJOINT = "DBV_POLYGON2D_DISJOINT";
+	public final static String DISJOINT = "DBV_POLYGON2D_DISJOINT";
 
 	/**
 	 *
 	 */
-	public static String CONTAINS_POINT2D = "DBV_POLYGON2D_CONTAINS_POINT2D";
+	public final static String CONTAINS_POINT2D = "DBV_POLYGON2D_CONTAINS_POINT2D";
+	public final static String ASTEXT_FUNCTION = "DBV_POLYGON2D_ASTEXT";
 
 	private Polygon2DFunctions() {
 	}
 
 	/**
 	 *
-	 * @param connection
-	 * @throws SQLException
+	 * @param connection the database to add functions to
+	 *
+	 * @throws SQLException database errors
 	 */
 	public static void addFunctions(java.sql.Connection connection) throws SQLException {
 		add(connection, DIMENSION, new SpatialDimension());
@@ -149,6 +145,8 @@ public class Polygon2DFunctions {
 		add(connection, WITHIN, new Within());
 		add(connection, OVERLAPS, new Overlaps());
 		add(connection, INTERSECTS, new Intersects());
+		add(connection, INTERSECTION, new Intersection());
+		add(connection, UNION, new Union());
 		add(connection, DISJOINT, new Disjoint());
 		add(connection, CREATE_FROM_WKTPOLYGON2D, new CreatePolygonFromWKTPolygon2D());
 		add(connection, CREATE_FROM_POINT2DS, new CreatePolygonFromPoint2Ds());
@@ -158,6 +156,7 @@ public class Polygon2DFunctions {
 		add(connection, MIN_Y, new MinY());
 		add(connection, BOUNDINGBOX, new BoundingBox());
 		add(connection, CONTAINS_POINT2D, new ContainsPoint2D());
+		add(connection, ASTEXT_FUNCTION, new AsText());
 	}
 
 	private static void add(java.sql.Connection connection, String functionName, Function function) throws SQLException {
@@ -178,6 +177,19 @@ public class Polygon2DFunctions {
 	}
 
 	/**
+	 * Implements Polygon2D AsText for SQLite
+	 *
+	 */
+	private static class AsText extends Function {
+
+		@Override
+		protected void xFunc() throws SQLException {
+			String point = value_text(0);
+			result(point);
+		}
+	}
+
+	/**
 	 * Implements Polygon2D CREATE for SQLite
 	 *
 	 */
@@ -187,9 +199,9 @@ public class Polygon2DFunctions {
 		protected void xFunc() throws SQLException {
 			try {
 				Polygon polygon = getPolygon(value_text(0));
-	//			polygon.normalize();
+				//			polygon.normalize();
 				result(polygon.toText());
-			} catch (com.vividsolutions.jts.io.ParseException ex) {
+			} catch (SQLException | com.vividsolutions.jts.io.ParseException ex) {
 				Logger.getLogger(Polygon2DFunctions.class.getName()).log(Level.SEVERE, null, ex);
 			}
 		}
@@ -214,7 +226,7 @@ public class Polygon2DFunctions {
 					if (originalStr == null) {
 						result((String) null);
 					} else {
-						Point point = null;
+						Point point;
 						Geometry geometry;
 						geometry = wktReader.read(originalStr);
 						if (geometry instanceof Point) {
@@ -228,10 +240,7 @@ public class Polygon2DFunctions {
 				Polygon createPolygon = factory.createPolygon(coords.toArray(new Coordinate[]{}));
 				createPolygon.normalize();
 				result(createPolygon.toText());
-			} catch (ParseException ex) {
-				Logger.getLogger(SQLiteDB.class.getName()).log(Level.SEVERE, null, ex);
-				throw new RuntimeException("Failed To Parse SQLite Polygon", ex);
-			} catch (com.vividsolutions.jts.io.ParseException ex) {
+			} catch (ParseException | com.vividsolutions.jts.io.ParseException ex) {
 				Logger.getLogger(SQLiteDB.class.getName()).log(Level.SEVERE, null, ex);
 				throw new RuntimeException("Failed To Parse SQLite Polygon", ex);
 			}
@@ -243,10 +252,7 @@ public class Polygon2DFunctions {
 		@Override
 		protected void xFunc() throws SQLException {
 			try {
-				SQLiteDefinition defn = new SQLiteDefinition();
 				WKTReader wktReader = new WKTReader();
-				GeometryFactory factory = new GeometryFactory();
-				List<Coordinate> coords = new ArrayList<Coordinate>();
 				String originalStr;
 				originalStr = value_text(0);
 				if (originalStr == null) {
@@ -268,10 +274,7 @@ public class Polygon2DFunctions {
 						throw new ParseException(originalStr, 0);
 					}
 				}
-			} catch (ParseException ex) {
-				Logger.getLogger(SQLiteDB.class.getName()).log(Level.SEVERE, null, ex);
-				throw new RuntimeException("Failed To Parse SQLite Polygon", ex);
-			} catch (com.vividsolutions.jts.io.ParseException ex) {
+			} catch (ParseException | com.vividsolutions.jts.io.ParseException ex) {
 				Logger.getLogger(SQLiteDB.class.getName()).log(Level.SEVERE, null, ex);
 				throw new RuntimeException("Failed To Parse SQLite Polygon", ex);
 			}
@@ -305,10 +308,7 @@ public class Polygon2DFunctions {
 						throw new ParseException(originalStr, 0);
 					}
 				}
-			} catch (ParseException ex) {
-				Logger.getLogger(SQLiteDB.class.getName()).log(Level.SEVERE, null, ex);
-				throw new RuntimeException("Failed To Parse SQLite Polygon", ex);
-			} catch (com.vividsolutions.jts.io.ParseException ex) {
+			} catch (ParseException | com.vividsolutions.jts.io.ParseException ex) {
 				Logger.getLogger(SQLiteDB.class.getName()).log(Level.SEVERE, null, ex);
 				throw new RuntimeException("Failed To Parse SQLite Polygon", ex);
 			}
@@ -320,10 +320,7 @@ public class Polygon2DFunctions {
 		@Override
 		protected void xFunc() throws SQLException {
 			try {
-//				SQLiteDefinition defn = new SQLiteDefinition();
 				WKTReader wktReader = new WKTReader();
-//				GeometryFactory factory = new GeometryFactory();
-//				List<Coordinate> coords = new ArrayList<Coordinate>();
 				String originalStr = value_text(0);
 				if (originalStr == null) {
 					result((String) null);
@@ -347,10 +344,7 @@ public class Polygon2DFunctions {
 				}
 //				Polygon createPolygon = factory.createPolygon(coords.toArray(new Coordinate[]{}));
 //				result(createPolygon.toText());
-			} catch (ParseException ex) {
-				Logger.getLogger(SQLiteDB.class.getName()).log(Level.SEVERE, null, ex);
-				throw new RuntimeException("Failed To Parse SQLite Polygon", ex);
-			} catch (com.vividsolutions.jts.io.ParseException ex) {
+			} catch (ParseException | com.vividsolutions.jts.io.ParseException ex) {
 				Logger.getLogger(SQLiteDB.class.getName()).log(Level.SEVERE, null, ex);
 				throw new RuntimeException("Failed To Parse SQLite Polygon", ex);
 			}
@@ -384,7 +378,7 @@ public class Polygon2DFunctions {
 						throw new ParseException(originalStr, 0);
 					}
 				}
-			} catch (Exception ex) {
+			} catch (com.vividsolutions.jts.io.ParseException | SQLException | ParseException ex) {
 				throw new RuntimeException("Failed To Parse Polygon", ex);
 			}
 		}
@@ -437,10 +431,7 @@ public class Polygon2DFunctions {
 						throw new ParseException(originalStr, 0);
 					}
 				}
-			} catch (ParseException ex) {
-				Logger.getLogger(SQLiteDB.class.getName()).log(Level.SEVERE, null, ex);
-				throw new RuntimeException("Failed To Parse SQLite Polygon", ex);
-			} catch (com.vividsolutions.jts.io.ParseException ex) {
+			} catch (ParseException | com.vividsolutions.jts.io.ParseException ex) {
 				Logger.getLogger(SQLiteDB.class.getName()).log(Level.SEVERE, null, ex);
 				throw new RuntimeException("Failed To Parse SQLite Polygon", ex);
 			}
@@ -452,14 +443,19 @@ public class Polygon2DFunctions {
 		@Override
 		protected void xFunc() throws SQLException {
 			try {
-				Polygon firstPoly = getPolygon(value_text(0));
-				Polygon secondPoly = getPolygon(value_text(1));
-				if (firstPoly == null || secondPoly == null) {
+				if (args() < 2) {
+					System.out.println("ERROR: Equals() must be called with 2 arguments");
 					result();
 				} else {
-					firstPoly.normalize();
-					secondPoly.normalize();
-					result(firstPoly.toText().equals(secondPoly.toText()) ? 1 : 0);
+					Polygon firstPoly = getPolygon(value_text(0));
+					Polygon secondPoly = getPolygon(value_text(1));
+					if (firstPoly == null || secondPoly == null) {
+						result();
+					} else {
+						firstPoly.normalize();
+						secondPoly.normalize();
+						result(firstPoly.toText().equals(secondPoly.toText()) ? 1 : 0);
+					}
 				}
 			} catch (com.vividsolutions.jts.io.ParseException ex) {
 				Logger.getLogger(SQLiteDB.class.getName()).log(Level.SEVERE, null, ex);
@@ -498,7 +494,7 @@ public class Polygon2DFunctions {
 				} else {
 					result(poly1.touches(poly2) ? 1 : 0);
 				}
-			} catch (Exception ex) {
+			} catch (com.vividsolutions.jts.io.ParseException | SQLException ex) {
 				throw new RuntimeException("Failed To Parse Polygon", ex);
 			}
 		}
@@ -540,7 +536,7 @@ public class Polygon2DFunctions {
 				} else {
 					result(poly1.contains(poly2) ? 1 : 0);
 				}
-			} catch (Exception ex) {
+			} catch (com.vividsolutions.jts.io.ParseException | SQLException ex) {
 				throw new RuntimeException("Failed To Parse Polygon", ex);
 			}
 		}
@@ -558,7 +554,7 @@ public class Polygon2DFunctions {
 				} else {
 					result(poly1.contains(point) ? 1 : 0);
 				}
-			} catch (Exception ex) {
+			} catch (com.vividsolutions.jts.io.ParseException | SQLException ex) {
 				throw new RuntimeException("Failed To Parse Polygon or Point", ex);
 			}
 		}
@@ -621,6 +617,44 @@ public class Polygon2DFunctions {
 		}
 	}
 
+	private static class Intersection extends PolygonFunction {
+
+		@Override
+		protected void xFunc() throws SQLException {
+			try {
+				Polygon poly1 = getPolygon(value_text(0));
+				Polygon poly2 = getPolygon(value_text(1));
+				if (poly1 == null || poly2 == null) {
+					result();
+				} else {
+					result(poly1.intersection(poly2).toText());
+				}
+			} catch (com.vividsolutions.jts.io.ParseException ex) {
+				Logger.getLogger(SQLiteDB.class.getName()).log(Level.SEVERE, null, ex);
+				throw new RuntimeException("Failed To Parse SQLite Polygon", ex);
+			}
+		}
+	}
+
+	private static class Union extends PolygonFunction {
+
+		@Override
+		protected void xFunc() throws SQLException {
+			try {
+				Polygon poly1 = getPolygon(value_text(0));
+				Polygon poly2 = getPolygon(value_text(1));
+				if (poly1 == null || poly2 == null) {
+					result();
+				} else {
+					result(poly1.union(poly2).toText());
+				}
+			} catch (com.vividsolutions.jts.io.ParseException ex) {
+				Logger.getLogger(SQLiteDB.class.getName()).log(Level.SEVERE, null, ex);
+				throw new RuntimeException("Failed To Parse SQLite Polygon", ex);
+			}
+		}
+	}
+
 	private static class Disjoint extends PolygonFunction {
 
 		@Override
@@ -650,7 +684,7 @@ public class Polygon2DFunctions {
 			}
 			return null;
 		}
-		
+
 		Point getPoint(String possiblePoly) throws com.vividsolutions.jts.io.ParseException {
 			WKTReader wktReader = new WKTReader();
 			Geometry firstGeom = wktReader.read(possiblePoly);

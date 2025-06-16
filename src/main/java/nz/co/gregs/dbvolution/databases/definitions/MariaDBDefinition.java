@@ -20,8 +20,10 @@ import java.text.SimpleDateFormat;
 import java.util.Date;
 import nz.co.gregs.dbvolution.databases.MariaClusterDB;
 import nz.co.gregs.dbvolution.databases.MariaDB;
-import nz.co.gregs.dbvolution.datatypes.DBByteArray;
+import nz.co.gregs.dbvolution.datatypes.DBLargeBinary;
+import nz.co.gregs.dbvolution.datatypes.DBLargeText;
 import nz.co.gregs.dbvolution.datatypes.DBDate;
+import nz.co.gregs.dbvolution.datatypes.DBInteger;
 import nz.co.gregs.dbvolution.datatypes.DBLargeObject;
 import nz.co.gregs.dbvolution.datatypes.DBString;
 import nz.co.gregs.dbvolution.datatypes.QueryableDatatype;
@@ -34,21 +36,34 @@ import nz.co.gregs.dbvolution.datatypes.QueryableDatatype;
  * This DBDefinition is automatically included in {@link MariaDB} and
  * {@link MariaClusterDB} instances, and you should not need to use it directly.
  *
- * <p style="color: #F90;">Support DBvolution at
- * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
- *
  * @author Gregory Graham
  */
 public class MariaDBDefinition extends DBDefinition {
 
-	private static final DateFormat DATETIME_FORMAT = new SimpleDateFormat("dd,MM,yyyy HH:mm:ss");
+	public static final long serialVersionUID = 1L;
+	
+	private final DateFormat DATETIME_FORMAT = new SimpleDateFormat("dd,MM,yyyy HH:mm:ss");
 
 	@Override
 	@SuppressWarnings("deprecation")
 	public String getDateFormattedForQuery(Date date) {
-
 		return " STR_TO_DATE('" + DATETIME_FORMAT.format(date) + "', '%d,%m,%Y %H:%i:%s') ";
+	}
 
+	@Override
+	public String getDatePartsFormattedForQuery(String years, String months, String days, String hours, String minutes, String seconds, String subsecond, String timeZoneSign, String timeZoneHourOffset, String timeZoneMinuteOffSet) {
+		return " STR_TO_DATE('" 
+				+ days
+				+ "||'-'||" + months
+				+ "||'-'||" + years
+				+ "||' '||" + hours
+				+ "||':'||" + minutes
+				+ "||':'||(" + seconds+"+"+subsecond+")"
+//				+ "||' '||" + timeZoneSign
+//				+ "||" + timeZoneHourOffset
+//				+ "||':'||" + timeZoneMinuteOffSet
+				+ "', '%d,%m,%Y %H:%i:%s') ";
+		//return "PARSEDATETIME('" + years + "','" + H2_DATE_FORMAT_STR + "')";
 	}
 
 	@Override
@@ -62,13 +77,17 @@ public class MariaDBDefinition extends DBDefinition {
 	}
 
 	@Override
-	public String getDatabaseDataTypeOfQueryableDatatype(QueryableDatatype qdt) {
+	public String getDatabaseDataTypeOfQueryableDatatype(QueryableDatatype<?> qdt) {
 		if (qdt instanceof DBString) {
-			return " VARCHAR(1000) CHARACTER SET utf8 COLLATE utf8_bin ";
+			return " NVARCHAR(1000) CHARACTER SET utf8 COLLATE utf8_bin ";
 		} else if (qdt instanceof DBDate) {
 			return " DATETIME ";
-		} else if (qdt instanceof DBByteArray) {
+		} else if (qdt instanceof DBInteger) {
+			return " BIGINT ";
+		} else if (qdt instanceof DBLargeBinary) {
 			return " LONGBLOB ";
+		} else if (qdt instanceof DBLargeText) {
+			return " LONGTEXT ";
 		} else if (qdt instanceof DBLargeObject) {
 			return " LONGBLOB ";
 		} else {
@@ -103,6 +122,26 @@ public class MariaDBDefinition extends DBDefinition {
 	@Override
 	public String doDayOfWeekTransform(String dateSQL) {
 		return " DAYOFWEEK(" + dateSQL + ")";
+	}
+
+	@Override
+	public String doInstantDayOfWeekTransform(String dateSQL) {
+		return " DAYOFWEEK(" + dateSQL + ")";
+	}
+
+	@Override
+	public boolean supportsRecursiveQueriesNatively() {
+		return false;
+	}
+
+	@Override
+	public boolean supportsFullOuterJoinNatively() {
+		return false;
+	}
+
+	@Override
+	public boolean supportsDateRepeatDatatypeFunctions() {
+		return false;
 	}
 
 }

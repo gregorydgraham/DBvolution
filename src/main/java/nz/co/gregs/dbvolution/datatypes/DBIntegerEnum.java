@@ -17,35 +17,68 @@ package nz.co.gregs.dbvolution.datatypes;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.Comparator;
 import java.util.HashSet;
 import java.util.Set;
-import nz.co.gregs.dbvolution.DBDatabase;
 import nz.co.gregs.dbvolution.DBReport;
 import nz.co.gregs.dbvolution.DBRow;
-import nz.co.gregs.dbvolution.expressions.NumberExpression;
+import nz.co.gregs.dbvolution.columns.IntegerColumn;
+import nz.co.gregs.dbvolution.databases.definitions.DBDefinition;
+import nz.co.gregs.dbvolution.exceptions.IncorrectRowProviderInstanceSuppliedException;
+import nz.co.gregs.dbvolution.expressions.IntegerExpression;
 import nz.co.gregs.dbvolution.expressions.StringExpression;
-import nz.co.gregs.dbvolution.results.NumberResult;
 import nz.co.gregs.dbvolution.operators.DBPermittedRangeExclusiveOperator;
 import nz.co.gregs.dbvolution.operators.DBPermittedRangeInclusiveOperator;
 import nz.co.gregs.dbvolution.operators.DBPermittedRangeOperator;
 import nz.co.gregs.dbvolution.operators.DBPermittedValuesOperator;
+import nz.co.gregs.dbvolution.query.RowDefinition;
+import nz.co.gregs.dbvolution.results.IntegerResult;
+import nz.co.gregs.dbvolution.utility.comparators.ComparableComparator;
 
 /**
  * Like {@link DBInteger} except that the database value can be easily
  * interpreted as an enumeration with {@code Integer} or {@code Long} codes.
  *
+ * <p>
+ * Normally declared as something like:</p>
+ * <pre>
+ * {@literal @}DBColumn
+ * DBintegerEnum state = new DBIntegerEnum&lt;MyEnumValue&gt;();
+ *
+ *
+ * public static enum MyEnumValue implements DBEnumValue&lt;Integer&gt; {
+ *
+ * STATE_ONE(1, "One"),
+ * STATE_TWO(2, "Two"),
+ * STATE_THREE(3, "Three");
+ * private final Integer literalValue;
+ * private final String displayName;
+ *
+ * private GenericEnumType(Integer code, String displayName) {
+ * this.literalValue = code;
+ * this.displayName = displayName;
+ * }
+ *
+ * public Integer getCode() {
+ * return literalValue;
+ * }
+ *
+ * public String getDisplayName() {
+ * return displayName;
+ * }
+ * }
+ * </pre>
+ *
+ *
+ *
  * @param <E> type of enumeration class
  *
  * <p style="color: #F90;">Support DBvolution at
  * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
- *
- * @author Gregory Graham
- * <p style="color: #F90;">Support DBvolution at
- * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
- *
  * @author Malcolm Lett
+ * @author Gregory Graham
  */
-public class DBIntegerEnum<E extends Enum<E> & DBEnumValue<? extends Number>> extends DBEnum<E> implements NumberResult {
+public class DBIntegerEnum<E extends Enum<E> & DBEnumValue<Long>> extends DBEnum<E, Long> implements IntegerResult {
 
 	private static final long serialVersionUID = 1L;
 
@@ -87,7 +120,7 @@ public class DBIntegerEnum<E extends Enum<E> & DBEnumValue<? extends Number>> ex
 	 *
 	 * @param numberExpression	numberExpression
 	 */
-	public DBIntegerEnum(NumberExpression numberExpression) {
+	public DBIntegerEnum(IntegerExpression numberExpression) {
 		super(numberExpression);
 	}
 
@@ -133,26 +166,54 @@ public class DBIntegerEnum<E extends Enum<E> & DBEnumValue<? extends Number>> ex
 		return new HashSet<DBRow>();
 	}
 
-	/**
-	 *
-	 * reduces the rows to only the object, Set, List, Array, or vararg of objects
-	 *
-	 * @param permitted	permitted
-	 */
-	public void permittedValues(E... permitted) {
-		this.setOperator(new DBPermittedValuesOperator(convertToLiteral(permitted)));
+	@SafeVarargs
+	@SuppressWarnings("unchecked")
+	@Override
+	protected final Long[] convertToLiteral(E... enumValues) {
+		return convertToLiteralLong(enumValues);
 	}
 
 	/**
+	 * Create an array of Longs containing the literal values of the provided
+	 * Enums.
 	 *
-	 * excludes the object, Set, List, Array, or vararg of objects
+	 * <p>
+	 * Provided as a convenience function
 	 *
 	 *
-	 * @param excluded	excluded
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
+	 * @param enumValues the values to transform into Longs
+	 * @return a Long[] of the enums values.
 	 */
-	public void excludedValues(E... excluded) {
-		this.setOperator(new DBPermittedValuesOperator(convertToLiteral(excluded)));
-		negateOperator();
+	@SafeVarargs
+	protected final Long[] convertToLiteralLong(E... enumValues) {
+		Long[] result = new Long[enumValues.length];
+		for (int i = 0; i < enumValues.length; i++) {
+			E enumValue = enumValues[i];
+			result[i] = convertToLiteralLong(enumValue);
+		}
+		return result;
+	}
+
+	/**
+	 * Convert the enum to its Long literal value.
+	 *
+	 *
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
+	 * @return the literal value of the enum.
+	 */
+	private Long convertToLiteralLong(E enumValue) {
+		if (enumValue == null || enumValue.getCode() == null) {
+			return null;
+		} else {
+			validateLiteralValue(enumValue);
+			Long newLiteralValue = enumValue.getCode();
+			return newLiteralValue;
+		}
 	}
 
 	/**
@@ -176,7 +237,7 @@ public class DBIntegerEnum<E extends Enum<E> & DBEnumValue<? extends Number>> ex
 	 * @param upperBound upperBound
 	 */
 	public void permittedRange(E lowerBound, E upperBound) {
-		setOperator(new DBPermittedRangeOperator(convertToLiteral(lowerBound), convertToLiteral(upperBound)));
+		setOperator(new DBPermittedRangeOperator<Long>(convertToLiteral(lowerBound), convertToLiteral(upperBound)));
 	}
 
 	/**
@@ -248,7 +309,7 @@ public class DBIntegerEnum<E extends Enum<E> & DBEnumValue<? extends Number>> ex
 	 * @param upperBound upperBound
 	 */
 	public void excludedRange(E lowerBound, E upperBound) {
-		setOperator(new DBPermittedRangeOperator(convertToLiteral(lowerBound), convertToLiteral(upperBound)));
+		setOperator(new DBPermittedRangeOperator<Long>(convertToLiteral(lowerBound), convertToLiteral(upperBound)));
 		negateOperator();
 	}
 
@@ -303,27 +364,6 @@ public class DBIntegerEnum<E extends Enum<E> & DBEnumValue<? extends Number>> ex
 	}
 
 	/**
-	 * Reduces the rows to only the object, Set, List, Array, or vararg of objects
-	 *
-	 * @param permitted	permitted
-	 */
-	public void permittedValues(Long... permitted) {
-		this.setOperator(new DBPermittedValuesOperator((Object[]) permitted));
-	}
-
-	/**
-	 *
-	 * excludes the object, Set, List, Array, or vararg of objects
-	 *
-	 *
-	 * @param excluded	excluded
-	 */
-	public void excludedValues(Long... excluded) {
-		this.setOperator(new DBPermittedValuesOperator((Object[]) excluded));
-		negateOperator();
-	}
-
-	/**
 	 * Performs searches based on a range.
 	 *
 	 * if both ends of the range are specified the lower-bound will be included in
@@ -344,7 +384,7 @@ public class DBIntegerEnum<E extends Enum<E> & DBEnumValue<? extends Number>> ex
 	 * @param upperBound upperBound
 	 */
 	public void permittedRange(Long lowerBound, Long upperBound) {
-		setOperator(new DBPermittedRangeOperator(lowerBound, upperBound));
+		setOperator(new DBPermittedRangeOperator<Long>(lowerBound, upperBound));
 	}
 
 	/**
@@ -416,7 +456,7 @@ public class DBIntegerEnum<E extends Enum<E> & DBEnumValue<? extends Number>> ex
 	 * @param upperBound upperBound
 	 */
 	public void excludedRange(Long lowerBound, Long upperBound) {
-		setOperator(new DBPermittedRangeOperator(lowerBound, upperBound));
+		setOperator(new DBPermittedRangeOperator<Long>(lowerBound, upperBound));
 		negateOperator();
 	}
 
@@ -477,7 +517,7 @@ public class DBIntegerEnum<E extends Enum<E> & DBEnumValue<? extends Number>> ex
 	 * @param permitted	permitted
 	 */
 	public void permittedValues(Integer... permitted) {
-		this.setOperator(new DBPermittedValuesOperator((Object[]) permitted));
+		this.setOperator(new DBPermittedValuesOperator<Integer>(permitted));
 	}
 
 	/**
@@ -488,7 +528,7 @@ public class DBIntegerEnum<E extends Enum<E> & DBEnumValue<? extends Number>> ex
 	 * @param excluded	excluded
 	 */
 	public void excludedValues(Integer... excluded) {
-		this.setOperator(new DBPermittedValuesOperator((Object[]) excluded));
+		this.setOperator(new DBPermittedValuesOperator<Integer>(excluded));
 		negateOperator();
 	}
 
@@ -513,7 +553,7 @@ public class DBIntegerEnum<E extends Enum<E> & DBEnumValue<? extends Number>> ex
 	 * @param upperBound upperBound
 	 */
 	public void permittedRange(Integer lowerBound, Integer upperBound) {
-		setOperator(new DBPermittedRangeOperator(lowerBound, upperBound));
+		setOperator(new DBPermittedRangeOperator<Integer>(lowerBound, upperBound));
 	}
 
 	/**
@@ -585,7 +625,7 @@ public class DBIntegerEnum<E extends Enum<E> & DBEnumValue<? extends Number>> ex
 	 * @param upperBound upperBound
 	 */
 	public void excludedRange(Integer lowerBound, Integer upperBound) {
-		setOperator(new DBPermittedRangeOperator(lowerBound, upperBound));
+		setOperator(new DBPermittedRangeOperator<Integer>(lowerBound, upperBound));
 		negateOperator();
 	}
 
@@ -647,11 +687,11 @@ public class DBIntegerEnum<E extends Enum<E> & DBEnumValue<? extends Number>> ex
 	 *
 	 * @return the value as a Number.
 	 */
-	public Number numberValue() {
+	public Long numberValue() {
 		if (getLiteralValue() == null) {
 			return null;
 		} else if (getLiteralValue() instanceof Number) {
-			return (Number) getLiteralValue();
+			return getLiteralValue();
 		} else {
 			return Long.parseLong(getLiteralValue().toString());
 		}
@@ -668,10 +708,8 @@ public class DBIntegerEnum<E extends Enum<E> & DBEnumValue<? extends Number>> ex
 	public Long longValue() {
 		if (getLiteralValue() == null) {
 			return null;
-		} else if (getLiteralValue() instanceof Long) {
-			return (Long) getLiteralValue();
 		} else {
-			return Long.parseLong(getLiteralValue().toString());
+			return getLiteralValue();
 		}
 	}
 
@@ -686,20 +724,18 @@ public class DBIntegerEnum<E extends Enum<E> & DBEnumValue<? extends Number>> ex
 	public Integer intValue() {
 		if (getLiteralValue() == null) {
 			return null;
-		} else if (getLiteralValue() instanceof Integer) {
-			return (Integer) getLiteralValue();
 		} else {
 			return Integer.parseInt(getLiteralValue().toString());
 		}
 	}
 
 	@Override
-	public Number getValue() {
+	public Long getValue() {
 		return numberValue();
 	}
 
 	@Override
-	protected Object getFromResultSet(DBDatabase database, ResultSet resultSet, String fullColumnName) throws SQLException {
+	protected Long getFromResultSet(DBDefinition database, ResultSet resultSet, String fullColumnName) throws SQLException {
 		return resultSet.getLong(fullColumnName);
 	}
 
@@ -718,4 +754,35 @@ public class DBIntegerEnum<E extends Enum<E> & DBEnumValue<? extends Number>> ex
 	public StringExpression stringResult() {
 		return StringExpression.value("" + getValue());
 	}
+
+	@Override
+	public boolean isPurelyFunctional() {
+		return false;
+	}
+
+	@Override
+	protected void setValueFromStandardStringEncoding(String encodedValue) {
+		if (encodedValue.isEmpty()) {
+			super.setLiteralValue(null);
+		} else {
+			try {
+				Double parseDouble = Double.parseDouble(encodedValue);
+				Long literalLong = parseDouble.longValue();
+				setLiteralValue(literalLong);
+			} catch (NumberFormatException noFormat) {
+				setLiteralValue(null);
+			}
+		}
+	}
+
+	@Override
+	public IntegerColumn getColumn(RowDefinition row) throws IncorrectRowProviderInstanceSuppliedException {
+		return new IntegerColumn(row, this);
+	}
+
+	@Override
+	public Comparator<Long> getComparator() {
+		return ComparableComparator.forClass(Long.class);
+	}
+
 }

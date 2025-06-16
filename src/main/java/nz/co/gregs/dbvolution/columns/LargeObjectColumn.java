@@ -16,13 +16,14 @@
 package nz.co.gregs.dbvolution.columns;
 
 import java.util.Set;
-import nz.co.gregs.dbvolution.DBDatabase;
 import nz.co.gregs.dbvolution.DBRow;
-import nz.co.gregs.dbvolution.datatypes.DBDate;
+import nz.co.gregs.dbvolution.databases.definitions.DBDefinition;
 import nz.co.gregs.dbvolution.datatypes.DBLargeObject;
-import nz.co.gregs.dbvolution.expressions.BooleanExpression;
+import nz.co.gregs.dbvolution.datatypes.QueryableDatatype;
 import nz.co.gregs.dbvolution.expressions.LargeObjectExpression;
+import nz.co.gregs.dbvolution.expressions.SortProvider;
 import nz.co.gregs.dbvolution.query.RowDefinition;
+import nz.co.gregs.dbvolution.results.AnyResult;
 
 /**
  * Represents a database column storing a large object value.
@@ -36,19 +37,19 @@ import nz.co.gregs.dbvolution.query.RowDefinition;
  * methods in {@link LargeObjectExpression} to insert the column into the
  * expression.
  *
- * <p>
- * Generally you get a LargeObjectColumn using
- * {@link RowDefinition#column(nz.co.gregs.dbvolution.datatypes.DBLargeObject)  RowDefinition.column(DBlargeObject)}.
- *
- * <p style="color: #F90;">Support DBvolution at
- * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
- *
  * @author Gregory Graham
+ * @param <BASETYPE> the standard Java class or type used with this instance
+ * @param <RESULT> the result class used to make expression with this type
+ * @param <QDT> the QueryableDatatype used to represent this instance
  * @see RowDefinition
  * @see AbstractColumn
  * @see LargeObjectExpression
  */
-public class LargeObjectColumn extends LargeObjectExpression implements ColumnProvider {
+public abstract class LargeObjectColumn<BASETYPE extends Object, RESULT extends AnyResult<BASETYPE>, QDT extends QueryableDatatype<BASETYPE>> 
+		extends LargeObjectExpression<BASETYPE, RESULT, QDT> 
+		implements ColumnProvider {
+
+	private final static long serialVersionUID = 1l;
 
 	private final AbstractColumn column;
 
@@ -58,18 +59,13 @@ public class LargeObjectColumn extends LargeObjectExpression implements ColumnPr
 	 * @param row the row containing the field
 	 * @param field the field defining the column
 	 */
-	public LargeObjectColumn(RowDefinition row, DBLargeObject field) {
+	public LargeObjectColumn(RowDefinition row, DBLargeObject<?> field) {
 		this.column = new AbstractColumn(row, field);
 	}
 
 	@Override
-	public String toSQLString(DBDatabase db) {
+	public String toSQLString(DBDefinition db) {
 		return column.toSQLString(db);
-	}
-
-	@Override
-	public LargeObjectColumn copy() {
-		return new LargeObjectColumn(column.getRowDefinition(), (DBLargeObject) column.getField());
 	}
 
 	@Override
@@ -89,6 +85,16 @@ public class LargeObjectColumn extends LargeObjectExpression implements ColumnPr
 
 	@Override
 	public boolean isPurelyFunctional() {
-		return getTablesInvolved().size() == 0;
+		return getTablesInvolved().isEmpty();
+	}
+
+	@Override
+	public boolean isAggregator() {
+		return column.isAggregator();
+	}
+
+	@Override
+	public SortProvider.Column getSortProvider() {
+		return column.getSortProvider();
 	}
 }

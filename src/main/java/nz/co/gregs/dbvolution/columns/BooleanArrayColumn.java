@@ -16,11 +16,12 @@
 package nz.co.gregs.dbvolution.columns;
 
 import java.util.Set;
-import nz.co.gregs.dbvolution.DBDatabase;
 import nz.co.gregs.dbvolution.DBRow;
+import nz.co.gregs.dbvolution.databases.definitions.DBDefinition;
 import nz.co.gregs.dbvolution.datatypes.DBBooleanArray;
 import nz.co.gregs.dbvolution.expressions.BooleanArrayExpression;
 import nz.co.gregs.dbvolution.expressions.BooleanExpression;
+import nz.co.gregs.dbvolution.expressions.SortProvider;
 import nz.co.gregs.dbvolution.query.RowDefinition;
 
 /**
@@ -48,6 +49,8 @@ import nz.co.gregs.dbvolution.query.RowDefinition;
  */
 public class BooleanArrayColumn extends BooleanArrayExpression implements ColumnProvider {
 
+	private final static long serialVersionUID = 1l;
+
 	private final AbstractColumn column;
 
 	/**
@@ -57,7 +60,7 @@ public class BooleanArrayColumn extends BooleanArrayExpression implements Column
 	 * @param field the field representing the column
 	 */
 	public BooleanArrayColumn(RowDefinition row, boolean[] field) {
-		this.column = new AbstractColumn(row, field);
+		this.column = new AbstractColumn(row, new DBBooleanArray(field));
 	}
 
 	/**
@@ -71,22 +74,16 @@ public class BooleanArrayColumn extends BooleanArrayExpression implements Column
 	}
 
 	@Override
-	public String toSQLString(DBDatabase db) {
+	public String toSQLString(DBDefinition db) {
 		return column.toSQLString(db);
 	}
 
 	@Override
 	public BooleanArrayColumn copy() {
-		BooleanArrayColumn newColumn;
-		RowDefinition instanceOfRow = column.getRowDefinition();
-		Object field = column.getField();
-		if (field instanceof DBBooleanArray) {
-			newColumn = new BooleanArrayColumn(instanceOfRow, (DBBooleanArray) field);
-		} else {
-			newColumn = new BooleanArrayColumn(instanceOfRow, (boolean[]) field);
-		}
-
-		return newColumn;
+		final AbstractColumn col = getColumn();
+		final DBRow row = col.getInstanceOfRow();
+		BooleanArrayColumn newInstance = new BooleanArrayColumn(row, (DBBooleanArray) col.getAppropriateQDTFromRow(row));
+		return newInstance;
 	}
 
 	@Override
@@ -109,16 +106,25 @@ public class BooleanArrayColumn extends BooleanArrayExpression implements Column
 		return getTablesInvolved().isEmpty();
 	}
 
+	@Override
+	public boolean isAggregator() {
+		return column.isAggregator();
+	}
+
 	/**
 	 * Creates an expression that will compare this column to the other column.
 	 *
 	 * @param boolArrayColumn the column to compare to
 	 * <p style="color: #F90;">Support DBvolution at
 	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
-	 *
 	 * @return a BooleanExpression
 	 */
 	public BooleanExpression is(DBBooleanArray boolArrayColumn) {
 		return super.is(boolArrayColumn);
+	}
+
+	@Override
+	public SortProvider.Column getSortProvider() {
+		return column.getSortProvider();
 	}
 }

@@ -16,20 +16,22 @@
 package nz.co.gregs.dbvolution.actions;
 
 import java.sql.SQLException;
-import nz.co.gregs.dbvolution.DBDatabase;
+import java.util.Collection;
+import java.util.List;
+import nz.co.gregs.dbvolution.databases.DBDatabase;
 import nz.co.gregs.dbvolution.DBRow;
+import nz.co.gregs.dbvolution.databases.QueryIntention;
 import nz.co.gregs.dbvolution.datatypes.QueryableDatatype;
 import nz.co.gregs.dbvolution.exceptions.AccidentalUpdateOfUndefinedRowException;
 
 /**
  * Provides support for the abstract concept of updating rows.
  *
- * <p style="color: #F90;">Support DBvolution at
- * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
- *
  * @author Gregory Graham
  */
 public abstract class DBUpdate extends DBAction {
+
+	private final static long serialVersionUID = 1l;
 
 	/**
 	 * Creates a DBUpdate action for the row supplied.
@@ -38,7 +40,19 @@ public abstract class DBUpdate extends DBAction {
 	 * @param row the row to be updated
 	 */
 	public <R extends DBRow> DBUpdate(R row) {
-		super(row);
+		super(row, QueryIntention.UPDATE_ROW);
+	}
+
+	/**
+	 * Creates a DBUpdate action for the row supplied.
+	 *
+	 * @param <R> the table affected
+	 * @param row the row to be updated
+	 * @param intent the specific intention of this action, a description of what
+	 * is expected to occur
+	 */
+	public <R extends DBRow> DBUpdate(R row, QueryIntention intent) {
+		super(row, intent);
 	}
 
 	/**
@@ -50,40 +64,37 @@ public abstract class DBUpdate extends DBAction {
 	 * changes to the row.
 	 *
 	 * @param db the target database
-	 * @param row the row to be updated
-	 * <p style="color: #F90;">Support DBvolution at
-	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
-	 *
+	 * @param rows the rows to be updated
 	 * @return a DBActionList of updates that have been executed.
 	 * @throws SQLException database exceptions
 	 */
-	public static DBActionList update(DBDatabase db, DBRow row) throws SQLException {
-		DBActionList updates = getUpdates(row);
-		for (DBAction act : updates) {
-			act.execute(db);
+	public static DBActionList update(DBDatabase db, DBRow... rows) throws SQLException {
+		DBActionList actions = new DBActionList();
+		for (DBRow row : rows) {
+			DBActionList updates = getUpdates(row);
+			for (DBAction act : updates) {
+				actions.addAll(db.executeDBAction(act));
+			}
+			row.setSimpleTypesToUnchanged();
 		}
-		return updates;
+		return actions;
 	}
 
 	/**
-	 * Creates a DBActionList of update actions for the rows.
+	 * Executes required update actions for the row and returns a
+	 * {@link DBActionList} of those actions.
 	 *
-	 * <p>
-	 * The actions created can be applied on a particular database using
-	 * {@link DBActionList#execute(nz.co.gregs.dbvolution.DBDatabase)}
+	 * The original rows are not changed by this method, or any DBUpdate method.
+	 * Use {@link DBRow#setSimpleTypesToUnchanged() } if you need to ignore the
+	 * changes to the row.
 	 *
-	 * <p>
-	 * Synonym for {@link #getUpdates(nz.co.gregs.dbvolution.DBRow...) }
-	 *
+	 * @param db the target database
 	 * @param rows the rows to be updated
-	 * <p style="color: #F90;">Support DBvolution at
-	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
-	 *
-	 * @return a DBActionList of updates.
+	 * @return a DBActionList of updates that have been executed.
 	 * @throws SQLException database exceptions
 	 */
-	public static DBActionList update(DBRow... rows) throws SQLException {
-		return getUpdates(rows);
+	public static DBActionList update(DBDatabase db, Collection<? extends DBRow> rows) throws SQLException {
+		return update(db, rows.toArray(new DBRow[0]));
 	}
 
 	/**
@@ -91,21 +102,19 @@ public abstract class DBUpdate extends DBAction {
 	 *
 	 * <p>
 	 * The actions created can be applied on a particular database using
-	 * {@link DBActionList#execute(nz.co.gregs.dbvolution.DBDatabase)}
+	 * {@link DBActionList#execute(nz.co.gregs.dbvolution.databases.DBDatabase)}
 	 *
 	 * @param rows the rows to be updated
-	 * <p style="color: #F90;">Support DBvolution at
-	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
-	 *
 	 * @return a DBActionList of updates.
 	 * @throws SQLException database exceptions
 	 */
 	public static DBActionList getUpdates(DBRow... rows) throws SQLException {
 		DBActionList updates = new DBActionList();
 		for (DBRow row : rows) {
-			if (row.getDefined()) {
+			if (row.isDefined()) {
 				if (row.hasChangedSimpleTypes()) {
-					if (row.getPrimaryKey() == null) {
+					final List<QueryableDatatype<?>> primaryKeys = row.getPrimaryKeys();
+					if (primaryKeys == null || primaryKeys.isEmpty()) {
 						updates.add(new DBUpdateSimpleTypesUsingAllColumns(row));
 					} else {
 						updates.add(new DBUpdateSimpleTypes(row));
@@ -123,13 +132,23 @@ public abstract class DBUpdate extends DBAction {
 
 	private static boolean hasChangedLargeObjects(DBRow row) {
 		if (row.hasLargeObjects()) {
-			for (QueryableDatatype qdt : row.getLargeObjects()) {
+			for (QueryableDatatype<?> qdt : row.getLargeObjects()) {
 				if (qdt.hasChanged()) {
 					return true;
 				}
 			}
 		}
 		return false;
+	}
+
+	@Override
+	public boolean requiresRunOnIndividualDatabaseBeforeCluster() {
+		return true;
+	}
+
+	@Override
+	protected void updateRefetchRequirementForOtherDatabases() {
+		setRefetchStatus(RefetchRequirement.DO_NOT_REFETCH);
 	}
 
 }

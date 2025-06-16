@@ -15,15 +15,19 @@
  */
 package nz.co.gregs.dbvolution.exceptions;
 
+import java.util.List;
+import nz.co.gregs.dbvolution.DBQuery;
+
 /**
- *
- * <p style="color: #F90;">Support DBvolution at
- * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+ * Thrown when no conditions are detectable within the query and blank queries
+ * have not been explicitly set with {@link DBQuery#setBlankQueryAllowed(boolean)
+ * } or similar.
  *
  * @author Gregory Graham
  */
-@SuppressWarnings("serial")
-public class AccidentalBlankQueryException extends RuntimeException {
+public class AccidentalBlankQueryException extends DBRuntimeException {
+
+	static final long serialVersionUID = 1l;
 
 	/**
 	 * Thrown when a DBQuery or DBTable attempts to run a query without any
@@ -32,6 +36,17 @@ public class AccidentalBlankQueryException extends RuntimeException {
 	 */
 	public AccidentalBlankQueryException() {
 		super("Accidental Blank Query Aborted: ensure you have added all the required tables, defined all the criteria, and are using the correct allowBlankQueries() setting.");
+		super.fillInStackTrace();
+	}
+
+	public AccidentalBlankQueryException(boolean blankQueryAllowed, boolean willCreateBlankQuery, boolean hasNoRawSQL, List<String> sqlOptions) {
+		super("Accidental Blank Query Aborted: ensure you have added all the required tables, "
+				+ "defined all the criteria, and are using the correct allowBlankQueries() setting: "
+				+ "BlankQueryAllowed?" + blankQueryAllowed 
+				+ " willCreateBlankQuery?" + willCreateBlankQuery 
+				+ " hasNoRawSQL?" + hasNoRawSQL 
+				+ " SQL: "+System.lineSeparator() + sqlOptions.get(0));
+		super.fillInStackTrace();
 	}
 
 }

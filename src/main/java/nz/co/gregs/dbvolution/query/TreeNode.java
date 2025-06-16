@@ -19,6 +19,7 @@ import java.util.ArrayList;
 import java.util.List;
 import nz.co.gregs.dbvolution.DBRecursiveQuery;
 import nz.co.gregs.dbvolution.DBRow;
+import nz.co.gregs.dbvolution.datatypes.QueryableDatatype;
 
 /**
  * Encapsulates a DBRow class for use in {@link DBRecursiveQuery} tree or path.
@@ -27,49 +28,45 @@ import nz.co.gregs.dbvolution.DBRow;
  * Use {@link #getData() } to retrieve the DBRow contain in the node, {@link #getParent()
  * } to move up the hierarchy, and {@link #getChildren() } to move down it.
  *
- * <p style="color: #F90;">Support DBvolution at
- * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
- *
  * @author Gregory Graham
  * @param <T> The DBRow class
  */
 public class TreeNode<T extends DBRow> {
 
 	private final List<TreeNode<T>> children = new ArrayList<TreeNode<T>>();
-	private final List<String> childrenData = new ArrayList<String>();
-	private TreeNode<T> parent = null;
-	private T data = null;
+	private final List<String> childrenKeys = new ArrayList<String>();
+	private TreeNode<T> parent;
+	private final T data;
 
 	/**
 	 * Create a new node for the DBRow
 	 *
-	 * @param data
+	 * @param data the data to store in the node
 	 */
 	public TreeNode(T data) {
-		this.data = data;
+		this(data, null);
 	}
 
 	/**
-	 * Create a new node the contains the specified DBRow as the data, and the specified TreeNode as the parent of the node.
+	 * Create a new node the contains the specified DBRow as the data, and the
+	 * specified TreeNode as the parent of the node.
 	 *
-	 * @param data
-	 * @param parent
+	 * @param data the data to store in the node
+	 * @param parent the parent node of the data
 	 */
 	public TreeNode(T data, TreeNode<T> parent) {
-		this.data = data;
+		this.data = DBRow.copyDBRow(data);
 		this.parent = parent;
 	}
 
 	/**
-	 * Returns a list of all known children of this node, that is all database rows returned by the recursive query that referenced this row.
-	 *
-	 * <p style="color: #F90;">Support DBvolution at
-	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 * Returns a list of all known children of this node, that is all database
+	 * rows returned by the recursive query that referenced this row.
 	 *
 	 * @return a list of TreeNodes
 	 */
 	public List<TreeNode<T>> getChildren() {
-		return children;
+		return children.subList(0, children.size());
 	}
 
 	private void setParent(TreeNode<T> parent) {
@@ -78,47 +75,40 @@ public class TreeNode<T extends DBRow> {
 
 	/**
 	 * Append the supplied DBRow to the list of children for this node.
-	 * 
+	 *
 	 * <p>
 	 * Also adds this node as the parent of the supplied node.
 	 *
-	 * @param childData
+	 * @param childData the data to add as a child of this node
 	 */
 	public void addChild(T childData) {
 		TreeNode<T> child = new TreeNode<T>(childData);
 		this.addChild(child);
-//		child.setParent(this);
-//		if (notAlreadyIncluded(child)) {
-//			this.children.add(child);
-//			this.childrenData.add(data.getPrimaryKey().stringValue());
-//		}
+
 	}
 
 	/**
 	 * Append the supplied DBRow to the list of children for this node.
-	 * 
+	 *
 	 * <p>
 	 * Also adds this node as the parent of the supplied node.
 	 *
-	 * @param child 
+	 * @param child the node to add as a child of this node
 	 */
 	public void addChild(TreeNode<T> child) {
 		child.setParent(this);
 		if (notAlreadyIncluded(child)) {
 			this.children.add(child);
-			this.childrenData.add(child.getData().getPrimaryKey().stringValue());
+			this.childrenKeys.add(child.getKey());
 		}
 	}
 
 	private boolean notAlreadyIncluded(TreeNode<T> child) {
-		return !this.children.contains(child) && !childrenData.contains(child.getData().getPrimaryKey().stringValue());
+		return !this.children.contains(child) && !childrenKeys.contains(child.getKey());
 	}
 
 	/**
 	 * Retrieves the DBRow within this node.
-	 *
-	 * <p style="color: #F90;">Support DBvolution at
-	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
 	 *
 	 * @return a DBRow
 	 */
@@ -127,19 +117,8 @@ public class TreeNode<T extends DBRow> {
 	}
 
 	/**
-	 * Set the DBRow within this node.
-	 *
-	 * @param data
-	 */
-	public void setData(T data) {
-		this.data = data;
-	}
-
-	/**
-	 * Indicates whether or not this node is a root node, that is it has no known parent.
-	 *
-	 * <p style="color: #F90;">Support DBvolution at
-	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 * Indicates whether or not this node is a root node, that is it has no known
+	 * parent.
 	 *
 	 * @return TRUE if this node is the top of a hierarchy.
 	 */
@@ -148,10 +127,8 @@ public class TreeNode<T extends DBRow> {
 	}
 
 	/**
-	 * Indicates whether or not this node is a leaf node, that is it has no known children.
-	 *
-	 * <p style="color: #F90;">Support DBvolution at
-	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 * Indicates whether or not this node is a leaf node, that is it has no known
+	 * children.
 	 *
 	 * @return TRUE if this node is the bottom of a hierarchy.
 	 */
@@ -160,18 +137,10 @@ public class TreeNode<T extends DBRow> {
 	}
 
 	/**
-	 * Remove the link to this node's parent, if any.
-	 * 
-	 */
-	public void removeParent() {
-		this.parent = null;
-	}
-
-	/**
 	 * Retrieves the node that is the parent of this node.
 	 *
-	 * <p style="color: #F90;">Support DBvolution at
-	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 * <p>
+	 * Use {@link #isRoot() } to determine if the root has been reached.</p>
 	 *
 	 * @return the TreeNode immediately above this node in the hierarchy
 	 */
@@ -181,6 +150,15 @@ public class TreeNode<T extends DBRow> {
 
 	@Override
 	public String toString() {
-		return this.getData().toString();
+		return this.data.toString();
+	}
+
+	private String getKey() {
+		StringBuilder returnString = new StringBuilder("");
+		final List<QueryableDatatype<?>> pks = this.data.getPrimaryKeys();
+		for (QueryableDatatype<?> pk : pks) {
+			returnString.append("&&").append(pk.stringValue());
+		}
+		return returnString.toString();
 	}
 }

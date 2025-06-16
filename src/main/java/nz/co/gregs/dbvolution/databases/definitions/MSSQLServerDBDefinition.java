@@ -20,15 +20,27 @@ import com.vividsolutions.jts.io.WKTReader;
 import java.text.*;
 import java.util.*;
 import nz.co.gregs.dbvolution.DBRow;
+import nz.co.gregs.dbvolution.columns.AbstractColumn;
 import nz.co.gregs.dbvolution.databases.MSSQLServerDB;
 import nz.co.gregs.dbvolution.datatypes.*;
 import nz.co.gregs.dbvolution.datatypes.spatial2D.*;
-import nz.co.gregs.dbvolution.exceptions.DBRuntimeException;
 import nz.co.gregs.dbvolution.exceptions.IncorrectGeometryReturnedForDatatype;
 import nz.co.gregs.dbvolution.expressions.BooleanExpression;
 import nz.co.gregs.dbvolution.expressions.DBExpression;
+import nz.co.gregs.dbvolution.expressions.spatial2D.Spatial2DExpression;
+import nz.co.gregs.dbvolution.internal.properties.PropertyWrapper;
+import nz.co.gregs.dbvolution.internal.query.LargeObjectHandlerType;
+import nz.co.gregs.dbvolution.internal.query.QueryDetails;
 import nz.co.gregs.dbvolution.internal.sqlserver.*;
-import nz.co.gregs.dbvolution.query.QueryOptions;
+import nz.co.gregs.dbvolution.internal.query.QueryOptions;
+import nz.co.gregs.dbvolution.internal.query.QueryState;
+import nz.co.gregs.dbvolution.results.ExpressionHasStandardStringResult;
+import nz.co.gregs.dbvolution.results.Spatial2DResult;
+import nz.co.gregs.dbvolution.utility.StringCheck;
+import nz.co.gregs.regexi.Regex;
+import nz.co.gregs.separatedstring.Builder;
+import nz.co.gregs.separatedstring.Encoder;
+import org.apache.commons.lang3.ArrayUtils;
 
 /**
  * Defines the features of the Microsoft SQL Server database that differ from
@@ -38,12 +50,11 @@ import nz.co.gregs.dbvolution.query.QueryOptions;
  * This DBDefinition is automatically included in {@link MSSQLServerDB}
  * instances, and you should not need to use it directly.
  *
- * <p style="color: #F90;">Support DBvolution at
- * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
- *
  * @author Gregory Graham
  */
 public class MSSQLServerDBDefinition extends DBDefinition {
+
+	public static final long serialVersionUID = 1L;
 
 	private static final String[] RESERVED_WORDS_ARRAY = new String[]{"ADD", "EXTERNAL", "PROCEDURE", "ALL", "FETCH", "PUBLIC", "ALTER", "FILE", "RAISERROR", "AND", "FILLFACTOR", "READ", "ANY", "FOR", "READTEXT", "AS", "FOREIGN", "RECONFIGURE", "ASC", "FREETEXT", "REFERENCES", "AUTHORIZATION", "FREETEXTTABLE", "REPLICATION", "BACKUP", "FROM", "RESTORE", "BEGIN", "FULL", "RESTRICT", "BETWEEN", "FUNCTION", "RETURN", "BREAK", "GOTO", "REVERT", "BROWSE", "GRANT", "REVOKE", "BULK", "GROUP", "RIGHT", "BY", "HAVING", "ROLLBACK", "CASCADE", "HOLDLOCK", "ROWCOUNT", "CASE", "IDENTITY", "ROWGUIDCOL", "CHECK", "IDENTITY_INSERT", "RULE", "CHECKPOINT", "IDENTITYCOL", "SAVE", "CLOSE", "IF", "SCHEMA", "CLUSTERED", "IN", "SECURITYAUDIT", "COALESCE", "INDEX", "SELECT", "COLLATE", "INNER", "SEMANTICKEYPHRASETABLE", "COLUMN", "INSERT", "SEMANTICSIMILARITYDETAILSTABLE", "COMMIT", "INTERSECT", "SEMANTICSIMILARITYTABLE", "COMPUTE", "INTO", "SESSION_USER", "CONSTRAINT", "IS", "SET", "CONTAINS", "JOIN", "SETUSER", "CONTAINSTABLE", "KEY", "SHUTDOWN", "CONTINUE", "KILL", "SOME", "CONVERT", "LEFT", "STATISTICS", "CREATE", "LIKE", "SYSTEM_USER", "CROSS", "LINENO", "TABLE", "CURRENT", "LOAD", "TABLESAMPLE", "CURRENT_DATE", "MERGE", "TEXTSIZE", "CURRENT_TIME", "NATIONAL", "THEN", "CURRENT_TIMESTAMP", "NOCHECK", "TO", "CURRENT_USER", "NONCLUSTERED", "TOP", "CURSOR", "NOT", "TRAN", "DATABASE", "NULL", "TRANSACTION", "DBCC", "NULLIF", "TRIGGER", "DEALLOCATE", "OF", "TRUNCATE", "DECLARE", "OFF", "TRY_CONVERT", "DEFAULT", "OFFSETS", "TSEQUAL", "DELETE", "ON", "UNION", "DENY", "OPEN", "UNIQUE", "DESC", "OPENDATASOURCE", "UNPIVOT", "DISK", "OPENQUERY", "UPDATE", "DISTINCT", "OPENROWSET", "UPDATETEXT", "DISTRIBUTED", "OPENXML", "USE", "DOUBLE", "OPTION", "USER", "DROP", "OR", "VALUES", "DUMP", "ORDER", "VARYING", "ELSE", "OUTER", "VIEW", "END", "OVER", "WAITFOR", "ERRLVL", "PERCENT", "WHEN", "ESCAPE", "PIVOT", "WHERE", "EXCEPT", "PLAN", "WHILE", "EXEC", "PRECISION", "WITH", "EXECUTE", "PRIMARY", "WITHIN GROUP", "EXISTS", "PRINT", "WRITETEXT", "EXIT", "PROC"};
 	private static final List<String> RESERVED_WORDS = Arrays.asList(RESERVED_WORDS_ARRAY);
@@ -51,30 +62,49 @@ public class MSSQLServerDBDefinition extends DBDefinition {
 	@Override
 	public String getDateFormattedForQuery(Date date) {
 		DateFormat format = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS");
-		DateFormat tzFormat = new SimpleDateFormat("Z");
-		String tz = tzFormat.format(date);
-		if (tz.length() == 4) {
-			tz = "+" + tz.substring(0, 2) + ":" + tz.substring(2, 4);
-		} else if (tz.length() == 5) {
-			tz = tz.substring(0, 3) + ":" + tz.substring(3, 5);
-		} else {
-			throw new DBRuntimeException("TIMEZONE was :\"" + tz + "\"");
-		}
-		final String result = " CAST('" + format.format(date) + " " + tz + "' as DATETIMEOFFSET) ";
-//		System.out.println(""+result);
+		final String result = " CAST('" + format.format(date) + "' as DATETIME2(7)) ";
 		return result;
 	}
 
 	@Override
-	protected String getDatabaseDataTypeOfQueryableDatatype(QueryableDatatype qdt) {
+	public String getDatePartsFormattedForQuery(String years, String months, String days, String hours, String minutes, String seconds, String subsecond, String timeZoneSign, String timeZoneHourOffset, String timeZoneMinuteOffSet) {
+		return "CAST("
+				+ doConcatTransform(
+						doNumberToStringTransform(years), "'-'", doNumberToStringTransform(months), "'-'", doNumberToStringTransform(days), "' '",
+						doNumberToStringTransform(hours), "':'", doNumberToStringTransform(minutes), "':'", doNumberToStringTransform("(" + seconds + "+" + subsecond + ")")
+				)
+				+ " as DATETIME2(7))";
+	}
+
+	@Override
+	public String doConcatTransform(String firstString, String secondString, String... rest) {
+		Encoder sep = Builder.forSeparator("+").startsWith("(").endsWith(")").encoder()
+				.add(firstString)
+				.add(secondString)
+				.addAll(rest);
+		return sep.toString();
+	}
+
+	@Override
+	protected String getDatabaseDataTypeOfQueryableDatatype(QueryableDatatype<?> qdt) {
 		if (qdt instanceof DBBoolean) {
 			return " BIT ";
 		} else if (qdt instanceof DBBooleanArray) {
 			return " VARCHAR(64) ";
 		} else if (qdt instanceof DBDate) {
-			return " DATETIMEOFFSET ";
-		} else if (qdt instanceof DBLargeObject) {
+			return " DATETIME2(7) ";
+		} else if (qdt instanceof DBInstant) {
+			return " DATETIME2(7) ";
+		} else if (qdt instanceof DBLocalDate) {
+			return " DATETIME2(7) ";
+		} else if (qdt instanceof DBLocalDateTime) {
+			return " DATETIME2(7) ";
+		} else if (qdt instanceof DBLargeBinary) {
+			return " IMAGE ";
+		} else if (qdt instanceof DBLargeText) {
 			return " NTEXT ";
+		} else if (qdt instanceof DBLargeObject) {
+			return " IMAGE ";
 		} else if (qdt instanceof DBString) {
 			return " NVARCHAR(1000) COLLATE Latin1_General_CS_AS_KS_WS ";
 		} else if (qdt instanceof DBPoint2D) {
@@ -87,26 +117,22 @@ public class MSSQLServerDBDefinition extends DBDefinition {
 			return " GEOMETRY ";
 		} else if (qdt instanceof DBMultiPoint2D) {
 			return " GEOMETRY ";
+//		} else if (qdt instanceof DBDuration) {
+//			return " VARCHAR(65) ";
 		} else {
 			return super.getDatabaseDataTypeOfQueryableDatatype(qdt);
 		}
 	}
 
 	@Override
-	public String doColumnTransformForSelect(QueryableDatatype qdt, String selectableName) {
-		if (qdt instanceof DBPolygon2D) {
-			return "(" + selectableName + ").STAsText()";
-		} else if (qdt instanceof DBPoint2D) {
-			return "CAST((" + selectableName + ").STAsText() AS VARCHAR(2000))";
-		} else if (qdt instanceof DBLine2D) {
-			return "CAST((" + selectableName + ").STAsText() AS VARCHAR(2000))";
-		} else if (qdt instanceof DBLineSegment2D) {
-			return "CAST((" + selectableName + ").STAsText() AS VARCHAR(2000))";
-		} else if (qdt instanceof DBMultiPoint2D) {
-			return "CAST((" + selectableName + ").STAsText() AS VARCHAR(2000))";
-		} else {
-			return selectableName;
+	public String doColumnTransformForSelect(QueryableDatatype<?> qdt, String selectableName) {
+		if (!qdt.hasColumnExpression()) {
+			if (qdt instanceof Spatial2DResult) {
+				return "CAST((" + selectableName + ").STAsText() AS NVARCHAR(2000))";
+			}
 		}
+		return super.doColumnTransformForSelect(qdt, selectableName);
+//		return selectableName;
 	}
 
 	@Override
@@ -115,48 +141,87 @@ public class MSSQLServerDBDefinition extends DBDefinition {
 	}
 
 	@Override
-	public Date parseDateFromGetString(String getStringDate) throws ParseException {
-		String tempString = getStringDate.replaceAll(":([0-9]*)$", "$1");
-		Date parsed;
-		try {
-			parsed = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS Z").parse(tempString);
-		} catch (ParseException ex) {
-			parsed = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS").parse(tempString);
-		}
-		return parsed;
-	}
-
-	@Override
 	public String formatTableName(DBRow table) {
-		final String schemaName = table.getSchemaName();
-		if (table.getSchemaName() == null || "".equals(schemaName)) {
+		String schemaName = StringCheck.check(table.getSchemaName(),"dbo");
+		if (schemaName == null || "".equals(schemaName)) {
 			return "[" + table.getTableName() + "]";
 		} else {
-			return "[" + table.getSchemaName() + "].[" + table.getTableName() + "]";
+			return "[" + schemaName+ "].[" + table.getTableName() + "]";
 		}
+	}
+
+	/**
+	 * Provides the start of the DROP TABLE expression for this database.
+	 *
+	 *
+	 *
+	 *
+	 * @return "DROP TABLE " or equivalent for the database.
+	 */
+  @Override
+	public String getDropTableStart() {
+		return "DROP TABLE IF EXISTS ";
+	}
+
+  /**
+   * Provides the SQL of the DROP TABLE expression for this database.
+   *
+   *
+   *
+   *
+   * @param tableRow the DBRow of the table to be dropped
+   * @return "DROP TABLE IF EXISTS tablename;" or equivalent for the database.
+   */
+  @Override
+  public String getDropTableSQL(DBRow tableRow) {
+    StringBuilder sqlScript = new StringBuilder(0);
+    final String dropTableStart = getDropTableStart();
+    final String formatTableName = formatTableName(tableRow);
+    final String endSQLStatement = endSQLStatement();
+    sqlScript.append(dropTableStart).append(formatTableName).append(endSQLStatement).append("");
+    String sqlString = sqlScript.toString();
+    return sqlString;
+  }
+
+  @Override
+	public String getTableExistsSQL(DBRow tableRow) {
+		final QueryOptions queryOptions = new QueryOptions();
+		queryOptions.setRowLimit(1);
+		return beginSelectStatement() + getLimitRowsSubClauseDuringSelectClause(queryOptions)
+				+ getCountFunctionName() + "(*) c"
+				+ beginFromClause()
+				+ formatTableName(tableRow)
+				+ endSQLStatement();
 	}
 
 	@Override
 	protected String formatNameForDatabase(final String sqlObjectName) {
 		if (RESERVED_WORDS.contains(sqlObjectName.toUpperCase())) {
 			return ("O" + sqlObjectName.hashCode()).replaceAll("^[_-]", "O").replaceAll("-", "_");
-	}
+		}
 		return sqlObjectName;
 	}
 
 	@Override
-	public Object endSQLStatement() {
-		return "";
+	public String endSQLStatement() {
+		return ";";
 	}
 
 	@Override
-	public Object getLimitRowsSubClauseDuringSelectClause(QueryOptions options) {
-		return " TOP(" + options.getRowLimit() + ") "; //To change body of generated methods, choose Tools | Templates.
+	public String beginStringValue() {
+		return " N'";
 	}
 
 	@Override
-	public Object getLimitRowsSubClauseAfterWhereClause(QueryOptions options) {
-		return "";
+	public String getLimitRowsSubClauseAfterWhereClause(QueryState state, QueryOptions options) {
+		int rowLimit = options.getRowLimit();
+		Integer pageNumber = options.getPageIndex();
+		if (rowLimit > 0 && supportsPagingNatively(options)) {
+			long offset = pageNumber * rowLimit;
+			return "OFFSET " + offset + " ROWS FETCH NEXT " + rowLimit + " ROWS ONLY";
+		} else {
+			return "";
+		}
 	}
 
 	@Override
@@ -183,19 +248,18 @@ public class MSSQLServerDBDefinition extends DBDefinition {
 	 * like it or not.
 	 *
 	 * <p>
-	 * While this seems useful, in fact it prevents checking for incorrect
-	 * strings and breaks the industrial standard.
+	 * While this seems useful, in fact it prevents checking for incorrect strings
+	 * and breaks the industrial standard.
 	 *
 	 * @param firstSQLExpression the first string value to compare
 	 * @param secondSQLExpression the second string value to compare
 	 * <p style="color: #F90;">Support DBvolution at
 	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
-	 *
 	 * @return SQL
 	 */
 	@Override
 	public String doStringEqualsTransform(String firstSQLExpression, String secondSQLExpression) {
-		return "(" + firstSQLExpression + "+'@') = (" + secondSQLExpression + "+'@')";
+		return super.doStringEqualsTransform(firstSQLExpression + "+'@'", secondSQLExpression + "+'@'");
 	}
 
 	@Override
@@ -237,23 +301,17 @@ public class MSSQLServerDBDefinition extends DBDefinition {
 	}
 
 	/**
-	 * Wraps the provided SQL snippet in a statement that the length of the
-	 * value of the snippet.
+	 * Wraps the provided SQL snippet in a statement that the length of the value
+	 * of the snippet.
 	 *
 	 * @param enclosedValue	enclosedValue
 	 * <p style="color: #F90;">Support DBvolution at
 	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
-	 *
 	 * @return SQL snippet
 	 */
 	@Override
 	public String doStringLengthTransform(String enclosedValue) {
-		return " CAST(" + getStringLengthFunctionName() + "( " + enclosedValue + " ) as NUMERIC(15,10))";
-	}
-
-	@Override
-	public boolean supportsPagingNatively(QueryOptions options) {
-		return false;
+		return " CAST(" + getStringLengthFunctionName() + "( " + enclosedValue + " ) as NUMERIC(" + getNumericPrecision() + "," + getNumericScale() + "))";
 	}
 
 	@Override
@@ -262,13 +320,13 @@ public class MSSQLServerDBDefinition extends DBDefinition {
 	}
 
 	@Override
-	public boolean prefersLargeObjectsSetAsBase64String() {
-		return true;
+	public boolean prefersLargeObjectsSetAsBase64String(DBLargeObject<?> lob) {
+		return !(lob instanceof DBLargeBinary);
 	}
 
 	@Override
-	public boolean prefersLargeObjectsReadAsBase64CharacterStream() {
-		return true;
+	public boolean prefersLargeObjectsReadAsBase64CharacterStream(DBLargeObject<?> lob) {
+		return !(lob instanceof DBLargeBinary);
 	}
 
 	@Override
@@ -278,45 +336,76 @@ public class MSSQLServerDBDefinition extends DBDefinition {
 
 	@Override
 	public String doBooleanToIntegerTransform(String booleanExpression) {
-		return "(case when (" + booleanExpression + ") then 1 else 0 end)";
+		return " case when (" + booleanExpression + ") then 1 when not (" + booleanExpression + ") then 0 else " + getNull() + " end ";
 	}
 
-//	@Override
-//	public String doAddMillisecondsTransform(String dateValue, String numberOfSeconds) {
-//		return "DATEADD( MILLISECOND, " + numberOfSeconds + "," + dateValue + ")";
-//	}
 	@Override
-	public String doAddSecondsTransform(String dateValue, String numberOfSeconds) {
+	public String doDateAddSecondsTransform(String dateValue, String numberOfSeconds) {
 		return "DATEADD( SECOND, " + numberOfSeconds + "," + dateValue + ")";
 	}
 
 	@Override
-	public String doAddMinutesTransform(String dateValue, String numberOfMinutes) {
+	public String doDateAddMinutesTransform(String dateValue, String numberOfMinutes) {
 		return "DATEADD( MINUTE, " + numberOfMinutes + "," + dateValue + ")";
 	}
 
 	@Override
-	public String doAddDaysTransform(String dateValue, String numberOfDays) {
+	public String doDateAddDaysTransform(String dateValue, String numberOfDays) {
 		return "DATEADD( DAY, " + numberOfDays + "," + dateValue + ")";
 	}
 
 	@Override
-	public String doAddHoursTransform(String dateValue, String numberOfHours) {
+	public String doDateAddHoursTransform(String dateValue, String numberOfHours) {
 		return "DATEADD( HOUR, " + numberOfHours + "," + dateValue + ")";
 	}
 
 	@Override
-	public String doAddWeeksTransform(String dateValue, String numberOfWeeks) {
+	public String doDateAddWeeksTransform(String dateValue, String numberOfWeeks) {
 		return "DATEADD( WEEK, " + numberOfWeeks + "," + dateValue + ")";
 	}
 
 	@Override
-	public String doAddMonthsTransform(String dateValue, String numberOfMonths) {
+	public String doDateAddMonthsTransform(String dateValue, String numberOfMonths) {
 		return "DATEADD( MONTH, " + numberOfMonths + "," + dateValue + ")";
 	}
 
 	@Override
-	public String doAddYearsTransform(String dateValue, String numberOfYears) {
+	public String doDateAddYearsTransform(String dateValue, String numberOfYears) {
+		return "DATEADD( YEAR, " + numberOfYears + "," + dateValue + ")";
+	}
+
+	@Override
+	public String doInstantAddSecondsTransform(String dateValue, String numberOfSeconds) {
+		return "DATEADD( SECOND, " + numberOfSeconds + "," + dateValue + ")";
+	}
+
+	@Override
+	public String doInstantAddMinutesTransform(String dateValue, String numberOfMinutes) {
+		return "DATEADD( MINUTE, " + numberOfMinutes + "," + dateValue + ")";
+	}
+
+	@Override
+	public String doInstantAddDaysTransform(String dateValue, String numberOfDays) {
+		return "DATEADD( DAY, " + numberOfDays + "," + dateValue + ")";
+	}
+
+	@Override
+	public String doInstantAddHoursTransform(String dateValue, String numberOfHours) {
+		return "DATEADD( HOUR, " + numberOfHours + "," + dateValue + ")";
+	}
+
+	@Override
+	public String doInstantAddWeeksTransform(String dateValue, String numberOfWeeks) {
+		return "DATEADD( WEEK, " + numberOfWeeks + "," + dateValue + ")";
+	}
+
+	@Override
+	public String doInstantAddMonthsTransform(String dateValue, String numberOfMonths) {
+		return "DATEADD( MONTH, " + numberOfMonths + "," + dateValue + ")";
+	}
+
+	@Override
+	public String doInstantAddYearsTransform(String dateValue, String numberOfYears) {
 		return "DATEADD( YEAR, " + numberOfYears + "," + dateValue + ")";
 	}
 
@@ -396,7 +485,47 @@ public class MSSQLServerDBDefinition extends DBDefinition {
 	}
 
 	@Override
+	public String doSecondAndSubsecondTransform(String dateExpression) {
+		return "(" + doSubsecondTransform(dateExpression) + " + " + doSecondTransform(dateExpression) + ")";
+	}
+
+	@Override
 	public String doSubsecondTransform(String dateExpression) {
+		return "(DATEPART(MICROSECOND , " + dateExpression + ")/1000000.0000)";
+	}
+
+	@Override
+	public String doInstantYearTransform(String dateExpression) {
+		return "DATEPART(YEAR, " + dateExpression + ")";
+	}
+
+	@Override
+	public String doInstantMonthTransform(String dateExpression) {
+		return "DATEPART(MONTH, " + dateExpression + ")";
+	}
+
+	@Override
+	public String doInstantDayTransform(String dateExpression) {
+		return "DATEPART(DAY, " + dateExpression + ")";
+	}
+
+	@Override
+	public String doInstantHourTransform(String dateExpression) {
+		return "DATEPART(HOUR, " + dateExpression + ")";
+	}
+
+	@Override
+	public String doInstantMinuteTransform(String dateExpression) {
+		return "DATEPART(MINUTE, " + dateExpression + ")";
+	}
+
+	@Override
+	public String doInstantSecondTransform(String dateExpression) {
+		return "DATEPART(SECOND , " + dateExpression + ")";
+	}
+
+	@Override
+	public String doInstantSubsecondTransform(String dateExpression) {
 		return "(DATEPART(MILLISECOND , " + dateExpression + ")/1000.0000)";
 	}
 
@@ -446,19 +575,32 @@ public class MSSQLServerDBDefinition extends DBDefinition {
 	}
 
 	/**
-	 * Transforms a SQL snippet of a number expression into a character
+	 * Transforms a SQL snippet of a number expression into a character expression
+	 * for this database.
+	 *
+	 * @param numberExpression	numberExpression
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 * @return a String of the SQL required to transform the number supplied into
+	 * a character or String type.
+	 */
+	@Override
+	protected String doNumberToStringTransformUnsafe(String numberExpression) {
+		return "CONVERT(NVARCHAR(1000), " + numberExpression + ")";
+	}
+
+	/**
+	 * Transforms a SQL snippet of a integer expression into a character
 	 * expression for this database.
 	 *
 	 * @param numberExpression	numberExpression
 	 * <p style="color: #F90;">Support DBvolution at
 	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
-	 *
-	 * @return a String of the SQL required to transform the number supplied
-	 * into a character or String type.
+	 * @return a String of the SQL required to transform the number supplied into
+	 * a character or String type.
 	 */
 	@Override
-	public String doNumberToStringTransform(String numberExpression) {
-		DBString dbs = new DBString();
+	protected String doIntegerToStringTransformUnsafe(String numberExpression) {
 		return "CONVERT(NVARCHAR(1000), " + numberExpression + ")";
 	}
 
@@ -467,8 +609,38 @@ public class MSSQLServerDBDefinition extends DBDefinition {
 		return " WITH ";
 	}
 
+	/**
+	 * Defines the function used to get the current timestamp from the database.
+	 *
+	 * @return the default implementation returns " CURRENT_TIMESTAMP "
+	 */
+	@Override
+	protected String getCurrentZonedDateTimeFunction() {
+		return " SYSDATETIMEOFFSET() ";
+	}
+
+	@Override
+	protected String getCurrentDateTimeFunction() {
+		return " SYSDATETIME() ";
+//		return " SYSDATETIMEOFFSET() ";
+//		return " switchoffset("
+//				+ "SYSDATETIME()" + ", '"
+//				+ OffsetTime.now().format(DateTimeFormatter.ofPattern("ZZZZZ"))
+//				+ "')";
+	}
+
+	@Override
+	public String doCurrentUTCDateTimeTransform() {
+		return " SYSUTCDATETIME()";
+	}
+
 	@Override
 	public String doDayOfWeekTransform(String dateSQL) {
+		return " datepart(dw,(" + dateSQL + "))";
+	}
+
+	@Override
+	public String doInstantDayOfWeekTransform(String dateSQL) {
 		return " datepart(dw,(" + dateSQL + "))";
 	}
 
@@ -499,16 +671,110 @@ public class MSSQLServerDBDefinition extends DBDefinition {
 
 	@Override
 	public String doStringToNumberTransform(String stringResultContainingANumber) {
-		return "(CAST(0.0 as numeric(15,10))+(" + stringResultContainingANumber + "))";
+		return "(CAST(0.0 as numeric(" + getNumericPrecision() + "," + getNumericScale() + "))+(CAST (" + stringResultContainingANumber + " as float)))";
 	}
 
 	@Override
 	public DBExpression transformToStorableType(DBExpression columnExpression) {
 		if (columnExpression instanceof BooleanExpression) {
-			return ((BooleanExpression) columnExpression).ifThenElse(1, 0);
+			final BooleanExpression boolExpr = (BooleanExpression) columnExpression;
+			if (boolExpr.isWindowingFunction()) {
+				return columnExpression;
+			} else {
+				return boolExpr.ifTrueFalseNull(1, 0, null).bracket();
+			}
+		} else if (columnExpression instanceof AbstractColumn) {
+			Object col = ((AbstractColumn) columnExpression).getField();
+			if (col != null && (col instanceof DBBoolean)) {
+				final DBBoolean bool = (DBBoolean) col;
+				final DBExpression[] exprns = bool.getColumnExpression();
+				if (exprns.length > 0) {
+					for (DBExpression expr : exprns) {
+						if (expr instanceof BooleanExpression) {
+							return ((BooleanExpression) expr).ifTrueFalseNull(1, 0, null).bracket();
+						}
+					}
+				}
+			}
+		}
+		return super.transformToStorableType(columnExpression);
+	}
+
+	@Override
+	public DBExpression transformToSelectableType(DBExpression columnExpression) {
+		if (columnExpression instanceof BooleanExpression) {
+			final BooleanExpression boolExpr = (BooleanExpression) columnExpression;
+			if (boolExpr.isWindowingFunction()) {
+				return columnExpression;
+			} else if (boolExpr.isBooleanStatement()) {
+				return boolExpr.ifTrueFalseNull(1, 0, null).bracket();
+			} else {
+				return columnExpression;
+			}
+		} else if (columnExpression instanceof Spatial2DExpression) {
+			return ((ExpressionHasStandardStringResult) columnExpression).stringResult();
+		}
+		return super.transformToSelectableType(columnExpression);
+	}
+
+	@Override
+	public DBExpression transformToGroupableType(DBExpression expression) {
+		if (expression instanceof BooleanExpression) {
+			final BooleanExpression boolexpr = (BooleanExpression) expression;
+			return boolexpr.ifTrueFalseNull(true, false, null);
+		} else if (expression instanceof Spatial2DExpression) {
+			return ((ExpressionHasStandardStringResult) expression).stringResult();
+		} else {
+			return super.transformToStorableType(expression);
+		}
+	}
+
+	@Override
+	public DBExpression transformToWhenableType(BooleanExpression test) {
+		if (test.isBooleanStatement()) {
+			return test;
+		} else {
+			return new BooleanExpression(test) {
+				@Override
+				public String toSQLString(DBDefinition db) {
+					return "(" + super.toSQLString(db) + "=1)";
+				}
+			};
+		}
+	}
+
+	@Override
+	public DBExpression transformToSortableType(DBExpression columnExpression) {
+		if (columnExpression instanceof BooleanExpression) {
+			final BooleanExpression boolExpr = (BooleanExpression) columnExpression;
+			if (boolExpr.isWindowingFunction()) {
+				return columnExpression;
+			} else {
+				return boolExpr.ifTrueFalseNull(1, 0, null).bracket();
+			}
+		} else if (columnExpression instanceof AbstractColumn) {
+			Object col = ((AbstractColumn) columnExpression).getField();
+			if (col != null && (col instanceof DBBoolean)) {
+				final DBBoolean bool = (DBBoolean) col;
+				final DBExpression[] exprns = bool.getColumnExpression();
+				if (exprns.length > 0) {
+					for (DBExpression expr : exprns) {
+						if (expr instanceof BooleanExpression) {
+							return ((BooleanExpression) expr).ifTrueFalseNull(1, 0, null).bracket();
+						} else {
+							return super.transformToStorableType(columnExpression);
+						}
+					}
+				} else {
+					return super.transformToStorableType(columnExpression);
+				}
+			} else {
+				return super.transformToStorableType(columnExpression);
+			}
 		} else {
 			return super.transformToStorableType(columnExpression);
 		}
+		return super.transformToStorableType(columnExpression);
 	}
 
 	@Override
@@ -538,12 +804,12 @@ public class MSSQLServerDBDefinition extends DBDefinition {
 
 	@Override
 	public String doPoint2DAsTextTransform(String point2DString) {
-		return "(" + point2DString + ").STAsText()";
+		return "CAST((" + point2DString + ").STAsText() as varchar(1000))";
 	}
 
 	@Override
 	public String doLine2DAsTextTransform(String line2DSQL) {
-		return "(" + line2DSQL + ").STAsText()";
+		return "CAST((" + line2DSQL + ").STAsText() as nvarchar(2000))";
 	}
 
 	@Override
@@ -597,13 +863,9 @@ public class MSSQLServerDBDefinition extends DBDefinition {
 		return "(" + firstGeometry + ").STIntersection(" + secondGeometry + ")";
 	}
 
-//	@Override
-//	public String OldtransformPolygonIntoDatabasePolygon2DFormat(Polygon polygon) {
-//		return "geometry::STGeomFromText ('" + polygon.toText() + "',0)";
-//	}
 	@Override
 	public String transformLineStringIntoDatabaseLine2DFormat(LineString line) {
-		return "geometry::STGeomFromText ('" + line.toText() + "',0)";
+		return "geometry::STGeomFromText ('" + line.toText() + "',0).MakeValid().STUnion(geometry::STGeomFromText('" + line.toText() + "', 0).MakeValid().STStartPoint())";
 	}
 
 	@Override
@@ -626,7 +888,7 @@ public class MSSQLServerDBDefinition extends DBDefinition {
 			separator = ", ";
 		}
 
-		return "geometry::STGeomFromText('POLYGON ((" + str + "))', 0)";
+		return "geometry::STGeomFromText('POLYGON ((" + str + "))', 0).MakeValid().STUnion(geometry::STGeomFromText('POLYGON ((" + str + "))', 0).MakeValid().STStartPoint())";
 	}
 
 	@Override
@@ -643,7 +905,8 @@ public class MSSQLServerDBDefinition extends DBDefinition {
 			}
 		}
 //'POLYGON ((12 12, 13 12, 13 13, 12 13, 12 12))'
-		return "geometry::STGeomFromText('POLYGON ((" + str + "))', 0)";
+// the STUnion corrects for the unusual handedness of SQLServer
+		return "geometry::STGeomFromText('POLYGON ((" + str + "))', 0).MakeValid().STUnion(geometry::STGeomFromText('POLYGON ((" + str + "))', 0).MakeValid().STStartPoint())";
 	}
 
 	@Override
@@ -652,13 +915,17 @@ public class MSSQLServerDBDefinition extends DBDefinition {
 		StringBuilder str = new StringBuilder();
 		String separator = "";
 		for (String point : pointSQL) {
-			System.out.println("" + point);
 			final String coordsOnly = point.replaceAll("geometry::STGeomFromText \\('POINT \\(", "").replaceAll("\\)',0\\)", "");
 			str.append(separator).append(coordsOnly);
 			separator = ",";
 		}
 
-		return "geometry::STGeomFromText('POLYGON ((" + str + "))', 0)";
+		return "geometry::STGeomFromText('POLYGON ((" + str + "))', 0).MakeValid().STUnion(geometry::STGeomFromText('POLYGON ((" + str + "))', 0).MakeValid().STStartPoint())";
+	}
+
+	@Override
+	public String doPolygon2DAsTextTransform(String polygonSQL) {
+		return "((" + polygonSQL + ").STAsText())";
 	}
 
 	@Override
@@ -694,7 +961,8 @@ public class MSSQLServerDBDefinition extends DBDefinition {
 
 	@Override
 	public String doPolygon2DEqualsTransform(String firstGeometry, String secondGeometry) {
-		return "((" + firstGeometry + ").STEquals(" + secondGeometry + ")=1)";
+		//return "((" + firstGeometry + ").STEquals(" + secondGeometry + ")=1)";
+		return "(" + Polygon2DFunctions.EQUALS + "((" + firstGeometry + "), (" + secondGeometry + "))=1)";
 	}
 
 	/**
@@ -704,7 +972,6 @@ public class MSSQLServerDBDefinition extends DBDefinition {
 	 * @param secondGeometry the second polygon2d value to compare
 	 * <p style="color: #F90;">Support DBvolution at
 	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
-	 *
 	 * @return SQL that is TRUE if the first polygon contains the second.
 	 */
 	@Override
@@ -725,7 +992,6 @@ public class MSSQLServerDBDefinition extends DBDefinition {
 	 * @param secondGeometry the second polygon2d value to compare
 	 * <p style="color: #F90;">Support DBvolution at
 	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
-	 *
 	 * @return SQL that is FALSE if the polygons intersect.
 	 */
 	@Override
@@ -744,7 +1010,6 @@ public class MSSQLServerDBDefinition extends DBDefinition {
 	 * @param secondGeometry the second polygon2d value to compare
 	 * <p style="color: #F90;">Support DBvolution at
 	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
-	 *
 	 * @return SQL that is TRUE if the first polygon is within the second.
 	 */
 	@Override
@@ -763,7 +1028,6 @@ public class MSSQLServerDBDefinition extends DBDefinition {
 	 * @param polygon2DSQL a polygon2d value
 	 * <p style="color: #F90;">Support DBvolution at
 	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
-	 *
 	 * @return "2" unless something has gone horribly wrong.
 	 */
 	@Override
@@ -864,21 +1128,46 @@ public class MSSQLServerDBDefinition extends DBDefinition {
 
 	@Override
 	public String transformMultiPoint2DToDatabaseMultiPoint2DValue(MultiPoint points) {
-		return "geometry::STGeomFromText ('" + points.toText() + "',0)";
+		return "geometry::STGeomFromText ('" + points.toText() + "',0).MakeValid().STUnion(geometry::STGeomFromText('" + points.toText() + "', 0).MakeValid().STStartPoint())";
 	}
 
 	@Override
 	public MultiPoint transformDatabaseMultiPoint2DValueToJTSMultiPoint(String pointsAsString) throws com.vividsolutions.jts.io.ParseException {
 		MultiPoint mpoint = null;
 		WKTReader wktReader = new WKTReader();
-		Geometry geometry = wktReader.read(pointsAsString);
-		if (geometry instanceof MultiPoint) {
-			mpoint = (MultiPoint) geometry;
-		} else if (geometry instanceof Point) {
-			Point point = (Point) geometry;
-			mpoint = (new GeometryFactory()).createMultiPoint(new Point[]{point});
+		if (pointsAsString == null || pointsAsString.isEmpty()) {
+			mpoint = (new GeometryFactory()).createMultiPoint(new Point[]{});
 		} else {
-			throw new IncorrectGeometryReturnedForDatatype(geometry, mpoint);
+			Geometry geometry = wktReader.read(pointsAsString);
+			if (geometry.isEmpty()) {
+				mpoint = (new GeometryFactory()).createMultiPoint(new Coordinate[]{});
+			} else if (geometry instanceof MultiPoint) {
+				mpoint = (MultiPoint) geometry;
+			} else if (geometry instanceof Point) {
+				Point point = (Point) geometry;
+				mpoint = (new GeometryFactory()).createMultiPoint(new Point[]{point});
+			} else {
+				throw new IncorrectGeometryReturnedForDatatype(geometry, mpoint);
+			}
+		}
+		return mpoint;
+	}
+
+	@Override
+	public Point transformDatabasePoint2DValueToJTSPoint(String pointsAsString) throws com.vividsolutions.jts.io.ParseException {
+		Point mpoint = null;
+		WKTReader wktReader = new WKTReader();
+		if (pointsAsString == null || pointsAsString.isEmpty()) {
+			mpoint = (new GeometryFactory()).createPoint(new Coordinate());
+		} else {
+			Geometry geometry = wktReader.read(pointsAsString);
+			if (geometry.isEmpty()) {
+				mpoint = (new GeometryFactory()).createPoint(new Coordinate());
+			} else if (geometry instanceof Point) {
+				mpoint = (Point) geometry;
+			} else {
+				throw new IncorrectGeometryReturnedForDatatype(geometry, mpoint);
+			}
 		}
 		return mpoint;
 	}
@@ -890,7 +1179,7 @@ public class MSSQLServerDBDefinition extends DBDefinition {
 
 	@Override
 	public String doMultiPoint2DGetPointAtIndexTransform(String first, String index) {
-		return "(" + first + ").STPointN(" + index + ")";
+		return "(" + first + ").STPointN(" + doMultiPoint2DGetNumberOfPointsTransform(first) + " - (" + index + " -1))";
 	}
 
 	@Override
@@ -947,4 +1236,208 @@ public class MSSQLServerDBDefinition extends DBDefinition {
 	public String getFalseValue() {
 		return " 0 ";
 	}
+
+	@Override
+	public LargeObjectHandlerType preferredLargeObjectWriter(DBLargeObject<?> lob) {
+		if (lob instanceof DBLargeText) {
+			return LargeObjectHandlerType.CHARSTREAM;
+		} else if (lob instanceof DBJavaObject) {
+			return LargeObjectHandlerType.BLOB;
+		} else {
+			return super.preferredLargeObjectWriter(lob);
+		}
+	}
+
+	@Override
+	public LargeObjectHandlerType preferredLargeObjectReader(DBLargeObject<?> lob) {
+		if (lob instanceof DBLargeText) {
+			return LargeObjectHandlerType.STRING;
+		} else if (lob instanceof DBJavaObject) {
+			return LargeObjectHandlerType.BLOB;
+		} else {
+			return super.preferredLargeObjectReader(lob);
+		}
+	}
+
+	/**
+	 * Return the function name for the RoundUp function.
+	 *
+	 * <p>
+	 * For MS SQLServer this method returns <b>ceiling</b></p>
+	 *
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
+	 * @return the name of the function to use when rounding numbers up
+	 */
+	@Override
+	public String getRoundUpFunctionName() {
+		return "ceiling";
+	}
+
+	/**
+	 * Return the function name for the Natural Logarithm function.
+	 *
+	 * <p>
+	 * For SQLServer this method returns <b>log</b></p>
+	 *
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
+	 * @return the name of the function to use when rounding numbers up
+	 */
+	@Override
+	public String getNaturalLogFunctionName() {
+		return "log";
+	}
+
+	/**
+	 * Return the function name for the Logarithm Base10 function.
+	 *
+	 * <p>
+	 * By default this method returns <b>log10</b></p>
+	 *
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
+	 * @return the name of the function to use when rounding numbers up
+	 */
+	@Override
+	public String getLogBase10FunctionName() {
+		return "log10";
+	}
+
+	/**
+	 * Returns the required code to generate a random number.
+	 *
+	 * <p>
+	 * For each call of this method a new random number is generated.
+	 * </p>
+	 *
+	 * <p>
+	 * This method DOES NOT use the SQLServer built-in function as it does not
+	 * produce a different result for different rows in a single query.</p>
+	 *
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 *
+	 * @return random number generating code
+	 */
+	@Override
+	public String doRandomNumberTransform() {
+		return " (ABS(cast(CHECKSUM(NewId())as BIGINT))/2147483648) ";
+	}
+
+	@Override
+	public String doFindNumberInStringTransform(String toSQLString) {
+		return MigrationFunctions.FINDFIRSTNUMBER + "(" + toSQLString + ')';
+	}
+
+	@Override
+	public String doFindIntegerInStringTransform(String toSQLString) {
+		return MigrationFunctions.FINDFIRSTINTEGER + "(" + toSQLString + ')';
+	}
+
+	@Override
+	public Collection<? extends String> getInsertPreparation(DBRow table) {
+		final ArrayList<String> strs = new ArrayList<String>();
+		if (table.hasAutoIncrementField() && table.getAutoIncrementField().getQueryableDatatype().hasBeenSet()) {
+			strs.add("SET IDENTITY_INSERT " + this.formatTableName(table) + " ON;");
+		}
+		return strs;
+	}
+
+	@Override
+	public Collection<? extends String> getInsertCleanUp(DBRow table) {
+		final ArrayList<String> strs = new ArrayList<String>();
+		if (table.hasAutoIncrementField() && table.getAutoIncrementField().getQueryableDatatype().hasBeenSet()) {
+			strs.add("SET IDENTITY_INSERT " + this.formatTableName(table) + " OFF;");
+		}
+		return strs;
+	}
+
+	@Override
+	public String getAlterTableAddColumnSQL(DBRow existingTable, PropertyWrapper<?, ?, ?> columnPropertyWrapper) {
+		return "ALTER TABLE " + formatTableName(existingTable) + " ADD " + getAddColumnColumnSQL(columnPropertyWrapper) + endSQLStatement();
+	}
+
+	@Override
+	public boolean supportsNullsOrderingStandard() {
+		return false;
+	}
+
+	@Override
+	public String doStringAccumulateTransform(String accumulateColumn, String separator, String referencedTable) {
+		return "(STRING_AGG(" + accumulateColumn + ", " + doStringLiteralWrapping(separator) + "))";
+	}
+
+	@Override
+	public String doStringAccumulateTransform(String accumulateColumn, String separator, String orderByColumnName, String referencedTable) {
+		return "(STRING_AGG(" + accumulateColumn + ", " + doStringLiteralWrapping(separator) + ") WITHIN GROUP (ORDER BY " + orderByColumnName + "))";
+	}
+
+	@Override
+	public boolean requiresClosedPolygons() {
+		return true;
+	}
+
+	@Override
+	public boolean requiresOnClauseForAllJoins() {
+		return true;
+	}
+
+	@Override
+	public boolean requiresReversingLineStringsFromDatabase() {
+		return true;
+	}
+
+	@Override
+	public LineString transformDatabaseLine2DValueToJTSLineString(String lineStringAsSQL) throws com.vividsolutions.jts.io.ParseException {
+		final GeometryFactory geom = new GeometryFactory();
+		LineString lineString = geom.createLineString(new Coordinate[]{});
+		WKTReader wktReader = new WKTReader();
+		Geometry geometry = wktReader.read(lineStringAsSQL);
+		if (geometry.isEmpty()) {
+			lineString = geom.createLineString(new Coordinate[]{});
+		} else if (geometry instanceof LineString) {
+			lineString = (LineString) geometry;
+			Coordinate[] coords = lineString.getCoordinates();
+			ArrayUtils.reverse(coords);
+			lineString = geom.createLineString(coords);
+		} else {
+			throw new IncorrectGeometryReturnedForDatatype(geometry, lineString);
+		}
+		return lineString;
+	}
+
+	@Override
+	public String getDefaultOrderingClause() {
+		return "ORDER BY (SELECT NULL)";
+	}
+
+	@Override
+	public boolean supportsDurationNatively() {
+		return false;
+	}
+
+	@Override
+	public boolean supportsDateRepeatDatatypeFunctions() {
+		return false;
+	}
+
+	private static final Regex DUPLICATE_COLUMN_EXCEPTION
+			= Regex
+					.startingAnywhere()
+					.literalCaseInsensitive("Column names in each table must be unique. Column name '")//Column names in each table must be unique. Column name 'name' in table 'RequiredTableShouldBeCreatedAutomatically' is specified more than once.
+					.anyCharacterExcept("'").atLeastOnce()
+					.literalCaseInsensitive("' in table '")
+					.anyCharacterExcept("'").atLeastOnce()
+					.literalCaseInsensitive("' is specified more than once.")
+					.toRegex();
+
+	@Override
+	public boolean isDuplicateColumnException(Exception exc) {
+		return DUPLICATE_COLUMN_EXCEPTION.matchesWithinString(exc.getMessage());
+	}
+
 }

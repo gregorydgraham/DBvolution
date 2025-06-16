@@ -15,8 +15,7 @@
  */
 package nz.co.gregs.dbvolution.internal.postgres;
 
-import java.sql.SQLException;
-import java.sql.Statement;
+import nz.co.gregs.dbvolution.internal.FeatureAdd;
 
 /**
  *
@@ -25,13 +24,12 @@ import java.sql.Statement;
  *
  * @author gregorygraham
  */
-public enum StringFunctions {
+public enum StringFunctions implements FeatureAdd {
 
 	/**
 	 *
 	 */
 	SUBSTRINGBEFORE(Language.sql, "text", "sourceText text, rightHandSide text", "select (CASE WHEN POSITION(rightHandSide IN (sourceText)::VARCHAR) > 0 THEN  SUBSTRING((sourceText)::VARCHAR FROM 0 + 1 FOR POSITION(rightHandSide IN (sourceText)::VARCHAR) - 1 - 0)  ELSE $$$$ END);"),
-
 	/**
 	 *
 	 */
@@ -56,19 +54,45 @@ public enum StringFunctions {
 		return "DBV_STRINGFN_" + name();
 	}
 
-	/**
-	 *
-	 * @param stmt
-	 * @throws SQLException
-	 */
-	public void add(Statement stmt) throws SQLException {
-		try {
-			stmt.execute("DROP FUNCTION " + this + "(" + parameters + ");");
-		} catch (SQLException sqlex) {
-			;
+//	@SuppressFBWarnings(value = "SQL_NONCONSTANT_STRING_PASSED_TO_EXECUTE",
+//			justification = "The strings are actually constant but made dynamically")
+//	public void add(Statement stmt) throws ExceptionDuringDatabaseFeatureSetup {
+//		try {
+//			final String drop = "DROP FUNCTION " + this + "(" + parameters + ");";
+//			stmt.execute(drop);
+//		} catch (SQLException sqlex) {
+//			;
+//		}
+//		final String add = "CREATE OR REPLACE FUNCTION " + this + "(" + this.parameters + ")\n" + "    RETURNS " + this.returnType + " AS\n" + "'\n" + this.code + "'\n" + "LANGUAGE '" + this.language.name() + "';";
+//		try {
+//			stmt.execute(add);
+//		} catch (Exception ex) {
+//			throw new ExceptionDuringDatabaseFeatureSetup("FAILED TO ADD FEATURE: " + name(), ex);
+//		}
+//	}
+	
+	@Override
+	public String[] createSQL() {
+		if (!this.code.isEmpty()) {
+			return new String[]{
+				"CREATE OR REPLACE FUNCTION " 
+					+ this + "(" + this.parameters + ")\n" 
+					+ "    RETURNS " + this.returnType 
+					+ " AS\n" + "'\n" + this.code + "'\n" 
+					+ "LANGUAGE '" + this.language.name() + "';"
+			};
 		}
-		stmt.execute("CREATE OR REPLACE FUNCTION " + this + "(" + this.parameters + ")\n" + "    RETURNS " + this.returnType + " AS\n" + "'\n" + this.code + "'\n" + "LANGUAGE '" + this.language.name() + "';");
+		return new String[]{};
+	}
 
+	@Override
+	public String[] dropSQL() {
+		if (!this.code.isEmpty()) {
+			return new String[]{
+				"DROP FUNCTION " + this + "(" + parameters + ");"
+			};
+		}
+		return new String[]{};
 	}
 
 }

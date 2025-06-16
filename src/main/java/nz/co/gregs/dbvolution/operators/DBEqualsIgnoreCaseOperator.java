@@ -16,21 +16,22 @@
 package nz.co.gregs.dbvolution.operators;
 
 import nz.co.gregs.dbvolution.datatypes.QueryableDatatypeSyncer.DBSafeInternalQDTAdaptor;
-import nz.co.gregs.dbvolution.DBDatabase;
+import nz.co.gregs.dbvolution.databases.definitions.DBDefinition;
 import nz.co.gregs.dbvolution.expressions.BooleanExpression;
 import nz.co.gregs.dbvolution.expressions.DBExpression;
 import nz.co.gregs.dbvolution.expressions.DateExpression;
+import nz.co.gregs.dbvolution.expressions.EqualExpression;
+import nz.co.gregs.dbvolution.expressions.IntegerExpression;
 import nz.co.gregs.dbvolution.results.DateResult;
 import nz.co.gregs.dbvolution.expressions.NumberExpression;
 import nz.co.gregs.dbvolution.results.NumberResult;
 import nz.co.gregs.dbvolution.expressions.StringExpression;
+import nz.co.gregs.dbvolution.results.IntegerResult;
 import nz.co.gregs.dbvolution.results.StringResult;
 
 /**
  * Implements the EQUALS operator for DBStrings, but case-insensitive.
  *
- * <p style="color: #F90;">Support DBvolution at
- * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
  *
  * @author Gregory Graham
  */
@@ -41,7 +42,7 @@ public class DBEqualsIgnoreCaseOperator extends DBEqualsOperator {
 	/**
 	 * Implements the EQUALS operator for DBStrings, but case-insensitive.
 	 *
-	 * @param equalTo
+	 * @param equalTo the expression to compare to
 	 */
 	public DBEqualsIgnoreCaseOperator(DBExpression equalTo) {
 		super(equalTo);
@@ -56,7 +57,7 @@ public class DBEqualsIgnoreCaseOperator extends DBEqualsOperator {
 	}
 
 	@Override
-	public BooleanExpression generateWhereExpression(DBDatabase db, DBExpression column) {
+	public BooleanExpression generateWhereExpression(DBDefinition db, DBExpression column) {
 		DBExpression genericExpression = column;
 		BooleanExpression op = BooleanExpression.trueExpression();
 		if (genericExpression instanceof StringExpression) {
@@ -65,9 +66,15 @@ public class DBEqualsIgnoreCaseOperator extends DBEqualsOperator {
 		} else if (genericExpression instanceof NumberExpression) {
 			NumberExpression numberExpression = (NumberExpression) genericExpression;
 			op = numberExpression.is((NumberResult) getFirstValue());
+		} else if (genericExpression instanceof IntegerExpression) {
+			IntegerExpression numberExpression = (IntegerExpression) genericExpression;
+			op = numberExpression.is((IntegerResult) getFirstValue());
 		} else if (genericExpression instanceof DateExpression) {
 			DateExpression dateExpression = (DateExpression) genericExpression;
 			op = dateExpression.is((DateResult) getFirstValue());
+		} else if (genericExpression instanceof EqualExpression) {
+			EqualExpression expr = (EqualExpression) genericExpression;
+			op = expr.is(getFirstValue());
 		}
 		return this.invertOperator ? op.not() : op;
 	}

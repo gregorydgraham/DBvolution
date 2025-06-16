@@ -16,6 +16,7 @@
 package nz.co.gregs.dbvolution.results;
 
 import nz.co.gregs.dbvolution.expressions.BooleanExpression;
+import nz.co.gregs.dbvolution.expressions.DBExpression;
 
 /**
  * Indicates that the class can be compared to other instances of this class as
@@ -29,10 +30,11 @@ import nz.co.gregs.dbvolution.expressions.BooleanExpression;
  * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
  *
  * @author Gregory Graham
+ * @param <B> the base Java type produced and manipulated by this class
  * @param <A> the class that can be compared using the "=" operator
  *
  */
-public interface EqualComparable<A> {
+public interface EqualComparable<B, A extends DBExpression> extends AnyComparable<B, A>{
 
 	/**
 	 * Creates a {@link BooleanExpression} that compares the 2 values using the
@@ -41,7 +43,6 @@ public interface EqualComparable<A> {
 	 * @param anotherInstance an instance to compare to
 	 * <p style="color: #F90;">Support DBvolution at
 	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
-	 *
 	 * @return a BooleanExpression
 	 */
 	public BooleanExpression is(A anotherInstance);
@@ -53,8 +54,29 @@ public interface EqualComparable<A> {
 	 * @param anotherInstance and instance to compare to
 	 * <p style="color: #F90;">Support DBvolution at
 	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
-	 *
 	 * @return a BooleanExpression
 	 */
 	public BooleanExpression isNot(A anotherInstance);
+
+	/**
+	 * Creates a {@link BooleanExpression} that compares the 2 values using the
+	 * EQUALS operation.
+	 *
+	 * @param anotherInstance an instance to compare to
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 * @return a BooleanExpression
+	 */
+	public BooleanExpression is(B anotherInstance);
+
+	/**
+	 * Creates a {@link BooleanExpression} that compares the 2 values using the
+	 * NOT EQUALS operation.
+	 *
+	 * @param anotherInstance and instance to compare to
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 * @return a BooleanExpression
+	 */
+	public BooleanExpression isNot(B anotherInstance);
 }

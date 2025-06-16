@@ -2,7 +2,7 @@ package nz.co.gregs.dbvolution.internal.properties;
 
 import static nz.co.gregs.dbvolution.internal.properties.PropertyMatchers.*;
 import static org.hamcrest.Matchers.*;
-import static org.junit.Assert.*;
+import static org.hamcrest.MatcherAssert.assertThat;
 
 import java.util.Date;
 import java.util.List;
@@ -16,8 +16,9 @@ import nz.co.gregs.dbvolution.annotations.DBTableName;
 import nz.co.gregs.dbvolution.datatypes.DBDate;
 import nz.co.gregs.dbvolution.datatypes.DBInteger;
 import nz.co.gregs.dbvolution.datatypes.DBTypeAdaptor;
-import nz.co.gregs.dbvolution.exceptions.DBPebkacException;
 import nz.co.gregs.dbvolution.exceptions.InvalidDeclaredTypeException;
+import nz.co.gregs.dbvolution.exceptions.ReferenceToUndefinedPrimaryKeyException;
+import nz.co.gregs.dbvolution.exceptions.UnableToInterpolateReferencedColumnInMultiColumnPrimaryKeyException;
 import nz.co.gregs.dbvolution.internal.properties.JavaPropertyFinder.PropertyType;
 import nz.co.gregs.dbvolution.internal.properties.JavaPropertyFinder.Visibility;
 
@@ -26,24 +27,24 @@ import org.junit.Test;
 @SuppressWarnings({"serial", "unused"})
 public class ForeignKeyHandlerTest {
 
-	private JavaPropertyFinder privateFieldPublicBeanFinder = new JavaPropertyFinder(
+	private final JavaPropertyFinder privateFieldPublicBeanFinder = new JavaPropertyFinder(
 			Visibility.PRIVATE, Visibility.PUBLIC, null, (PropertyType[]) null);
 
 	@Test
 	public void isForeignGivenAnnotation() {
-		ForeignKeyHandler handler = foreignKeyHandlerOf(Customer.class, "fkAddress");
+		var handler = foreignKeyHandlerOf(Customer.class, "fkAddress");
 		assertThat(handler.isForeignKey(), is(true));
 	}
 
 	@Test
 	public void isnotForeignGivenAnnotation() {
-		ForeignKeyHandler handler = foreignKeyHandlerOf(Customer.class, "customerUid");
+		var handler = foreignKeyHandlerOf(Customer.class, "customerUid");
 		assertThat(handler.isForeignKey(), is(false));
 	}
 
 	@Test
 	public void getsReferencedClassGivenValidAnnotation() {
-		ForeignKeyHandler handler = foreignKeyHandlerOf(Customer.class, "fkAddress");
+		var handler = foreignKeyHandlerOf(Customer.class, "fkAddress");
 		assertThat(handler.getReferencedClass(), is((Object) Address.class));
 	}
 
@@ -60,7 +61,7 @@ public class ForeignKeyHandlerTest {
 			public DBInteger fkAddress2;
 		}
 
-		ForeignKeyHandler handler = foreignKeyHandlerOf(TestCustomer.class, "fkAddress2");
+		var handler = foreignKeyHandlerOf(TestCustomer.class, "fkAddress2");
 		assertThat(handler.getReferencedColumnName(), is("intValue"));
 	}
 
@@ -77,7 +78,7 @@ public class ForeignKeyHandlerTest {
 			public DBInteger fkAddress2;
 		}
 
-		ForeignKeyHandler handler = foreignKeyHandlerOf(TestCustomer.class, "fkAddress2");
+		var handler = foreignKeyHandlerOf(TestCustomer.class, "fkAddress2");
 		assertThat(handler.getReferencedColumnName(), is("addressUid"));
 	}
 
@@ -95,7 +96,7 @@ public class ForeignKeyHandlerTest {
 			public DBInteger fkPreviousHistory;
 		}
 
-		ForeignKeyHandler handler = foreignKeyHandlerOf(TestCustomer.class, "fkPreviousHistory");
+		var handler = foreignKeyHandlerOf(TestCustomer.class, "fkPreviousHistory");
 		assertThat(handler.getReferencedTableName(), is("customer"));
 		assertThat(handler.getReferencedColumnName(), is("customerUid"));
 		assertThat(handler.getReferencedPropertyDefinitionIdentity(), is(not(nullValue())));
@@ -127,7 +128,7 @@ public class ForeignKeyHandlerTest {
 
 	@Test
 	public void getsReferenceeGivenCircularReferenceWithDepthOne() {
-		ForeignKeyHandler handler = foreignKeyHandlerOf(CustomerWithCircularReferenceToAddress.class, "fkAddress3");
+		var handler = foreignKeyHandlerOf(CustomerWithCircularReferenceToAddress.class, "fkAddress3");
 		assertThat(handler.getReferencedTableName(), is("address"));
 		assertThat(handler.getReferencedColumnName(), is("addressUid3"));
 		assertThat(handler.getReferencedPropertyDefinitionIdentity(), is(not(nullValue())));
@@ -172,7 +173,7 @@ public class ForeignKeyHandlerTest {
 			public DBInteger fkAddress2;
 		}
 
-		ForeignKeyHandler handler = foreignKeyHandlerOf(TestCustomer.class, "fkAddress2");
+		var handler = foreignKeyHandlerOf(TestCustomer.class, "fkAddress2");
 		assertThat(handler.getReferencedColumnName(), is("addressUid2"));
 	}
 
@@ -228,7 +229,7 @@ public class ForeignKeyHandlerTest {
 			public DBInteger fkAddress2;
 		}
 
-		ForeignKeyHandler handler = foreignKeyHandlerOf(TestCustomer.class, "fkAddress2");
+		var handler = foreignKeyHandlerOf(TestCustomer.class, "fkAddress2");
 		assertThat(handler.getReferencedPropertyDefinitionIdentity().type(), is((Object) DBInteger.class));
 	}
 
@@ -267,7 +268,7 @@ public class ForeignKeyHandlerTest {
 		foreignKeyHandlerOf(TestCustomer.class, "fkAddress2");
 	}
 
-	@Test(expected = DBPebkacException.class)
+	@Test(expected = ReferenceToUndefinedPrimaryKeyException.class)
 	public void errorsWhenColumnExplicitlySpecifiedGivenIncorrectColumnName() {
 		class TestCustomer extends DBRow {
 
@@ -283,7 +284,7 @@ public class ForeignKeyHandlerTest {
 		foreignKeyHandlerOf(TestCustomer.class, "fkAddress2");
 	}
 
-	@Test(expected = DBPebkacException.class)
+	@Test(expected = ReferenceToUndefinedPrimaryKeyException.class)
 	public void errorsWhenColumnExplicitlySpecifiedGivenDuplicateReferencedColumnName() {
 		class TestAddress extends DBRow {
 
@@ -311,7 +312,7 @@ public class ForeignKeyHandlerTest {
 		foreignKeyHandlerOf(TestCustomer.class, "fkAddress2");
 	}
 
-	@Test(expected = DBPebkacException.class)
+	@Test(expected = ReferenceToUndefinedPrimaryKeyException.class)
 	public void errorsWhenColumnExplicitlySpecifiedGivenDuplicateButDifferingCaseReferencedColumnName() {
 		class TestAddress extends DBRow {
 
@@ -339,7 +340,7 @@ public class ForeignKeyHandlerTest {
 		foreignKeyHandlerOf(TestCustomer.class, "fkAddress2");
 	}
 
-	@Test(expected = DBPebkacException.class)
+	@Test(expected = ReferenceToUndefinedPrimaryKeyException.class)
 	public void errorsGivenColumnUnspecifiedOnAnnotationAndNoPrimaryKey() {
 		class TestAddress extends DBRow {
 
@@ -385,16 +386,129 @@ public class ForeignKeyHandlerTest {
 		public DBInteger fkAddress;
 	}
 
-	private ForeignKeyHandler foreignKeyHandlerOf(Class<?> clazz, String javaPropertyName) {
-		return new ForeignKeyHandler(propertyOf(clazz, javaPropertyName), false);
+	@SuppressWarnings("unchecked")
+	private ForeignKeyHandler<?,?> foreignKeyHandlerOf(Class<?> clazz, String javaPropertyName) {
+		return new ForeignKeyHandler<>(propertyOf(clazz, javaPropertyName), false);
 	}
 
-	private JavaProperty propertyOf(Class<?> clazz, String javaPropertyName) {
-		List<JavaProperty> properties = privateFieldPublicBeanFinder.getPropertiesOf(clazz);
-		JavaProperty property = itemOf(properties, that(hasJavaPropertyName(javaPropertyName)));
+	private JavaProperty<?> propertyOf(Class<?> clazz, String javaPropertyName) {
+		var properties = privateFieldPublicBeanFinder.getPropertiesOf(clazz);
+		var property = itemOf(properties, that(hasJavaPropertyName(javaPropertyName)));
 		if (property == null) {
 			throw new IllegalArgumentException("No property found with java name '" + javaPropertyName + "'");
 		}
 		return property;
+	}
+
+	@Test()
+	public void guessesForeignKeyReferenceOfMultiplePrimaryKeyTable() {
+		class TestAddress extends DBRow {
+
+			@DBColumn
+			public DBInteger addressUid;
+
+			@DBColumn()
+			@DBPrimaryKey
+			public DBInteger addressUid2;
+
+			@DBColumn("bl_id")
+			@DBPrimaryKey
+			public DBInteger blId;
+
+			@DBColumn
+			public DBInteger intValue;
+		}
+
+		class TestCustomer extends DBRow {
+
+			@DBPrimaryKey
+			@DBColumn
+			public DBInteger customerUid;
+
+			@DBForeignKey(TestAddress.class)
+			@DBColumn
+			public DBInteger fkAddress2;
+
+			@DBForeignKey(TestAddress.class)
+			@DBColumn
+			public DBInteger fromBlId;
+		}
+
+		foreignKeyHandlerOf(TestCustomer.class, "fromBlId");
+	}
+
+	@Test(expected = UnableToInterpolateReferencedColumnInMultiColumnPrimaryKeyException.class)
+	public void failsToGuessForeignKeyReferenceOfMultiplePrimaryKeyTable() {
+		class TestAddress extends DBRow {
+
+			@DBColumn
+			public DBInteger addressUid;
+
+			@DBColumn()
+			@DBPrimaryKey
+			public DBInteger addressUid2;
+
+			@DBColumn("bl_id")
+			@DBPrimaryKey
+			public DBInteger blId;
+
+			@DBColumn
+			public DBInteger intValue;
+		}
+
+		class TestCustomer extends DBRow {
+
+			@DBPrimaryKey
+			@DBColumn
+			public DBInteger customerUid;
+
+			@DBForeignKey(TestAddress.class)
+			@DBColumn
+			public DBInteger fkAddress2;
+
+			@DBForeignKey(TestAddress.class)
+			@DBColumn
+			public DBInteger from;
+		}
+
+		foreignKeyHandlerOf(TestCustomer.class, "from");
+	}
+
+	public void SuccessfullyGuessForeignKeyReferenceOfMultiplePrimaryKeyTable() {
+		class TestAddress extends DBRow {
+
+			@DBColumn
+			public DBInteger addressUid;
+
+			@DBColumn("version_name")
+			@DBPrimaryKey
+			public DBInteger versionName;
+
+			@DBColumn("version_type")
+			@DBPrimaryKey
+			public DBInteger versionType;
+
+			@DBColumn
+			public DBInteger intValue;
+		}
+
+		class TestCustomer extends DBRow {
+
+			@DBPrimaryKey
+			@DBColumn
+			public DBInteger customerUid;
+
+			@DBColumn("waste_sol_version")
+			@DBForeignKey(TestAddress.class)
+			public DBInteger wasteSolVersion = new DBInteger();
+
+			@DBColumn("waste_sol_version_type")
+			@DBForeignKey(TestAddress.class)
+			public DBInteger wasteSolVersionType = new DBInteger();
+
+		}
+
+		foreignKeyHandlerOf(TestCustomer.class, "wasteSolVersionType");
+		foreignKeyHandlerOf(TestCustomer.class, "wasteSolVersion");
 	}
 }

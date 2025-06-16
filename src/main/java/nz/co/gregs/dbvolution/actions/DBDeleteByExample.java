@@ -18,27 +18,32 @@ package nz.co.gregs.dbvolution.actions;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
-import nz.co.gregs.dbvolution.DBDatabase;
+import nz.co.gregs.dbvolution.databases.DBDatabase;
 import nz.co.gregs.dbvolution.DBRow;
 import nz.co.gregs.dbvolution.databases.DBStatement;
+import nz.co.gregs.dbvolution.databases.QueryIntention;
 import nz.co.gregs.dbvolution.databases.definitions.DBDefinition;
+import nz.co.gregs.dbvolution.exceptions.AccidentalBlankQueryException;
+import nz.co.gregs.dbvolution.exceptions.AccidentalCartesianJoinException;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 
 /**
  * Supplies supports for the abstract concept of deleting rows based on an
  * example row.
  *
  * <p>
- * The best way to use this is by using {@link DBDelete#getDeletes(nz.co.gregs.dbvolution.DBDatabase, nz.co.gregs.dbvolution.DBRow...)
+ * The best way to use this is by using {@link DBDelete#getDeletes(nz.co.gregs.dbvolution.databases.DBDatabase, nz.co.gregs.dbvolution.DBRow...)
  * } to automatically use this action.
- *
- * <p style="color: #F90;">Support DBvolution at
- * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
  *
  * @author Gregory Graham
  */
 public class DBDeleteByExample extends DBDelete {
 
-	private List<DBRow> savedRows = new ArrayList<DBRow>();
+	private static final long serialVersionUID = 1l;
+	private static final Log LOG = LogFactory.getLog(DBDeleteByExample.class);
+
+	private final ArrayList<DBRow> savedRows = new ArrayList<DBRow>();
 
 	/**
 	 * Creates a DBDeleteByExample action for the supplied example DBRow on the
@@ -48,49 +53,42 @@ public class DBDeleteByExample extends DBDelete {
 	 * @param row the example to be deleted
 	 */
 	protected <R extends DBRow> DBDeleteByExample(R row) {
-		super(row);
+		super(row, QueryIntention.DELETE_BY_EXAMPLE);
 	}
 
 	private <R extends DBRow> DBDeleteByExample(DBDatabase db, R row) throws SQLException {
-		super(row);
-		List<R> gotRows = db.get(row);
-		for (R gotRow : gotRows) {
-			savedRows.add(DBRow.copyDBRow(gotRow));
-		}
+		this(row);
 	}
 
 	@Override
-	protected DBActionList execute(DBDatabase db) throws SQLException {
-		DBRow row = getRow();
-		final DBDeleteByExample deleteAction = new DBDeleteByExample(row);
+	public DBActionList execute(DBDatabase db) throws SQLException {
+		DBRow table = getRow();
+		final DBDeleteByExample deleteAction = new DBDeleteByExample(table);
 		DBActionList actions = new DBActionList(deleteAction);
-		List<DBRow> rowsToBeDeleted = db.get(row);
+		List<DBRow> rowsToBeDeleted = db.get(table);
 		for (DBRow deletingRow : rowsToBeDeleted) {
 			deleteAction.savedRows.add(DBRow.copyDBRow(deletingRow));
 		}
-		DBStatement statement = db.getDBStatement();
-		try {
-			for (String str : getSQLStatements(db)) {
-				statement.execute(str);
+		try (DBStatement statement = db.getDBStatement()) {
+			for (String sql : getSQLStatements(db)) {
+				statement.execute("DELETE ROW", QueryIntention.DELETE_ROW, sql);
 			}
-		} finally {
-			statement.close();
 		}
 		return actions;
 	}
 
 	@Override
 	public List<String> getSQLStatements(DBDatabase db) {
-		DBRow row = getRow();
 		DBDefinition defn = db.getDefinition();
-		String whereClause = "";
-		for (String clause : row.getWhereClausesWithoutAliases(db)) {
-			whereClause += defn.beginAndLine() + clause;
+		DBRow table = getRow();
+		StringBuilder whereClause = new StringBuilder();
+		for (String clause : table.getWhereClausesWithoutAliases(defn)) {
+			whereClause.append(defn.beginAndLine()).append(clause);
 		}
 
-		ArrayList<String> strs = new ArrayList<String>();
+		ArrayList<String> strs = new ArrayList<>();
 		strs.add(defn.beginDeleteLine()
-				+ defn.formatTableName(row)
+				+ defn.formatTableName(table)
 				+ defn.beginWhereClause()
 				+ defn.getWhereClauseBeginningCondition()
 				+ whereClause
@@ -125,7 +123,6 @@ public class DBDeleteByExample extends DBDelete {
 	 * @throws SQLException Database actions can throw SQLException
 	 * <p style="color: #F90;">Support DBvolution at
 	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
-	 *
 	 * @return the list of actions required to delete all the rows.
 	 */
 	@Override

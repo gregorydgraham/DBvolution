@@ -15,8 +15,7 @@
  */
 package nz.co.gregs.dbvolution.internal.postgres;
 
-import java.sql.SQLException;
-import java.sql.Statement;
+import nz.co.gregs.dbvolution.internal.FeatureAdd;
 
 /**
  *
@@ -25,7 +24,7 @@ import java.sql.Statement;
  *
  * @author gregorygraham
  */
-public enum Line2DFunctions {
+public enum Line2DFunctions implements FeatureAdd {
 
 	/**
 	 *
@@ -60,7 +59,6 @@ public enum Line2DFunctions {
 			+ "  return result;\n"
 			+ " END IF;\n"
 			+ "END;"),
-
 	/**
 	 *
 	 */
@@ -94,7 +92,6 @@ public enum Line2DFunctions {
 			+ "  return result;\n"
 			+ " END IF;\n"
 			+ "END;"),
-
 	/**
 	 *
 	 */
@@ -128,7 +125,6 @@ public enum Line2DFunctions {
 			+ "  return result;\n"
 			+ " END IF;\n"
 			+ "END;"),
-
 	/**
 	 *
 	 */
@@ -162,7 +158,6 @@ public enum Line2DFunctions {
 			+ "  return result;\n"
 			+ " END IF;\n"
 			+ "END;"),
-
 	/**
 	 *
 	 */
@@ -184,7 +179,6 @@ public enum Line2DFunctions {
 			+ "  return result;\n"
 			+ " END IF;\n"
 			+ "END;"),
-
 	/**
 	 *
 	 */
@@ -202,7 +196,6 @@ public enum Line2DFunctions {
 			+ "  END IF;\n"
 			+ " END IF;\n"
 			+ "END;"),
-
 	/**
 	 *
 	 */
@@ -241,21 +234,51 @@ public enum Line2DFunctions {
 		return "DBV_LINE2DFN_" + name();
 	}
 
-	/**
-	 *
-	 * @param stmt
-	 * @throws SQLException
-	 */
-	public void add(Statement stmt) throws SQLException {
-		try {
-			stmt.execute("DROP FUNCTION " + this + "(" + this.parameters + ");");
-		} catch (SQLException sqlex) {
-			;
-		}
-		final String createFunctionStatement = "CREATE OR REPLACE FUNCTION " + this + "(" + this.parameters + ")\n" + "    RETURNS " + this.returnType + " AS\n" + "'\n" + this.code + "'\n" + "LANGUAGE '" + language + "' IMMUTABLE;";
-//		System.out.println("" + createFunctionStatement);
-		stmt.execute(createFunctionStatement);
+//	/**
+//	 *
+//	 * @param stmt the database statement to add the datatype to.
+//	 * @throws ExceptionDuringDatabaseFeatureSetup database errors
+//	 */
+//	@SuppressFBWarnings(value = "SQL_NONCONSTANT_STRING_PASSED_TO_EXECUTE",
+//			justification = "The strings are actually constant but made dynamically")
+//	public void add(Statement stmt) throws ExceptionDuringDatabaseFeatureSetup {
+//		Log LOG = LogFactory.getLog(Line2DFunctions.class);
+//		try {
+//			final String drop = "DROP FUNCTION " + this + "(" + this.parameters + ");";
+//			stmt.execute(drop);
+//		} catch (SQLException sqlex) {
+//		}
+//		try {
+//			final String createFunctionStatement = "CREATE OR REPLACE FUNCTION " + this + "(" + this.parameters + ")\n" + "    RETURNS " + this.returnType + " AS\n" + "'\n" + this.code + "'\n" + "LANGUAGE '" + language + "' IMMUTABLE;";
+//			stmt.execute(createFunctionStatement);
+//		} catch (Exception ex) {
+//			throw new ExceptionDuringDatabaseFeatureSetup("FAILED TO ADD FEATURE: " + name(), ex);
+//		}
+//	}
+	
+	@Override
+	public String featureName() {
+		return name();
+	}
 
+	@Override
+	public String[] createSQL() {
+		if (!this.code.isEmpty()) {
+			return new String[]{
+				"CREATE OR REPLACE FUNCTION " + this + "(" + this.parameters + ")\n" + "    RETURNS " + this.returnType + " AS\n" + "'\n" + this.code + "'\n" + "LANGUAGE '" + language + "' IMMUTABLE;"
+			};
+		}
+		return new String[]{};
+	}
+
+	@Override
+	public String[] dropSQL() {
+		if (!this.code.isEmpty()) {
+			return new String[]{
+				"DROP FUNCTION " + this + "(" + this.parameters + ");"
+			};
+		}
+		return new String[]{};
 	}
 
 }

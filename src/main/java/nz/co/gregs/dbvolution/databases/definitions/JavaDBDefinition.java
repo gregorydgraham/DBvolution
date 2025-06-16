@@ -24,8 +24,9 @@ import nz.co.gregs.dbvolution.DBRow;
 import nz.co.gregs.dbvolution.datatypes.DBBoolean;
 import nz.co.gregs.dbvolution.datatypes.DBDate;
 import nz.co.gregs.dbvolution.datatypes.DBJavaObject;
+import nz.co.gregs.dbvolution.datatypes.DBLargeObject;
 import nz.co.gregs.dbvolution.datatypes.QueryableDatatype;
-import nz.co.gregs.dbvolution.query.QueryOptions;
+import nz.co.gregs.dbvolution.internal.query.QueryOptions;
 
 /**
  * The DBDefinition to use for JavaDB databases.
@@ -37,9 +38,12 @@ import nz.co.gregs.dbvolution.query.QueryOptions;
  */
 public class JavaDBDefinition extends DBDefinition {
 
-	private static final DateFormat DATETIME_FORMAT = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS");
-	private static final String[] reservedWordsArray = new String[]{};
-	private static final List<String> reservedWords = Arrays.asList(reservedWordsArray);
+	public static final long serialVersionUID = 1L;
+	
+	private static final String DB_DATE_FORMAT_STR = "yyyy-M-d HH:mm:ss.SSS";//2017-02-18 18:59:59.000 +10:00
+	private final DateFormat DATETIME_FORMAT = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS");
+	private static final String[] RESERVED_WORD_ARRAY = new String[]{};
+	private static final List<String> RESERVED_WORDS = Arrays.asList(RESERVED_WORD_ARRAY);
 
 	@Override
 	public String getDateFormattedForQuery(Date date) {
@@ -48,7 +52,23 @@ public class JavaDBDefinition extends DBDefinition {
 	}
 
 	@Override
-	protected String getDatabaseDataTypeOfQueryableDatatype(QueryableDatatype qdt) {
+	public String getDatePartsFormattedForQuery(String years, String months, String days, String hours, String minutes, String seconds, String subsecond, String timeZoneSign, String timeZoneHourOffset, String timeZoneMinuteOffSet) {
+		return "PARSEDATETIME("
+				+ years
+				+ "||'-'||" + months
+				+ "||'-'||" + days
+				+ "||' '||" + hours
+				+ "||':'||" + minutes
+				+ "||':'||(" + seconds+"+"+subsecond+")"
+//				+ "||' '||" + timeZoneSign
+//				+ "||" + timeZoneHourOffset
+//				+ "||" + timeZoneMinuteOffSet
+				+ ", '" + DB_DATE_FORMAT_STR + "')";
+		//return "PARSEDATETIME('" + years + "','" + H2_DATE_FORMAT_STR + "')";
+	}
+
+	@Override
+	protected String getDatabaseDataTypeOfQueryableDatatype(QueryableDatatype<?> qdt) {
 		if (qdt instanceof DBBoolean) {
 			return "SMALLINT";
 		} else if (qdt instanceof DBJavaObject) {
@@ -86,7 +106,7 @@ public class JavaDBDefinition extends DBDefinition {
 	}
 
 	private static String formatNameForJavaDB(final String sqlObjectName) {
-		if (sqlObjectName.length() < 30 && !(reservedWords.contains(sqlObjectName.toUpperCase()))) {
+		if (sqlObjectName.length() < 30 && !(RESERVED_WORDS.contains(sqlObjectName.toUpperCase()))) {
 			return sqlObjectName.replaceAll("^[_-]", "O").replaceAll("-", "_");
 		} else {
 			return ("O" + sqlObjectName.hashCode()).replaceAll("^[_-]", "O").replaceAll("-", "_");
@@ -140,7 +160,7 @@ public class JavaDBDefinition extends DBDefinition {
 	}
 
 	@Override
-	public boolean prefersLargeObjectsReadAsBLOB() {
+	public boolean prefersLargeObjectsReadAsBLOB(DBLargeObject<?> lob) {
 		return true;
 	}
 
@@ -226,37 +246,72 @@ public class JavaDBDefinition extends DBDefinition {
 	}
 
 	@Override
-	public String doAddSecondsTransform(String dateExpression, String numberOfDays) {
+	public String doDateAddSecondsTransform(String dateExpression, String numberOfDays) {
 		return "cast({fn timestampadd(SQL_TSI_SECOND, " + numberOfDays + ", " + dateExpression + ")} as timestamp)";
 	}
 
 	@Override
-	public String doAddMinutesTransform(String dateExpression, String numberOfDays) {
+	public String doDateAddMinutesTransform(String dateExpression, String numberOfDays) {
 		return "cast({fn timestampadd(SQL_TSI_MINUTE, " + numberOfDays + ", " + dateExpression + ")} as timestamp)";
 	}
 
 	@Override
-	public String doAddHoursTransform(String dateExpression, String numberOfDays) {
+	public String doDateAddHoursTransform(String dateExpression, String numberOfDays) {
 		return "cast({fn timestampadd(SQL_TSI_HOUR, " + numberOfDays + ", " + dateExpression + ")} as timestamp)";
 	}
 
 	@Override
-	public String doAddDaysTransform(String dateExpression, String numberOfDays) {
+	public String doDateAddDaysTransform(String dateExpression, String numberOfDays) {
 		return "cast({fn timestampadd(SQL_TSI_DAY, " + numberOfDays + ", " + dateExpression + ")} as timestamp)";
 	}
 
 	@Override
-	public String doAddWeeksTransform(String dateExpression, String numberOfDays) {
+	public String doDateAddWeeksTransform(String dateExpression, String numberOfDays) {
 		return "cast({fn timestampadd(SQL_TSI_WEEK, " + numberOfDays + ", " + dateExpression + ")} as timestamp)";
 	}
 
 	@Override
-	public String doAddMonthsTransform(String dateExpression, String numberOfDays) {
+	public String doDateAddMonthsTransform(String dateExpression, String numberOfDays) {
 		return "cast({fn timestampadd(SQL_TSI_MONTH, " + numberOfDays + ", " + dateExpression + ")} as timestamp)";
 	}
 
 	@Override
-	public String doAddYearsTransform(String dateExpression, String numberOfDays) {
+	public String doDateAddYearsTransform(String dateExpression, String numberOfDays) {
+		return "cast({fn timestampadd(SQL_TSI_YEAR, " + numberOfDays + ", " + dateExpression + ")} as timestamp)";
+	}
+
+	@Override
+	public String doInstantAddSecondsTransform(String dateExpression, String numberOfDays) {
+		return "cast({fn timestampadd(SQL_TSI_SECOND, " + numberOfDays + ", " + dateExpression + ")} as timestamp)";
+	}
+
+	@Override
+	public String doInstantAddMinutesTransform(String dateExpression, String numberOfDays) {
+		return "cast({fn timestampadd(SQL_TSI_MINUTE, " + numberOfDays + ", " + dateExpression + ")} as timestamp)";
+	}
+
+	@Override
+	public String doInstantAddHoursTransform(String dateExpression, String numberOfDays) {
+		return "cast({fn timestampadd(SQL_TSI_HOUR, " + numberOfDays + ", " + dateExpression + ")} as timestamp)";
+	}
+
+	@Override
+	public String doInstantAddDaysTransform(String dateExpression, String numberOfDays) {
+		return "cast({fn timestampadd(SQL_TSI_DAY, " + numberOfDays + ", " + dateExpression + ")} as timestamp)";
+	}
+
+	@Override
+	public String doInstantAddWeeksTransform(String dateExpression, String numberOfDays) {
+		return "cast({fn timestampadd(SQL_TSI_WEEK, " + numberOfDays + ", " + dateExpression + ")} as timestamp)";
+	}
+
+	@Override
+	public String doInstantAddMonthsTransform(String dateExpression, String numberOfDays) {
+		return "cast({fn timestampadd(SQL_TSI_MONTH, " + numberOfDays + ", " + dateExpression + ")} as timestamp)";
+	}
+
+	@Override
+	public String doInstantAddYearsTransform(String dateExpression, String numberOfDays) {
 		return "cast({fn timestampadd(SQL_TSI_YEAR, " + numberOfDays + ", " + dateExpression + ")} as timestamp)";
 	}
 
@@ -273,7 +328,7 @@ public class JavaDBDefinition extends DBDefinition {
 	}
 
 	@Override
-	public String doNumberToStringTransform(String numberExpression) {
+	protected String doNumberToStringTransformUnsafe(String numberExpression) {
 		return "trim(cast(cast(" + numberExpression + " as char(38)) as varchar(1000)))";
 	}
 
@@ -288,8 +343,13 @@ public class JavaDBDefinition extends DBDefinition {
 	}
 
 	@Override
-	public Object getOrderByDirectionClause(Boolean sortOrder) {
-		return super.getOrderByDirectionClause(sortOrder) + (sortOrder ? " NULLS FIRST " : " NULLS LAST ");
+	public String getOrderByDescending() {
+		return " DESC ";
+	}
+
+	@Override
+	public String getOrderByAscending() {
+		return " ASC ";
 	}
 
 	@Override
@@ -297,4 +357,28 @@ public class JavaDBDefinition extends DBDefinition {
 		throw new UnsupportedOperationException("JavaDB does not support the DAYOFWEEK function");
 	}
 
+	@Override
+	public String doInstantDayOfWeekTransform(String dateSQL) {
+		throw new UnsupportedOperationException("JavaDB does not support the DAYOFWEEK function");
+	}
+
+	@Override
+	public boolean supportsFullOuterJoinNatively() {
+		return false;
+	}
+
+//	@Override
+//	public String getLocalDateFormattedForQuery(LocalDate date) {
+//		return "TIMESTAMP('" + DATETIME_FORMAT.format(date) + "')";
+//	}
+//
+//	@Override
+//	public String getLocalDateTimeFormattedForQuery(LocalDateTime date) {
+//		return "TIMESTAMP('" + DATETIME_FORMAT.format(date) + "')";
+//	}
+
+	@Override
+	public boolean supportsDateRepeatDatatypeFunctions() {
+		return false;
+	}
 }

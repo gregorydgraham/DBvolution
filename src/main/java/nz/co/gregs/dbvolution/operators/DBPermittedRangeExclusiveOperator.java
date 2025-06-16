@@ -40,10 +40,10 @@ public class DBPermittedRangeExclusiveOperator extends DBMetaOperator {
 
 	/**
 	 * Implements a BETWEEN operator that excludes the end points of the range.
-	 * 
+	 *
 	 * <p>
 	 * Use a null value to create open or unbounded ranges.
-	 * 
+	 *
 	 * @param lowerBound the largest value smaller than the desired range
 	 * @param upperBound the smallest value larger than the desired range
 	 */
@@ -53,10 +53,10 @@ public class DBPermittedRangeExclusiveOperator extends DBMetaOperator {
 					QueryableDatatype.getQueryableDatatypeForObject(lowerBound),
 					QueryableDatatype.getQueryableDatatypeForObject(upperBound));
 		} else if (lowerBound == null && upperBound != null) {
-			QueryableDatatype qdt = QueryableDatatype.getQueryableDatatypeForObject(upperBound);
+			QueryableDatatype<?> qdt = QueryableDatatype.getQueryableDatatypeForObject(upperBound);
 			operator = new DBLessThanOperator(qdt);
 		} else if (lowerBound != null && upperBound == null) {
-			final QueryableDatatype qdt = QueryableDatatype.getQueryableDatatypeForObject(lowerBound);
+			final QueryableDatatype<?> qdt = QueryableDatatype.getQueryableDatatypeForObject(lowerBound);
 			operator = new DBGreaterThanOperator(qdt);
 		}
 	}

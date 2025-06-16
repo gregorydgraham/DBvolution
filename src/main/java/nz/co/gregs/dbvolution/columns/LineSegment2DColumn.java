@@ -15,11 +15,14 @@
  */
 package nz.co.gregs.dbvolution.columns;
 
+import com.vividsolutions.jts.geom.LineSegment;
+import java.util.Objects;
 import java.util.Set;
-import nz.co.gregs.dbvolution.DBDatabase;
 import nz.co.gregs.dbvolution.DBRow;
+import nz.co.gregs.dbvolution.databases.definitions.DBDefinition;
 import nz.co.gregs.dbvolution.datatypes.spatial2D.DBLineSegment2D;
-import nz.co.gregs.dbvolution.expressions.LineSegment2DExpression;
+import nz.co.gregs.dbvolution.expressions.SortProvider;
+import nz.co.gregs.dbvolution.expressions.spatial2D.LineSegment2DExpression;
 import nz.co.gregs.dbvolution.query.RowDefinition;
 
 /**
@@ -31,6 +34,8 @@ import nz.co.gregs.dbvolution.query.RowDefinition;
  * @author Gregory Graham
  */
 public class LineSegment2DColumn extends LineSegment2DExpression implements ColumnProvider {
+
+	private final static long serialVersionUID = 1l;
 
 	private final AbstractColumn column;
 
@@ -45,6 +50,10 @@ public class LineSegment2DColumn extends LineSegment2DExpression implements Colu
 		this.column = new AbstractColumn(row, field);
 	}
 
+	public LineSegment2DColumn(RowDefinition row, LineSegment field) {
+		this.column = new AbstractColumn(row, field);
+	}
+
 	@Override
 	public AbstractColumn getColumn() {
 		return column;
@@ -56,7 +65,7 @@ public class LineSegment2DColumn extends LineSegment2DExpression implements Colu
 	}
 
 	@Override
-	public String toSQLString(DBDatabase db) {
+	public String toSQLString(DBDefinition db) {
 		return column.toSQLString(db);
 	}
 
@@ -68,5 +77,39 @@ public class LineSegment2DColumn extends LineSegment2DExpression implements Colu
 	@Override
 	public boolean isPurelyFunctional() {
 		return column.isPurelyFunctional();
+	}
+
+	@Override
+	public boolean isAggregator() {
+		return column.isAggregator();
+	}
+
+	@Override
+	public boolean equals(Object other) {
+		if (other instanceof LineSegment2DColumn) {
+			return column.equals(((LineSegment2DColumn) other).column);
+		} else {
+			return false;
+		}
+	}
+
+	@Override
+	public int hashCode() {
+		int hash = 5;
+		hash = 83 * hash + Objects.hashCode(this.column);
+		return hash;
+	}
+
+	@Override
+	public synchronized LineSegment2DColumn copy() {
+		final AbstractColumn col = getColumn();
+		final DBRow row = col.getInstanceOfRow();
+		LineSegment2DColumn newInstance = new LineSegment2DColumn(row, (DBLineSegment2D) col.getAppropriateQDTFromRow(row));
+		return newInstance;
+	}
+
+	@Override
+	public SortProvider.Column getSortProvider() {
+		return column.getSortProvider();
 	}
 }

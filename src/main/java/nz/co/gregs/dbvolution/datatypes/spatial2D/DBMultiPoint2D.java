@@ -22,14 +22,18 @@ import com.vividsolutions.jts.geom.Point;
 import com.vividsolutions.jts.io.ParseException;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.Comparator;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import nz.co.gregs.dbvolution.DBDatabase;
+import nz.co.gregs.dbvolution.columns.MultiPoint2DColumn;
+import nz.co.gregs.dbvolution.databases.definitions.DBDefinition;
 import nz.co.gregs.dbvolution.datatypes.QueryableDatatype;
 import nz.co.gregs.dbvolution.exceptions.*;
-import nz.co.gregs.dbvolution.expressions.MultiPoint2DExpression;
+import nz.co.gregs.dbvolution.expressions.spatial2D.MultiPoint2DExpression;
 import nz.co.gregs.dbvolution.expressions.StringExpression;
+import nz.co.gregs.dbvolution.query.RowDefinition;
 import nz.co.gregs.dbvolution.results.MultiPoint2DResult;
+import nz.co.gregs.dbvolution.utility.comparators.ComparableComparator;
 
 /**
  * Represents database columns and values that are list of 2 dimensional points:
@@ -40,8 +44,8 @@ import nz.co.gregs.dbvolution.results.MultiPoint2DResult;
  * {@code ST_Point}, or {@code GEOMETRY} that represents a point.
  *
  * <p>
- Generally DBMultiPoint2D is declared inside your DBRow sub-class as:
- {@code @DBColumn public DBMultiPoint2D myPointColumn = new DBMultiPoint2D();}
+ * Generally DBMultiPoint2D is declared inside your DBRow sub-class as:
+ * {@code @DBColumn public DBMultiPoint2D myPointColumn = new DBMultiPoint2D();}
  *
  *
  * <p style="color: #F90;">Support DBvolution at
@@ -49,7 +53,7 @@ import nz.co.gregs.dbvolution.results.MultiPoint2DResult;
  *
  * @author Gregory Graham
  */
-public class DBMultiPoint2D extends QueryableDatatype implements MultiPoint2DResult {
+public class DBMultiPoint2D extends QueryableDatatype<MultiPoint> implements MultiPoint2DResult {
 
 	private static final long serialVersionUID = 1L;
 
@@ -62,10 +66,11 @@ public class DBMultiPoint2D extends QueryableDatatype implements MultiPoint2DRes
 	}
 
 	/**
-	 * Create a DBPoint2D object to represent a Point column or
-	 * value using the value supplied.
+	 * Create a DBPoint2D object to represent a Point column or value using the
+	 * value supplied.
 	 *
-	 * @param points the collection of points that are the value of this DBMultiPoint2D
+	 * @param points the collection of points that are the value of this
+	 * DBMultiPoint2D
 	 */
 	public DBMultiPoint2D(MultiPoint points) {
 		super(points);
@@ -85,7 +90,8 @@ public class DBMultiPoint2D extends QueryableDatatype implements MultiPoint2DRes
 	}
 
 	/**
-	 * Set the value of this DBPoint2D to the {@link Coordinate coordinates} specified.
+	 * Set the value of this DBPoint2D to the {@link Coordinate coordinates}
+	 * specified.
 	 *
 	 * <p>
 	 * Set values are used to add the value to the database. Without a set value
@@ -125,7 +131,7 @@ public class DBMultiPoint2D extends QueryableDatatype implements MultiPoint2DRes
 				return null;
 			} else if (literalValue instanceof MultiPoint) {
 				return (MultiPoint) literalValue;
-			}else {
+			} else {
 				throw new DBRuntimeException("Unable to convert value to NULL or JTS MultiPoint: Please check that the value is NULL or an appropiate MULTIPOINT type value for this database");
 			}
 		}
@@ -143,17 +149,19 @@ public class DBMultiPoint2D extends QueryableDatatype implements MultiPoint2DRes
 	 * @return the set value of this object as a JTS Point object.
 	 */
 	public MultiPoint jtsMultiPointValue() {
-		return getValue();
+		final MultiPoint value = getValue();
+		value.normalize();
+		return value;
 	}
 
 	/**
-	 * Create a DBPoint2D with the column expression specified.
+	 * Create a DBPoint2D with the column value specified.
 	 *
 	 * <p>
-	 * When retrieving this object from the database the expression will be
-	 * evaluated to provide the value.
+	 * When retrieving this object from the database the value will be evaluated
+	 * to provide the value.
 	 *
-	 * @param columnExpression
+	 * @param columnExpression the expression to use to fill this field during a query
 	 */
 	public DBMultiPoint2D(MultiPoint2DExpression columnExpression) {
 		super(columnExpression);
@@ -165,7 +173,7 @@ public class DBMultiPoint2D extends QueryableDatatype implements MultiPoint2DRes
 	 * <p>
 	 * Equivalent to {code point2D = new DBPoint2D(); point2D.setValue(aPoint);}
 	 *
-	 * @param points
+	 * @param points the points to be included in this field
 	 */
 	public DBMultiPoint2D(Point... points) {
 		super(new MultiPoint(points, new GeometryFactory()));
@@ -177,18 +185,18 @@ public class DBMultiPoint2D extends QueryableDatatype implements MultiPoint2DRes
 	}
 
 	@Override
-	protected String formatValueForSQLStatement(DBDatabase db) {
+	protected String formatValueForSQLStatement(DBDefinition db) {
 		MultiPoint points = getValue();
 		if (points == null) {
-			return db.getDefinition().getNull();
+			return db.getNull();
 		} else {
-			String str = db.getDefinition().transformMultiPoint2DToDatabaseMultiPoint2DValue(points);
+			String str = db.transformMultiPoint2DToDatabaseMultiPoint2DValue(points);
 			return str;
 		}
 	}
 
 	@Override
-	protected Object getFromResultSet(DBDatabase database, ResultSet resultSet, String fullColumnName) throws SQLException, IncorrectGeometryReturnedForDatatype {
+	protected MultiPoint getFromResultSet(DBDefinition database, ResultSet resultSet, String fullColumnName) throws SQLException, IncorrectGeometryReturnedForDatatype {
 
 		MultiPoint point = null;
 		String string = resultSet.getString(fullColumnName);
@@ -196,10 +204,14 @@ public class DBMultiPoint2D extends QueryableDatatype implements MultiPoint2DRes
 			return null;
 		} else {
 			try {
-				point = database.getDefinition().transformDatabaseMultiPoint2DValueToJTSMultiPoint(string);
+				if (string.equals("GEOMETRYCOLLECTION()")) {
+					point = (new GeometryFactory().createMultiPoint(new Coordinate[]{}));
+				} else {
+					point = database.transformDatabaseMultiPoint2DValueToJTSMultiPoint(string);
+				}
 			} catch (ParseException ex) {
 				Logger.getLogger(DBPoint2D.class.getName()).log(Level.SEVERE, null, ex);
-				throw new ParsingSpatialValueException(fullColumnName, string,ex);
+				throw new ParsingSpatialValueException(fullColumnName, string, ex);
 			}
 			return point;
 		}
@@ -215,34 +227,25 @@ public class DBMultiPoint2D extends QueryableDatatype implements MultiPoint2DRes
 		return false;
 	}
 
-//	@Override
-//	public NumberExpression measurableDimensions() {
-//		return NumberExpression.value(0);
-//	}
-//
-//	@Override
-//	public NumberExpression spatialDimensions() {
-//		return NumberExpression.value(2);
-//	}
-//
-//	@Override
-//	public BooleanExpression hasMagnitude() {
-//		return BooleanExpression.falseExpression();
-//	}
-//
-//	@Override
-//	public NumberExpression magnitude() {
-//		return NumberExpression.value((Number)null);
-//	}
-//
-//	@Override
-//	public StringExpression toWKTFormat(){
-//		return StringExpression.value(jtsMultiPointValue().toText());
-//	}
-
 	@Override
 	public StringExpression stringResult() {
-		return MultiPoint2DExpression.value(this).stringResult();
+		return new MultiPoint2DExpression(this).stringResult();
 	}
-	
+
+	@Override
+	protected void setValueFromStandardStringEncoding(String encodedValue) {
+		throw new UnsupportedOperationException("DBmultiPoint2D does not support setValueFromStandardStringEncoding(String) yet."); //To change body of generated methods, choose Tools | Templates.
+	}
+
+	@Override
+	public MultiPoint2DColumn getColumn(RowDefinition row) throws IncorrectRowProviderInstanceSuppliedException {
+		return new MultiPoint2DColumn(row, this);
+	}
+
+	@Override
+	@SuppressWarnings("unchecked")
+	public Comparator<MultiPoint> getComparator() {
+		return ComparableComparator.forClass(MultiPoint.class);
+	}
+
 }

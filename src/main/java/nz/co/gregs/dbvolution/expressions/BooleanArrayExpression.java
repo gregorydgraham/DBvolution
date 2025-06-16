@@ -15,15 +15,16 @@
  */
 package nz.co.gregs.dbvolution.expressions;
 
+import java.lang.reflect.InvocationTargetException;
 import nz.co.gregs.dbvolution.results.EqualComparable;
 import nz.co.gregs.dbvolution.results.BooleanArrayResult;
 import java.util.HashSet;
 import java.util.Set;
-import nz.co.gregs.dbvolution.DBDatabase;
 import nz.co.gregs.dbvolution.DBRow;
+import nz.co.gregs.dbvolution.databases.DBDatabase;
+import nz.co.gregs.dbvolution.databases.definitions.DBDefinition;
 import nz.co.gregs.dbvolution.datatypes.DBBooleanArray;
 import nz.co.gregs.dbvolution.datatypes.DBBoolean;
-import nz.co.gregs.dbvolution.datatypes.QueryableDatatype;
 
 /**
  * The Expression object for bit array columns.
@@ -33,7 +34,13 @@ import nz.co.gregs.dbvolution.datatypes.QueryableDatatype;
  *
  * @author gregory.graham
  */
-public class BooleanArrayExpression implements BooleanArrayResult, EqualComparable<BooleanArrayResult>, ExpressionColumn<DBBooleanArray> {
+public class BooleanArrayExpression extends AnyExpression<Boolean[], BooleanArrayResult, DBBooleanArray> implements BooleanArrayResult, EqualComparable<Boolean[], BooleanArrayResult>, ExpressionColumn<DBBooleanArray> {
+
+	private final static long serialVersionUID = 1l;
+
+	public static BooleanArrayExpression value(Boolean[] i) {
+		return new BooleanArrayExpression(i);
+	}
 
 	private final BooleanArrayResult innerBooleanArrayResult;
 
@@ -59,16 +66,16 @@ public class BooleanArrayExpression implements BooleanArrayResult, EqualComparab
 
 	@Override
 	public BooleanArrayExpression copy() {
-		return new BooleanArrayExpression(this.getInnerBooleanArrayResult());
+		return new BooleanArrayExpression(this.getInnerBooleanArrayResult().copy());
 	}
 
 	@Override
-	public QueryableDatatype getQueryableDatatypeForExpressionValue() {
+	public DBBooleanArray getQueryableDatatypeForExpressionValue() {
 		return new DBBooleanArray();
 	}
 
 	@Override
-	public String toSQLString(DBDatabase db) {
+	public String toSQLString(DBDefinition db) {
 		if (innerBooleanArrayResult != null) {
 			return innerBooleanArrayResult.toSQLString(db);
 		} else {
@@ -90,7 +97,7 @@ public class BooleanArrayExpression implements BooleanArrayResult, EqualComparab
 		if (innerBooleanArrayResult != null) {
 			return innerBooleanArrayResult.getTablesInvolved();
 		} else {
-			return new HashSet<DBRow>();
+			return new HashSet<>();
 		}
 	}
 
@@ -113,6 +120,17 @@ public class BooleanArrayExpression implements BooleanArrayResult, EqualComparab
 	}
 
 	/**
+	 * Returns a value of the required type that will evaluate to NULL.
+	 *
+	 * @return a NULL for use in boolean statements.
+	 */
+	@SuppressWarnings("unchecked")
+	@Override
+	public BooleanArrayExpression nullExpression() {
+		return (BooleanArrayExpression) super.nullExpression();
+	}
+
+	/**
 	 * Return the BooleanArrayResult held internally in this class.
 	 *
 	 * <p style="color: #F90;">Support DBvolution at
@@ -132,14 +150,16 @@ public class BooleanArrayExpression implements BooleanArrayResult, EqualComparab
 	 * @param bools the value to compare this expression to
 	 * <p style="color: #F90;">Support DBvolution at
 	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
-	 *
 	 * @return a BooleanExpresson of the Bit comparison of the number and this
 	 * expression.
 	 */
+	@Override
 	public BooleanExpression is(Boolean[] bools) {
 		return new BooleanExpression(new DBBinaryBooleanArithmetic(this, new BooleanArrayExpression(bools)) {
+			private final static long serialVersionUID = 1l;
+
 			@Override
-			protected String getEquationOperator(DBDatabase db) {
+			protected String getEquationOperator(DBDefinition db) {
 				return " = ";
 			}
 		});
@@ -153,38 +173,55 @@ public class BooleanArrayExpression implements BooleanArrayResult, EqualComparab
 	 * @param i the value to compare this expression to
 	 * <p style="color: #F90;">Support DBvolution at
 	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
-	 *
 	 * @return a BooleanExpresson of the Bit comparison of the number and this
 	 * expression.
 	 */
 	@Override
 	public BooleanExpression is(BooleanArrayResult i) {
 		return new BooleanExpression(new DBBinaryBooleanArithmetic(this, i) {
+			private final static long serialVersionUID = 1l;
+
 			@Override
-			protected String getEquationOperator(DBDatabase db) {
+			protected String getEquationOperator(DBDefinition db) {
 				return " = ";
 			}
 		});
 	}
 
-
 	/**
 	 * Create a BooleanExpression that will compare the BooleanArrayResult
-	 * provided to this BooleanArrayExpression using the equivalent of the NOT EQUALS
-	 * operator.
+	 * provided to this BooleanArrayExpression using the equivalent of the NOT
+	 * EQUALS operator.
 	 *
 	 * @param i the value to compare this expression to
 	 * <p style="color: #F90;">Support DBvolution at
 	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 * @return a BooleanExpresson of the Bit comparison of the number and this
+	 * expression.
+	 */
+	@Override
+	public BooleanExpression isNot(Boolean[] i) {
+		return this.isNot(BooleanArrayExpression.value(i));
+	}
+
+	/**
+	 * Create a BooleanExpression that will compare the BooleanArrayResult
+	 * provided to this BooleanArrayExpression using the equivalent of the NOT
+	 * EQUALS operator.
 	 *
+	 * @param i the value to compare this expression to
+	 * <p style="color: #F90;">Support DBvolution at
+	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
 	 * @return a BooleanExpresson of the Bit comparison of the number and this
 	 * expression.
 	 */
 	@Override
 	public BooleanExpression isNot(BooleanArrayResult i) {
 		return new BooleanExpression(new DBBinaryBooleanArithmetic(this, i) {
+			private final static long serialVersionUID = 1l;
+
 			@Override
-			protected String getEquationOperator(DBDatabase db) {
+			protected String getEquationOperator(DBDefinition db) {
 				return " <> ";
 			}
 		});
@@ -195,7 +232,29 @@ public class BooleanArrayExpression implements BooleanArrayResult, EqualComparab
 		return new DBBooleanArray(this);
 	}
 
+	@Override
+	public BooleanArrayResult expression(Boolean[] value) {
+		return new BooleanArrayExpression(value);
+	}
+
+	@Override
+	public BooleanArrayResult expression(BooleanArrayResult value) {
+		return new BooleanArrayExpression(value);
+	}
+
+	@Override
+	public BooleanArrayResult expression(DBBooleanArray value) {
+		return new BooleanArrayExpression(value);
+	}
+
+//	@Override
+//	public StringExpression stringResult() {
+//		return new StringExpression().
+//	}
+
 	private static abstract class DBBinaryBooleanArithmetic extends BooleanExpression {
+
+		private static final long serialVersionUID = 1L;
 
 		private BooleanArrayExpression first;
 		private BooleanArrayResult second;
@@ -204,7 +263,7 @@ public class BooleanArrayExpression implements BooleanArrayResult, EqualComparab
 		DBBinaryBooleanArithmetic(BooleanArrayExpression first, BooleanArrayResult second) {
 			this.first = first;
 			this.second = second;
-			if (this.second == null || this.second == null || this.second.getIncludesNull()) {
+			if (this.first == null || this.first.getIncludesNull() || this.second == null || this.second.getIncludesNull()) {
 				this.requiresNullProtection = true;
 			}
 		}
@@ -215,7 +274,7 @@ public class BooleanArrayExpression implements BooleanArrayResult, EqualComparab
 		}
 
 		@Override
-		public String toSQLString(DBDatabase db) {
+		public String toSQLString(DBDefinition db) {
 			if (this.getIncludesNull()) {
 				return "(" + BooleanExpression.isNull(first).toSQLString(db) + ")";
 			} else {
@@ -227,10 +286,8 @@ public class BooleanArrayExpression implements BooleanArrayResult, EqualComparab
 		public DBBinaryBooleanArithmetic copy() {
 			DBBinaryBooleanArithmetic newInstance;
 			try {
-				newInstance = getClass().newInstance();
-			} catch (InstantiationException ex) {
-				throw new RuntimeException(ex);
-			} catch (IllegalAccessException ex) {
+				newInstance = getClass().getConstructor().newInstance();
+			} catch (InstantiationException | IllegalAccessException|IllegalArgumentException | InvocationTargetException | NoSuchMethodException | SecurityException ex) {
 				throw new RuntimeException(ex);
 			}
 			newInstance.first = first.copy();
@@ -238,11 +295,11 @@ public class BooleanArrayExpression implements BooleanArrayResult, EqualComparab
 			return newInstance;
 		}
 
-		protected abstract String getEquationOperator(DBDatabase db);
+		protected abstract String getEquationOperator(DBDefinition db);
 
 		@Override
 		public Set<DBRow> getTablesInvolved() {
-			HashSet<DBRow> hashSet = new HashSet<DBRow>();
+			HashSet<DBRow> hashSet = new HashSet<>();
 			if (first != null) {
 				hashSet.addAll(first.getTablesInvolved());
 			}
@@ -254,7 +311,15 @@ public class BooleanArrayExpression implements BooleanArrayResult, EqualComparab
 
 		@Override
 		public boolean isAggregator() {
-			return first.isAggregator() || second.isAggregator();
+			if (first == null && second == null) {
+				return false;
+			} else if (first == null) {
+				return second.isAggregator();
+			} else if (second == null) {
+				return first.isAggregator();
+			} else {
+				return first.isAggregator() || second.isAggregator();
+			}
 		}
 
 		@Override
@@ -266,10 +331,23 @@ public class BooleanArrayExpression implements BooleanArrayResult, EqualComparab
 		public boolean isPurelyFunctional() {
 			if (first == null && second == null) {
 				return true;
+			} else if (first == null) {
+				return second.isPurelyFunctional();
+			} else if (second == null) {
+				return first.isPurelyFunctional();
 			} else {
 				return first.isPurelyFunctional() && second.isPurelyFunctional();
 			}
 		}
 	}
 
+	@Override
+	public String createSQLForFromClause(DBDatabase database) {
+		throw new UnsupportedOperationException("BooleanArrayExpression does not support createSQLForFromClause(DBDatabase) yet."); //To change body of generated methods, choose Tools | Templates.
+	}
+
+	@Override
+	public boolean isComplexExpression() {
+		return false;
+	}
 }

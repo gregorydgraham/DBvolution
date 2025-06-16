@@ -25,14 +25,14 @@ import nz.co.gregs.dbvolution.expressions.BooleanExpression;
  *
  * @author gregorygraham
  */
-public class DBBooleanPermittedValuesOperator extends DBPermittedValuesOperator {
+public class DBBooleanPermittedValuesOperator extends DBPermittedValuesOperator<Boolean> {
 
 	private static final long serialVersionUID = 1L;
 
 	/**
 	 * Implements the EQUALS operator for DBBooleans.
 	 *
-	 * @param permitted
+	 * @param permitted the boolean value that is permitted
 	 */
 	@SuppressWarnings("unchecked")
 	public DBBooleanPermittedValuesOperator(Boolean permitted) {

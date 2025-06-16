@@ -15,19 +15,26 @@
  */
 package nz.co.gregs.dbvolution.databases.definitions;
 
+import nz.co.gregs.dbvolution.internal.query.LargeObjectHandlerType;
 import com.vividsolutions.jts.geom.*;
+import java.sql.SQLException;
 import java.text.*;
 import java.util.*;
+import nz.co.gregs.dbvolution.DBRow;
 import nz.co.gregs.dbvolution.databases.PostgresDB;
 import nz.co.gregs.dbvolution.databases.PostgresDBOverSSL;
 import nz.co.gregs.dbvolution.datatypes.*;
 import nz.co.gregs.dbvolution.datatypes.spatial2D.*;
 import nz.co.gregs.dbvolution.expressions.DBExpression;
-import nz.co.gregs.dbvolution.expressions.Line2DExpression;
-import nz.co.gregs.dbvolution.expressions.MultiPoint2DExpression;
-import nz.co.gregs.dbvolution.expressions.Polygon2DExpression;
+import nz.co.gregs.dbvolution.expressions.spatial2D.Line2DExpression;
+import nz.co.gregs.dbvolution.expressions.spatial2D.MultiPoint2DExpression;
+import nz.co.gregs.dbvolution.expressions.spatial2D.Polygon2DExpression;
 import nz.co.gregs.dbvolution.internal.postgres.*;
+import nz.co.gregs.dbvolution.internal.properties.PropertyWrapper;
 import nz.co.gregs.dbvolution.results.ExpressionHasStandardStringResult;
+import nz.co.gregs.dbvolution.utility.StringCheck;
+import nz.co.gregs.regexi.Regex;
+import nz.co.gregs.separatedstring.Builder;
 
 /**
  * Defines the features of the PostgreSQL database that differ from the standard
@@ -38,26 +45,26 @@ import nz.co.gregs.dbvolution.results.ExpressionHasStandardStringResult;
  * {@link PostgresDBOverSSL} instances, and you should not need to use it
  * directly.
  *
- * <p style="color: #F90;">Support DBvolution at
- * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
- *
  * @author Gregory Graham
  */
 public class PostgresDBDefinition extends DBDefinition {
 
-	private static final DateFormat DATETIME_FORMAT = new SimpleDateFormat("yyyyMMdd HH:mm:ss.SSS Z");
+	public static final long serialVersionUID = 1L;
 
-	private static final String[] reservedWordsArray = new String[]{"LIMIT", "END"};
-	private static final List<String> reservedWords = Arrays.asList(reservedWordsArray);
+	private final DateFormat DATETIME_FORMAT = new SimpleDateFormat("yyyyMMdd HH:mm:ss.SSS Z");
+
+	private static final String[] RESERVED_WORD_ARRAY = new String[]{"A", "ABORT", "ABS", "ABSENT", "ABSOLUTE", "ACCESS", "ACCORDING", "ACTION", "ADA", "ADD", "ADMIN", "AFTER", "AGGREGATE", "ALL", "ALLOCATE", "ALSO", "ALTER", "ALWAYS", "ANALYSE", "ANALYZE", "AND", "ANY", "ARE", "ARRAY", "ARRAY_AGG", "ARRAY_MAX_CARDINALITY", "AS", "ASC", "ASENSITIVE", "ASSERTION", "ASSIGNMENT", "ASYMMETRIC", "AT", "ATOMIC", "ATTACH", "ATTRIBUTE", "ATTRIBUTES", "AUTHORIZATION", "AVG", "BACKWARD", "BASE64", "BEFORE", "BEGIN", "BEGIN_FRAME", "BEGIN_PARTITION", "BERNOULLI", "BETWEEN", "BIGINT", "BINARY", "BIT", "BIT_LENGTH", "BLOB", "BLOCKED", "BOM", "BOOLEAN", "BOTH", "BREADTH", "BY", "C", "CACHE", "CALL", "CALLED", "CARDINALITY", "CASCADE", "CASCADED", "CASE", "CAST", "CATALOG", "CATALOG_NAME", "CEIL", "CEILING", "CHAIN", "CHAR", "CHARACTER", "CHARACTERISTICS", "CHARACTERS", "CHARACTER_LENGTH", "CHARACTER_SET_CATALOG", "CHARACTER_SET_NAME", "CHARACTER_SET_SCHEMA", "CHAR_LENGTH", "CHECK", "CHECKPOINT", "CLASS", "CLASS_ORIGIN", "CLOB", "CLOSE", "CLUSTER", "COALESCE", "COBOL", "COLLATE", "COLLATION", "COLLATION_CATALOG", "COLLATION_NAME", "COLLATION_SCHEMA", "COLLECT", "COLUMN", "COLUMNS", "COLUMN_NAME", "COMMAND_FUNCTION", "COMMAND_FUNCTION_CODE", "COMMENT", "COMMENTS", "COMMIT", "COMMITTED", "CONCURRENTLY", "CONDITION", "CONDITION_NUMBER", "CONFIGURATION", "CONFLICT", "CONNECT", "CONNECTION", "CONNECTION_NAME", "CONSTRAINT", "CONSTRAINTS", "CONSTRAINT_CATALOG", "CONSTRAINT_NAME", "CONSTRAINT_SCHEMA", "CONSTRUCTOR", "CONTAINS", "CONTENT", "CONTINUE", "CONTROL", "CONVERSION", "CONVERT", "COPY", "CORR", "CORRESPONDING", "COST", "COUNT", "COVAR_POP", "COVAR_SAMP", "CREATE", "CROSS", "CSV", "CUBE", "CUME_DIST", "CURRENT", "CURRENT_CATALOG", "CURRENT_DATE", "CURRENT_DEFAULT_TRANSFORM_GROUP", "CURRENT_PATH", "CURRENT_ROLE", "CURRENT_ROW", "CURRENT_SCHEMA", "CURRENT_TIME", "CURRENT_TIMESTAMP", "CURRENT_TRANSFORM_GROUP_FOR_TYPE", "CURRENT_USER", "CURSOR", "CURSOR_NAME", "CYCLE", "DATA", "DATABASE", "DATALINK", "DATE", "DATETIME_INTERVAL_CODE", "DATETIME_INTERVAL_PRECISION", "DAY", "DB", "DEALLOCATE", "DEC", "DECIMAL", "DECLARE", "DEFAULT", "DEFAULTS", "DEFERRABLE", "DEFERRED", "DEFINED", "DEFINER", "DEGREE", "DELETE", "DELIMITER", "DELIMITERS", "DENSE_RANK", "DEPENDS", "DEPTH", "DEREF", "DERIVED", "DESC", "DESCRIBE", "DESCRIPTOR", "DETACH", "DETERMINISTIC", "DIAGNOSTICS", "DICTIONARY", "DISABLE", "DISCARD", "DISCONNECT", "DISPATCH", "DISTINCT", "DLNEWCOPY", "DLPREVIOUSCOPY", "DLURLCOMPLETE", "DLURLCOMPLETEONLY", "DLURLCOMPLETEWRITE", "DLURLPATH", "DLURLPATHONLY", "DLURLPATHWRITE", "DLURLSCHEME", "DLURLSERVER", "DLVALUE", "DO", "DOCUMENT", "DOMAIN", "DOUBLE", "DROP", "DYNAMIC", "DYNAMIC_FUNCTION", "DYNAMIC_FUNCTION_CODE", "EACH", "ELEMENT", "ELSE", "EMPTY", "ENABLE", "ENCODING", "ENCRYPTED", "END", "END-EXEC", "END_FRAME", "END_PARTITION", "ENFORCED", "ENUM", "EQUALS", "ESCAPE", "EVENT", "EVERY", "EXCEPT", "EXCEPTION", "EXCLUDE", "EXCLUDING", "EXCLUSIVE", "EXEC", "EXECUTE", "EXISTS", "EXP", "EXPLAIN", "EXPRESSION", "EXTENSION", "EXTERNAL", "EXTRACT", "FALSE", "FAMILY", "FETCH", "FILE", "FILTER", "FINAL", "FIRST", "FIRST_VALUE", "FLAG", "FLOAT", "FLOOR", "FOLLOWING", "FOR", "FORCE", "FOREIGN", "FORTRAN", "FORWARD", "FOUND", "FRAME_ROW", "FREE", "FREEZE", "FROM", "FS", "FULL", "FUNCTION", "FUNCTIONS", "FUSION", "G", "GENERAL", "GENERATED", "GET", "GLOBAL", "GO", "GOTO", "GRANT", "GRANTED", "GREATEST", "GROUP", "GROUPING", "GROUPS", "HANDLER", "HAVING", "HEADER", "HEX", "HIERARCHY", "HOLD", "HOUR", "IDENTITY", "IF", "IGNORE", "ILIKE", "IMMEDIATE", "IMMEDIATELY", "IMMUTABLE", "IMPLEMENTATION", "IMPLICIT", "IMPORT", "IN", "INCLUDE", "INCLUDING", "INCREMENT", "INDENT", "INDEX", "INDEXES", "INDICATOR", "INHERIT", "INHERITS", "INITIALLY", "INLINE", "INNER", "INOUT", "INPUT", "INSENSITIVE", "INSERT", "INSTANCE", "INSTANTIABLE", "INSTEAD", "INT", "INTEGER", "INTEGRITY", "INTERSECT", "INTERSECTION", "INTERVAL", "INTO", "INVOKER", "IS", "ISNULL", "ISOLATION", "JOIN", "K", "KEY", "KEY_MEMBER", "KEY_TYPE", "LABEL", "LAG", "LANGUAGE", "LARGE", "LAST", "LAST_VALUE", "LATERAL", "LEAD", "LEADING", "LEAKPROOF", "LEAST", "LEFT", "LENGTH", "LEVEL", "LIBRARY", "LIKE", "LIKE_REGEX", "LIMIT", "LINK", "LISTEN", "LN", "LOAD", "LOCAL", "LOCALTIME", "LOCALTIMESTAMP", "LOCATION", "LOCATOR", "LOCK", "LOCKED", "LOGGED", "LOWER", "M", "MAP", "MAPPING", "MATCH", "MATCHED", "MATERIALIZED", "MAX", "MAXVALUE", "MAX_CARDINALITY", "MEMBER", "MERGE", "MESSAGE_LENGTH", "MESSAGE_OCTET_LENGTH", "MESSAGE_TEXT", "METHOD", "MIN", "MINUTE", "MINVALUE", "MOD", "MODE", "MODIFIES", "MODULE", "MONTH", "MORE", "MOVE", "MULTISET", "MUMPS", "NAMES", "NAMESPACE", "NATIONAL", "NATURAL", "NCHAR", "NCLOB", "NESTING", "NEW", "NEXT", "NFC", "NFD", "NFKC", "NFKD", "NIL", "NO", "NONE", "NORMALIZE", "NORMALIZED", "NOT", "NOTHING", "NOTIFY", "NOTNULL", "NOWAIT", "NTH_VALUE", "NTILE", "NULL", "NULLABLE", "NULLIF", "NULLS", "NUMBER", "NUMERIC", "OBJECT", "OCCURRENCES_REGEX", "OCTETS", "OCTET_LENGTH", "OF", "OFF", "OFFSET", "OIDS", "OLD", "ON", "ONLY", "OPEN", "OPERATOR", "OPTION", "OPTIONS", "OR", "ORDER", "ORDERING", "ORDINALITY", "OTHERS", "OUT", "OUTER", "OUTPUT", "OVER", "OVERLAPS", "OVERLAY", "OVERRIDING", "OWNED", "OWNER", "P", "PAD", "PARALLEL", "PARAMETER", "PARAMETER_MODE", "PARAMETER_NAME", "PARAMETER_ORDINAL_POSITION", "PARAMETER_SPECIFIC_CATALOG", "PARAMETER_SPECIFIC_NAME", "PARAMETER_SPECIFIC_SCHEMA", "PARSER", "PARTIAL", "PARTITION", "PASCAL", "PASSING", "PASSTHROUGH", "PASSWORD", "PATH", "PERCENT", "PERCENTILE_CONT", "PERCENTILE_DISC", "PERCENT_RANK", "PERIOD", "PERMISSION", "PLACING", "PLANS", "PLI", "POLICY", "PORTION", "POSITION", "POSITION_REGEX", "POWER", "PRECEDES", "PRECEDING", "PRECISION", "PREPARE", "PREPARED", "PRESERVE", "PRIMARY", "PRIOR", "PRIVILEGES", "PROCEDURAL", "PROCEDURE", "PROCEDURES", "PROGRAM", "PUBLIC", "PUBLICATION", "QUOTE", "RANGE", "RANK", "READ", "READS", "REAL", "REASSIGN", "RECHECK", "RECOVERY", "RECURSIVE", "REF", "REFERENCES", "REFERENCING", "REFRESH", "REGR_AVGX", "REGR_AVGY", "REGR_COUNT", "REGR_INTERCEPT", "REGR_R2", "REGR_SLOPE", "REGR_SXX", "REGR_SXY", "REGR_SYY", "REINDEX", "RELATIVE", "RELEASE", "RENAME", "REPEATABLE", "REPLACE", "REPLICA", "REQUIRING", "RESET", "RESPECT", "RESTART", "RESTORE", "RESTRICT", "RESULT", "RETURN", "RETURNED_CARDINALITY", "RETURNED_LENGTH", "RETURNED_OCTET_LENGTH", "RETURNED_SQLSTATE", "RETURNING", "RETURNS", "REVOKE", "RIGHT", "ROLE", "ROLLBACK", "ROLLUP", "ROUTINE", "ROUTINES", "ROUTINE_CATALOG", "ROUTINE_NAME", "ROUTINE_SCHEMA", "ROW", "ROWS", "ROW_COUNT", "ROW_NUMBER", "RULE", "SAVEPOINT", "SCALE", "SCHEMA", "SCHEMAS", "SCHEMA_NAME", "SCOPE", "SCOPE_CATALOG", "SCOPE_NAME", "SCOPE_SCHEMA", "SCROLL", "SEARCH", "SECOND", "SECTION", "SECURITY", "SELECT", "SELECTIVE", "SELF", "SENSITIVE", "SEQUENCE", "SEQUENCES", "SERIALIZABLE", "SERVER", "SERVER_NAME", "SESSION", "SESSION_USER", "SET", "SETOF", "SETS", "SHARE", "SHOW", "SIMILAR", "SIMPLE", "SIZE", "SKIP", "SMALLINT", "SNAPSHOT", "SOME", "SOURCE", "SPACE", "SPECIFIC", "SPECIFICTYPE", "SPECIFIC_NAME", "SQL", "SQLCODE", "SQLERROR", "SQLEXCEPTION", "SQLSTATE", "SQLWARNING", "SQRT", "STABLE", "STANDALONE", "START", "STATE", "STATEMENT", "STATIC", "STATISTICS", "STDDEV_POP", "STDDEV_SAMP", "STDIN", "STDOUT", "STORAGE", "STRICT", "STRIP", "STRUCTURE", "STYLE", "SUBCLASS_ORIGIN", "SUBMULTISET", "SUBSCRIPTION", "SUBSTRING", "SUBSTRING_REGEX", "SUCCEEDS", "SUM", "SYMMETRIC", "SYSID", "SYSTEM", "SYSTEM_TIME", "SYSTEM_USER", "T", "TABLE", "TABLES", "TABLESAMPLE", "TABLESPACE", "TABLE_NAME", "TEMP", "TEMPLATE", "TEMPORARY", "TEXT", "THEN", "TIES", "TIME", "TIMESTAMP", "TIMEZONE_HOUR", "TIMEZONE_MINUTE", "TO", "TOKEN", "TOP_LEVEL_COUNT", "TRAILING", "TRANSACTION", "TRANSACTIONS_COMMITTED", "TRANSACTIONS_ROLLED_BACK", "TRANSACTION_ACTIVE", "TRANSFORM", "TRANSFORMS", "TRANSLATE", "TRANSLATE_REGEX", "TRANSLATION", "TREAT", "TRIGGER", "TRIGGER_CATALOG", "TRIGGER_NAME", "TRIGGER_SCHEMA", "TRIM", "TRIM_ARRAY", "TRUE", "TRUNCATE", "TRUSTED", "TYPE", "TYPES", "UESCAPE", "UNBOUNDED", "UNCOMMITTED", "UNDER", "UNENCRYPTED", "UNION", "UNIQUE", "UNKNOWN", "UNLINK", "UNLISTEN", "UNLOGGED", "UNNAMED", "UNNEST", "UNTIL", "UNTYPED", "UPDATE", "UPPER", "URI", "USAGE", "USER", "USER_DEFINED_TYPE_CATALOG", "USER_DEFINED_TYPE_CODE", "USER_DEFINED_TYPE_NAME", "USER_DEFINED_TYPE_SCHEMA", "USING", "VACUUM", "VALID", "VALIDATE", "VALIDATOR", "VALUE", "VALUES", "VALUE_OF", "VARBINARY", "VARCHAR", "VARIADIC", "VARYING", "VAR_POP", "VAR_SAMP", "VERBOSE", "VERSION", "VERSIONING", "VIEW", "VIEWS", "VOLATILE", "WHEN", "WHENEVER", "WHERE", "WHITESPACE", "WIDTH_BUCKET", "WINDOW", "WITH", "WITHIN", "WITHOUT", "WORK", "WRAPPER", "WRITE", "XML", "XMLAGG", "XMLATTRIBUTES", "XMLBINARY", "XMLCAST", "XMLCOMMENT", "XMLCONCAT", "XMLDECLARATION", "XMLDOCUMENT", "XMLELEMENT", "XMLEXISTS", "XMLFOREST", "XMLITERATE", "XMLNAMESPACES", "XMLPARSE", "XMLPI", "XMLQUERY", "XMLROOT", "XMLSCHEMA", "XMLSERIALIZE", "XMLTABLE", "XMLTEXT", "XMLVALIDATE", "YEAR", "YES", "ZONE"};
+	private static final List<String> RESERVED_WORD_LIST = Arrays.asList(RESERVED_WORD_ARRAY);
 
 	@Override
 	public String getDropDatabase(String databaseName) throws UnsupportedOperationException {
 		return "DROP DATABASE IF EXISTS '" + databaseName + "';";
 	}
 
+  /* TODO Implement CREATE DATABASE for all databases */
 	@Override
-	public String getDropTableStart() {
-		return super.getDropTableStart() + " IF EXISTS "; //To change body of generated methods, choose Tools | Templates.
+	public String getCreateDatabase(String databaseName) throws UnsupportedOperationException {
+		return "CREATE DATABASE '" + databaseName + "';";
 	}
 
 	@Override
@@ -67,24 +74,57 @@ public class PostgresDBDefinition extends DBDefinition {
 
 	@Override
 	protected String formatNameForDatabase(final String sqlObjectName) {
-		if (!(reservedWords.contains(sqlObjectName.toUpperCase()))) {
-			return super.formatNameForDatabase(sqlObjectName);
+		if (!(RESERVED_WORD_LIST.contains(sqlObjectName.toUpperCase()))) {
+			return sqlObjectName.toLowerCase();
 		} else {
-			return formatNameForDatabase("p" + super.formatNameForDatabase(sqlObjectName));
+			return ("p" + sqlObjectName).toLowerCase();
 		}
 	}
 
 	@Override
 	public String getDateFormattedForQuery(Date date) {
-		return "(TIMESTAMP WITH TIME ZONE '" + DATETIME_FORMAT.format(date) + "')";
+		return "(TIMESTAMP '" + DATETIME_FORMAT.format(date) + "')";
 	}
 
 	@Override
-	public String getDatabaseDataTypeOfQueryableDatatype(QueryableDatatype qdt) {
-		if (qdt instanceof DBByteArray) {
-			return " BYTEA ";
+	public String getLocalDatePartsFormattedForQuery(String years, String months, String days, String hours, String minutes, String seconds, String subsecond, String timeZoneSign, String timeZoneHourOffset, String timeZoneMinuteOffSet) {
+		return Builder.forSeparator(", ").startsWith("make_timestamp(").endsWith(")").encoder()
+				.addAll(years, months, days)
+				.addAll(hours, minutes, "(" + seconds + "+" + subsecond + ")")
+				.encode();
+	}
+
+	@Override
+	public String getInstantPartsFormattedForQuery(String years, String months, String days, String hours, String minutes, String seconds, String subsecond, String timeZoneSign, String timeZoneHourOffset, String timeZoneMinuteOffSet) {
+		return Builder.forSeparator(", ").startsWith("make_timestamptz(").endsWith(")").encoder()
+				.addAll(years, months, days)
+				.addAll(hours, minutes, "(" + seconds + "+" + subsecond + ")")
+				.encode();
+	}
+
+	@Override
+	public String getDatePartsFormattedForQuery(String years, String months, String days, String hours, String minutes, String seconds, String subsecond, String timeZoneSign, String timeZoneHourOffset, String timeZoneMinuteOffSet) {
+		return Builder.forSeparator(", ").startsWith("make_timestamptz(").endsWith(")").encoder()
+				.addAll(years, months, days)
+				.addAll(hours, minutes, "(" + seconds + "+" + subsecond + ")")
+				.add(
+						doConcatTransform(
+								"'" + timeZoneSign + "'", doLeftPadTransform("'" + timeZoneHourOffset + "'", "'0'", "'2'"), doRightPadTransform("'" + timeZoneMinuteOffSet + "'", "'0'", "2")
+						)
+				)
+				.encode();
+	}
+
+	@Override
+	public String getDatabaseDataTypeOfQueryableDatatype(QueryableDatatype<?> qdt) {
+		if (qdt instanceof DBLargeText) {
+			return " TEXT ";
+		} else if (qdt instanceof DBInteger) {
+			return " BIGINT ";
 		} else if (qdt instanceof DBDate) {
-			return " TIMESTAMP WITH TIME ZONE ";
+			return " TIMESTAMP ";
+		} else if (qdt instanceof DBInstant) {
+			return " TIMESTAMPTZ ";
 		} else if (qdt instanceof DBLargeObject) {
 			return " BYTEA ";
 		} else if (qdt instanceof DBBoolean) {
@@ -97,31 +137,33 @@ public class PostgresDBDefinition extends DBDefinition {
 			return " PATH ";
 		} else if (qdt instanceof DBMultiPoint2D) {
 			return " GEOMETRY ";
+		} else if (qdt instanceof DBDuration) {
+			return " INTERVAL DAY TO SECOND(6) ";
 		} else {
 			return super.getDatabaseDataTypeOfQueryableDatatype(qdt);
 		}
 	}
 
 	@Override
-	public Class<? extends QueryableDatatype> getQueryableDatatypeClassForSQLDatatype(String typeName) {
-		if (typeName.equals("path")) {
-			return DBLine2D.class;
-		} else if (typeName.equals("geometry")) {
-			return DBMultiPoint2D.class;
-		} else {
-			return super.getQueryableDatatypeClassForSQLDatatype(typeName);
+	public Class<? extends QueryableDatatype<?>> getQueryableDatatypeClassForSQLDatatype(String typeName) {
+		switch (typeName) {
+			case "path":
+				return DBLine2D.class;
+			case "geometry":
+				return DBMultiPoint2D.class;
+			default:
+				return super.getQueryableDatatypeClassForSQLDatatype(typeName);
 		}
 	}
 
 	@Override
-	public Object getOrderByDirectionClause(Boolean sortOrder) {
-		if (sortOrder == null) {
-			return "";
-		} else if (sortOrder) {
-			return " ASC NULLS FIRST ";
-		} else {
-			return " DESC NULLS LAST ";
-		}
+	public String getOrderByDescending() {
+		return " DESC ";
+	}
+
+	@Override
+	public String getOrderByAscending() {
+		return " ASC ";
 	}
 
 	@Override
@@ -130,8 +172,8 @@ public class PostgresDBDefinition extends DBDefinition {
 	}
 
 	@Override
-	public String doBooleanToIntegerTransform(String columnName) {
-		return "("+columnName + ")::integer";
+	public String doNumberToIntegerTransform(String sql) {
+		return "CAST((" + sql + ") as INTEGER)";
 	}
 
 	@Override
@@ -141,15 +183,15 @@ public class PostgresDBDefinition extends DBDefinition {
 
 	@Override
 	public String doBitsValueTransform(boolean[] boolArray) {
-		String boolStr = "";
+		StringBuilder boolStr = new StringBuilder();
 		for (boolean c : boolArray) {
 			if (c) {
-				boolStr += "1";
+				boolStr.append("1");
 			} else {
-				boolStr += "0";
+				boolStr.append("0");
 			}
 		}
-		return "B'" + boolStr + "'";
+		return "B'" + boolStr.toString() + "'";
 	}
 
 	@Override
@@ -172,42 +214,88 @@ public class PostgresDBDefinition extends DBDefinition {
 		return false;
 	}
 
-//	@Override
-//	public String doAddMillisecondsTransform(String dateValue, String numberOfSeconds) {
-//		return "(" + dateValue + "+ (" + numberOfSeconds + ")*INTERVAL '1 MILLISECOND' )";
-//	}
 	@Override
-	public String doAddSecondsTransform(String dateValue, String numberOfSeconds) {
+	public String doSecondAndSubsecondTransform(String dateExpression) {
+		return "(EXTRACT(MICROSECOND FROM " + dateExpression + ")/1000000.0)";
+	}
+
+	@Override
+	public String doSubsecondTransform(String dateExpression) {
+		return "((EXTRACT(MICROSECOND FROM " + dateExpression + ")/1000000.0) - (" + doTruncTransform(doSecondTransform(dateExpression), "0") + "))";
+	}
+
+	@Override
+	public String doFormatAsDateRepeatSeconds(String numericSQL) {
+		return "to_char(" + numericSQL + ", 'fm90.099999999')";
+	}
+
+	@Override
+	public String doDateAddSecondsTransform(String dateValue, String numberOfSeconds) {
 		return "(" + dateValue + "+ (" + numberOfSeconds + ")*INTERVAL '1 SECOND' )";
 	}
 
 	@Override
-	public String doAddMinutesTransform(String dateValue, String numberOfMinutes) {
+	public String doDateAddMinutesTransform(String dateValue, String numberOfMinutes) {
 		return "(" + dateValue + "+ (" + numberOfMinutes + ")*INTERVAL '1 MINUTE' )";
 	}
 
 	@Override
-	public String doAddDaysTransform(String dateValue, String numberOfDays) {
+	public String doDateAddDaysTransform(String dateValue, String numberOfDays) {
 		return "(" + dateValue + "+ (" + numberOfDays + ")*INTERVAL '1 DAY' )";
 	}
 
 	@Override
-	public String doAddHoursTransform(String dateValue, String numberOfHours) {
+	public String doDateAddHoursTransform(String dateValue, String numberOfHours) {
 		return "(" + dateValue + "+ (" + numberOfHours + ")*INTERVAL '1 HOUR')";
 	}
 
 	@Override
-	public String doAddWeeksTransform(String dateValue, String numberOfWeeks) {
+	public String doDateAddWeeksTransform(String dateValue, String numberOfWeeks) {
 		return "(" + dateValue + "+ (" + numberOfWeeks + ")*INTERVAL '1 WEEK')";
 	}
 
 	@Override
-	public String doAddMonthsTransform(String dateValue, String numberOfWeeks) {
+	public String doDateAddMonthsTransform(String dateValue, String numberOfWeeks) {
 		return "(" + dateValue + "+ (" + numberOfWeeks + ")*INTERVAL '1 MONTH')";
 	}
 
 	@Override
-	public String doAddYearsTransform(String dateValue, String numberOfWeeks) {
+	public String doDateAddYearsTransform(String dateValue, String numberOfWeeks) {
+		return "(" + dateValue + "+ (" + numberOfWeeks + ")*(INTERVAL '1 YEAR'))";
+	}
+
+	@Override
+	public String doInstantAddSecondsTransform(String dateValue, String numberOfSeconds) {
+		return "(" + dateValue + "+ (" + numberOfSeconds + ")*INTERVAL '1 SECOND' )";
+	}
+
+	@Override
+	public String doInstantAddMinutesTransform(String dateValue, String numberOfMinutes) {
+		return "(" + dateValue + "+ (" + numberOfMinutes + ")*INTERVAL '1 MINUTE' )";
+	}
+
+	@Override
+	public String doInstantAddDaysTransform(String dateValue, String numberOfDays) {
+		return "(" + dateValue + "+ (" + numberOfDays + ")*INTERVAL '1 DAY' )";
+	}
+
+	@Override
+	public String doInstantAddHoursTransform(String dateValue, String numberOfHours) {
+		return "(" + dateValue + "+ (" + numberOfHours + ")*INTERVAL '1 HOUR')";
+	}
+
+	@Override
+	public String doInstantAddWeeksTransform(String dateValue, String numberOfWeeks) {
+		return "(" + dateValue + "+ (" + numberOfWeeks + ")*INTERVAL '1 WEEK')";
+	}
+
+	@Override
+	public String doInstantAddMonthsTransform(String dateValue, String numberOfWeeks) {
+		return "(" + dateValue + "+ (" + numberOfWeeks + ")*INTERVAL '1 MONTH')";
+	}
+
+	@Override
+	public String doInstantAddYearsTransform(String dateValue, String numberOfWeeks) {
 		return "(" + dateValue + "+ (" + numberOfWeeks + ")*(INTERVAL '1 YEAR'))";
 	}
 
@@ -218,7 +306,7 @@ public class PostgresDBDefinition extends DBDefinition {
 
 	@Override
 	public String doCurrentDateOnlyTransform() {
-		return super.getCurrentDateOnlyFunctionName(); //To change body of generated methods, choose Tools | Templates.
+		return super.getCurrentDateOnlyFunctionName();
 	}
 
 	@Override
@@ -260,13 +348,14 @@ public class PostgresDBDefinition extends DBDefinition {
 		return "round(EXTRACT(EPOCH FROM (" + dateValue + ") - (" + otherDateValue + "))*-1)";
 	}
 
-//	@Override
-//	public String doMillisecondDifferenceTransform(String dateValue, String otherDateValue) {
-//		return "round(EXTRACT(EPOCH FROM (" + dateValue + ") - (" + otherDateValue + "))*-1000)";
-//	}
 	@Override
 	public String doDayOfWeekTransform(String dateSQL) {
 		return " (EXTRACT(DOW FROM (" + dateSQL + "))+1)";
+	}
+
+	@Override
+	public String doInstantDayOfWeekTransform(String dateSQL) {
+		return " (EXTRACT(DOW FROM (" + dateSQL + ") AT TIME ZONE 'UTC')+1)";
 	}
 
 	@Override
@@ -274,17 +363,18 @@ public class PostgresDBDefinition extends DBDefinition {
 		StringBuilder str = new StringBuilder();
 		str.append("'{");
 		String separator = "";
-		if (bools.length == 0) {
-			return "'{}'";
-		} else if (bools.length == 1) {
-			return "'{" + bools[0] + "}'";
-		} else {
-			for (Boolean bool : bools) {
-				str.append(separator).append(bool ? 1 : 0);
-				separator = ",";
-			}
-			str.append("}'");
-			return str.toString();
+		switch (bools.length) {
+			case 0:
+				return "'{}'";
+			case 1:
+				return "'{" + bools[0] + "}'";
+			default:
+				for (Boolean bool : bools) {
+					str.append(separator).append(bool ? 1 : 0);
+					separator = ",";
+				}
+				str.append("}'");
+				return str.toString();
 		}
 	}
 
@@ -295,13 +385,11 @@ public class PostgresDBDefinition extends DBDefinition {
 
 	@Override
 	public String doPolygon2DOverlapsTransform(String firstGeometry, String secondGeometry) {
-//		return "(" + firstGeometry + ") ?#  (" + secondGeometry + ")";
 		return "ST_OVERLAPS((" + firstGeometry + ")::GEOMETRY , (" + secondGeometry + ")::GEOMETRY)";
 	}
 
 	@Override
 	public String doPolygon2DIntersectsTransform(String firstGeometry, String secondGeometry) {
-//		return "(" + firstGeometry + ") ?#  (" + secondGeometry + ")";
 		return "((" + firstGeometry + ") && (" + secondGeometry + "))";
 	}
 
@@ -342,8 +430,6 @@ public class PostgresDBDefinition extends DBDefinition {
 
 	@Override
 	public String doPolygon2DWithinTransform(String firstGeometry, String secondGeometry) {
-		//indicate whether g1 is spatially within g2. This is the inverse of Contains(). 
-		// i.e. G1.within(G2) === G2.contains(G1)
 		return "ST_WITHIN((" + firstGeometry + ")::GEOMETRY , (" + secondGeometry + ")::GEOMETRY)";
 	}
 
@@ -384,12 +470,12 @@ public class PostgresDBDefinition extends DBDefinition {
 
 	@Override
 	public boolean supportsHyperbolicFunctionsNatively() {
-		return false;//To change body of generated methods, choose Tools | Templates.
+		return false;
 	}
 
 	@Override
 	public String doStringToNumberTransform(String stringResultContainingANumber) {
-		return "(CASE WHEN (" + stringResultContainingANumber + ") IS NULL OR (" + stringResultContainingANumber + ") = '' THEN 0 ELSE TO_NUMBER(" + stringResultContainingANumber + ", 'S999999999999999D9999999') END)";
+		return "(CASE WHEN (" + stringResultContainingANumber + ") IS NULL OR (" + stringResultContainingANumber + ") = '' THEN NULL ELSE TO_NUMBER(" + stringResultContainingANumber + ", 'S999999999999999D9999999') END)";
 	}
 
 	@Override
@@ -437,7 +523,6 @@ public class PostgresDBDefinition extends DBDefinition {
 		return "POINT (" + point.getX() + ", " + point.getY() + ")";
 	}
 
-	//path '[(0,0),(1,1),(2,0)]'
 	@Override
 	public String transformLineStringIntoDatabaseLine2DFormat(LineString line) {
 		StringBuilder str = new StringBuilder();
@@ -451,7 +536,7 @@ public class PostgresDBDefinition extends DBDefinition {
 	}
 
 	@Override
-	public String doColumnTransformForSelect(QueryableDatatype qdt, String selectableName) {
+	public String doColumnTransformForSelect(QueryableDatatype<?> qdt, String selectableName) {
 		if (qdt instanceof DBPolygon2D) {
 			return "(" + selectableName + ")::VARCHAR";
 		} else if (qdt instanceof DBPoint2D) {
@@ -460,8 +545,10 @@ public class PostgresDBDefinition extends DBDefinition {
 			return "(" + selectableName + ")::VARCHAR";
 		} else if (qdt instanceof DBMultiPoint2D) {
 			return "ST_ASTEXT(" + selectableName + ")::VARCHAR";
+		} else if (qdt instanceof DBInstant) {
+			return "(" + selectableName + ") at time zone 'UTC'";
 		} else {
-			return selectableName;
+			return super.doColumnTransformForSelect(qdt, selectableName);
 		}
 	}
 
@@ -470,70 +557,77 @@ public class PostgresDBDefinition extends DBDefinition {
 		Point point = null;
 		if (pointAsString.matches(" *\\( *[-0-9.]+, *[-0-9.]+ *\\) *")) {
 			String[] split = pointAsString.split("[^-0-9.]+");
-			for (String split1 : split) {
-				System.out.println("DATABASE VALUE: " + split1);
-			}
+			List<Coordinate> coords = getCoordinatesFromStrings(split);
+
 			GeometryFactory geometryFactory = new GeometryFactory();
-			final double x = Double.parseDouble(split[1]);
-			final double y = Double.parseDouble(split[2]);
-			point = geometryFactory.createPoint(new Coordinate(x, y));
+			point = geometryFactory.createPoint(coords.get(0));
 		} else {
-//			throw new IncorrectGeometryReturnedForDatatype(geometry, point);
 		}
 		return point;
 	}
 
-	// ((2,3),(2,3),(2,3),(2,3))
-	// POLYGON((2 3,2 4,3 4,3 3,2 3))
 	@Override
 	public Polygon transformDatabasePolygon2DToJTSPolygon(String geometryAsString) throws com.vividsolutions.jts.io.ParseException {
-		String string = "POLYGON " + geometryAsString.replaceAll("\\),\\(", ", ").replaceAll("([-0-9.]+),([-0-9.]+)", "$1 $2");
-		System.out.println(geometryAsString + " => " + string);
+		// reduce the string to just the numbers
 		String[] splits = geometryAsString.split("[^0-9.]+");
-		List<Coordinate> coords = new ArrayList<Coordinate>();
-		Coordinate firstCoord = null;
-		for (int i = 1; i < splits.length; i++) {
-			String splitX = splits[i];
-			String splitY = splits[i + 1];
-			System.out.println("COORD: " + splitX + ", " + splitY);
-			final Coordinate coordinate = new Coordinate(Double.parseDouble(splitX), Double.parseDouble(splitY));
-			coords.add(coordinate);
-			if (firstCoord == null) {
-				firstCoord = coordinate;
-			}
-			i++;
-		}
+		// use our super-duper method for converting numbers into coordinates
+		List<Coordinate> coords = getCoordinatesFromStrings(splits);
+		// check for a degenerate case
 		if (coords.size() == 1) {
-			coords.add(firstCoord);
-			coords.add(firstCoord);
-			coords.add(firstCoord);
-			coords.add(firstCoord);
+			// points are not polygons, so we need to make a box
+			// grab the only coordinate we have
+			Coordinate firstCoordinate = coords.get(0);
+			// and add it 3 times to make a 0 area rectangle
+			coords.add(firstCoordinate);
+			coords.add(firstCoordinate);
+			coords.add(firstCoordinate);
+			// and add another one because my original implementation created a 0 area pentagon
+			// yay, backwards compatibility!
+			coords.add(firstCoordinate);
 		}
+
 		final GeometryFactory geometryFactory = new GeometryFactory();
 		Polygon polygon = geometryFactory.createPolygon(coords.toArray(new Coordinate[]{}));
 		return polygon;
+	}
+
+	private List<Coordinate> getCoordinatesFromStrings(String[] splits) throws NumberFormatException {
+		String splitX = "0";
+		String splitY;
+		List<Coordinate> coords = new ArrayList<>(0);
+		boolean isX = true;
+		
+		for (int index = 1; index < splits.length; index++) {
+			// grab the value to work with
+			String currentString = splits[index];
+			// some of the String arrays include a leading empty string so 
+			// check that there is a value
+			if (StringCheck.isNotEmptyNorNull(currentString)) {
+				if (isX) {
+					// save the current value to X
+					splitX = currentString;
+					// we've got an X so switch to looking for Y
+					isX = false;
+				} else {
+					splitY = currentString;
+					// we have both X and Y so make a cordinate
+					final Coordinate coordinate = new Coordinate(Double.parseDouble(splitX), Double.parseDouble(splitY));
+					// add to the list of  coordinates
+					coords.add(coordinate);
+					// reset to get another X 
+					isX = true;
+				}
+			}
+		}
+		return coords;
 	}
 
 	@Override
 	public LineString transformDatabaseLine2DValueToJTSLineString(String lineStringAsString) throws com.vividsolutions.jts.io.ParseException {
 		LineString lineString;
 		if (!lineStringAsString.matches("^ *LINESTRING.*")) {
-			String string = "LINESTRING " + lineStringAsString.replaceAll("\\),\\(", ", ").replaceAll("([-0-9.]+),([-0-9.]+)", "$1 $2");
 			String[] splits = lineStringAsString.split("[(),]+");
-			System.out.println(lineStringAsString + " => " + string);
-			Coordinate firstCoord = null;
-			List<Coordinate> coords = new ArrayList<Coordinate>();
-			for (int i = 1; i < splits.length - 1; i++) {
-				String splitX = splits[i];
-				String splitY = splits[i + 1];
-				System.out.println("COORD: " + splitX + ", " + splitY);
-				final Coordinate coordinate = new Coordinate(Double.parseDouble(splitX), Double.parseDouble(splitY));
-				coords.add(coordinate);
-				if (firstCoord == null) {
-					firstCoord = coordinate;
-				}
-				i++;
-			}
+			List<Coordinate> coords = getCoordinatesFromStrings(splits);
 			final GeometryFactory geometryFactory = new GeometryFactory();
 			lineString = geometryFactory.createLineString(coords.toArray(new Coordinate[]{}));
 		} else {
@@ -602,8 +696,6 @@ public class PostgresDBDefinition extends DBDefinition {
 		return StringFunctions.SUBSTRINGAFTER + "(" + fromThis + ", " + afterThis + ")";
 	}
 
-	//INSERT INTO BasicSpatialTable( myfirstgeom)  VALUES ( polygon 'POLYGON ((5 10, 6 10, 6 11, 5 11, 5 10))')
-	//INSERT INTO BasicSpatialTable( myfirstgeom)  VALUES ( polygon '((5,10), (6,10), (6,11), (5,11), (5,10))');
 	@Override
 	public String transformPolygonIntoDatabasePolygon2DFormat(Polygon polygon) {
 
@@ -617,10 +709,10 @@ public class PostgresDBDefinition extends DBDefinition {
 
 		return "POLYGON '(" + str + ")'";
 	}
-	
+
 	@Override
 	public String transformCoordinateArrayToDatabasePolygon2DFormat(List<String> coordinateSQL) {
-		
+
 		StringBuilder str = new StringBuilder();
 		String separator = "";
 		for (String coordinate : coordinateSQL) {
@@ -630,10 +722,9 @@ public class PostgresDBDefinition extends DBDefinition {
 
 		return "POLYGON '(" + str + ")'";
 	}
-	
+
 	@Override
 	public String transformPoint2DArrayToDatabasePolygon2DFormat(List<String> pointSQL) {
-		//POINT (0.0, 0.0) => POLYGON((0.0, 0.0), ... )
 		StringBuilder str = new StringBuilder();
 		String separator = "";
 		for (String point : pointSQL) {
@@ -668,22 +759,8 @@ public class PostgresDBDefinition extends DBDefinition {
 	public LineSegment transformDatabaseLineSegment2DValueToJTSLineSegment(String lineStringAsString) throws com.vividsolutions.jts.io.ParseException {
 		LineSegment lineString;
 		if (!lineStringAsString.matches("^ *LINESTRING.*")) {
-			String string = "LINESTRING " + lineStringAsString.replaceAll("\\),\\(", ", ").replaceAll("([-0-9.]+),([-0-9.]+)", "$1 $2");
 			String[] splits = lineStringAsString.split("[(),]+");
-			System.out.println(lineStringAsString + " => " + string);
-			Coordinate firstCoord = null;
-			List<Coordinate> coords = new ArrayList<Coordinate>();
-			for (int i = 1; i < splits.length - 1; i += 2) {
-				String splitX = splits[i];
-				String splitY = splits[i + 1];
-				System.out.println("COORD: " + splitX + ", " + splitY);
-				final Coordinate coordinate = new Coordinate(Double.parseDouble(splitX), Double.parseDouble(splitY));
-				coords.add(coordinate);
-				if (firstCoord == null) {
-					firstCoord = coordinate;
-				}
-			}
-			coords.add(firstCoord);
+			List<Coordinate> coords = getCoordinatesFromStrings(splits);
 			lineString = new LineSegment(coords.get(0), coords.get(1));
 		} else {
 			return super.transformDatabaseLineSegment2DValueToJTSLineSegment(lineStringAsString);
@@ -786,10 +863,6 @@ public class PostgresDBDefinition extends DBDefinition {
 		return MultiPoint2DFunctions.ASLINE2D + "((" + first + "))::PATH";
 	}
 
-//	@Override
-//	public String doMultiPoint2DToPolygon2DTransform(String first) {
-//		throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
-//	}
 	@Override
 	public String doMultiPoint2DGetMinYTransform(String toSQLString) {
 		return "ST_YMIN(" + toSQLString + ")";
@@ -810,10 +883,262 @@ public class PostgresDBDefinition extends DBDefinition {
 		return "ST_XMAX(" + toSQLString + ")";
 	}
 
-	// Relies on Java8 :(
-//	@Override
-//	public String doDateAtTimeZoneTransform(String dateSQL, TimeZone timeZone) {
-//		return "((" + dateSQL + ") AT TIME ZONE '" + timeZone.toZoneId().getId() + "') ";
-//	}
+	@Override
+	public LargeObjectHandlerType preferredLargeObjectWriter(DBLargeObject<?> lob) {
+		if (lob instanceof DBLargeBinary) {
+			return LargeObjectHandlerType.BINARYSTREAM;
+		} else if (lob instanceof DBLargeText) {
+			return LargeObjectHandlerType.CHARSTREAM;
+		} else if (lob instanceof DBJavaObject) {
+			return LargeObjectHandlerType.BINARYSTREAM;
+		} else {
+			return super.preferredLargeObjectWriter(lob);
+		}
+	}
 
+	@Override
+	public LargeObjectHandlerType preferredLargeObjectReader(DBLargeObject<?> lob) {
+		if (lob instanceof DBLargeBinary) {
+			return LargeObjectHandlerType.BINARYSTREAM;
+		} else if (lob instanceof DBLargeText) {
+			return LargeObjectHandlerType.STRING;
+		} else if (lob instanceof DBJavaObject) {
+			return LargeObjectHandlerType.BINARYSTREAM;
+		} else {
+			return super.preferredLargeObjectReader(lob);
+		}
+	}
+
+	/**
+	 * Return the function name for the Logarithm Base10 function.
+	 *
+	 * @return the name of the function to use when rounding numbers up
+	 */
+	@Override
+	public String getLogBase10FunctionName() {
+		return "log";
+	}
+
+	@Override
+	public String doLogBase10NumberTransform(String sql) {
+		return "log(" + sql + ")";
+	}
+
+	@Override
+	public String doFindNumberInStringTransform(String toSQLString) {
+		return "(substring(" + toSQLString + " from '([-]?[0-9]+(\\.[0-9]+)?)'))";
+	}
+
+	@Override
+	public String doFindIntegerInStringTransform(String toSQLString) {
+		return "(substring(" + toSQLString + " from '([-]?[0-9]+)'))";
+	}
+
+	@Override
+	public String doRandomNumberTransform() {
+		return " (RANDOM())";
+	}
+
+	@Override
+	public boolean requiresOnClauseForAllJoins() {
+		return true;
+	}
+
+	@Override
+	public boolean requiresSequenceUpdateAfterManualInsert() {
+		return true;
+	}
+
+	@Override
+	public String getSequenceUpdateSQL(String tableName, String columnName, long primaryKeyGenerated) {
+		String formattedTableName = StringCheck.substring(tableName, 0, 29);
+		String formattedColumnName = StringCheck.substring(columnName, 0, 29);
+		final String result = "ALTER SEQUENCE IF EXISTS " + formattedTableName + "_" + formattedColumnName + "_seq RESTART WITH " + (primaryKeyGenerated + 1) + ";";
+		return result;
+	}
+
+	@Override
+	public String doStringAccumulateTransform(String accumulateColumn, String separator, String referencedTable) {
+		return "STRING_AGG(" + accumulateColumn + ", " + doStringLiteralWrapping(separator) + ")";
+	}
+
+	@Override
+	public String doStringAccumulateTransform(String accumulateColumn, String separator, String orderByColumnName, String referencedTable) {
+		return "STRING_AGG(" + accumulateColumn + ", " + doStringLiteralWrapping(separator) + " ORDER BY " + orderByColumnName + ")";
+	}
+
+	/**
+	 * Generate the SQL to apply rounding to the Number expressions with the
+	 * specified number of decimal places.
+	 *
+	 * @param number the number value
+	 * @param decimalPlaces the number value of the decimal places required.
+	 * @return SQL
+	 */
+	@Override
+	public String doRoundWithDecimalPlacesTransform(String number, String decimalPlaces) {
+		return "ROUND((" + number + ")::numeric, " + decimalPlaces + ")";
+	}
+
+	/**
+	 * Creates the CURRENTTIME function for this database.
+	 *
+	 * @return the default implementation returns " CURRENT_TIMESTAMP "
+	 */
+	@Override
+	public String doCurrentUTCTimeTransform() {
+		return "(now())";
+	}
+
+	@Override
+	public String doCurrentUTCDateTimeTransform() {
+		return "(now())";
+	}
+
+	/**
+	 * Transforms a SQL snippet that is assumed to be a date into an SQL snippet
+	 * that provides the year part of the date.
+	 *
+	 * @param dateExpression	dateExpression
+	 * @return a SQL snippet that will produce the year of the supplied date.
+	 */
+	@Override
+	public String doInstantYearTransform(String dateExpression) {
+		return doNumberToIntegerTransform("EXTRACT(YEAR FROM " + dateExpression + " AT TIME ZONE 'UTC')");
+	}
+
+	/**
+	 * Transforms a SQL snippet that is assumed to be a date into an SQL snippet
+	 * that provides the month part of the date.
+	 *
+	 * @param dateExpression	dateExpression
+	 * @return a SQL snippet that will produce the month of the supplied date.
+	 */
+	@Override
+	public String doInstantMonthTransform(String dateExpression) {
+		return doNumberToIntegerTransform("EXTRACT(MONTH FROM " + dateExpression + " AT TIME ZONE 'UTC')");
+	}
+
+	/**
+	 * Transforms a SQL snippet that is assumed to be a date into an SQL snippet
+	 * that provides the day part of the date.
+	 *
+	 * <p>
+	 * Day in this sense is the number of the day within the month: that is the 23
+	 * part of Monday 25th of August 2014
+	 *
+	 * @param dateExpression	dateExpression
+	 * @return a SQL snippet that will produce the day of the supplied date.
+	 */
+	@Override
+	public String doInstantDayTransform(String dateExpression) {
+		return doNumberToIntegerTransform("EXTRACT(DAY FROM " + dateExpression + " AT TIME ZONE 'UTC')");
+	}
+
+	/**
+	 * Transforms a SQL snippet that is assumed to be a date into an SQL snippet
+	 * that provides the hour part of the date.
+	 *
+	 * @param dateExpression	dateExpression
+	 * @return a SQL snippet that will produce the hour of the supplied date.
+	 */
+	@Override
+	public String doInstantHourTransform(String dateExpression) {
+		return doNumberToIntegerTransform("EXTRACT(HOUR FROM " + dateExpression + " AT TIME ZONE 'UTC')");
+	}
+
+	/**
+	 * Transforms a SQL snippet that is assumed to be a date into an SQL snippet
+	 * that provides the minute part of the date.
+	 *
+	 * @param dateExpression	dateExpression
+	 * @return a SQL snippet that will produce the minute of the supplied date.
+	 */
+	@Override
+	public String doInstantMinuteTransform(String dateExpression) {
+		return doNumberToIntegerTransform("EXTRACT(MINUTE FROM " + dateExpression + " AT TIME ZONE 'UTC')");
+	}
+
+	/**
+	 * Transforms a SQL snippet that is assumed to be a date into an SQL snippet
+	 * that provides the second part of the date.
+	 *
+	 * @param dateExpression	dateExpression
+	 * @return a SQL snippet that will produce the second of the supplied date.
+	 */
+	@Override
+	public String doInstantSecondTransform(String dateExpression) {
+		return "EXTRACT(SECOND FROM " + dateExpression + " AT TIME ZONE 'UTC')";
+	}
+
+	/**
+	 * Returns the partial second value from the date.
+	 *
+	 * <p>
+	 * This should return the most detailed possible value less than a second for
+	 * the date expression provided. It should always return a value less than 1s.
+	 *
+	 * @param dateExpression the date from which to get the subsecond part of.
+	 * @return SQL
+	 */
+	@Override
+	public String doInstantSubsecondTransform(String dateExpression) {
+		return "(EXTRACT(MILLISECOND FROM " + dateExpression + " AT TIME ZONE 'UTC')/1000.0000)";
+	}
+
+	@Override
+	public String doInstantEndOfMonthTransform(String dateSQL) {
+		return "(((" + dateSQL + " at time zone 'UTC'+ (( CAST((EXTRACT(DAY FROM " + dateSQL + " AT TIME ZONE 'UTC')) as INTEGER) - 1)  * -1)*INTERVAL '1 DAY' )+ (1)*INTERVAL '1 MONTH')+ (-1)*INTERVAL '1 DAY' ) at time zone 'UTC'";
+	}
+
+	@Override
+	public boolean prefersInstantsReadAsStrings() {
+		return true;
+	}
+
+	@Override
+	public DBExpression transformToSelectableType(DBExpression columnExpression) {
+		return super.transformToSelectableType(columnExpression);
+	}
+
+	@Override
+	public int getParseDurationPartOffset() {
+		return 0;
+	}
+
+	@Override
+	public boolean supportsDateRepeatDatatypeFunctions() {
+		return false;
+	}
+
+	private static final Regex DUPLICATE_ROW_EXCEPTION
+			= Regex
+					.startingAnywhere()
+					.beginOrGroup()
+					.literalCaseInsensitive("duplicate key value violates unique constraint")
+					.or()
+					.literalCaseInsensitive("ERROR: column \"")
+					.anyCharacterExcept('"').oneOrMore()
+					.literalCaseInsensitive("\" of relation \"")
+					.anyCharacterExcept('"').oneOrMore()
+					.literalCaseInsensitive("\" already exists")
+					.endOrGroup()
+					.toRegex();
+
+	@Override
+	public boolean isPrimaryKeyAlreadyExistsException(Exception alreadyExists) {
+		Throwable exc = alreadyExists;
+		while (exc != null) {
+			if ((exc instanceof SQLException) && DUPLICATE_ROW_EXCEPTION.matchesWithinString(exc.getMessage())) {
+				return true;
+			}
+			exc = exc.getCause();
+		}
+		return false;
+	}
+
+	@Override
+	public String getAlterTableAddColumnSQL(DBRow existingTable, PropertyWrapper<?, ?, ?> columnPropertyWrapper) {
+		return "ALTER TABLE IF EXISTS " + formatTableName(existingTable) + " ADD COLUMN IF NOT EXISTS " + getAddColumnColumnSQL(columnPropertyWrapper) + endSQLStatement();
+	}
 }

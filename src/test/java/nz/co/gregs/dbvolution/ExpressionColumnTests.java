@@ -16,6 +16,8 @@
 package nz.co.gregs.dbvolution;
 
 import java.util.Date;
+import java.util.GregorianCalendar;
+import nz.co.gregs.dbvolution.databases.DBDatabaseCluster;
 import nz.co.gregs.dbvolution.datatypes.DBDate;
 import nz.co.gregs.dbvolution.datatypes.DBNumber;
 import nz.co.gregs.dbvolution.datatypes.DBString;
@@ -25,7 +27,7 @@ import nz.co.gregs.dbvolution.example.Marque;
 import nz.co.gregs.dbvolution.expressions.DateExpression;
 import nz.co.gregs.dbvolution.generic.AbstractTest;
 import static org.hamcrest.Matchers.*;
-import org.junit.Assert;
+import static org.hamcrest.MatcherAssert.assertThat;
 import org.junit.Test;
 
 public class ExpressionColumnTests extends AbstractTest {
@@ -42,17 +44,28 @@ public class ExpressionColumnTests extends AbstractTest {
 		DBQuery query = database.getDBQuery(marque, carCompany);
 
 		final Date dateKey = new Date();
-		query.addExpressionColumn(dateKey, DateExpression.currentDateOnly());
+		query.addExpressionColumn(dateKey, DateExpression.currentDateOnly().asExpressionColumn());
 
-		final String sqlForQuery = query.getSQLForQuery();
-		Assert.assertThat(sqlForQuery, containsString(database.getDefinition().doCurrentDateOnlyTransform().trim()));
-
+		if (!(database instanceof DBDatabaseCluster)) {
+			final String sqlForQuery = query.getSQLForQuery();
+			assertThat(sqlForQuery, containsString(database.getDefinition().doCurrentDateOnlyTransform().trim()));
+		}
+		if (!(database instanceof DBDatabaseCluster)) {
+			final String sqlForQuery = query.getSQLForQuery();
+			assertThat(sqlForQuery, containsString(database.getDefinition().doCurrentDateOnlyTransform().trim()));
+		}
 		for (DBQueryRow row : query.getAllRows()) {
-			QueryableDatatype expressionColumnValue = row.getExpressionColumnValue(dateKey);
-			System.out.println(expressionColumnValue.toSQLString(database));
+			QueryableDatatype<?> expressionColumnValue = row.getExpressionColumnValue(dateKey);
 			if (expressionColumnValue instanceof DBDate) {
+				GregorianCalendar cal = new GregorianCalendar();
+				cal.add(GregorianCalendar.MINUTE,+1);
+				Date later = cal.getTime();
+				cal.add(GregorianCalendar.MINUTE,-1);
+				cal.add(GregorianCalendar.HOUR,-24);
+				Date yesterday = cal.getTime();
 				DBDate currentDate = (DBDate) expressionColumnValue;
-				System.out.println("" + currentDate.dateValue());
+				assertThat(currentDate.getValue(), lessThan(later));
+				assertThat(currentDate.getValue(), greaterThan(yesterday));
 			} else {
 				throw new RuntimeException("CurrentDate Expression Failed To Create DBDate Instance");
 			}
@@ -67,18 +80,16 @@ public class ExpressionColumnTests extends AbstractTest {
 		DBQuery query = database.getDBQuery(marque, carCompany);
 
 		final String shortMarqueName = "Short marque name";
-		query.addExpressionColumn(shortMarqueName, marque.column(marque.name).substring(0, 3));
+		query.addExpressionColumn(shortMarqueName, marque.column(marque.name).substring(0, 3).asExpressionColumn());
 
 		final String sqlForQuery = query.getSQLForQuery();
-		Assert.assertThat(sqlForQuery, containsString("SUBSTR"));
+		assertThat(sqlForQuery, containsString("SUBSTR"));
 
 		for (DBQueryRow row : query.getAllRows()) {
-			QueryableDatatype expressionColumnValue = row.getExpressionColumnValue(shortMarqueName);
-			System.out.println(expressionColumnValue.toSQLString(database));
+			QueryableDatatype<?> expressionColumnValue = row.getExpressionColumnValue(shortMarqueName);
 			if (expressionColumnValue instanceof DBString) {
 				DBString shortName = (DBString) expressionColumnValue;
-				System.out.println("" + shortName.stringValue());
-				Assert.assertThat(shortName.toString(), is("TOYOTA".substring(0, 3)));
+				assertThat(shortName.toString(), is("TOYOTA".substring(0, 3)));
 			} else {
 				throw new RuntimeException("String Expression Failed To Create DBString Instance");
 			}
@@ -93,18 +104,16 @@ public class ExpressionColumnTests extends AbstractTest {
 		DBQuery query = database.getDBQuery(marque, carCompany);
 
 		final String strangeEquation = "strange equation";
-		query.addExpressionColumn(strangeEquation, marque.column(marque.uidMarque).times(5).dividedBy(3).plus(2));
+		query.addExpressionColumn(strangeEquation, marque.column(marque.uidMarque).times(5).dividedBy(3).plus(2).asExpressionColumn());
 
 		for (DBQueryRow row : query.getAllRows()) {
 			Long uid = row.get(new Marque()).uidMarque.getValue();
-			QueryableDatatype expressionColumnValue = row.getExpressionColumnValue(strangeEquation);
-			System.out.println(expressionColumnValue.toSQLString(database));
+			QueryableDatatype<?> expressionColumnValue = row.getExpressionColumnValue(strangeEquation);
 			if (expressionColumnValue instanceof DBNumber) {
 				DBNumber eqValue = (DBNumber) expressionColumnValue;
-				System.out.println("" + eqValue.numberValue());
-				Assert.assertThat(eqValue.longValue(), is(uid * 5 / 3 + 2));
+				assertThat(eqValue.longValue(), is(uid * 5 / 3 + 2));
 			} else {
-				throw new RuntimeException("String Expression Failed To Create DBString Instance");
+				throw new RuntimeException("String Expression Failed To Create DBNumber Instance");
 			}
 		}
 	}

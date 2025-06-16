@@ -17,14 +17,19 @@ package nz.co.gregs.dbvolution;
 
 import java.text.SimpleDateFormat;
 import java.util.Date;
+import java.util.GregorianCalendar;
 import java.util.List;
 import nz.co.gregs.dbvolution.annotations.*;
+import nz.co.gregs.dbvolution.databases.DBDatabase;
+import nz.co.gregs.dbvolution.databases.DBDatabaseCluster;
 import nz.co.gregs.dbvolution.datatypes.*;
+import nz.co.gregs.dbvolution.example.Marque;
 import nz.co.gregs.dbvolution.expressions.DateExpression;
 import nz.co.gregs.dbvolution.expressions.NumberExpression;
 import nz.co.gregs.dbvolution.expressions.StringExpression;
 import nz.co.gregs.dbvolution.generic.AbstractTest;
 import static org.hamcrest.Matchers.*;
+import static org.hamcrest.MatcherAssert.assertThat;
 import org.junit.*;
 
 /**
@@ -40,6 +45,26 @@ public class ExpressionsInDBRowFields extends AbstractTest {
 		super(testIterationName, db);
 	}
 
+	@BeforeClass
+	public static void setUpClass() {
+	}
+
+	@AfterClass
+	public static void tearDownClass() {
+	}
+
+	@Before
+	@Override
+	public void setUp() throws Exception {
+		super.setUp();
+	}
+
+	@After
+	@Override
+	public void tearDown() throws Exception {
+		super.tearDown();
+	}
+
 	@Test
 	public void selectDBRowExpressionWithDBQuery() throws Exception {
 		final ExpressionRow exprExample = new ExpressionRow();
@@ -48,18 +73,29 @@ public class ExpressionsInDBRowFields extends AbstractTest {
 		DBQuery query = database.getDBQuery(exprExample);
 
 		final String sqlForQuery = query.getSQLForQuery();
-		Assert.assertThat(sqlForQuery, containsString(database.getDefinition().doCurrentDateOnlyTransform()));
-		Assert.assertThat(sqlForQuery, containsString(ExpressionRow.STRING_VALUE));
-		Assert.assertThat(sqlForQuery, containsString(NumberExpression.value(5).times(3).toSQLString(database)));
-		final List<DBQueryRow> allRows = query.getAllRows();
+		if (!(database instanceof DBDatabaseCluster)) {
+			assertThat(sqlForQuery, containsString(database.getDefinition().doCurrentDateOnlyTransform()));
+		}
+		assertThat(sqlForQuery, containsString(ExpressionRow.STRING_VALUE));
+		assertThat(sqlForQuery, containsString(NumberExpression.value(5).times(3).toSQLString(database.getDefinition())));
 
+		final List<DBQueryRow> allRows = query.getAllRows();
 		for (DBQueryRow row : allRows) {
 			ExpressionRow expressionRow = row.get(exprExample);
-			Assert.assertThat(expressionRow.stringColumnOnClass.stringValue(), is(ExpressionRow.STRING_VALUE.toUpperCase()));
-			Assert.assertThat(expressionRow.numberColumnOnClass.intValue(), is(15));
-			Assert.assertThat(expressionRow.marqueUIDTimes10.intValue(), is(10));
-			Assert.assertThat(expressionRow.shortName.stringValue(), is("TOY"));
-			Assert.assertThat(expressionRow.uidAndName.stringValue(), is("1-TOYOTA"));
+			DBDate currentDate = expressionRow.sysDateColumnOnClass;
+			GregorianCalendar cal = new GregorianCalendar();
+			cal.add(GregorianCalendar.MINUTE, +1);
+			Date later = cal.getTime();
+			cal.add(GregorianCalendar.MINUTE, -1);
+			cal.add(GregorianCalendar.HOUR, -24);
+			Date yesterday = cal.getTime();
+			assertThat(currentDate.getValue(), lessThan(later));
+			assertThat(currentDate.getValue(), greaterThan(yesterday));
+			assertThat(expressionRow.stringColumnOnClass.stringValue(), is(ExpressionRow.STRING_VALUE.toUpperCase()));
+			assertThat(expressionRow.numberColumnOnClass.intValue(), is(15));
+			assertThat(expressionRow.marqueUIDTimes10.intValue(), is(10));
+			assertThat(expressionRow.shortName.stringValue(), is("TOY"));
+			assertThat(expressionRow.uidAndName.stringValue(), is("1-TOYOTA"));
 		}
 	}
 
@@ -71,16 +107,17 @@ public class ExpressionsInDBRowFields extends AbstractTest {
 		exprExample.name.permittedValuesIgnoreCase("TOYOTA");
 		DBQuery query = database.getDBQuery(exprExample);
 
-		String sqlForQuery = query.getSQLForQuery();
-		Assert.assertThat(sqlForQuery, containsString(database.getDefinition().doCurrentDateOnlyTransform()));
-
+		if (!(database instanceof DBDatabaseCluster)) {
+			String sqlForQuery = query.getSQLForQuery();
+			assertThat(sqlForQuery, containsString(database.getDefinition().doCurrentDateOnlyTransform()));
+		}
 		for (DBQueryRow row : query.getAllRows()) {
 			ExpressionRow expressionRow = row.get(exprExample);
-			Assert.assertThat(expressionRow.stringColumnOnClass.stringValue(), is(ExpressionRow.STRING_VALUE.toUpperCase()));
-			Assert.assertThat(expressionRow.numberColumnOnClass.intValue(), is(15));
-			Assert.assertThat(expressionRow.marqueUIDTimes10.intValue(), is(10));
-			Assert.assertThat(expressionRow.shortName.stringValue(), is("TOY"));
-			Assert.assertThat(expressionRow.uidAndName.stringValue(), is("1-TOYOTA"));
+			assertThat(expressionRow.stringColumnOnClass.stringValue(), is(ExpressionRow.STRING_VALUE.toUpperCase()));
+			assertThat(expressionRow.numberColumnOnClass.intValue(), is(15));
+			assertThat(expressionRow.marqueUIDTimes10.intValue(), is(10));
+			assertThat(expressionRow.shortName.stringValue(), is("TOY"));
+			assertThat(expressionRow.uidAndName.stringValue(), is("1-TOYOTA"));
 		}
 
 		final ExpressionRow exprExample2 = new ExpressionRow();
@@ -89,11 +126,13 @@ public class ExpressionsInDBRowFields extends AbstractTest {
 
 		query = database.getDBQuery(exprExample2);
 
-		sqlForQuery = query.getSQLForQuery();
-		Assert.assertThat(sqlForQuery, containsString(database.getDefinition().doCurrentDateOnlyTransform()));
+		if (!(database instanceof DBDatabaseCluster)) {
+			String sqlForQuery = query.getSQLForQuery();
+			assertThat(sqlForQuery, containsString(database.getDefinition().doCurrentDateOnlyTransform()));
+		}
 		final List<DBQueryRow> allRows = query.getAllRows();
-		database.print(allRows);
-		Assert.assertThat(allRows.size(), is(0));
+
+		assertThat(allRows.size(), is(0));
 	}
 
 	@Test
@@ -103,18 +142,26 @@ public class ExpressionsInDBRowFields extends AbstractTest {
 		DBTable<ExpressionRow> table = database.getDBTable(exprExample);
 
 		final String sqlForQuery = table.getSQLForQuery();
-//		System.out.println(sqlForQuery);
-		Assert.assertThat(sqlForQuery, containsString(database.getDefinition().doCurrentDateOnlyTransform()));
-		final List<ExpressionRow> rowsByExample = table.getAllRows();
-		database.print(rowsByExample);
+
+		if (!(database instanceof DBDatabaseCluster)) {
+			assertThat(sqlForQuery, containsString(database.getDefinition().doCurrentDateOnlyTransform()));
+		}
 
 		for (ExpressionRow expressionRow : table.getAllRows()) {
 			DBDate currentDate = expressionRow.sysDateColumnOnClass;
-			Assert.assertThat(expressionRow.stringColumnOnClass.stringValue(), is(ExpressionRow.STRING_VALUE.toUpperCase()));
-			Assert.assertThat(expressionRow.numberColumnOnClass.intValue(), is(15));
-			Assert.assertThat(expressionRow.marqueUIDTimes10.intValue(), is(10));
-			Assert.assertThat(expressionRow.shortName.stringValue(), is("TOY"));
-			Assert.assertThat(expressionRow.uidAndName.stringValue(), is("1-TOYOTA"));
+			GregorianCalendar cal = new GregorianCalendar();
+			cal.add(GregorianCalendar.MINUTE, +1);
+			Date later = cal.getTime();
+			cal.add(GregorianCalendar.MINUTE, -1);
+			cal.add(GregorianCalendar.HOUR, -24);
+			Date yesterday = cal.getTime();
+			assertThat(currentDate.getValue(), lessThan(later));
+			assertThat(currentDate.getValue(), greaterThan(yesterday));
+			assertThat(expressionRow.stringColumnOnClass.stringValue(), is(ExpressionRow.STRING_VALUE.toUpperCase()));
+			assertThat(expressionRow.numberColumnOnClass.intValue(), is(15));
+			assertThat(expressionRow.marqueUIDTimes10.intValue(), is(10));
+			assertThat(expressionRow.shortName.stringValue(), is("TOY"));
+			assertThat(expressionRow.uidAndName.stringValue(), is("1-TOYOTA"));
 		}
 	}
 
@@ -122,42 +169,189 @@ public class ExpressionsInDBRowFields extends AbstractTest {
 	@SuppressWarnings("deprecation")
 	public void selectDBRowExpressionAllMarques() throws Exception {
 		final ExpressionRow expressionRow = new ExpressionRow();
-		final DBTable<ExpressionRow> expressionTable = database.getDBTable(expressionRow);
+		final DBTable<ExpressionRow> expressionTable = database.getDBTable(expressionRow)
+				.setQueryLabel("selectDBRowExpressionAllMarques");
 		final List<ExpressionRow> allMarques = expressionTable.setBlankQueryAllowed(true).getAllRows();
-		database.print(allMarques);
 
 		for (ExpressionRow row : allMarques) {
-			Assert.assertThat(row.uidAndName.stringValue(),
+			assertThat(row.uidAndName.stringValue(),
 					is(row.uidMarque.stringValue() + "-" + row.name.stringValue()));
 			final Date dateValue = row.creationDate.dateValue();
 
 			if (dateValue != null) {
 				String year = new SimpleDateFormat("yyyy").format(dateValue);
-				Assert.assertThat(row.uidNameAndYear.stringValue(), is(
+				assertThat(row.uidNameAndYear.stringValue(), is(
 						row.uidMarque.stringValue() + "-"
 						+ row.name.stringValue() + "-"
 						+ year));
-				Assert.assertThat(row.uidNameAndNVLYear.stringValue(), is(
+				assertThat(row.uidNameAndNVLYear.stringValue(), is(
 						row.uidMarque.stringValue() + "-"
 						+ row.name.stringValue() + "-"
 						+ year));
 			} else {
 				if (database.supportsDifferenceBetweenNullAndEmptyString()) {
-					Assert.assertThat(row.uidNameAndYear.stringValue(), isEmptyOrNullString());
+					assertThat(
+							row.uidNameAndYear.stringValue(),
+							isEmptyOrNullString()
+					);
 					String year = new SimpleDateFormat("yyyy").format(new Date());
-					Assert.assertThat(row.uidNameAndNVLYear.stringValue(), is(
+					assertThat(
+							row.uidNameAndNVLYear.stringValue(),
+							is(row.uidMarque.stringValue() + "-" + row.name.stringValue() + "-" + year)
+					);
+				} else {
+					if (row.creationDate.isNull()) {
+						assertThat(
+								row.uidNameAndYear.stringValue(),
+								is(row.uidMarque.stringValue() + "-" + row.name.stringValue() + "-")
+						);
+						String year = new SimpleDateFormat("yyyy").format(new Date());
+						assertThat(
+								row.uidNameAndNVLYear.stringValue(),
+								is(row.uidMarque.stringValue() + "-" + row.name.stringValue() + "-" + year)
+						);
+					} else {
+						assertThat(
+								row.uidNameAndYear.stringValue(),
+								is(row.uidMarque.stringValue() + "-" + row.name.stringValue() + "-")
+						);
+						String year = new SimpleDateFormat("yyyy").format(new Date());
+						assertThat(
+								row.uidNameAndNVLYear.stringValue(),
+								is(row.uidMarque.stringValue() + "-" + row.name.stringValue() + "-" + year)
+						);
+					}
+				}
+			}
+		}
+	}
+
+	@Test
+	@SuppressWarnings("deprecation")
+	public void selectDBRowExpressionAllMarquesWithinOracleCluster() throws Exception {
+		boolean supportsDifferenceBetweenNullAndEmptyString = database.supportsDifferenceBetweenNullAndEmptyString();
+		DBDatabase pseudoOracle = getDatabaseThatDoesNotSupportDifferenceBetweenEmptyStringsAndNull();
+		List<Marque> requiredRowsForMarqueTable = database.getDBTable(new Marque()).setBlankQueryAllowed(true).getAllRows();
+		pseudoOracle.createTable(new Marque());
+		pseudoOracle.insert(requiredRowsForMarqueTable);
+		try (var cluster = new DBDatabaseCluster("test required empty for null cluster", DBDatabaseCluster.Configuration.manual(), pseudoOracle)) {
+			cluster.addTrackedTable(new Marque());
+			cluster.addDatabaseAndWait(database);
+
+			final var expressionRow = new ExpressionRow();
+			final var expressionTable = database.getDBTable(expressionRow).setQueryLabel("selectDBRowExpressionAllMarques");
+
+			final List<ExpressionRow> allMarques = expressionTable.setBlankQueryAllowed(true).getAllRows();
+
+			for (ExpressionRow row : allMarques) {
+				assertThat(row.uidAndName.stringValue(),
+						is(row.uidMarque.stringValue() + "-" + row.name.stringValue()));
+				final Date dateValue = row.creationDate.dateValue();
+
+				if (dateValue != null) {
+					String year = new SimpleDateFormat("yyyy").format(dateValue);
+					assertThat(row.uidNameAndYear.stringValue(), is(
+							row.uidMarque.stringValue() + "-"
+							+ row.name.stringValue() + "-"
+							+ year));
+					assertThat(row.uidNameAndNVLYear.stringValue(), is(
 							row.uidMarque.stringValue() + "-"
 							+ row.name.stringValue() + "-"
 							+ year));
 				} else {
-					Assert.assertThat(row.uidNameAndYear.stringValue(), is(
-							row.uidMarque.stringValue() + "-"
-							+ row.name.stringValue() + "-"));
-					String year = new SimpleDateFormat("yyyy").format(new Date());
-					Assert.assertThat(row.uidNameAndNVLYear.stringValue(), is(
+					if (supportsDifferenceBetweenNullAndEmptyString) {
+						assertThat(
+								row.uidNameAndYear.stringValue(),
+								isEmptyOrNullString()
+						);
+						String year = new SimpleDateFormat("yyyy").format(new Date());
+						assertThat(
+								row.uidNameAndNVLYear.stringValue(),
+								is(row.uidMarque.stringValue() + "-" + row.name.stringValue() + "-" + year)
+						);
+					} else {
+						if (row.creationDate.isNull()) {
+							assertThat(
+									row.uidNameAndYear.stringValue(),
+									is(row.uidMarque.stringValue() + "-" + row.name.stringValue() + "-")
+							);
+							String year = new SimpleDateFormat("yyyy").format(new Date());
+							assertThat(
+									row.uidNameAndNVLYear.stringValue(),
+									is(row.uidMarque.stringValue() + "-" + row.name.stringValue() + "-" + year)
+							);
+						} else {
+							assertThat(
+									row.uidNameAndYear.stringValue(),
+									is(row.uidMarque.stringValue() + "-" + row.name.stringValue() + "-")
+							);
+							String year = new SimpleDateFormat("yyyy").format(new Date());
+							assertThat(
+									row.uidNameAndNVLYear.stringValue(),
+									is(row.uidMarque.stringValue() + "-" + row.name.stringValue() + "-" + year)
+							);
+						}
+					}
+				}
+			}
+		}
+	}
+
+	@Test
+	@SuppressWarnings("deprecation")
+	public void selectDBRowExpressionAllMarquesAfterAddingToClusterAndIntroducingOracleDatabase() throws Exception {
+
+		DBDatabase h2PretendingToBeOracle = getDatabaseThatDoesNotSupportDifferenceBetweenEmptyStringsAndNull();
+		try (DBDatabaseCluster cluster = new DBDatabaseCluster("selectDBRowExpressionAllMarquesAfterAddingToClusterAndIntroducingOracleDatabase", DBDatabaseCluster.Configuration.manual(), database)) {
+			cluster.addTrackedTable(new ExpressionRow());
+			cluster.addDatabaseAndWait(h2PretendingToBeOracle);
+			
+			final ExpressionRow expressionRow = new ExpressionRow();
+			h2PretendingToBeOracle.getDBTable(expressionRow).setBlankQueryAllowed(true).getAllRows();
+			database.getDBTable(expressionRow).setBlankQueryAllowed(true).getAllRows();
+			
+			final DBTable<ExpressionRow> expressionTable = cluster.getDBTable(expressionRow)
+					.setQueryLabel("selectDBRowExpressionAllMarquesAfterAddingToClusterAndIntroducingOracleDatabase");
+
+			final List<ExpressionRow> allMarques = expressionTable.setBlankQueryAllowed(true).getAllRows();
+			
+			for (ExpressionRow row : allMarques) {
+				assertThat(row.uidAndName.stringValue(),
+						is(row.uidMarque.stringValue() + "-" + row.name.stringValue()));
+				final Date dateValue = row.creationDate.dateValue();
+
+				if (dateValue != null) {
+					String year = new SimpleDateFormat("yyyy").format(dateValue);
+					assertThat(row.uidNameAndYear.stringValue(), is(
 							row.uidMarque.stringValue() + "-"
 							+ row.name.stringValue() + "-"
 							+ year));
+					assertThat(row.uidNameAndNVLYear.stringValue(), is(
+							row.uidMarque.stringValue() + "-"
+							+ row.name.stringValue() + "-"
+							+ year));
+				} else {
+					if (row.creationDate.isNull()) {
+						assertThat(
+								row.uidNameAndYear.stringValue(),
+								is(row.uidMarque.stringValue() + "-" + row.name.stringValue() + "-")
+						);
+						String year = new SimpleDateFormat("yyyy").format(new Date());
+						assertThat(
+								row.uidNameAndNVLYear.stringValue(),
+								is(row.uidMarque.stringValue() + "-" + row.name.stringValue() + "-" + year)
+						);
+					} else {
+						assertThat(
+								row.uidNameAndYear.stringValue(),
+								is(row.uidMarque.stringValue() + "-" + row.name.stringValue() + "-")
+						);
+						String year = new SimpleDateFormat("yyyy").format(new Date());
+						assertThat(
+								row.uidNameAndNVLYear.stringValue(),
+								is(row.uidMarque.stringValue() + "-" + row.name.stringValue() + "-" + year)
+						);
+					}
 				}
 			}
 		}
@@ -205,6 +399,9 @@ public class ExpressionsInDBRowFields extends AbstractTest {
 
 		@DBColumn
 		DBString uidNameAndNVLYear = new DBString(this.column(this.uidMarque).ifDBNull(NumberExpression.value(-1).times(NumberExpression.value(2))).append("-").append(this.column(this.name).ifDBNull("UNKNOWN")).append("-").append(this.column(this.creationDate).ifDBNull(DateExpression.currentDateOnly()).year().ifDBNull(2000)));
-		
+
+		@DBColumn
+		DBString uidNameAndNVLYearWithDate = new DBString(this.column(this.uidMarque).ifDBNull(NumberExpression.value(-1).times(NumberExpression.value(2))).append("-").append(this.column(this.name).ifDBNull("UNKNOWN")).append("-").append(this.column(this.creationDate).ifDBNull(april2nd2011).year().ifDBNull(2000)));
+
 	}
 }

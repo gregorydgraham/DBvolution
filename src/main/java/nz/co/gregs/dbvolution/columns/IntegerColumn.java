@@ -16,13 +16,16 @@
 package nz.co.gregs.dbvolution.columns;
 
 import java.util.Set;
-import nz.co.gregs.dbvolution.DBDatabase;
 import nz.co.gregs.dbvolution.DBRow;
+import nz.co.gregs.dbvolution.databases.DBDatabase;
+import nz.co.gregs.dbvolution.databases.definitions.DBDefinition;
+import nz.co.gregs.dbvolution.datatypes.DBEnum;
+import nz.co.gregs.dbvolution.datatypes.DBEnumValue;
 import nz.co.gregs.dbvolution.datatypes.DBInteger;
-import nz.co.gregs.dbvolution.datatypes.DBIntegerEnum;
-import nz.co.gregs.dbvolution.datatypes.DBNumber;
 import nz.co.gregs.dbvolution.expressions.BooleanExpression;
+import nz.co.gregs.dbvolution.expressions.IntegerExpression;
 import nz.co.gregs.dbvolution.expressions.NumberExpression;
+import nz.co.gregs.dbvolution.expressions.SortProvider;
 import nz.co.gregs.dbvolution.query.RowDefinition;
 
 /**
@@ -48,7 +51,9 @@ import nz.co.gregs.dbvolution.query.RowDefinition;
  * @see AbstractColumn
  * @see NumberExpression
  */
-public class IntegerColumn extends NumberExpression implements ColumnProvider {
+public class IntegerColumn extends IntegerExpression implements ColumnProvider {
+
+	private final static long serialVersionUID = 1l;
 
 	private AbstractColumn column;
 
@@ -62,7 +67,8 @@ public class IntegerColumn extends NumberExpression implements ColumnProvider {
 	 * @param field the field defining the column
 	 */
 	public IntegerColumn(RowDefinition row, Long field) {
-		this.column = new AbstractColumn(row, field);
+		super();
+		this.column = new AbstractColumn(row, new DBInteger(field));
 	}
 
 	/**
@@ -72,7 +78,7 @@ public class IntegerColumn extends NumberExpression implements ColumnProvider {
 	 * @param field the field defining the column
 	 */
 	public IntegerColumn(RowDefinition row, Integer field) {
-		this.column = new AbstractColumn(row, field);
+		this.column = new AbstractColumn(row, new DBInteger(field));
 	}
 
 	/**
@@ -88,30 +94,25 @@ public class IntegerColumn extends NumberExpression implements ColumnProvider {
 	/**
 	 * Create a IntegerColumn for the supplied field of the supplied row
 	 *
+	 * @param <E> a type of DBEnumValue
 	 * @param row the row containing the field
 	 * @param field the field defining the column
 	 */
-	public IntegerColumn(RowDefinition row, DBIntegerEnum<?> field) {
+	public <E extends Enum<E> & DBEnumValue<Long>> IntegerColumn(RowDefinition row, DBEnum<E, Long> field) {
 		this.column = new AbstractColumn(row, field);
 	}
 
 	@Override
-	public String toSQLString(DBDatabase db) {
+	public String toSQLString(DBDefinition db) {
 		return column.toSQLString(db);
 	}
 
 	@Override
 	public synchronized IntegerColumn copy() {
-		try {
-			IntegerColumn newInstance = this.getClass().newInstance();
-			newInstance.column = this.column;
-			return newInstance;
-		} catch (InstantiationException ex) {
-			throw new RuntimeException(ex);
-		} catch (IllegalAccessException ex) {
-			throw new RuntimeException(ex);
-		}
-
+		final AbstractColumn col = getColumn();
+		final DBRow row = col.getInstanceOfRow();
+		IntegerColumn newInstance = new IntegerColumn(row, (DBInteger) col.getAppropriateQDTFromRow(row));
+		return newInstance;
 	}
 
 	@Override
@@ -134,6 +135,11 @@ public class IntegerColumn extends NumberExpression implements ColumnProvider {
 		return getTablesInvolved().isEmpty();
 	}
 
+	@Override
+	public boolean isAggregator() {
+		return column.isAggregator();
+	}
+
 	/**
 	 * Create an expression to compare this column to the other column using
 	 * EQUALS.
@@ -141,24 +147,25 @@ public class IntegerColumn extends NumberExpression implements ColumnProvider {
 	 * @param integerColumn the value we wish to find in this column.
 	 * <p style="color: #F90;">Support DBvolution at
 	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
-	 *
 	 * @return a BooleanExpression
 	 */
+	@Override
 	public BooleanExpression is(DBInteger integerColumn) {
 		return super.is(integerColumn);
 	}
 
-	/**
-	 * Create an expression to compare this column to the other column using
-	 * EQUALS.
-	 *
-	 * @param numberColumn the value we wish to find in this column.
-	 * <p style="color: #F90;">Support DBvolution at
-	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
-	 *
-	 * @return a BooleanExpression
-	 */
-	public BooleanExpression is(DBNumber numberColumn) {
-		return super.is(numberColumn);
+	@Override
+	public SortProvider.Column getSortProvider() {
+		return column.getSortProvider();
+	}
+
+	@Override
+	public String createSQLForGroupByClause(DBDatabase database) {
+		return column.createSQLForGroupByClause(database);
+	}
+
+	@Override
+	public String createSQLForFromClause(DBDatabase database) {
+		return column.createSQLForFromClause(database);
 	}
 }

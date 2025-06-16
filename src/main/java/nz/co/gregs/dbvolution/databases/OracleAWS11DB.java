@@ -15,22 +15,16 @@
  */
 package nz.co.gregs.dbvolution.databases;
 
-import java.sql.Connection;
+import nz.co.gregs.dbvolution.databases.settingsbuilders.OracleAWS11SettingsBuilder;
 import java.sql.SQLException;
 import javax.sql.DataSource;
-import nz.co.gregs.dbvolution.DBDatabase;
-import nz.co.gregs.dbvolution.DBRow;
 import nz.co.gregs.dbvolution.databases.definitions.OracleAWS11DBDefinition;
-import nz.co.gregs.dbvolution.databases.definitions.DBDefinition;
 import nz.co.gregs.dbvolution.databases.definitions.Oracle12DBDefinition;
 import nz.co.gregs.dbvolution.databases.definitions.OracleAWSDBDefinition;
 
 /**
  * Implements support for version 11 and prior of the Oracle database as provide
  * by Amazon's AWS relational database service (RDS).
- *
- * <p style="color: #F90;">Support DBvolution at
- * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
  *
  * @author Gregory Graham
  * @see OracleAWSDB
@@ -41,38 +35,48 @@ import nz.co.gregs.dbvolution.databases.definitions.OracleAWSDBDefinition;
  */
 public class OracleAWS11DB extends OracleAWSDB {
 
-	/**
-	 *
-	 * Provides a convenient constructor for DBDatabases that have configuration
-	 * details hardwired or are able to automatically retrieve the details.
-	 *
-	 * <p>
-	 * This constructor creates an empty DBDatabase with only the default
-	 * settings, in particular with no driver, URL, username, password, or
-	 * {@link DBDefinition}
-	 *
-	 * <p>
-	 * Most programmers should not call this constructor directly. Instead you
-	 * should define a no-parameter constructor that supplies the details for
-	 * creating an instance using a more complete constructor.
-	 *
-	 * <p>
-	 * DBDatabase encapsulates the knowledge of the database, in particular the
-	 * syntax of the database in the DBDefinition and the connection details from
-	 * a DataSource.
-	 *
-	 * @see DBDefinition
-	 */
-	protected OracleAWS11DB() {
-	}
+	public static final long serialVersionUID = 1l;
 
 	/**
 	 * Creates a DBDatabase instance tweaked for Oracle 11 and above.
 	 *
 	 * @param dataSource a datasource to an Oracle database
+	 * @throws java.sql.SQLException database errors
 	 */
-	public OracleAWS11DB(DataSource dataSource) {
+	public OracleAWS11DB(DataSource dataSource) throws SQLException {
 		super(new OracleAWS11DBDefinition(), dataSource);
+	}
+
+	/**
+	 * Creates an Oracle connection for the DatabaseConnectionSettings.
+	 *
+	 * @param dcs	stored settings for connecting to the database server
+	 * @throws java.sql.SQLException database errors
+	 */
+	public OracleAWS11DB(DatabaseConnectionSettings dcs) throws SQLException {
+		this(new OracleAWS11SettingsBuilder().fromSettings(dcs));
+	}
+
+	/**
+	 * Creates an Oracle connection for the DatabaseConnectionSettings.
+	 *
+	 * @param settings settings required to connect to the database server
+	 * @throws java.sql.SQLException database errors
+	 */
+	public OracleAWS11DB(OracleAWS11SettingsBuilder settings) throws SQLException {
+		super(settings);
+	}
+
+	/**
+	 * Creates an Oracle connection for the DatabaseConnectionSettings.
+	 *
+	 * @param dcs	stored settings for connecting to the database server
+	 * @param defn the oracle database definition
+	 * @throws java.sql.SQLException database errors
+	 */
+	@Deprecated
+	public OracleAWS11DB(OracleAWS11DBDefinition defn, DatabaseConnectionSettings dcs) throws SQLException {
+		super(defn, dcs);
 	}
 
 	/**
@@ -83,8 +87,10 @@ public class OracleAWS11DB extends OracleAWSDB {
 	 * @param driverName driverName
 	 * @param password password
 	 * @param username username
+	 * @throws java.sql.SQLException database errors
 	 */
-	public OracleAWS11DB(OracleAWSDBDefinition definition, String driverName, String jdbcURL, String username, String password) {
+	@Deprecated
+	public OracleAWS11DB(OracleAWSDBDefinition definition, String driverName, String jdbcURL, String username, String password) throws SQLException {
 		super(definition, driverName, jdbcURL, username, password);
 	}
 
@@ -95,8 +101,10 @@ public class OracleAWS11DB extends OracleAWSDB {
 	 * @param jdbcURL jdbcURL
 	 * @param username username
 	 * @param password password
+	 * @throws java.sql.SQLException database errors
 	 */
-	public OracleAWS11DB(String driverName, String jdbcURL, String username, String password) {
+	@Deprecated
+	public OracleAWS11DB(String driverName, String jdbcURL, String username, String password) throws SQLException {
 		super(new OracleAWS11DBDefinition(), driverName, jdbcURL, username, password);
 	}
 
@@ -106,9 +114,10 @@ public class OracleAWS11DB extends OracleAWSDB {
 	 * @param jdbcURL jdbcURL
 	 * @param username username
 	 * @param password password
+	 * @throws java.sql.SQLException database errors
 	 */
-	public OracleAWS11DB(String jdbcURL, String username, String password) {
-		super(new OracleAWS11DBDefinition(), "oracle.jdbc.driver.OracleDriver", jdbcURL, username, password);
+	public OracleAWS11DB(String jdbcURL, String username, String password) throws SQLException {
+		this(new OracleAWS11SettingsBuilder().fromJDBCURL(jdbcURL, username, password));
 	}
 
 	/**
@@ -119,42 +128,21 @@ public class OracleAWS11DB extends OracleAWSDB {
 	 * @param serviceName serviceName
 	 * @param password password
 	 * @param username username
+	 * @throws java.sql.SQLException database errors
 	 */
-	public OracleAWS11DB(String host, int port, String serviceName, String username, String password) {
+	@Deprecated
+	public OracleAWS11DB(String host, int port, String serviceName, String username, String password) throws SQLException {
 		super(new OracleAWS11DBDefinition(), "oracle.jdbc.driver.OracleDriver", "jdbc:oracle:thin:@//" + host + ":" + port + "/" + serviceName, username, password);
 	}
 
 	@Override
-	protected <TR extends DBRow> void dropAnyAssociatedDatabaseObjects(TR tableRow) throws SQLException {
-
-		if (tableRow.getPrimaryKey() != null) {
-			DBDefinition definition = getDefinition();
-			final DBStatement dbStatement = getDBStatement();
-			final String formattedTableName = definition.formatTableName(tableRow);
-			final String formattedColumnName = definition.formatColumnName(tableRow.getPrimaryKeyColumnName());
-			try {
-				dbStatement.execute("DROP SEQUENCE " + definition.getPrimaryKeySequenceName(formattedTableName, formattedColumnName));
-			} finally {
-				dbStatement.close();
-			}
-//			final DBStatement dbStatement2 = getDBStatement();
-//			try {
-//				dbStatement2.execute("DROP TRIGGER " + definition.getPrimaryKeyTriggerName(formattedTableName, formattedColumnName));
-//			} finally {
-//				dbStatement2.close();
-//			}
-		}
-		super.dropAnyAssociatedDatabaseObjects(tableRow);
-	}
-
-	@Override
 	public DBDatabase clone() throws CloneNotSupportedException {
-		return super.clone(); //To change body of generated methods, choose Tools | Templates.
+		return super.clone();
 	}
 
 	@Override
-	protected Connection getConnectionFromDriverManager() throws SQLException {
-		return super.getConnectionFromDriverManager(); //To change body of generated methods, choose Tools | Templates.
+	public OracleAWS11SettingsBuilder getURLInterpreter() {
+		return new OracleAWS11SettingsBuilder();
 	}
 
 }

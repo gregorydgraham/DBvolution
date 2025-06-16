@@ -1,0 +1,34 @@
+-- IP Address for connections is the IP of the host machine (for instance 192.168.0.2)
+
+-- Remember to start the Docker app
+
+-- Get latest version
+docker pull microsoft/mssql-server-linux
+
+-- Start the container
+-- -name sqlserver_mcr is the name of the container for docker control purposes
+-- OPTIONAL -v /Users/gregorygraham/Projects/MSSQLServer-MCR:/MSSQLServer-MCR is the volume where we'll store the data 
+-- OPTIONAL -i is interactive (keep stdin open), 
+-- OPTIONAL --cap-add=SYS_TIME adds linux capabilities for sys_time
+-- -e ACCEPT_EULA=Y accepts the agreement with MS and allows the database instance to start
+-- -e SA_PASSWORD=Password23 defines the password so we can login
+-- -e 'TZ=Pacific/Auckland' sets the container timezone to the where I do my test (needs improving)
+-- -p 1433:1433 is the port of the host and container
+-- -d is detach "Run container in background and print container ID"
+docker run --name sqlserver_mcr -v /Users/gregorygraham/Projects/MSSQLServer-MCR:/MSSQLServer-MCR -i --cap-add=SYS_TIME -e ACCEPT_EULA=Y -e SA_PASSWORD=Password23 -e 'TZ=Pacific/Auckland' -p 1433:1433 -d mcr.microsoft.com/mssql/server
+
+-- Apple silicon (while SQLServer isn't available for ARM chips)
+docker run --cap-add SYS_PTRACE -e 'ACCEPT_EULA=1' -e 'MSSQL_SA_PASSWORD=Password23' -p 1433:1433 --name sqlserver_container -d mcr.microsoft.com/azure-sql-edge
+-- CLR isn't available in Azure Edge, but TTHor has done something for ARM64 maybe it'll work
+docker run --name sqlserver_container -v /Users/gregorygraham/Projects/MSSQLServer:/MSSQLServer -i --cap-add=SYS_TIME -e ACCEPT_EULA=Y -e SA_PASSWORD=Password23 -e 'TZ=Pacific/Auckland' -p 1433:1433 -d tthor/sqlserver-arm
+
+-- Start the container in winter
+docker run --name sqlserver_container -v /Users/gregorygraham/Projects/MSSQLServer:/MSSQLServer -i --cap-add=SYS_TIME -e ACCEPT_EULA=Y -e SA_PASSWORD=Password23 -e 'TZ=Pacific/Auckland' -p 1433:1433 -d mcr.microsoft.com/mssql/server
+
+-- Windows version (doesn't work on Mac :( )
+docker pull microsoft/mssql-server-windows-developer
+docker run --name sqlserver_container -v /Users/gregorygraham/Projects/MSSQLServer:/MSSQLServer -i --cap-add=SYS_TIME -e ACCEPT_EULA=Y -e SA_PASSWORD=Password23 -p 1433:1433 -d microsoft/mssql-server-windows-developers
+
+-- Stop and remove the container
+docker container stop sqlserver_container ; docker container rm sqlserver_container
+

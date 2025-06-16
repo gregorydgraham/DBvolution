@@ -16,12 +16,14 @@
 package nz.co.gregs.dbvolution.columns;
 
 import java.util.Set;
-import nz.co.gregs.dbvolution.DBDatabase;
 import nz.co.gregs.dbvolution.DBRow;
-import nz.co.gregs.dbvolution.datatypes.DBInteger;
+import nz.co.gregs.dbvolution.databases.definitions.DBDefinition;
+import nz.co.gregs.dbvolution.datatypes.DBEnum;
+import nz.co.gregs.dbvolution.datatypes.DBEnumValue;
 import nz.co.gregs.dbvolution.datatypes.DBNumber;
 import nz.co.gregs.dbvolution.expressions.BooleanExpression;
 import nz.co.gregs.dbvolution.expressions.NumberExpression;
+import nz.co.gregs.dbvolution.expressions.SortProvider;
 import nz.co.gregs.dbvolution.query.RowDefinition;
 
 /**
@@ -49,6 +51,8 @@ import nz.co.gregs.dbvolution.query.RowDefinition;
  */
 public class NumberColumn extends NumberExpression implements ColumnProvider {
 
+	private final static long serialVersionUID = 1l;
+
 	private AbstractColumn column;
 
 	private NumberColumn() {
@@ -74,23 +78,29 @@ public class NumberColumn extends NumberExpression implements ColumnProvider {
 		this.column = new AbstractColumn(row, field);
 	}
 
+	/**
+	 * Create a NumberColumn for the supplied field of the supplied row
+	 *
+	 * @param <NUMBER> the Java number type represented by the number column
+	 * @param <ENUM> an DBEnumValue&lt;Number&gt; type
+	 * @param row the row containing the field
+	 * @param field the field defining the column
+	 */
+	public <NUMBER extends Number, ENUM extends Enum<ENUM> & DBEnumValue<NUMBER>> NumberColumn(RowDefinition row, DBEnum<ENUM, NUMBER> field) {
+		this.column = new AbstractColumn(row, field);
+	}
+
 	@Override
-	public String toSQLString(DBDatabase db) {
+	public String toSQLString(DBDefinition db) {
 		return column.toSQLString(db);
 	}
 
 	@Override
 	public synchronized NumberColumn copy() {
-		try {
-			NumberColumn newInstance = this.getClass().newInstance();
-			newInstance.column = this.column;
-			return newInstance;
-		} catch (InstantiationException ex) {
-			throw new RuntimeException(ex);
-		} catch (IllegalAccessException ex) {
-			throw new RuntimeException(ex);
-		}
-
+		final AbstractColumn col = getColumn();
+		final DBRow row = col.getInstanceOfRow();
+		NumberColumn newInstance = new NumberColumn(row, (DBNumber) col.getAppropriateQDTFromRow(row));
+		return newInstance;
 	}
 
 	@Override
@@ -113,18 +123,9 @@ public class NumberColumn extends NumberExpression implements ColumnProvider {
 		return getTablesInvolved().isEmpty();
 	}
 
-	/**
-	 * Create an expression to compare this column to the other column using
-	 * EQUALS.
-	 *
-	 * @param column the value to compare against
-	 * <p style="color: #F90;">Support DBvolution at
-	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
-	 *
-	 * @return a BooleanExpression
-	 */
-	public BooleanExpression is(DBInteger column) {
-		return super.is(column);
+	@Override
+	public boolean isAggregator() {
+		return column.isAggregator();
 	}
 
 	/**
@@ -134,10 +135,15 @@ public class NumberColumn extends NumberExpression implements ColumnProvider {
 	 * @param column the value to compare against
 	 * <p style="color: #F90;">Support DBvolution at
 	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
-	 *
 	 * @return a BooleanExpression
 	 */
+	@Override
 	public BooleanExpression is(DBNumber column) {
 		return super.is(column);
+	}
+
+	@Override
+	public SortProvider.Column getSortProvider() {
+		return column.getSortProvider();
 	}
 }

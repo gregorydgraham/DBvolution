@@ -18,22 +18,14 @@ package nz.co.gregs.dbvolution.reflection;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javassist.Modifier;
-import nz.co.gregs.dbvolution.DBDatabase;
+import nz.co.gregs.dbvolution.databases.DBDatabase;
 import nz.co.gregs.dbvolution.DBQuery;
 import nz.co.gregs.dbvolution.DBRow;
 import nz.co.gregs.dbvolution.exceptions.DBRuntimeException;
-import nz.co.gregs.dbvolution.internal.properties.PropertyWrapper;
-import nz.co.gregs.dbvolution.internal.properties.RowDefinitionInstanceWrapper;
 import nz.co.gregs.dbvolution.internal.properties.RowDefinitionWrapperFactory;
 import org.reflections.Reflections;
 
@@ -49,19 +41,18 @@ import org.reflections.Reflections;
  * database connections, the schema of those databases, and methods to
  * manipulate the schema objects in a generic way.
  *
- * <p style="color: #F90;">Support DBvolution at
- * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
- *
  * @author gregory.graham
  */
 public class DataModel {
+
+	private static Set<DBRow> storedRequiredTables;
 
 	private DataModel() {
 	}
 
 	/**
-	 * Scans all known classes and returns a set of all DBDatabase instances that
-	 * could be found.
+	 * Scans all known classes and returns a set of all non-builtin DBDatabase
+	 * instances that could be found.
 	 *
 	 * <p>
 	 * Excludes the standard DBDatabases in nz.co.gregs.dbvolution.databases.
@@ -69,9 +60,6 @@ public class DataModel {
 	 * <p>
 	 * The intent of this method is to help provide access to classes that might
 	 * define database connections.
-	 *
-	 * <p style="color: #F90;">Support DBvolution at
-	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
 	 *
 	 * @return a set of {@link DBDatabase} classes.
 	 */
@@ -89,12 +77,58 @@ public class DataModel {
 	}
 
 	/**
+	 * Scans all known classes and returns a set of all builtin DBDatabase
+	 * instances that could be found.
+	 *
+	 * <p>
+	 * Only includes the standard DBDatabases in nz.co.gregs.dbvolution.databases.
+	 *
+	 * <p>
+	 * The intent of this method is to help provide access to classes that might
+	 * define database connections.
+	 *
+	 * @return a set of {@link DBDatabase} classes.
+	 */
+	protected static Set<Class<? extends DBDatabase>> getBuiltinDBDatabaseClasses() {
+		Reflections reflections = new Reflections("");
+		final Set<Class<? extends DBDatabase>> allKnownDBDatabases = reflections.getSubTypesOf(DBDatabase.class);
+
+		final Set<Class<? extends DBDatabase>> usefulDBDatabases = new HashSet<Class<? extends DBDatabase>>();
+		for (Class<? extends DBDatabase> known : allKnownDBDatabases) {
+			if (known.getPackage().getName().equals("nz.co.gregs.dbvolution.databases")) {
+				usefulDBDatabases.add(known);
+			}
+		}
+		return usefulDBDatabases;
+	}
+
+	/**
+	 * Scans all known classes and returns a set of all builtin DBDatabase
+	 * instances that could be found.
+	 *
+	 * <p>
+	 * Only includes the standard DBDatabases in nz.co.gregs.dbvolution.databases.
+	 *
+	 * <p>
+	 * The intent of this method is to help provide access to classes that might
+	 * define database connections.
+	 *
+	 * @return a set of {@link DBDatabase} classes.
+	 */
+	protected static Set<Class<? extends DBDatabase>> getAllDBDatabaseClasses() {
+		Reflections reflections = new Reflections("");
+		final Set<Class<? extends DBDatabase>> allKnownDBDatabases = reflections.getSubTypesOf(DBDatabase.class);
+
+		final Set<Class<? extends DBDatabase>> usefulDBDatabases = new HashSet<Class<? extends DBDatabase>>();
+		allKnownDBDatabases.forEach(known -> {
+			usefulDBDatabases.add(known);
+		});
+		return usefulDBDatabases;
+	}
+
+	/**
 	 * Finds the constructors for
 	 * {@link #getUseableDBDatabaseClasses() all known databases}.
-	 *
-	 *
-	 * <p style="color: #F90;">Support DBvolution at
-	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
 	 *
 	 * @return a set of all constructors for all the known databases.
 	 */
@@ -141,14 +175,11 @@ public class DataModel {
 	 * }<br>
 	 * <br>
 	 * </code>
-	 *	 
-* <p>
+	 *
+	 * <p>
 	 * This method aims to find the getTestDatabase and getLocalTestDatabase
 	 * methods. The method getTestDatabaseOnHost(String) is excluded as it
 	 * requires a parameter to be supplied.
-	 *
-	 * <p style="color: #F90;">Support DBvolution at
-	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
 	 *
 	 * @return a list of methods defined in DBDatabase classes that return a
 	 * DBDatabase and require no parameters.
@@ -197,13 +228,10 @@ public class DataModel {
 	 * }<br>
 	 * <br>
 	 * </code>
-	 *	 
-* <p>
+	 *
+	 * <p>
 	 * This method aims to find the getTestDatabaseOnHost(String),
 	 * getTestDatabase(), getLocalTestDatabase() methods.
-	 *
-	 * <p style="color: #F90;">Support DBvolution at
-	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
 	 *
 	 * @return a list of methods defined in DBDatabase classes that return a
 	 * DBDatabase.
@@ -266,9 +294,6 @@ public class DataModel {
 	 * <p>
 	 * This method aims to find the getLocalTestDatabase() method.
 	 *
-	 * <p style="color: #F90;">Support DBvolution at
-	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
-	 *
 	 * @return a list of static methods with no parameters defined in DBDatabase
 	 * classes that return a DBDatabase.
 	 */
@@ -292,9 +317,6 @@ public class DataModel {
 	 * The intent of this method is to find easy to use constructors that MAY
 	 * directly create a usable DBDatabase object.
 	 *
-	 * <p style="color: #F90;">Support DBvolution at
-	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
-	 *
 	 * @return a list of easy to invoke DBDatabase constructors
 	 */
 	public static Set<Constructor<DBDatabase>> getDBDatabaseConstructorsPublicWithoutParameters() {
@@ -312,9 +334,6 @@ public class DataModel {
 	 * Using {@link #getDBDatabaseConstructorsPublicWithoutParameters() } creates
 	 * instances of the accessible DBDatabases.
 	 *
-	 * <p style="color: #F90;">Support DBvolution at
-	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
-	 *
 	 * @return all the instances that can be created from the constructors found
 	 * by {@link #getDBDatabaseConstructorsPublicWithoutParameters() }.
 	 */
@@ -326,13 +345,7 @@ public class DataModel {
 			try {
 				DBDatabase newInstance = constr.newInstance();
 				databaseInstances.add(newInstance);
-			} catch (InstantiationException ex) {
-				Logger.getLogger(DataModel.class.getName()).log(Level.SEVERE, null, ex);
-			} catch (IllegalAccessException ex) {
-				Logger.getLogger(DataModel.class.getName()).log(Level.SEVERE, null, ex);
-			} catch (IllegalArgumentException ex) {
-				Logger.getLogger(DataModel.class.getName()).log(Level.SEVERE, null, ex);
-			} catch (InvocationTargetException ex) {
+			} catch (InstantiationException | IllegalAccessException | IllegalArgumentException | InvocationTargetException ex) {
 				Logger.getLogger(DataModel.class.getName()).log(Level.SEVERE, null, ex);
 			}
 		}
@@ -342,29 +355,67 @@ public class DataModel {
 	/**
 	 * Find all DBRow subclasses on the current classpath.
 	 *
-	 * <p style="color: #F90;">Support DBvolution at
-	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
-	 *
 	 * @return all the subclasses of DBRow in the current classpath.
 	 */
-	public static Set<Class<? extends DBRow>> getDBRowClasses() {
+	public static Set<Class<? extends DBRow>> getDBRowSubclasses() {
 		Reflections reflections = new Reflections("");
 		return reflections.getSubTypesOf(DBRow.class);
 	}
 
 	/**
-	 * Find all DBRow subclasses on the current classpath, minus the example classes found in DBvolution.
+	 * Find all DBRow subclasses on the current classpath.
 	 *
-	 * <p style="color: #F90;">Support DBvolution at
-	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 * @return all the subclasses of DBRow in the current classpath.
+	 */
+	public static Set<Class<? extends DBRow>> getDBRowDirectSubclasses() {
+		Set<Class<? extends DBRow>> result = new HashSet<Class<? extends DBRow>>();
+		Reflections reflections = new Reflections("");
+		Set<Class<? extends DBRow>> subTypesOf = reflections.getSubTypesOf(DBRow.class);
+		for (Class<? extends DBRow> clzz : subTypesOf) {
+			try {
+				clzz.getConstructor();// checking that there an appropriate constructor
+				if (clzz.getGenericSuperclass().equals(DBRow.class)) {
+					result.add(clzz);
+				}
+			} catch (NoSuchMethodException | SecurityException ex) {
+				;// no constructor
+			}
+		}
+		return result;
+	}
+
+	/**
+	 * Find all DBRow subclasses on the current classpath.
 	 *
-	 * @return all the subclasses of DBRow in the current classpath, except DBV's examples.
+	 * @return all the subclasses of DBRow in the current classpath.
+	 */
+	public synchronized static Set< DBRow> getRequiredTables() {
+		if (storedRequiredTables == null || storedRequiredTables.isEmpty()) {
+			Set< DBRow> result = new HashSet<>(0);
+			Set<Class<? extends DBRow>> dbRowDirectSubclasses = getDBRowDirectSubclasses();
+			for (Class<? extends DBRow> clzz : dbRowDirectSubclasses) {
+				DBRow dbRow = DBRow.getDBRow(clzz);
+				if (dbRow.isRequiredTable()) {
+					result.add(dbRow);
+				}
+			}
+			storedRequiredTables = result;
+		}
+		return new HashSet<DBRow>(storedRequiredTables);
+	}
+
+	/**
+	 * Find all DBRow subclasses on the current classpath, minus the example
+	 * classes found in DBvolution.
+	 *
+	 * @return all the subclasses of DBRow in the current classpath, except DBV's
+	 * examples.
 	 */
 	public static Set<Class<? extends DBRow>> getDBRowClassesExcludingDBvolutionExamples() {
-		Set<Class<? extends DBRow>> dbRowClasses = getDBRowClasses();
+		Set<Class<? extends DBRow>> dbRowClasses = getDBRowSubclasses();
 		HashSet<Class<? extends DBRow>> returnSet = new HashSet<Class<? extends DBRow>>();
 		for (Class<? extends DBRow> dbrowClass : dbRowClasses) {
-			if (!dbrowClass.getPackage().getName().startsWith("nz.co.gregs.dbvolution")){
+			if (!dbrowClass.getPackage().getName().startsWith("nz.co.gregs.dbvolution")) {
 				returnSet.add(dbrowClass);
 			}
 		}
@@ -372,25 +423,29 @@ public class DataModel {
 	}
 
 	/**
-	 * Using the classes found by {@link #getDBRowClasses() }, creates an instance of as many classes as possible.
+	 * Using the classes found by {@link #getDBRowSubclasses() }, creates an
+	 * instance of as many classes as possible.
 	 *
-	 * <p style="color: #F90;">Support DBvolution at
-	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
-	 *
-	 * @return an instance of every DBRow class that can be found and created easily.
+	 * @return an instance of every DBRow class that can be found and created
+	 * easily.
 	 */
 	public static List<DBRow> getDBRowInstances() {
+		return getDBRowInstances(getDBRowSubclasses());
+	}
+
+	/**
+	 * Using the classes supplied creates an instance of as many classes as
+	 * possible.
+	 *
+	 * @param dbRowClasses the classes to instantiate
+	 * @return an instance of every DBRow class that can be found and created
+	 * easily.
+	 */
+	public static List<DBRow> getDBRowInstances(Collection<Class<? extends DBRow>> dbRowClasses) {
 		List<DBRow> dbrows = new ArrayList<DBRow>();
-		Set<Class<? extends DBRow>> dbRowClasses = getDBRowClasses();
 		for (Class<? extends DBRow> dbRowClass : dbRowClasses) {
-			try {
-				DBRow newInstance = dbRowClass.newInstance();
-				dbrows.add(newInstance);
-			} catch (InstantiationException ex) {
-				Logger.getLogger(DataModel.class.getName()).log(Level.INFO, null, ex);
-			} catch (IllegalAccessException ex) {
-				Logger.getLogger(DataModel.class.getName()).log(Level.INFO, null, ex);
-			}
+			DBRow newInstance = DBRow.getDBRow(dbRowClass);
+			dbrows.add(newInstance);
 		}
 		return dbrows;
 	}
@@ -408,16 +463,15 @@ public class DataModel {
 	 * The greater intent is an extensible mechanism for parsing web links and
 	 * creating queries from them.
 	 *
-	 * @param db
-	 * @param encodedTablesPropertiesAndValues
-	 * @param interpreter
-	 * <p style="color: #F90;">Support DBvolution at
-	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 * @param db the database to query
+	 * @param encodedTablesPropertiesAndValues a string encoding of a query
+	 * @param interpreter the interpreter to use to understand the encoded query
 	 *
 	 * @return a DBQuery.
-	 * @throws ClassNotFoundException
-	 * @throws InstantiationException
-	 * @throws IllegalAccessException
+	 * @throws ClassNotFoundException if Class.forName() cannot find the table
+	 * provided by the interpreter
+	 * @throws InstantiationException if the class cannot be instantiated
+	 * @throws IllegalAccessException if the class cannot be accessed
 	 */
 	public static DBQuery createDBQueryFromEncodedTablesPropertiesAndValues(DBDatabase db, String encodedTablesPropertiesAndValues, EncodingInterpreter interpreter) throws ClassNotFoundException, InstantiationException, IllegalAccessException {
 		final RowDefinitionWrapperFactory rowDefinitionWrapperFactory = new RowDefinitionWrapperFactory();
@@ -430,7 +484,9 @@ public class DataModel {
 			if (newInstance == null) {
 				Class<?> tableClass = Class.forName(table);
 				if (DBRow.class.isAssignableFrom(tableClass)) {
-					newInstance = (DBRow) tableClass.newInstance();
+					@SuppressWarnings("unchecked")
+					final Class<? extends DBRow> rowClass = (Class<? extends DBRow>) tableClass;
+					newInstance = DBRow.getDBRow(rowClass);
 					foundAlready.put(table, newInstance);
 				} else {
 					throw new DBRuntimeException("Class Specified Is Not A DBRow Sub-Class: expected " + tableClass + "(derived from " + table + ") to be a DBRow subclass but it was not.  Please only use DBRows with this method.");
@@ -440,14 +496,17 @@ public class DataModel {
 				String propertyName = interpreter.getPropertyName(parameter);
 				if (propertyName != null) {
 					String value = interpreter.getPropertyValue(parameter);
-					RowDefinitionInstanceWrapper instanceWrapper = rowDefinitionWrapperFactory.instanceWrapperFor(newInstance);
-					PropertyWrapper propertyWrapper = instanceWrapper.getPropertyByName(propertyName);
+					var instanceWrapper = rowDefinitionWrapperFactory.instanceWrapperFor(newInstance);
+					var propertyWrapper = instanceWrapper.getPropertyByName(propertyName);
 					interpreter.setValue(propertyWrapper.getQueryableDatatype(), value);
 				}
 			}
 		}
-		final DBRow[] allTables = foundAlready.values().toArray(new DBRow[]{});
-		return db.getDBQuery(allTables);
+		final Collection<DBRow> values = foundAlready.values();
+		DBRow[] allTables = values.toArray(new DBRow[]{});
+		final DBQuery dbQuery = db.getDBQuery();
+		dbQuery.add(allTables);
+		return dbQuery;
 	}
 
 }

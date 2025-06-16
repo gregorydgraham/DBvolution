@@ -19,38 +19,41 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import nz.co.gregs.dbvolution.datatypes.QueryableDatatypeSyncer.DBSafeInternalQDTAdaptor;
-import nz.co.gregs.dbvolution.DBDatabase;
+import nz.co.gregs.dbvolution.databases.definitions.DBDefinition;
 import nz.co.gregs.dbvolution.expressions.BooleanExpression;
 import nz.co.gregs.dbvolution.expressions.DBExpression;
 import nz.co.gregs.dbvolution.expressions.DateExpression;
+import nz.co.gregs.dbvolution.expressions.InExpression;
+import nz.co.gregs.dbvolution.expressions.IntegerExpression;
 import nz.co.gregs.dbvolution.results.DateResult;
 import nz.co.gregs.dbvolution.expressions.NumberExpression;
 import nz.co.gregs.dbvolution.results.NumberResult;
 import nz.co.gregs.dbvolution.expressions.StringExpression;
+import nz.co.gregs.dbvolution.results.IntegerResult;
 import nz.co.gregs.dbvolution.results.StringResult;
 
 /**
  * Creates an operator that compares a column to a list of values using the IN
  * operator or similar.
  *
- * <p style="color: #F90;">Support DBvolution at
- * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
  *
  * @author Gregory Graham
  */
 public class DBInOperator extends DBOperator {
 
 	private static final long serialVersionUID = 1L;
-	private final List<DBExpression> listOfPossibleValues = new ArrayList<DBExpression>();
-	private final List<StringResult> listOfPossibleStrings = new ArrayList<StringResult>();
-	private final List<NumberResult> listOfPossibleNumbers = new ArrayList<NumberResult>();
-	private final List<DateResult> listOfPossibleDates = new ArrayList<DateResult>();
+	protected final List<DBExpression> listOfPossibleValues = new ArrayList<>();
+	protected final List<StringResult> listOfPossibleStrings = new ArrayList<>();
+	protected final List<NumberResult> listOfPossibleNumbers = new ArrayList<>();
+	protected final ArrayList<IntegerResult> listOfPossibleIntegers = new ArrayList<>();
+	protected final List<DateResult> listOfPossibleDates = new ArrayList<>();
 
 	/**
 	 * Creates an operator that compares a column to a list of values using the IN
 	 * operator or similar.
 	 *
-	 * @param listOfPossibleValues
+	 * @param listOfPossibleValues the values to compare the database values
+	 * against
 	 */
 	public DBInOperator(Collection<DBExpression> listOfPossibleValues) {
 		super();
@@ -63,6 +66,8 @@ public class DBInOperator extends DBOperator {
 				listOfPossibleStrings.add((StringResult) newExpr);
 			} else if ((newExpr instanceof NumberResult)) {
 				listOfPossibleNumbers.add((NumberResult) newExpr);
+			} else if ((newExpr instanceof IntegerResult)) {
+				listOfPossibleIntegers.add((IntegerResult) newExpr);
 			} else if ((newExpr instanceof DateResult)) {
 				listOfPossibleDates.add((DateResult) newExpr);
 			}
@@ -90,10 +95,10 @@ public class DBInOperator extends DBOperator {
 		} else {
 			if (other instanceof DBInOperator) {
 				DBInOperator otherIn = (DBInOperator) other;
-				if (getListOfPossibleValues().size() != otherIn.getListOfPossibleValues().size()) {
+				if (listOfPossibleValues.size() != otherIn.listOfPossibleValues.size()) {
 					return false;
 				} else {
-					for (DBExpression qdt : getListOfPossibleValues()) {
+					for (DBExpression qdt : listOfPossibleValues) {
 						if (!otherIn.listOfPossibleValues.contains(qdt)) {
 							return false;
 						}
@@ -108,8 +113,8 @@ public class DBInOperator extends DBOperator {
 
 	@Override
 	public DBInOperator copyAndAdapt(DBSafeInternalQDTAdaptor typeAdaptor) {
-		ArrayList<DBExpression> list = new ArrayList<DBExpression>();
-		for (DBExpression item : getListOfPossibleValues()) {
+		ArrayList<DBExpression> list = new ArrayList<>();
+		for (DBExpression item : listOfPossibleValues) {
 			list.add(typeAdaptor.convert(item));
 		}
 		DBInOperator op = new DBInOperator(list);
@@ -119,78 +124,42 @@ public class DBInOperator extends DBOperator {
 	}
 
 	@Override
-	public BooleanExpression generateWhereExpression(DBDatabase db, DBExpression column) {
+	@SuppressWarnings("unchecked")
+	public BooleanExpression generateWhereExpression(DBDefinition db, DBExpression column) {
 		DBExpression genericExpression = column;
 		BooleanExpression op = BooleanExpression.trueExpression();
 		if (genericExpression instanceof StringExpression) {
-			ArrayList<StringResult> listString = new ArrayList<StringResult>(getListOfPossibleStrings());
+			ArrayList<StringResult> listString = new ArrayList<>(listOfPossibleStrings);
 			if (this.includeNulls) {
 				listString.add(null);
 			}
 			StringExpression stringExpression = (StringExpression) genericExpression;
 			op = stringExpression.bracket().isIn(listString.toArray(new StringResult[]{}));
 		} else if (genericExpression instanceof NumberExpression) {
-			ArrayList<NumberResult> listNumbers = new ArrayList<NumberResult>(getListOfPossibleNumbers());
+			ArrayList<NumberResult> listNumbers = new ArrayList<>(listOfPossibleNumbers);
 			if (this.includeNulls) {
 				listNumbers.add(null);
 			}
 			NumberExpression numberExpression = (NumberExpression) genericExpression;
 			op = numberExpression.isIn(listNumbers.toArray(new NumberResult[]{}));
+		} else if (genericExpression instanceof IntegerExpression) {
+			ArrayList<IntegerResult> listIntegers = new ArrayList<>(listOfPossibleIntegers);
+			if (this.includeNulls) {
+				listIntegers.add(null);
+			}
+			IntegerExpression numberExpression = (IntegerExpression) genericExpression;
+			op = numberExpression.isIn(listIntegers.toArray(new IntegerResult[]{}));
 		} else if (genericExpression instanceof DateExpression) {
-			ArrayList<DateResult> listDate = new ArrayList<DateResult>(getListOfPossibleDates());
+			ArrayList<DateResult> listDate = new ArrayList<>(listOfPossibleDates);
 			if (this.includeNulls) {
 				listDate.add(null);
 			}
 			DateExpression dateExpression = (DateExpression) genericExpression;
 			op = dateExpression.isIn(listDate.toArray(new DateResult[]{}));
+		} else if (genericExpression instanceof InExpression) {
+			InExpression expr = (InExpression) genericExpression;
+			op = expr.isIn(listOfPossibleValues);
 		}
 		return this.invertOperator ? op.not() : op;
-	}
-
-	/**
-	 * List of supplied values.
-	 *
-	 * <p style="color: #F90;">Support DBvolution at
-	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
-	 *
-	 * @return the listOfPossibleValues
-	 */
-	public List<DBExpression> getListOfPossibleValues() {
-		return listOfPossibleValues;
-	}
-
-	/**
-	 * List of strings derived, if any, from the supplied values.
-	 *
-	 * <p style="color: #F90;">Support DBvolution at
-	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
-	 *
-	 * @return the listOfPossibleStrings
-	 */
-	public List<StringResult> getListOfPossibleStrings() {
-		return listOfPossibleStrings;
-	}
-
-	/**
-	 * List of numbers derived, if any, from the supplied values.
-	 * <p style="color: #F90;">Support DBvolution at
-	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
-	 *
-	 * @return the listOfPossibleNumbers
-	 */
-	public List<NumberResult> getListOfPossibleNumbers() {
-		return listOfPossibleNumbers;
-	}
-
-	/**
-	 * List of dates derived, if any, from the supplied values.
-	 * 
-	 * <p style="color: #F90;">Support DBvolution at
-	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
-	 *
-	 * @return the listOfPossibleDates
-	 */
-	public List<DateResult> getListOfPossibleDates() {
-		return listOfPossibleDates;
 	}
 }

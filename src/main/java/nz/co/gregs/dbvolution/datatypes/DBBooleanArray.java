@@ -15,17 +15,18 @@
  */
 package nz.co.gregs.dbvolution.datatypes;
 
+import nz.co.gregs.dbvolution.utility.comparators.BooleanArrayComparator;
 import java.sql.Array;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.Arrays;
-import java.util.HashSet;
-import java.util.Set;
-import nz.co.gregs.dbvolution.DBDatabase;
+import java.util.*;
 import nz.co.gregs.dbvolution.DBReport;
 import nz.co.gregs.dbvolution.DBRow;
+import nz.co.gregs.dbvolution.columns.BooleanArrayColumn;
 import nz.co.gregs.dbvolution.databases.definitions.DBDefinition;
+import nz.co.gregs.dbvolution.exceptions.IncorrectRowProviderInstanceSuppliedException;
 import nz.co.gregs.dbvolution.expressions.BooleanArrayExpression;
+import nz.co.gregs.dbvolution.query.RowDefinition;
 import nz.co.gregs.dbvolution.results.BooleanArrayResult;
 
 /**
@@ -49,7 +50,7 @@ import nz.co.gregs.dbvolution.results.BooleanArrayResult;
  *
  * @author Gregory Graham
  */
-public class DBBooleanArray extends QueryableDatatype implements BooleanArrayResult {
+public class DBBooleanArray extends QueryableDatatype<Boolean[]> implements BooleanArrayResult {
 
 	private static final long serialVersionUID = 1L;
 
@@ -61,6 +62,24 @@ public class DBBooleanArray extends QueryableDatatype implements BooleanArrayRes
 	 *
 	 */
 	public DBBooleanArray() {
+	}
+
+	/**
+	 * Creates a DBBits with the value provided.
+	 *
+	 * <p>
+	 * The resulting DBBits will be set as having the value provided but will not
+	 * be defined in the database.
+	 *
+	 * @param bools	bits
+	 */
+	public DBBooleanArray(boolean[] bools) {
+		super();
+		List<Boolean> bigBools = new ArrayList<>();
+		for (var bool : bools) {
+			bigBools.add(bool);
+		}
+		setValue(bigBools.toArray(new Boolean[]{}));
 	}
 
 	/**
@@ -96,7 +115,6 @@ public class DBBooleanArray extends QueryableDatatype implements BooleanArrayRes
 	 * @param other	other
 	 * <p style="color: #F90;">Support DBvolution at
 	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
-	 *
 	 * @return TRUE if this object is the same as the other, otherwise FALSE.
 	 */
 	@Override
@@ -114,9 +132,9 @@ public class DBBooleanArray extends QueryableDatatype implements BooleanArrayRes
 	}
 
 	@Override
-	protected Boolean[] getFromResultSet(DBDatabase database, ResultSet resultSet, String fullColumnName) throws SQLException {
+	protected Boolean[] getFromResultSet(DBDefinition database, ResultSet resultSet, String fullColumnName) throws SQLException {
 		Boolean[] result = new Boolean[]{};
-		if (database.getDefinition().supportsArraysNatively()) {
+		if (database.supportsArraysNatively()) {
 			Array sqlArray = resultSet.getArray(fullColumnName);
 			if (!resultSet.wasNull()) {
 				Object array = sqlArray.getArray();
@@ -128,7 +146,7 @@ public class DBBooleanArray extends QueryableDatatype implements BooleanArrayRes
 							if (objArray[i] instanceof Boolean) {
 								result[i] = (Boolean) objArray[i];
 							} else {
-								Boolean bool = database.getDefinition().doBooleanArrayElementTransform(objArray[i]);
+								Boolean bool = database.doBooleanArrayElementTransform(objArray[i]);
 								result[i] = bool;
 							}
 						}
@@ -139,20 +157,13 @@ public class DBBooleanArray extends QueryableDatatype implements BooleanArrayRes
 			}
 		} else {
 			String string = resultSet.getString(fullColumnName);
-			result = database.getDefinition().doBooleanArrayResultInterpretation(string);
+			result = database.doBooleanArrayResultInterpretation(string);
 		}
 		return result;
 	}
 
-	@Override
-	void setValue(Object newLiteralValue) {
-		if (newLiteralValue instanceof Boolean[]) {
-			setValue((Boolean[]) newLiteralValue);
-		} else if (newLiteralValue instanceof DBBooleanArray) {
-			setValue(((DBBooleanArray) newLiteralValue).booleanArrayValue());
-		} else {
-			throw new ClassCastException(this.getClass().getSimpleName() + ".setValue() Called With A Non-Boolean[]: Use only Boolean[1-100] with this class");
-		}
+	void setValue(DBBooleanArray newLiteralValue) {
+		setValue(newLiteralValue.booleanArrayValue());
 	}
 
 	/**
@@ -160,15 +171,15 @@ public class DBBooleanArray extends QueryableDatatype implements BooleanArrayRes
 	 *
 	 * @param newLiteralValue	newLiteralValue
 	 */
+	@Override
 	public void setValue(Boolean[] newLiteralValue) {
 		super.setLiteralValue(newLiteralValue);
 	}
 
 	@Override
-	public String formatValueForSQLStatement(DBDatabase db) {
-		DBDefinition defn = db.getDefinition();
+	public String formatValueForSQLStatement(DBDefinition defn) {
 		if (getLiteralValue() != null) {
-			Boolean[] booleanArray = (Boolean[]) getLiteralValue();
+			Boolean[] booleanArray = getLiteralValue();
 			return defn.doBooleanArrayTransform(booleanArray);
 		}
 		return defn.getNull();
@@ -185,7 +196,7 @@ public class DBBooleanArray extends QueryableDatatype implements BooleanArrayRes
 	 */
 	public Boolean[] booleanArrayValue() {
 		if (this.getLiteralValue() != null) {
-			return (Boolean[]) this.getLiteralValue();
+			return this.getLiteralValue();
 		} else {
 			return null;
 		}
@@ -213,7 +224,7 @@ public class DBBooleanArray extends QueryableDatatype implements BooleanArrayRes
 
 	@Override
 	public Set<DBRow> getTablesInvolved() {
-		return new HashSet<DBRow>();
+		return new HashSet<>();
 	}
 
 	/**
@@ -232,6 +243,111 @@ public class DBBooleanArray extends QueryableDatatype implements BooleanArrayRes
 	@Override
 	public int hashCode() {
 		return super.hashCode();
+	}
+
+	@Override
+	protected void setValueFromStandardStringEncoding(String encodedValue) {
+		throw new UnsupportedOperationException("DBBooleanArray does not support setValueFromStandardStringEncoding(String) yet."); //To change body of generated methods, choose Tools | Templates.
+	}
+
+	@Override
+	public BooleanArrayColumn getColumn(RowDefinition row) throws IncorrectRowProviderInstanceSuppliedException {
+		return new BooleanArrayColumn(row, this);
+	}
+
+//	@Override
+//	public StringExpression stringResult() {
+//		return new BooleanArrayExpression(this).stringResult();
+//	}
+	/**
+	 * Set the value to be inserted when no value has been set, using
+	 * {@link #setValue(java.lang.Boolean[])  setValue(...)}, for the QDT.
+	 *
+	 * <p>
+	 * The value is only used during the initial insert and does not effect the
+	 * definition of the column within the database.</p>
+	 *
+	 * <p>
+	 * Care should be taken when using this as some "obvious" uses are better
+	 * handled using the
+	 * {@link #setDefaultInsertValue(nz.co.gregs.dbvolution.results.AnyResult) expression version}.
+	 * In particular, setDefaultInsertValue(new Date()) is probably NOT what you
+	 * want, setDefaultInsertValue(DateExpression.currentDate()) will produce a
+	 * correct creation date value.</p>
+	 *
+	 * @param value the value to use during insertion when no particular value has
+	 * been specified.
+	 * @return This QDT
+	 */
+	@Override
+	public synchronized DBBooleanArray setDefaultInsertValue(Boolean[] value) {
+		super.setDefaultInsertValue(value);
+		return this;
+	}
+
+	/**
+	 * Set the value to be inserted when no value has been set, using
+	 * {@link #setValue(java.lang.Boolean[])  setValue(...)}, for the QDT.
+	 *
+	 * <p>
+	 * The value is only used during the initial insert and does not effect the
+	 * definition of the column within the database.</p>
+	 *
+	 * @param value the value to use during insertion when no particular value has
+	 * been specified.
+	 * @return This QDT
+	 */
+	public synchronized DBBooleanArray setDefaultInsertValue(DBBooleanArray value) {
+		super.setDefaultInsertValue(value);
+		return this;
+	}
+
+	/**
+	 * Set the value to be used during an update when no value has been set, using
+	 * {@link #setValue(java.lang.Boolean[])  setValue(...)}, for the QDT.
+	 *
+	 * <p>
+	 * The value is only used during updates and does not effect the definition of
+	 * the column within the database nor the initial value of the column.</p>
+	 *
+	 * <p>
+	 * Care should be taken when using this as some "obvious" uses are better
+	 * handled using the
+	 * {@link #setDefaultUpdateValue(nz.co.gregs.dbvolution.results.AnyResult) expression version}.
+	 * In particular, setDefaultUpdateValue(new Date()) is probably NOT what you
+	 * want, setDefaultUpdateValue(DateExpression.currentDate()) will produce a
+	 * correct update time value.</p>
+	 *
+	 * @param value the value to use during update when no particular value has
+	 * been specified.
+	 * @return This QDT
+	 */
+	@Override
+	public synchronized DBBooleanArray setDefaultUpdateValue(Boolean[] value) {
+		super.setDefaultUpdateValue(value);
+		return this;
+	}
+
+	/**
+	 * Set the value to be used during an update when no value has been set, using
+	 * {@link #setValue(java.lang.Boolean[])  setValue(...)}, for the QDT.
+	 *
+	 * <p>
+	 * The value is only used during updates and does not effect the definition of
+	 * the column within the database nor the initial value of the column.</p>
+	 *
+	 * @param value the value to use during update when no particular value has
+	 * been specified.
+	 * @return This QDT
+	 */
+	public synchronized DBBooleanArray setDefaultUpdateValue(DBBooleanArray value) {
+		super.setDefaultUpdateValue(value);
+		return this;
+	}
+
+	@Override
+	public Comparator<Boolean[]> getComparator() {
+		return new BooleanArrayComparator();
 	}
 
 }

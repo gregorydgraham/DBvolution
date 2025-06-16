@@ -16,15 +16,12 @@
 package nz.co.gregs.dbvolution.datatypes;
 
 import static org.hamcrest.Matchers.*;
+import static org.hamcrest.MatcherAssert.assertThat;
 import org.junit.After;
-import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 
 /**
- *
- * <p style="color: #F90;">Support DBvolution at
- * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
  *
  * @author Gregory Graham
  */
@@ -46,11 +43,9 @@ public class DBNumberEditorTest {
 	 */
 	@Test
 	public void testSetFormat() {
-		System.out.println("setFormat");
 		String format = "";
 		DBNumberEditor instance = new DBNumberEditor();
 		instance.setFormat(format);
-		// TODO review the generated test code and remove the default call to fail.
 	}
 
 	/**
@@ -59,11 +54,10 @@ public class DBNumberEditorTest {
 	@Test
 	@SuppressWarnings("deprecation")
 	public void testSetAsText() {
-		System.out.println("setAsText");
 		String text = "5.1";
 		DBNumberEditor instance = new DBNumberEditor();
 		instance.setAsText(text);
-		Assert.assertThat((Double) ((QueryableDatatype) instance.getValue()).literalValue, is(5.1));
+		assertThat((Double) ((QueryableDatatype) instance.getValue()).getLiteralValue(), is(5.1));
 	}
 
 }
