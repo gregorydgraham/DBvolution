@@ -15,8 +15,8 @@
  */
 package nz.co.gregs.dbvolution.generic;
 
-import nz.co.gregs.dbvolution.databases.MSSQLServer2017ContainerDB;
-import nz.co.gregs.dbvolution.databases.Oracle11XEContainerDB;
+import nz.co.gregs.dbvolution.containers.MSSQLServer2017ContainerDB;
+import nz.co.gregs.dbvolution.containers.Oracle11XEContainerDB;
 import nz.co.gregs.dbvolution.databases.DBDatabase;
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
