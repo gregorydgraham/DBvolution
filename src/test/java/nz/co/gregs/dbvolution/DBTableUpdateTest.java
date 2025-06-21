@@ -43,10 +43,12 @@ public class DBTableUpdateTest extends AbstractTest {
 		DBActionList updateList = marquesTable.update(toyota);
 		if (!(database instanceof DBDatabaseCluster)) {
 			final String standardSQL = "UPDATE MARQUE SET UID_MARQUE = 99999 WHERE (UID_MARQUE = 1);";
+			final String sqlserverSQL = "UPDATE dbo.MARQUE SET UID_MARQUE = 99999 WHERE (UID_MARQUE = 1);";
 			final String oracleSQL = "update OO1081299805 set uid_marque = 99999 where (uid_marque = 1)";
 			assertThat(testableSQL(updateList.get(0).getSQLStatements(database).get(0)),
 					anyOf(
 							is(testableSQL(standardSQL)),
+              is(testableSQL(sqlserverSQL)),
 							is(testableSQL(oracleSQL))
 					));
 		}
@@ -59,6 +61,7 @@ public class DBTableUpdateTest extends AbstractTest {
 			assertThat(testableSQL(updateList.get(0).getSQLStatements(database).get(0)),
 					isIn(new String[]{
 				testableSQL("UPDATE MARQUE SET NAME = 'NOTOYOTA' WHERE (UID_MARQUE = 99999);"),
+				testableSQL("UPDATE DBO.MARQUE SET NAME = N'NOTOYOTA' WHERE (UID_MARQUE = 99999);"), //SQLSERVER syntax
 				testableSQL("UPDATE MARQUE SET NAME = N'NOTOYOTA' WHERE (UID_MARQUE = 99999);"),}));
 		}
 		marqueExample = new Marque();
@@ -86,6 +89,7 @@ public class DBTableUpdateTest extends AbstractTest {
 					isIn(
 							new String[]{
 								testableSQL("UPDATE MARQUE SET NAME = 'NOTTOYOTA' WHERE (UID_MARQUE = 1);"),
+								testableSQL("UPDATE DBO.MARQUE SET NAME = N'NOTTOYOTA' WHERE (UID_MARQUE = 1);"),// SQLServer syntax
 								testableSQL("UPDATE MARQUE SET NAME = N'NOTTOYOTA' WHERE (UID_MARQUE = 1);")
 							}
 					));
