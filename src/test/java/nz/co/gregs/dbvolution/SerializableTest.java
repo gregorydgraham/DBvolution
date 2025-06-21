@@ -33,7 +33,7 @@ import org.junit.Test;
  */
 public class SerializableTest extends AbstractTest {
 
-	String filename = "SerializableTest.obj";
+	String filename = "target/SerializableTest.obj";
 
 	public SerializableTest(Object testIterationName, Object db) {
 		super(testIterationName, db);
