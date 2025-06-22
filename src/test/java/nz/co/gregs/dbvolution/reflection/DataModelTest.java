@@ -91,34 +91,28 @@ public class DataModelTest extends AbstractTest {
 	@Test
 	public void testGetUsableDBDatabaseConstructors() {
 		Set<Constructor<DBDatabase>> result = DataModel.getDBDatabaseConstructors();
-		Map<String, Constructor<DBDatabase>> conMap = new HashMap<String, Constructor<DBDatabase>>();
+		Map<String, Constructor<DBDatabase>> conMap = new HashMap<>();
 		for (Constructor<DBDatabase> constructor : result) {
 			conMap.put(constructor.toString(), constructor);
 		}
-		Set<String> constr = conMap.keySet();
+		Set<String> constr = new HashMap<>(conMap).keySet();
 		List<String> knownStrings = new ArrayList<>();
 		knownStrings.add("public nz.co.gregs.dbvolution.reflection.DataModelTest$DatamodelTestDBClass() throws java.sql.SQLException");
 		knownStrings.add("private nz.co.gregs.dbvolution.TestingDatabase(nz.co.gregs.dbvolution.databases.settingsbuilders.H2MemorySettingsBuilder) throws java.sql.SQLException");
 		for (String knownString : knownStrings) {
 			if (!constr.contains(knownString)) {
 				System.out.println("NOT FOUND CONSTRUCTOR: " + knownString + "");
-				constr.stream().forEachOrdered((t) -> {
-					System.out.println("EXISTING CONSTRUCTOR: " + t);
-				});
 			}
 			assertTrue(constr.contains(knownString));
 			conMap.remove(knownString);
 		}
-		for (String constrString : constr) {
-			if (!knownStrings.contains(constrString)) {
-				System.out.println("UNKNOWN CONSTRUCTOR: " + constrString + "");
-				constr.stream().forEachOrdered((t) -> {
-					System.out.println("EXPECTED CONSTRUCTOR: " + t);
-				});
-			}
-			assertTrue(constr.contains(constrString));
-			conMap.remove(constrString);
-		}
+    for (String constrString : constr) {
+      if (!knownStrings.contains(constrString)) {
+        System.out.println("UNKNOWN CONSTRUCTOR: " + constrString + "");
+      }
+      assertTrue(constr.contains(constrString));
+      conMap.remove(constrString);
+    }
 		assertThat(result.size(), is(knownStrings.size()));
 	}
 
