@@ -154,10 +154,17 @@ public class MSSQLServerDBDefinition2016 extends DBDefinition {
 
 	@Override
 	protected String formatNameForDatabase(final String sqlObjectName) {
-		if (RESERVED_WORDS.contains(sqlObjectName.toUpperCase())) {
-			return ("O" + sqlObjectName.hashCode()).replaceAll("^[_-]", "O").replaceAll("-", "_");
+    String returnStr = sqlObjectName;
+		if (RESERVED_WORDS.contains(returnStr.toUpperCase())) {
+			returnStr =  ("O" + returnStr.hashCode()).replaceAll("^[_-]", "O").replaceAll("-", "_");
 		}
-		return sqlObjectName;
+		return returnStr;
+	}
+  
+  @Override
+	public String formatTableAliasAndColumnNameForSelectClause(DBRow table, String columnName) {
+		final String tableAliasAndColumn = formatTableAliasAndColumnName(table, columnName);
+		return tableAliasAndColumn + " [" + formatForColumnAlias(tableAliasAndColumn)+"]";
 	}
 
 	@Override
