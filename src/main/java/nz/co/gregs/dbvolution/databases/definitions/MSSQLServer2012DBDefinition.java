@@ -15,15 +15,14 @@
  */
 package nz.co.gregs.dbvolution.databases.definitions;
 
+import nz.co.gregs.dbvolution.DBRow;
 import nz.co.gregs.dbvolution.internal.query.QueryOptions;
 import nz.co.gregs.dbvolution.internal.query.QueryState;
+import nz.co.gregs.dbvolution.utility.StringCheck;
 
 /**
  * Extends and updates the MS SQLServer database definition to use features made
  * available by the 2012 version of MS SQLServer.
- *
- * <p style="color: #F90;">Support DBvolution at
- * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
  *
  * @author Gregory Graham
  */
@@ -31,6 +30,17 @@ public class MSSQLServer2012DBDefinition extends MSSQLServerDBDefinition {
 
 	public static final long serialVersionUID = 1L;
 	
+	@Override
+	public String formatTableName(DBRow table) {
+		final String schemaName = StringCheck.check(table.getSchemaName(),"dbo");
+    final String tableName = table.getTableName();
+		if (schemaName == null || "".equals(schemaName)) {
+			return "[" + tableName + "]";
+		} else {
+			return "[" + schemaName + "].[" + tableName + "]";
+		}
+	}
+  
 	@Override
 	public boolean supportsPagingNatively(QueryOptions options) {
 		return true;

@@ -30,7 +30,6 @@ import nz.co.gregs.dbvolution.expressions.DBExpression;
 import nz.co.gregs.dbvolution.expressions.spatial2D.Spatial2DExpression;
 import nz.co.gregs.dbvolution.internal.properties.PropertyWrapper;
 import nz.co.gregs.dbvolution.internal.query.LargeObjectHandlerType;
-import nz.co.gregs.dbvolution.internal.query.QueryDetails;
 import nz.co.gregs.dbvolution.internal.sqlserver.*;
 import nz.co.gregs.dbvolution.internal.query.QueryOptions;
 import nz.co.gregs.dbvolution.internal.query.QueryState;
@@ -117,8 +116,6 @@ public class MSSQLServerDBDefinition extends DBDefinition {
 			return " GEOMETRY ";
 		} else if (qdt instanceof DBMultiPoint2D) {
 			return " GEOMETRY ";
-//		} else if (qdt instanceof DBDuration) {
-//			return " VARCHAR(65) ";
 		} else {
 			return super.getDatabaseDataTypeOfQueryableDatatype(qdt);
 		}
@@ -132,7 +129,6 @@ public class MSSQLServerDBDefinition extends DBDefinition {
 			}
 		}
 		return super.doColumnTransformForSelect(qdt, selectableName);
-//		return selectableName;
 	}
 
 	@Override
@@ -143,10 +139,11 @@ public class MSSQLServerDBDefinition extends DBDefinition {
 	@Override
 	public String formatTableName(DBRow table) {
 		String schemaName = StringCheck.check(table.getSchemaName(),"dbo");
+    final String tableName = table.getTableName();
 		if (schemaName == null || "".equals(schemaName)) {
-			return "[" + table.getTableName() + "]";
+			return "[" + tableName + "]";
 		} else {
-			return "[" + schemaName+ "].[" + table.getTableName() + "]";
+			return "[" + schemaName+ "].[" + tableName + "]";
 		}
 	}
 
@@ -165,9 +162,6 @@ public class MSSQLServerDBDefinition extends DBDefinition {
 
   /**
    * Provides the SQL of the DROP TABLE expression for this database.
-   *
-   *
-   *
    *
    * @param tableRow the DBRow of the table to be dropped
    * @return "DROP TABLE IF EXISTS tablename;" or equivalent for the database.
@@ -253,8 +247,6 @@ public class MSSQLServerDBDefinition extends DBDefinition {
 	 *
 	 * @param firstSQLExpression the first string value to compare
 	 * @param secondSQLExpression the second string value to compare
-	 * <p style="color: #F90;">Support DBvolution at
-	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
 	 * @return SQL
 	 */
 	@Override
@@ -285,9 +277,6 @@ public class MSSQLServerDBDefinition extends DBDefinition {
 	/**
 	 * MSSQLserver only supports integer degrees, and that's not good enough.
 	 *
-	 * <p style="color: #F90;">Support DBvolution at
-	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
-	 *
 	 * @return false
 	 */
 	@Override
@@ -305,8 +294,6 @@ public class MSSQLServerDBDefinition extends DBDefinition {
 	 * of the snippet.
 	 *
 	 * @param enclosedValue	enclosedValue
-	 * <p style="color: #F90;">Support DBvolution at
-	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
 	 * @return SQL snippet
 	 */
 	@Override
@@ -444,10 +431,6 @@ public class MSSQLServerDBDefinition extends DBDefinition {
 		return "(DATEDIFF(SECOND, " + dateValue + "," + otherDateValue + "))";
 	}
 
-//	@Override
-//	public String doMillisecondDifferenceTransform(String dateValue, String otherDateValue) {
-//		return "(DATEDIFF(MILLISECOND, " + dateValue + "," + otherDateValue + "))";
-//	}
 	@Override
 	public String doTruncTransform(String realNumberExpression, String numberOfDecimalPlacesExpression) {
 		//When the third parameter != 0 it truncates rather than rounds

@@ -35,6 +35,7 @@ import nz.co.gregs.dbvolution.internal.query.LargeObjectHandlerType;
 import nz.co.gregs.dbvolution.internal.sqlserver.*;
 import nz.co.gregs.dbvolution.internal.query.QueryOptions;
 import nz.co.gregs.dbvolution.internal.query.QueryState;
+import nz.co.gregs.dbvolution.utility.StringCheck;
 
 /**
  * Defines the features of the Microsoft SQL Server database that differ from
@@ -142,11 +143,12 @@ public class MSSQLServerDBDefinition2016 extends DBDefinition {
 
 	@Override
 	public String formatTableName(DBRow table) {
-		final String schemaName = table.getSchemaName();
-		if (table.getSchemaName() == null || "".equals(schemaName)) {
-			return "[" + table.getTableName() + "]";
+		final String schemaName = StringCheck.check(table.getSchemaName(),"dbo");
+    final String tableName = table.getTableName();
+		if (schemaName == null || "".equals(schemaName)) {
+			return "[" + tableName + "]";
 		} else {
-			return "[" + table.getSchemaName() + "].[" + table.getTableName() + "]";
+			return "[" + schemaName + "].[" + tableName + "]";
 		}
 	}
 
