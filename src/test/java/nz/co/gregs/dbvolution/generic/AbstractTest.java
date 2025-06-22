@@ -37,6 +37,7 @@ import nz.co.gregs.dbvolution.databases.definitions.H2DBDefinition;
 import nz.co.gregs.dbvolution.databases.settingsbuilders.*;
 import nz.co.gregs.dbvolution.example.*;
 import nz.co.gregs.dbvolution.exceptions.NoAvailableDatabaseException;
+import nz.co.gregs.dbvolution.utility.StringCheck;
 import nz.co.gregs.regexi.Regex;
 import nz.co.gregs.regexi.RegexReplacement;
 import org.h2.jdbcx.JdbcDataSource;
@@ -323,7 +324,9 @@ public abstract class AbstractTest {
       } else if ((database instanceof NuoDB)) {
         return trimStr.replaceAll("\\(\\(([^)]*)\\)=true\\)", "$1");
       } else if (database instanceof MSSQLServerDB) {
-        return trimStr.replaceAll("[\\[\\]]", "");
+        return trimStr
+                .replaceAll("\\[dbo\\]\\.", "")
+                .replaceAll("[\\[\\]]", "");
       } else {
         return trimStr;
       }
@@ -335,7 +338,9 @@ public abstract class AbstractTest {
   private static final RegexReplacement REMOVE_COMMENTS = Regex.startingAnywhere().literal("/").asterisk().anyCharacterExcept('*').asterisk().literal("/").replaceWith().nothing();
 
   public String testableSQLWithoutColumnAliases(String str) {
-    if (str != null) {
+    if (StringCheck.isEmptyOrNull(str)) {
+      return str;
+    }else{
       String trimStr = REMOVE_COMMENTS.replaceAll(str);
 //			System.out.println("STR: "+trimStr);
       trimStr = trimStr
@@ -360,14 +365,13 @@ public abstract class AbstractTest {
         return trimStr.replaceAll("\\(\\(([^)]*)\\)=true\\)", "$1");
       } else if ((database instanceof MSSQLServerDB)) {
         return trimStr
+                .replaceAll("\\[dbo\\]\\.", "")
                 .replaceAll("\\[", "")
                 .replaceAll("\\]", "")
                 .replaceAll(" *;", "");
       } else {
         return trimStr;
       }
-    } else {
-      return str;
     }
   }
 
