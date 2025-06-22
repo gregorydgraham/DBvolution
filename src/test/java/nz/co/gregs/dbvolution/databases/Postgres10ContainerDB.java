@@ -33,6 +33,7 @@ package nz.co.gregs.dbvolution.databases;
 import java.sql.SQLException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import nz.co.gregs.dbvolution.databases.PostgresDB;
 import nz.co.gregs.dbvolution.databases.settingsbuilders.PostgresSettingsBuilder;
 import org.testcontainers.containers.PostgreSQLContainer;
 import org.testcontainers.utility.DockerImageName;

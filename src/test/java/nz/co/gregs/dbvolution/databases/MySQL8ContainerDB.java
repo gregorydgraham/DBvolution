@@ -33,6 +33,7 @@ package nz.co.gregs.dbvolution.databases;
 import java.sql.SQLException;
 import java.util.*;
 import nz.co.gregs.dbvolution.databases.MySQL8ContainerDB.Versions;
+import nz.co.gregs.dbvolution.databases.MySQLDB;
 import nz.co.gregs.dbvolution.databases.settingsbuilders.MySQLSettingsBuilder;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
