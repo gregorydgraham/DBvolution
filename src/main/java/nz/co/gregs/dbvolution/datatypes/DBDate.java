@@ -18,7 +18,6 @@ package nz.co.gregs.dbvolution.datatypes;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Timestamp;
-import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.time.format.DateTimeParseException;
 import java.util.Comparator;
@@ -276,7 +275,7 @@ public class DBDate extends QueryableDatatype<Date> implements DateResult {
 		return dbValue;
 	}
 
-	private Date setByGetString(DBDefinition database, ResultSet resultSet, String fullColumnName) {
+	private Date setByGetString(DBDefinition defn, ResultSet resultSet, String fullColumnName) {
 		String string = null;
 		try {
 			string = resultSet.getString(fullColumnName);
@@ -287,7 +286,7 @@ public class DBDate extends QueryableDatatype<Date> implements DateResult {
 			return null;
 		} else {
 			try {
-				return new Date(database.parseDateFromGetString(string).getTime());
+				return new Date(defn.parseDateFromGetString(string).getTime());
 			} catch (DateTimeParseException ex) {
 				throw new DBRuntimeException("Unable To Parse Date: " + string, ex);
 			}
