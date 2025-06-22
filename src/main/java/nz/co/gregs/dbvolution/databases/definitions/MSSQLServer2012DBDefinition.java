@@ -41,6 +41,12 @@ public class MSSQLServer2012DBDefinition extends MSSQLServerDBDefinition {
 		}
 	}
   
+  @Override
+	public String formatTableAliasAndColumnNameForSelectClause(DBRow table, String columnName) {
+		final String tableAliasAndColumn = formatTableAliasAndColumnName(table, columnName);
+		return tableAliasAndColumn + " [" + formatForColumnAlias(tableAliasAndColumn)+"]";
+	}
+  
 	@Override
 	public boolean supportsPagingNatively(QueryOptions options) {
 		return true;
