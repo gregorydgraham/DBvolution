@@ -16,13 +16,9 @@
 package nz.co.gregs.dbvolution.internal.sqlserver;
 
 import nz.co.gregs.dbvolution.datatypes.DBNumber;
-import nz.co.gregs.dbvolution.exceptions.ExceptionDuringDatabaseFeatureSetup;
 import nz.co.gregs.dbvolution.internal.FeatureAdd;
 
 /**
- *
- * <p style="color: #F90;">Support DBvolution at
- * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
  *
  * @author gregorygraham
  */
@@ -148,7 +144,7 @@ public enum Line2DFunctions implements FeatureAdd {
 			+ "  END\n"
 			+ " END\n"
 			+ " return(@resultVal)");
-
+  
 	private final String returnType;
 	private final String parameters;
 	private final String code;
@@ -164,29 +160,6 @@ public enum Line2DFunctions implements FeatureAdd {
 		return "dbo.DBV_LINE2DFN_" + name();
 	}
 
-//	/**
-//	 *
-//	 * @param stmt
-//	 * @throws ExceptionDuringDatabaseFeatureSetup database errors
-//	 */
-//	public void add(Statement stmt) throws ExceptionDuringDatabaseFeatureSetup {
-//		try {
-//			stmt.execute("DROP FUNCTION " + this + ";");
-//		} catch (Exception ex) {
-//			throw new ExceptionDuringDatabaseFeatureSetup("FAILED TO ADD FEATURE: " + name(), ex);
-//		}
-//		if (!this.code.isEmpty()) {
-//			final String createFn = "CREATE FUNCTION " + this + "(" + this.parameters + ")\n"
-//					+ "    RETURNS " + this.returnType
-//					+ " AS BEGIN\n" + "\n" + this.code
-//					+ "\n END;";
-//			try {
-//				stmt.execute(createFn);
-//			} catch (Exception ex) {
-//				throw new ExceptionDuringDatabaseFeatureSetup("FAILED TO ADD FEATURE: " + name(), ex);
-//			}
-//		}
-//	}
 	@Override
 	public String featureName() {
 		return name();
@@ -197,8 +170,8 @@ public enum Line2DFunctions implements FeatureAdd {
 		if (!this.code.isEmpty()) {
 			return new String[]{
 				"CREATE FUNCTION " + this + "(" + this.parameters + ")\n"
-				+ "    RETURNS " + this.returnType
-				+ " AS BEGIN\n" + "\n" + this.code
+              + "    RETURNS " + this.returnType
+              + " AS BEGIN\n" + "\n" + this.code
 				+ "\n END;"
 			};
 		}
