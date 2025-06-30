@@ -449,19 +449,19 @@ public class Line2DExpressionTest extends AbstractTest {
 
 	@Test
 	public void testIntersectionWithMultiPoint2DExpression() throws SQLException {
-		final LineTestTable lineTestTable = new LineTestTable();
+		LineTestTable lineTestTable = new LineTestTable();
 		DBQuery dbQuery = database.getDBQuery(lineTestTable);
-		Coordinate coordinate1 = new Coordinate(1, 2);
-		Coordinate coordinate2 = new Coordinate(1, 3);
-		Coordinate coordinate3 = new Coordinate(5, 3);
-		final MultiPoint2DExpression nonCrossingLine = MultiPoint2DExpression.value(coordinate1, coordinate2, coordinate3);
+		final Coordinate coordinate1 = new Coordinate(1, 2);
+		final Coordinate coordinate2 = new Coordinate(1, 3);
+		final Coordinate coordinate3 = new Coordinate(5, 3);
+		MultiPoint2DExpression nonCrossingLine = MultiPoint2DExpression.value(coordinate1, coordinate2, coordinate3);
 
-		Coordinate coordinateA = new Coordinate(3, 3);
-		Coordinate coordinateB = new Coordinate(2, 4);
-		Coordinate coordinateC = new Coordinate(1, 4);
+		final Coordinate coordinateA = new Coordinate(3, 3);
+		final Coordinate coordinateB = new Coordinate(2, 4);
+		final Coordinate coordinateC = new Coordinate(1, 4);
 		MultiPoint2DExpression crossingLine = MultiPoint2DExpression.value(coordinateA, coordinateB, coordinateC);
-		dbQuery.setBlankQueryAllowed(true);
-
+    dbQuery.setBlankQueryAllowed(true);
+    
 		dbQuery.addCondition(lineTestTable.column(lineTestTable.line).intersectionWith(crossingLine).is(Point2DExpression.value(2.5D, 3.5D)));
 		dbQuery.addExpressionColumn(crossingLine, lineTestTable.column(lineTestTable.line).intersectionWith(crossingLine).asExpressionColumn());
 
