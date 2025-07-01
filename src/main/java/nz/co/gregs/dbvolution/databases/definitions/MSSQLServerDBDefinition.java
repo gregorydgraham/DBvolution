@@ -855,7 +855,7 @@ public class MSSQLServerDBDefinition extends DBDefinition {
 
 	@Override
 	public String transformLineStringIntoDatabaseLine2DFormat(LineString line) {
-		return "geometry::STGeomFromText ('" + line.toText() + "',0).MakeValid().STUnion(geometry::STGeomFromText('" + line.toText() + "', 0).MakeValid().STStartPoint())";
+		return "geometry::STGeomFromText ('" + line.toText() + "',0).MakeValid()";
 	}
 
 	@Override
@@ -1118,7 +1118,7 @@ public class MSSQLServerDBDefinition extends DBDefinition {
 
 	@Override
 	public String transformMultiPoint2DToDatabaseMultiPoint2DValue(MultiPoint points) {
-		return "geometry::STGeomFromText ('" + points.toText() + "',0).MakeValid().STUnion(geometry::STGeomFromText('" + points.toText() + "', 0).MakeValid().STStartPoint())";
+		return "geometry::STGeomFromText ('" + points.toText() + "',0).MakeValid()";
 	}
 
 	@Override
@@ -1169,7 +1169,7 @@ public class MSSQLServerDBDefinition extends DBDefinition {
 
 	@Override
 	public String doMultiPoint2DGetPointAtIndexTransform(String first, String index) {
-		return "(" + first + ").STPointN(" + doMultiPoint2DGetNumberOfPointsTransform(first) + " - (" + index + " -1))";
+		return "(" + first + ").STPointN(" + index + ")";
 	}
 
 	@Override
