@@ -39,7 +39,6 @@ import nz.co.gregs.dbvolution.utility.StringCheck;
 import nz.co.gregs.regexi.Regex;
 import nz.co.gregs.separatedstring.Builder;
 import nz.co.gregs.separatedstring.Encoder;
-import org.apache.commons.lang3.ArrayUtils;
 
 /**
  * Defines the features of the Microsoft SQL Server database that differ from
@@ -527,8 +526,6 @@ public class MSSQLServerDBDefinition extends DBDefinition {
 	/**
 	 * MS SQLServer does not support the LEASTOF operation natively.
 	 *
-	 * <p style="color: #F90;">Support DBvolution at
-	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
 	 *
 	 * @return FALSE
 	 */
@@ -540,8 +537,6 @@ public class MSSQLServerDBDefinition extends DBDefinition {
 	/**
 	 * MS SQLServer does not support the GREATESTOF operation natively.
 	 *
-	 * <p style="color: #F90;">Support DBvolution at
-	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
 	 *
 	 * @return FALSE
 	 */
@@ -554,8 +549,6 @@ public class MSSQLServerDBDefinition extends DBDefinition {
 	 * MS SQLServer does not support the grouping by columns that do not access
 	 * table data.
 	 *
-	 * <p style="color: #F90;">Support DBvolution at
-	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
 	 *
 	 * @return FALSE
 	 */
@@ -569,8 +562,6 @@ public class MSSQLServerDBDefinition extends DBDefinition {
 	 * for this database.
 	 *
 	 * @param numberExpression	numberExpression
-	 * <p style="color: #F90;">Support DBvolution at
-	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
 	 * @return a String of the SQL required to transform the number supplied into
 	 * a character or String type.
 	 */
@@ -584,8 +575,6 @@ public class MSSQLServerDBDefinition extends DBDefinition {
 	 * expression for this database.
 	 *
 	 * @param numberExpression	numberExpression
-	 * <p style="color: #F90;">Support DBvolution at
-	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
 	 * @return a String of the SQL required to transform the number supplied into
 	 * a character or String type.
 	 */
@@ -612,11 +601,6 @@ public class MSSQLServerDBDefinition extends DBDefinition {
 	@Override
 	protected String getCurrentDateTimeFunction() {
 		return " SYSDATETIME() ";
-//		return " SYSDATETIMEOFFSET() ";
-//		return " switchoffset("
-//				+ "SYSDATETIME()" + ", '"
-//				+ OffsetTime.now().format(DateTimeFormatter.ofPattern("ZZZZZ"))
-//				+ "')";
 	}
 
 	@Override
@@ -960,8 +944,6 @@ public class MSSQLServerDBDefinition extends DBDefinition {
 	 *
 	 * @param firstGeometry the first polygon2d value to compare
 	 * @param secondGeometry the second polygon2d value to compare
-	 * <p style="color: #F90;">Support DBvolution at
-	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
 	 * @return SQL that is TRUE if the first polygon contains the second.
 	 */
 	@Override
@@ -980,8 +962,6 @@ public class MSSQLServerDBDefinition extends DBDefinition {
 	 *
 	 * @param firstGeometry the first polygon2d value to compare
 	 * @param secondGeometry the second polygon2d value to compare
-	 * <p style="color: #F90;">Support DBvolution at
-	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
 	 * @return SQL that is FALSE if the polygons intersect.
 	 */
 	@Override
@@ -998,8 +978,6 @@ public class MSSQLServerDBDefinition extends DBDefinition {
 	 *
 	 * @param firstGeometry the first polygon2d value to compare
 	 * @param secondGeometry the second polygon2d value to compare
-	 * <p style="color: #F90;">Support DBvolution at
-	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
 	 * @return SQL that is TRUE if the first polygon is within the second.
 	 */
 	@Override
@@ -1016,8 +994,6 @@ public class MSSQLServerDBDefinition extends DBDefinition {
 	 * This will be "2"
 	 *
 	 * @param polygon2DSQL a polygon2d value
-	 * <p style="color: #F90;">Support DBvolution at
-	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
 	 * @return "2" unless something has gone horribly wrong.
 	 */
 	@Override
@@ -1255,8 +1231,6 @@ public class MSSQLServerDBDefinition extends DBDefinition {
 	 * <p>
 	 * For MS SQLServer this method returns <b>ceiling</b></p>
 	 *
-	 * <p style="color: #F90;">Support DBvolution at
-	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
 	 *
 	 * @return the name of the function to use when rounding numbers up
 	 */
@@ -1271,9 +1245,6 @@ public class MSSQLServerDBDefinition extends DBDefinition {
 	 * <p>
 	 * For SQLServer this method returns <b>log</b></p>
 	 *
-	 * <p style="color: #F90;">Support DBvolution at
-	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
-	 *
 	 * @return the name of the function to use when rounding numbers up
 	 */
 	@Override
@@ -1287,8 +1258,6 @@ public class MSSQLServerDBDefinition extends DBDefinition {
 	 * <p>
 	 * By default this method returns <b>log10</b></p>
 	 *
-	 * <p style="color: #F90;">Support DBvolution at
-	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
 	 *
 	 * @return the name of the function to use when rounding numbers up
 	 */
@@ -1307,9 +1276,6 @@ public class MSSQLServerDBDefinition extends DBDefinition {
 	 * <p>
 	 * This method DOES NOT use the SQLServer built-in function as it does not
 	 * produce a different result for different rows in a single query.</p>
-	 *
-	 * <p style="color: #F90;">Support DBvolution at
-	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
 	 *
 	 * @return random number generating code
 	 */
@@ -1391,9 +1357,6 @@ public class MSSQLServerDBDefinition extends DBDefinition {
 			lineString = geom.createLineString(new Coordinate[]{});
 		} else if (geometry instanceof LineString) {
 			lineString = (LineString) geometry;
-			Coordinate[] coords = lineString.getCoordinates();
-			ArrayUtils.reverse(coords);
-			lineString = geom.createLineString(coords);
 		} else {
 			throw new IncorrectGeometryReturnedForDatatype(geometry, lineString);
 		}
