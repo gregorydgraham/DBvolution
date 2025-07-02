@@ -580,7 +580,7 @@ public class DBStatement implements AutoCloseable {
 						return;
 					}
 				} catch (Exception ex) {
-					throw new SQLException("Failed To Add Support On " + database.getJdbcURL() + " For SQL: " + exp.getMessage() + " : Original Query: " + sql, ex);
+					throw new SQLException("Failed To Add Support On " + database.getJdbcURL() + " For SQL: " + exp.getMessage() + " : \nIntent: "+details.getIntention()+"; Original Query: " + sql, ex);
 				}
 			}
 			try {
