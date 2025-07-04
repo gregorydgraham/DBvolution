@@ -130,9 +130,9 @@ public abstract class DBDatabaseImplementation implements DBDatabase, Serializab
 		String databaseName = getSettings().getDatabaseName();
 		String username = getSettings().getUsername();
 		if (jdbcURL != null && !jdbcURL.isEmpty()) {
-			return this.getClass().getSimpleName() + "{" + (databaseName == null ? "UNNAMED" : databaseName + "=") + jdbcURL + ":" + username + "}";
+			return getClass().getSimpleName() + "{" + (databaseName == null ? "UNNAMED" : databaseName + "=") + jdbcURL + ":" + username + "}";
 		} else if (getDataSource() != null) {
-			return this.getClass().getSimpleName() + ": " + getDataSource().toString();
+			return getClass().getSimpleName() + ": " + getDataSource().toString();
 		} else {
 			return super.toString();
 		}
@@ -159,7 +159,7 @@ public abstract class DBDatabaseImplementation implements DBDatabase, Serializab
 			Logger.getLogger(DBDatabase.class.getName()).log(Level.SEVERE, null, ex);
 		}
 		try {
-			return this.getSettings().createDBDatabase();
+			return getSettings().createDBDatabase();
 		} catch (ClassNotFoundException | NoSuchMethodException | SecurityException | InstantiationException | IllegalAccessException | IllegalArgumentException | InvocationTargetException ex) {
 			Logger.getLogger(DBDatabase.class.getName()).log(Level.SEVERE, null, ex);
 		}
@@ -169,12 +169,12 @@ public abstract class DBDatabaseImplementation implements DBDatabase, Serializab
 	@Override
 	public synchronized int hashCode() {
 		int hash = 7;
-		hash = 29 * hash + (this.getDriverName() != null ? this.getDriverName().hashCode() : 0);
-		hash = 29 * hash + (this.getJdbcURL() != null ? this.getJdbcURL().hashCode() : 0);
-		hash = 29 * hash + (this.getUsername() != null ? this.getUsername().hashCode() : 0);
-		hash = 29 * hash + (this.getPassword() != null ? this.getPassword().hashCode() : 0);
-		hash = 29 * hash + (this.getDataSource() != null ? this.getDataSource().hashCode() : 0);
-		hash = 29 * hash + (this.getSettings() != null ? this.getSettings().hashCode() : 0);
+		hash = 29 * hash + (getDriverName() != null ? getDriverName().hashCode() : 0);
+		hash = 29 * hash + (getJdbcURL() != null ? getJdbcURL().hashCode() : 0);
+		hash = 29 * hash + (getUsername() != null ? getUsername().hashCode() : 0);
+		hash = 29 * hash + (getPassword() != null ? getPassword().hashCode() : 0);
+		hash = 29 * hash + (getDataSource() != null ? getDataSource().hashCode() : 0);
+		hash = 29 * hash + (getSettings() != null ? getSettings().hashCode() : 0);
 		return hash;
 	}
 
@@ -187,22 +187,22 @@ public abstract class DBDatabaseImplementation implements DBDatabase, Serializab
 			return false;
 		}
 		final DBDatabase other = (DBDatabase) obj;
-		if ((this.getDriverName() == null) ? (other.getDriverName() != null) : !this.getDriverName().equals(other.getDriverName())) {
+		if ((getDriverName() == null) ? (other.getDriverName() != null) : !getDriverName().equals(other.getDriverName())) {
 			return false;
 		}
-		if ((this.getJdbcURL() == null) ? (other.getJdbcURL() != null) : !this.getJdbcURL().equals(other.getJdbcURL())) {
+		if ((getJdbcURL() == null) ? (other.getJdbcURL() != null) : !getJdbcURL().equals(other.getJdbcURL())) {
 			return false;
 		}
-		if ((this.getUsername() == null) ? (other.getUsername() != null) : !this.getUsername().equals(other.getUsername())) {
+		if ((getUsername() == null) ? (other.getUsername() != null) : !getUsername().equals(other.getUsername())) {
 			return false;
 		}
-		if ((this.getPassword() == null) ? (other.getPassword() != null) : !this.getPassword().equals(other.getPassword())) {
+		if ((getPassword() == null) ? (other.getPassword() != null) : !getPassword().equals(other.getPassword())) {
 			return false;
 		}
-		if ((this.getDataSource() == null) ? (other.getDataSource() != null) : !this.getDataSource().equals(other.getDataSource())) {
+		if ((getDataSource() == null) ? (other.getDataSource() != null) : !getDataSource().equals(other.getDataSource())) {
 			return false;
 		}
-		final DatabaseConnectionSettings thisSettings = this.getSettings();
+		final DatabaseConnectionSettings thisSettings = getSettings();
 		final DatabaseConnectionSettings otherSettings = other.getSettings();
 		return !(thisSettings != otherSettings && (thisSettings == null || !thisSettings.equals(otherSettings)));
 	}
@@ -279,11 +279,11 @@ public abstract class DBDatabaseImplementation implements DBDatabase, Serializab
 	}
 
 	protected final void initDatabase(SettingsBuilder<?, ?> suppliedSettings) throws SQLException {
-		this.definition = suppliedSettings.getDefinition();
+		definition = suppliedSettings.getDefinition();
 		initDriver(suppliedSettings);
 		settings.copy(suppliedSettings.toSettings());
 		if (suppliedSettings instanceof NamedDatabaseCapableSettingsBuilder) {
-			this.setDatabaseName(((NamedDatabaseCapableSettingsBuilder) suppliedSettings).getDatabaseName());
+			setDatabaseName(((NamedDatabaseCapableSettingsBuilder) suppliedSettings).getDatabaseName());
 		}
 		setDBDatabaseClassInSettings(suppliedSettings);
 		createRequiredTables();
@@ -337,9 +337,9 @@ public abstract class DBDatabaseImplementation implements DBDatabase, Serializab
 		DBStatement statement;
 		synchronized (getStatementSynchronizeObject) {
 			if (isInATransaction) {
-				statement = this.transactionStatement;
+				statement = transactionStatement;
 				if (statement.isClosed()) {
-					this.transactionStatement = new DBTransactionStatement(this, getLowLevelStatement());
+					transactionStatement = new DBTransactionStatement(this, getLowLevelStatement());
 				}
 				/* TODO: this looks like it can return a closed statement unnecessarily */
 			} else {
@@ -387,8 +387,8 @@ public abstract class DBDatabaseImplementation implements DBDatabase, Serializab
 		if (terminated) {
 			return null;
 		} else {
-			if (isInATransaction && !this.transactionConnection.isClosed()) {
-				return this.transactionConnection;
+			if (isInATransaction && !transactionConnection.isClosed()) {
+				return transactionConnection;
 			}
 			DBConnection conn = null;
 			while (conn == null) {
@@ -427,7 +427,7 @@ public abstract class DBDatabaseImplementation implements DBDatabase, Serializab
 			DBConnection connection = null;
 			int retries = 0;
 			synchronized (getConnectionSynchronizeObject) {
-				if (this.getDataSource() == null) {
+				if (getDataSource() == null) {
 					try {
 						if (getDriverName() != null && !getDriverName().isEmpty()) {
 							// load the driver
@@ -502,8 +502,8 @@ public abstract class DBDatabaseImplementation implements DBDatabase, Serializab
 	private boolean connectionUsedForPersistentConnection(DBConnection connection) throws DBRuntimeException, SQLException {
 		if (getDefinition().persistentConnectionRequired()) {
 			if (storedConnection == null) {
-				this.storedConnection = connection;
-				this.storedConnection.createDBStatement();
+				storedConnection = connection;
+				storedConnection.createDBStatement();
         usedConnection(connection);
 			}
 			if (storedConnection.equals(connection)) {
@@ -665,7 +665,7 @@ public abstract class DBDatabaseImplementation implements DBDatabase, Serializab
 	public final DBActionList delete(DBRow... rows) throws SQLException {
 		DBActionList changes = new DBActionList();
 		for (DBRow row : rows) {
-			changes.addAll(this.getDBTable(row).delete(row));
+			changes.addAll(getDBTable(row).delete(row));
 		}
 		return changes;
 	}
@@ -683,7 +683,7 @@ public abstract class DBDatabaseImplementation implements DBDatabase, Serializab
 		DBActionList changes = new DBActionList();
 		if (list.size() > 0) {
 			for (DBRow row : list) {
-				changes.addAll(this.getDBTable(row).delete(row));
+				changes.addAll(getDBTable(row).delete(row));
 			}
 		}
 		return changes;
@@ -912,7 +912,7 @@ public abstract class DBDatabaseImplementation implements DBDatabase, Serializab
 	public synchronized <V> V doTransaction(DBTransaction<V> dbTransaction, Boolean commit) throws SQLException, ExceptionThrownDuringTransaction {
 		DBDatabaseImplementation db;
 		try {
-			db = (DBDatabaseImplementation) this.clone();
+			db = (DBDatabaseImplementation) clone();
 		} catch (CloneNotSupportedException ex) {
 			throw new UnsupportedOperationException("Unable to drop database due to incorrecte DBDatabase implementation: correct the implementation of clone()", ex);
 		}
@@ -955,7 +955,7 @@ public abstract class DBDatabaseImplementation implements DBDatabase, Serializab
 	public synchronized <V> IncompleteTransaction<V> doTransactionWithoutCompleting(DBTransaction<V> dbTransaction) throws SQLException, ExceptionThrownDuringTransaction {
 		DBDatabaseImplementation db;
 		try {
-			db = (DBDatabaseImplementation) this.clone();
+			db = (DBDatabaseImplementation) clone();
 		} catch (CloneNotSupportedException ex) {
 			throw new UnsupportedOperationException("Unable to clone database due to incorrect DBDatabase implementation: correct the implementation of clone()", ex);
 		}
@@ -1573,7 +1573,7 @@ public abstract class DBDatabaseImplementation implements DBDatabase, Serializab
 	public <TR extends DBRow> void dropTableNoExceptions(TR tableRow) throws AccidentalDroppingOfTableException, AutoCommitActionDuringTransactionException {
 		LOG.debug("DROPPING TABLE NOEXECEPTIONS: " + tableRow.getTableName());
 		try {
-			this.dropTable(tableRow);
+			dropTable(tableRow);
 		} catch (SQLException exp) {
 		}
 	}
@@ -1604,7 +1604,7 @@ public abstract class DBDatabaseImplementation implements DBDatabase, Serializab
 	@Override
 	public <TR extends DBRow> void dropTableIfExists(TR tableRow) throws AccidentalDroppingOfTableException, AutoCommitActionDuringTransactionException, SQLException {
 		if (tableExists(tableRow)) {
-			this.dropTable(tableRow);
+			dropTable(tableRow);
 		}
 	}
 
@@ -1661,7 +1661,7 @@ public abstract class DBDatabaseImplementation implements DBDatabase, Serializab
 	 */
 	@Override
 	public boolean willCreateBlankQuery(DBRow row) throws NoAvailableDatabaseException {
-		return row.willCreateBlankQuery(this.getDefinition());
+		return row.willCreateBlankQuery(getDefinition());
 	}
 
 	/**
@@ -1745,7 +1745,7 @@ public abstract class DBDatabaseImplementation implements DBDatabase, Serializab
 	final public String getLabel() {
 		final String label = settings.getLabel();
 		return label == null || label.isEmpty()
-				? "Unlabelled " + this.getClass().getSimpleName()
+				? "Unlabelled " + getClass().getSimpleName()
 				: label;
 	}
 
@@ -1810,11 +1810,11 @@ public abstract class DBDatabaseImplementation implements DBDatabase, Serializab
 	 */
 	@Override
 	public synchronized void preventDroppingOfTables(boolean droppingTablesIsAMistake) {
-		this.preventAccidentalDroppingOfTables = droppingTablesIsAMistake;
+		preventAccidentalDroppingOfTables = droppingTablesIsAMistake;
 	}
 
 	protected synchronized boolean getPreventAccidentalDroppingOfTables() {
-		return this.preventAccidentalDroppingOfTables;
+		return preventAccidentalDroppingOfTables;
 	}
 
 	/**
@@ -1833,11 +1833,11 @@ public abstract class DBDatabaseImplementation implements DBDatabase, Serializab
 	 */
 	@Override
 	public synchronized void preventDroppingOfDatabases(boolean justLeaveThisAtTrue) {
-		this.preventAccidentalDroppingDatabase = justLeaveThisAtTrue;
+		preventAccidentalDroppingDatabase = justLeaveThisAtTrue;
 	}
 
 	public synchronized boolean getPreventAccidentalDroppingOfDatabases() {
-		return this.preventAccidentalDroppingDatabase;
+		return preventAccidentalDroppingDatabase;
 	}
 
 	public synchronized void preventAccidentalDroppingOfDatabases(DBAction action) throws AccidentalDroppingOfDatabaseException {
@@ -2018,7 +2018,7 @@ public abstract class DBDatabaseImplementation implements DBDatabase, Serializab
 	}
 
 	private synchronized List<DBConnection> getConnectionList(Map<String, List<DBConnection>> connectionMap) {
-		final String key = this.getSettings().encode();
+		final String key = getSettings().encode();
 		List<DBConnection> connList = connectionMap.get(key);
 		if (connList == null) {
 			connList = new ArrayList<>();
@@ -2112,11 +2112,11 @@ public abstract class DBDatabaseImplementation implements DBDatabase, Serializab
 
 	@Override
 	public void setLastException(Throwable except) {
-		this.exception = except;
+		exception = except;
 	}
 
 	public Throwable getLastException() {
-		return this.exception;
+		return exception;
 	}
 
 	@Override
@@ -2257,12 +2257,12 @@ public abstract class DBDatabaseImplementation implements DBDatabase, Serializab
 
 	@Override
 	public void setQuietExceptionsPreference(boolean b) {
-		this.quietExceptionsPreference = b;
+		quietExceptionsPreference = b;
 	}
 
 	@Override
 	public boolean getQuietExceptionsPreference() {
-		return this.quietExceptionsPreference;
+		return quietExceptionsPreference;
 	}
 
 	@Override
@@ -2482,7 +2482,7 @@ public abstract class DBDatabaseImplementation implements DBDatabase, Serializab
 	@Override
 	public synchronized void stop() {
 		terminated = true;
-		String stopping = "STOPPING: " + this.getLabel();
+		String stopping = "STOPPING: " + getLabel();
 		LOG.info(stopping);
 		LOG.info(stopping+ " Regular Processors");
 		for (RegularProcess regularProcessor : getRegularProcessors()) {
