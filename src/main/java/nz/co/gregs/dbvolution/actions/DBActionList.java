@@ -18,6 +18,7 @@ package nz.co.gregs.dbvolution.actions;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.List;
 import nz.co.gregs.dbvolution.databases.DBDatabase;
 import nz.co.gregs.dbvolution.DBScript;
@@ -44,8 +45,6 @@ import nz.co.gregs.dbvolution.transactions.DBTransaction;
  * to accumulate actions that are executed as a batch with {@link DBActionList#execute(nz.co.gregs.dbvolution.databases.DBDatabase)
  * }.
  *
- * <p style="color: #F90;">Support DBvolution at
- * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
  *
  * @author Gregory Graham
  */
@@ -61,7 +60,18 @@ public class DBActionList extends ArrayList<DBAction> {
 	 */
 	public DBActionList(DBAction... actions) {
 		super(0);
-		this.addAll(Arrays.asList(actions));
+		addAll(Arrays.asList(actions));
+	}
+  
+	/**
+	 * Creates a new DBActionList containing the DBactions provided in the order
+	 * specified.
+	 *
+	 * @param actions the list of actions to include in this DBActionList
+	 */
+	public DBActionList(Collection<DBAction> actions) {
+		super(0);
+		addAll(actions);
 	}
 
 	/**
