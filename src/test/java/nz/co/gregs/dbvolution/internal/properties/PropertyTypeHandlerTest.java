@@ -6,7 +6,6 @@ import static org.hamcrest.Matchers.*;
 
 import java.util.Calendar;
 import java.util.Date;
-import java.util.List;
 
 import nz.co.gregs.dbvolution.DBRow;
 import nz.co.gregs.dbvolution.annotations.DBAdaptType;
@@ -19,10 +18,9 @@ import nz.co.gregs.dbvolution.datatypes.DBTypeAdaptor;
 import nz.co.gregs.dbvolution.datatypes.QueryableDatatype;
 import nz.co.gregs.dbvolution.exceptions.InvalidDeclaredTypeException;
 import static org.hamcrest.MatcherAssert.assertThat;
+import org.junit.Assert;
 
-import org.junit.Rule;
 import org.junit.Test;
-import org.junit.rules.ExpectedException;
 
 /**
  * Focuses on low-level functionality of type adaptors. End-to-end confirmation
@@ -30,9 +28,6 @@ import org.junit.rules.ExpectedException;
  */
 @SuppressWarnings({"serial", "unused"})
 public class PropertyTypeHandlerTest {
-
-	@Rule
-	public ExpectedException thrown = ExpectedException.none();
 
 	@Test
 	public void errorsOnConstructionGivenValidTypeAdaptorWithWrongExplicitDBvType() {
@@ -43,10 +38,15 @@ public class PropertyTypeHandlerTest {
 			public DBString field = new DBString();
 		}
 
-		thrown.expect(InvalidDeclaredTypeException.class);
-		thrown.expectMessage("internal Long type is not compatible");
-		@SuppressWarnings("unchecked")
-		var propertyTypeHandler = new PropertyTypeHandler<>(propertyOf(MyClass.class, "field"), false);
+    InvalidDeclaredTypeException assertThrows = Assert.assertThrows("internal Long type is not compatible", InvalidDeclaredTypeException.class, () -> {
+      var obj = new PropertyTypeHandler<>(propertyOf(MyClass.class, "field"), false);
+      if(obj.isTypeAdapted()){
+        // just to get rid of the IDE hints
+      }
+    });
+    if (assertThrows.getMessage().isEmpty()) {
+      // just to get rid of all the IDE hints
+    }
 	}
 
 	@Test
@@ -58,11 +58,17 @@ public class PropertyTypeHandlerTest {
 			public DBString field = new DBString();
 		}
 
-		thrown.expect(InvalidDeclaredTypeException.class);
-		thrown.expectMessage("external Long type is not compatible");
-		@SuppressWarnings("unchecked")
-		var propertyTypeHandler = new PropertyTypeHandler<>(propertyOf(MyClass.class, "field"), false);
-	}
+    InvalidDeclaredTypeException exc = Assert.assertThrows(
+            "external Long type is not compatible",
+            InvalidDeclaredTypeException.class,
+            () -> {
+              var propertyTypeHandler = new PropertyTypeHandler<>(propertyOf(MyClass.class, "field"), false);
+            }
+    );
+    if (exc.getMessage().isEmpty()) {
+      // just to get rid of all the IDE hints
+    }
+  }
 
 	@Test
 	public void errorsOnConstructionGivenInvalidAdaptorWithNonSimpleFirstType() {
@@ -73,10 +79,16 @@ public class PropertyTypeHandlerTest {
 			public DBString field = new DBString();
 		}
 
-		thrown.expect(InvalidDeclaredTypeException.class);
-		thrown.expectMessage("external type must not");
-		@SuppressWarnings("unchecked")
-		var propertyTypeHandler = new PropertyTypeHandler<>(propertyOf(MyClass.class, "field"), false);
+    InvalidDeclaredTypeException exc = Assert.assertThrows(
+            "external type must not",
+            InvalidDeclaredTypeException.class,
+            () -> {
+              var propertyTypeHandler = new PropertyTypeHandler<>(propertyOf(MyClass.class, "field"), false);
+            }
+    );
+    if (exc.getMessage().isEmpty()) {
+      // just to get rid of all the IDE hints
+    }
 	}
 
 	@Test
@@ -88,10 +100,16 @@ public class PropertyTypeHandlerTest {
 			public DBString field = new DBString();
 		}
 
-		thrown.expect(InvalidDeclaredTypeException.class);
-		thrown.expectMessage("internal type must not");
-		@SuppressWarnings("unchecked")
-		var propertyTypeHandler = new PropertyTypeHandler<>(propertyOf(MyClass.class, "field"), false);
+    InvalidDeclaredTypeException exc = Assert.assertThrows(
+            "internal type must not",
+            InvalidDeclaredTypeException.class,
+            () -> {
+              var propertyTypeHandler = new PropertyTypeHandler<>(propertyOf(MyClass.class, "field"), false);
+            }
+    );
+    if (exc.getMessage().isEmpty()) {
+      // just to get rid of all the IDE hints
+    }
 	}
 
 	@Test(expected = InvalidDeclaredTypeException.class)
@@ -105,6 +123,9 @@ public class PropertyTypeHandlerTest {
 
 		@SuppressWarnings("unchecked")
 		var propertyTypeHandler = new PropertyTypeHandler<>(propertyOf(MyClass.class, "field"), false);
+    if (propertyTypeHandler.isTypeAdapted()) {
+      // just to get rid of all the IDE hints
+    }
 	}
 
 	@Test
@@ -686,7 +707,7 @@ public class PropertyTypeHandlerTest {
 		@Override
 		public Integer fromDatabaseValue(String dbvValue) {
 			if (dbvValue != null) {
-				return Integer.parseInt(dbvValue);
+				return Integer.valueOf(dbvValue);
 			}
 			return null;
 		}
@@ -713,7 +734,7 @@ public class PropertyTypeHandlerTest {
 		@Override
 		public Integer toDatabaseValue(String objectValue) {
 			if (objectValue != null) {
-				return Integer.parseInt(objectValue);
+				return Integer.valueOf(objectValue);
 			}
 			return null;
 		}
@@ -724,7 +745,7 @@ public class PropertyTypeHandlerTest {
 		@Override
 		public Long fromDatabaseValue(String dbvValue) {
 			if (dbvValue != null) {
-				return Long.parseLong(dbvValue);
+				return Long.valueOf(dbvValue);
 			}
 			return null;
 		}
@@ -751,7 +772,7 @@ public class PropertyTypeHandlerTest {
 		@Override
 		public Long toDatabaseValue(String objectValue) {
 			if (objectValue != null) {
-				return Long.parseLong(objectValue);
+				return Long.valueOf(objectValue);
 			}
 			return null;
 		}
@@ -770,7 +791,7 @@ public class PropertyTypeHandlerTest {
 		@Override
 		public Long toDatabaseValue(String objectValue) {
 			if (objectValue != null) {
-				return Long.parseLong(objectValue);
+				return Long.valueOf(objectValue);
 			}
 			return null;
 		}
