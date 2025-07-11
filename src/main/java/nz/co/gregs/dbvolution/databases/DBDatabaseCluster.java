@@ -1219,18 +1219,20 @@ public class DBDatabaseCluster extends DBDatabaseImplementation {
 		}
 	}
 
-	@Override
-	public synchronized boolean tableExists(DBRow table) throws SQLException {
-		boolean tableExists = true;
-		DBDatabase[] readyDatabases = getDetails().getReadyDatabases();
-		for (DBDatabase readyDatabase : readyDatabases) {
-			synchronized (readyDatabase) {
-				final boolean tableExists1 = readyDatabase.tableExists(table);
-				tableExists &= tableExists1;
-			}
-		}
-		return tableExists;
-	}
+  @Override
+  public boolean tableExists(DBRow table) throws SQLException {
+    boolean defaultToFalse = false;
+    DBDatabase[] readyDatabases = getDetails().getReadyDatabases();
+    for (DBDatabase readyDatabase : readyDatabases) {
+      synchronized (readyDatabase) {
+        final boolean tableExistsAnywhere = readyDatabase.tableExists(table);
+        if (tableExistsAnywhere) {
+          return true;
+        }
+      }
+    }
+    return defaultToFalse;
+  }
 
 	/**
 	 * Returns the number of ready databases.
