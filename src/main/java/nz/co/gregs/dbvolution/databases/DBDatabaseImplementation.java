@@ -2214,10 +2214,10 @@ public abstract class DBDatabaseImplementation implements DBDatabase, Serializab
 		preventAccidentalDeletingAllRowFromTable = b;
 	}
 
-	@Override
-	public void deleteAllRowsFromTable(DBRow table) throws SQLException {
-		executeDBAction(new DBDeleteAll(table));
-	}
+  @Override
+  public DBActionList deleteAllRowsFromTable(DBRow table) throws SQLException {
+    return executeDBAction(new DBDeleteAll(table));
+  }
 
 	@Override
 	public boolean supportsGeometryTypesFullyInSchema() {

@@ -669,8 +669,8 @@ public class DBDatabaseHandle implements DBDatabase {
 	}
 
 	@Override
-	public void deleteAllRowsFromTable(DBRow table) throws SQLException {
-		wrappedDatabase.deleteAllRowsFromTable(table);
+	public DBActionList deleteAllRowsFromTable(DBRow table) throws SQLException {
+		return wrappedDatabase.deleteAllRowsFromTable(table);
 	}
 
 	@Override

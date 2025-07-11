@@ -149,7 +149,7 @@ public interface DBDatabase extends Serializable {
 
 	public void handleErrorDuringExecutingSQL(DBDatabase suspectDatabase, Throwable sqlException, String sqlString);
 
-	void deleteAllRowsFromTable(DBRow table) throws SQLException;
+	public DBActionList deleteAllRowsFromTable(DBRow table) throws SQLException;
 
 	boolean supportsGeometryTypesFullyInSchema();
 
