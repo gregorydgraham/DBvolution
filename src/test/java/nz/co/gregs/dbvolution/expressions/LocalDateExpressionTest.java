@@ -15,6 +15,7 @@
  */
 package nz.co.gregs.dbvolution.expressions;
 
+import com.sun.javafx.tools.packager.TemplatePlaceholders;
 import java.sql.SQLException;
 import java.text.ParseException;
 import java.time.LocalDate;
@@ -26,7 +27,9 @@ import nz.co.gregs.dbvolution.DBQuery;
 import nz.co.gregs.dbvolution.DBQueryRow;
 import nz.co.gregs.dbvolution.DBReport;
 import nz.co.gregs.dbvolution.DBRow;
+import nz.co.gregs.dbvolution.DBScript;
 import nz.co.gregs.dbvolution.DBTable;
+import nz.co.gregs.dbvolution.actions.DBActionList;
 import nz.co.gregs.dbvolution.annotations.DBColumn;
 import nz.co.gregs.dbvolution.annotations.DBForeignKey;
 import nz.co.gregs.dbvolution.annotations.DBPrimaryKey;
@@ -1370,33 +1373,42 @@ public class LocalDateExpressionTest extends AbstractTest {
 		DBDatabase db = database;
 		db.preventDroppingOfTables(false);
 		db.dropTableIfExists(new MarqueWithLocalDate());
-		db.createTable(new MarqueWithLocalDate());
+		db.createTableNoExceptions(new MarqueWithLocalDate());
 
-		List<MarqueWithLocalDate> toInsert = new ArrayList<>();
-		toInsert.add(new MarqueWithLocalDate(4893059, "True", 1246974, null, 3, "UV", "PEUGEOT", null, "Y", null, 4, true));
-		toInsert.add(new MarqueWithLocalDate(4893090, "False", 1246974, "", 1, "UV", "FORD", "", "Y", march23rd2013LocalDate, 2, false));
-		toInsert.add(new MarqueWithLocalDate(4893101, "False", 1246974, "", 2, "UV", "HOLDEN", "", "Y", march23rd2013LocalDate, 3, null));
-		toInsert.add(new MarqueWithLocalDate(4893112, "False", 1246974, "", 2, "UV", "MITSUBISHI", "", "Y", march23rd2013LocalDate, 4, null));
-		toInsert.add(new MarqueWithLocalDate(4893150, "False", 1246974, "", 3, "UV", "SUZUKI", "", "Y", march23rd2013LocalDate, 4, null));
-		toInsert.add(new MarqueWithLocalDate(4893263, "False", 1246974, "", 2, "UV", "HONDA", "", "Y", march23rd2013LocalDate, 4, null));
-		toInsert.add(new MarqueWithLocalDate(4893353, "False", 1246974, "", 4, "UV", "NISSAN", "", "Y", march23rd2013LocalDate, 4, null));
-		toInsert.add(new MarqueWithLocalDate(4893557, "False", 1246974, "", 2, "UV", "SUBARU", "", "Y", march23rd2013LocalDate, 4, null));
-		toInsert.add(new MarqueWithLocalDate(4894018, "False", 1246974, "", 2, "UV", "MAZDA", "", "Y", march23rd2013LocalDate, 4, null));
-		toInsert.add(new MarqueWithLocalDate(4895203, "False", 1246974, "", 2, "UV", "ROVER", "", "Y", march23rd2013LocalDate, 4, null));
-		toInsert.add(new MarqueWithLocalDate(4896300, "False", 1246974, null, 2, "UV", "HYUNDAI", null, "Y", march23rd2013LocalDate, 1, null));
-		toInsert.add(new MarqueWithLocalDate(4899527, "False", 1246974, "", 1, "UV", "JEEP", "", "Y", march23rd2013LocalDate, 3, null));
-		toInsert.add(new MarqueWithLocalDate(7659280, "False", 1246972, "Y", 3, "", "DAIHATSU", "", "Y", march23rd2013LocalDate, 4, null));
-		toInsert.add(new MarqueWithLocalDate(7681544, "False", 1246974, "", 2, "UV", "LANDROVER", "", "Y", march23rd2013LocalDate, 4, null));
-		toInsert.add(new MarqueWithLocalDate(7730022, "False", 1246974, "", 2, "UV", "VOLVO", "", "Y", march23rd2013LocalDate, 4, null));
-		toInsert.add(new MarqueWithLocalDate(8376505, "False", 1246974, "", null, "", "ISUZU", "", "Y", march23rd2013LocalDate, 4, null));
-		toInsert.add(new MarqueWithLocalDate(8587147, "False", 1246974, "", null, "", "DAEWOO", "", "Y", march23rd2013LocalDate, 4, null));
-		toInsert.add(new MarqueWithLocalDate(9971178, "False", 1246974, "", 1, "", "CHRYSLER", "", "Y", march23rd2013LocalDate, 4, null));
-		toInsert.add(new MarqueWithLocalDate(13224369, "False", 1246974, "", 0, "", "VW", "", "Y", april2nd2011LocalDate, 4, null));
-		toInsert.add(new MarqueWithLocalDate(6664478, "False", 1246974, "", 0, "", "BMW", "", "Y", april2nd2011LocalDate, 4, null));
-		toInsert.add(new MarqueWithLocalDate(1, "False", 1246974, "", 0, "", "TOYOTA", "", "Y", march23rd2013LocalDate, 1, true));
-		toInsert.add(new MarqueWithLocalDate(2, "False", 1246974, "", 0, "", "HUMMER", "", "Y", april2nd2011LocalDate, 3, null));
+    var script = new DBScript() {
+      @Override
+      public DBActionList script(DBDatabase db) throws Exception {
+        DBActionList actions = db.deleteAllRowsFromTable(new MarqueWithLocalDate());
+        
+        List<MarqueWithLocalDate> toInsert = new ArrayList<>();
+        toInsert.add(new MarqueWithLocalDate(4893059, "True", 1246974, null, 3, "UV", "PEUGEOT", null, "Y", null, 4, true));
+        toInsert.add(new MarqueWithLocalDate(4893090, "False", 1246974, "", 1, "UV", "FORD", "", "Y", march23rd2013LocalDate, 2, false));
+        toInsert.add(new MarqueWithLocalDate(4893101, "False", 1246974, "", 2, "UV", "HOLDEN", "", "Y", march23rd2013LocalDate, 3, null));
+        toInsert.add(new MarqueWithLocalDate(4893112, "False", 1246974, "", 2, "UV", "MITSUBISHI", "", "Y", march23rd2013LocalDate, 4, null));
+        toInsert.add(new MarqueWithLocalDate(4893150, "False", 1246974, "", 3, "UV", "SUZUKI", "", "Y", march23rd2013LocalDate, 4, null));
+        toInsert.add(new MarqueWithLocalDate(4893263, "False", 1246974, "", 2, "UV", "HONDA", "", "Y", march23rd2013LocalDate, 4, null));
+        toInsert.add(new MarqueWithLocalDate(4893353, "False", 1246974, "", 4, "UV", "NISSAN", "", "Y", march23rd2013LocalDate, 4, null));
+        toInsert.add(new MarqueWithLocalDate(4893557, "False", 1246974, "", 2, "UV", "SUBARU", "", "Y", march23rd2013LocalDate, 4, null));
+        toInsert.add(new MarqueWithLocalDate(4894018, "False", 1246974, "", 2, "UV", "MAZDA", "", "Y", march23rd2013LocalDate, 4, null));
+        toInsert.add(new MarqueWithLocalDate(4895203, "False", 1246974, "", 2, "UV", "ROVER", "", "Y", march23rd2013LocalDate, 4, null));
+        toInsert.add(new MarqueWithLocalDate(4896300, "False", 1246974, null, 2, "UV", "HYUNDAI", null, "Y", march23rd2013LocalDate, 1, null));
+        toInsert.add(new MarqueWithLocalDate(4899527, "False", 1246974, "", 1, "UV", "JEEP", "", "Y", march23rd2013LocalDate, 3, null));
+        toInsert.add(new MarqueWithLocalDate(7659280, "False", 1246972, "Y", 3, "", "DAIHATSU", "", "Y", march23rd2013LocalDate, 4, null));
+        toInsert.add(new MarqueWithLocalDate(7681544, "False", 1246974, "", 2, "UV", "LANDROVER", "", "Y", march23rd2013LocalDate, 4, null));
+        toInsert.add(new MarqueWithLocalDate(7730022, "False", 1246974, "", 2, "UV", "VOLVO", "", "Y", march23rd2013LocalDate, 4, null));
+        toInsert.add(new MarqueWithLocalDate(8376505, "False", 1246974, "", null, "", "ISUZU", "", "Y", march23rd2013LocalDate, 4, null));
+        toInsert.add(new MarqueWithLocalDate(8587147, "False", 1246974, "", null, "", "DAEWOO", "", "Y", march23rd2013LocalDate, 4, null));
+        toInsert.add(new MarqueWithLocalDate(9971178, "False", 1246974, "", 1, "", "CHRYSLER", "", "Y", march23rd2013LocalDate, 4, null));
+        toInsert.add(new MarqueWithLocalDate(13224369, "False", 1246974, "", 0, "", "VW", "", "Y", april2nd2011LocalDate, 4, null));
+        toInsert.add(new MarqueWithLocalDate(6664478, "False", 1246974, "", 0, "", "BMW", "", "Y", april2nd2011LocalDate, 4, null));
+        toInsert.add(new MarqueWithLocalDate(1, "False", 1246974, "", 0, "", "TOYOTA", "", "Y", march23rd2013LocalDate, 1, true));
+        toInsert.add(new MarqueWithLocalDate(2, "False", 1246974, "", 0, "", "HUMMER", "", "Y", april2nd2011LocalDate, 3, null));
 
-		db.insert(toInsert);
+        actions.addAll(db.insert(toInsert));
+        return actions;
+      }
+    };
+    script.implement(db);
 	}
 
 	public static class MarqueWithEndOfMonthForInstantColumn extends MarqueWithLocalDate {

@@ -28,7 +28,9 @@ import nz.co.gregs.dbvolution.DBQuery;
 import nz.co.gregs.dbvolution.DBQueryRow;
 import nz.co.gregs.dbvolution.DBReport;
 import nz.co.gregs.dbvolution.DBRow;
+import nz.co.gregs.dbvolution.DBScript;
 import nz.co.gregs.dbvolution.DBTable;
+import nz.co.gregs.dbvolution.actions.DBActionList;
 import nz.co.gregs.dbvolution.annotations.DBColumn;
 import nz.co.gregs.dbvolution.annotations.DBForeignKey;
 import nz.co.gregs.dbvolution.annotations.DBPrimaryKey;
@@ -39,6 +41,7 @@ import nz.co.gregs.dbvolution.datatypes.DBInteger;
 import nz.co.gregs.dbvolution.datatypes.DBNumber;
 import nz.co.gregs.dbvolution.datatypes.DBString;
 import nz.co.gregs.dbvolution.example.CarCompany;
+import nz.co.gregs.dbvolution.example.Marque;
 import nz.co.gregs.dbvolution.exceptions.AccidentalBlankQueryException;
 import nz.co.gregs.dbvolution.exceptions.AccidentalCartesianJoinException;
 import nz.co.gregs.dbvolution.exceptions.UnexpectedNumberOfRowsException;
@@ -1840,33 +1843,42 @@ public class LocalDateTimeExpressionTest extends AbstractTest {
 		db.preventDroppingOfTables(false);
 		db.dropTableIfExists(new MarqueWithLocalDateTime());
 		db.createTable(new MarqueWithLocalDateTime());
+    
+    DBScript script = new DBScript() {
+      @Override
+      public DBActionList script(DBDatabase db) throws Exception {
 
-		List<MarqueWithLocalDateTime> toInsert = new ArrayList<>();
-		toInsert.add(new MarqueWithLocalDateTime(4893059, "True", 1246974, null, 3, "UV", "PEUGEOT", null, "Y", null, 4, true));
-		toInsert.add(new MarqueWithLocalDateTime(4893090, "False", 1246974, "", 1, "UV", "FORD", "", "Y", march23rd2013LocalDateTime, 2, false));
-		toInsert.add(new MarqueWithLocalDateTime(4893101, "False", 1246974, "", 2, "UV", "HOLDEN", "", "Y", march23rd2013LocalDateTime, 3, null));
-		toInsert.add(new MarqueWithLocalDateTime(4893112, "False", 1246974, "", 2, "UV", "MITSUBISHI", "", "Y", march23rd2013LocalDateTime, 4, null));
-		toInsert.add(new MarqueWithLocalDateTime(4893150, "False", 1246974, "", 3, "UV", "SUZUKI", "", "Y", march23rd2013LocalDateTime, 4, null));
-		toInsert.add(new MarqueWithLocalDateTime(4893263, "False", 1246974, "", 2, "UV", "HONDA", "", "Y", march23rd2013LocalDateTime, 4, null));
-		toInsert.add(new MarqueWithLocalDateTime(4893353, "False", 1246974, "", 4, "UV", "NISSAN", "", "Y", march23rd2013LocalDateTime, 4, null));
-		toInsert.add(new MarqueWithLocalDateTime(4893557, "False", 1246974, "", 2, "UV", "SUBARU", "", "Y", march23rd2013LocalDateTime, 4, null));
-		toInsert.add(new MarqueWithLocalDateTime(4894018, "False", 1246974, "", 2, "UV", "MAZDA", "", "Y", march23rd2013LocalDateTime, 4, null));
-		toInsert.add(new MarqueWithLocalDateTime(4895203, "False", 1246974, "", 2, "UV", "ROVER", "", "Y", march23rd2013LocalDateTime, 4, null));
-		toInsert.add(new MarqueWithLocalDateTime(4896300, "False", 1246974, null, 2, "UV", "HYUNDAI", null, "Y", march23rd2013LocalDateTime, 1, null));
-		toInsert.add(new MarqueWithLocalDateTime(4899527, "False", 1246974, "", 1, "UV", "JEEP", "", "Y", march23rd2013LocalDateTime, 3, null));
-		toInsert.add(new MarqueWithLocalDateTime(7659280, "False", 1246972, "Y", 3, "", "DAIHATSU", "", "Y", march23rd2013LocalDateTime, 4, null));
-		toInsert.add(new MarqueWithLocalDateTime(7681544, "False", 1246974, "", 2, "UV", "LANDROVER", "", "Y", march23rd2013LocalDateTime, 4, null));
-		toInsert.add(new MarqueWithLocalDateTime(7730022, "False", 1246974, "", 2, "UV", "VOLVO", "", "Y", march23rd2013LocalDateTime, 4, null));
-		toInsert.add(new MarqueWithLocalDateTime(8376505, "False", 1246974, "", null, "", "ISUZU", "", "Y", march23rd2013LocalDateTime, 4, null));
-		toInsert.add(new MarqueWithLocalDateTime(8587147, "False", 1246974, "", null, "", "DAEWOO", "", "Y", march23rd2013LocalDateTime, 4, null));
-		toInsert.add(new MarqueWithLocalDateTime(9971178, "False", 1246974, "", 1, "", "CHRYSLER", "", "Y", march23rd2013LocalDateTime, 4, null));
-		toInsert.add(new MarqueWithLocalDateTime(13224369, "False", 1246974, "", 0, "", "VW", "", "Y", april2nd2011LocalDateTime, 4, null));
-		toInsert.add(new MarqueWithLocalDateTime(6664478, "False", 1246974, "", 0, "", "BMW", "", "Y", april2nd2011LocalDateTime, 4, null));
-		toInsert.add(new MarqueWithLocalDateTime(1, "False", 1246974, "", 0, "", "TOYOTA", "", "Y", march23rd2013LocalDateTime, 1, true));
-		toInsert.add(new MarqueWithLocalDateTime(2, "False", 1246974, "", 0, "", "HUMMER", "", "Y", april2nd2011LocalDateTime, 3, null));
+        DBActionList actions = db.deleteAllRowsFromTable(new MarqueWithLocalDateTime());
+        List<MarqueWithLocalDateTime> toInsert = new ArrayList<>();
+        toInsert.add(new MarqueWithLocalDateTime(4893059, "True", 1246974, null, 3, "UV", "PEUGEOT", null, "Y", null, 4, true));
+        toInsert.add(new MarqueWithLocalDateTime(4893090, "False", 1246974, "", 1, "UV", "FORD", "", "Y", march23rd2013LocalDateTime, 2, false));
+        toInsert.add(new MarqueWithLocalDateTime(4893101, "False", 1246974, "", 2, "UV", "HOLDEN", "", "Y", march23rd2013LocalDateTime, 3, null));
+        toInsert.add(new MarqueWithLocalDateTime(4893112, "False", 1246974, "", 2, "UV", "MITSUBISHI", "", "Y", march23rd2013LocalDateTime, 4, null));
+        toInsert.add(new MarqueWithLocalDateTime(4893150, "False", 1246974, "", 3, "UV", "SUZUKI", "", "Y", march23rd2013LocalDateTime, 4, null));
+        toInsert.add(new MarqueWithLocalDateTime(4893263, "False", 1246974, "", 2, "UV", "HONDA", "", "Y", march23rd2013LocalDateTime, 4, null));
+        toInsert.add(new MarqueWithLocalDateTime(4893353, "False", 1246974, "", 4, "UV", "NISSAN", "", "Y", march23rd2013LocalDateTime, 4, null));
+        toInsert.add(new MarqueWithLocalDateTime(4893557, "False", 1246974, "", 2, "UV", "SUBARU", "", "Y", march23rd2013LocalDateTime, 4, null));
+        toInsert.add(new MarqueWithLocalDateTime(4894018, "False", 1246974, "", 2, "UV", "MAZDA", "", "Y", march23rd2013LocalDateTime, 4, null));
+        toInsert.add(new MarqueWithLocalDateTime(4895203, "False", 1246974, "", 2, "UV", "ROVER", "", "Y", march23rd2013LocalDateTime, 4, null));
+        toInsert.add(new MarqueWithLocalDateTime(4896300, "False", 1246974, null, 2, "UV", "HYUNDAI", null, "Y", march23rd2013LocalDateTime, 1, null));
+        toInsert.add(new MarqueWithLocalDateTime(4899527, "False", 1246974, "", 1, "UV", "JEEP", "", "Y", march23rd2013LocalDateTime, 3, null));
+        toInsert.add(new MarqueWithLocalDateTime(7659280, "False", 1246972, "Y", 3, "", "DAIHATSU", "", "Y", march23rd2013LocalDateTime, 4, null));
+        toInsert.add(new MarqueWithLocalDateTime(7681544, "False", 1246974, "", 2, "UV", "LANDROVER", "", "Y", march23rd2013LocalDateTime, 4, null));
+        toInsert.add(new MarqueWithLocalDateTime(7730022, "False", 1246974, "", 2, "UV", "VOLVO", "", "Y", march23rd2013LocalDateTime, 4, null));
+        toInsert.add(new MarqueWithLocalDateTime(8376505, "False", 1246974, "", null, "", "ISUZU", "", "Y", march23rd2013LocalDateTime, 4, null));
+        toInsert.add(new MarqueWithLocalDateTime(8587147, "False", 1246974, "", null, "", "DAEWOO", "", "Y", march23rd2013LocalDateTime, 4, null));
+        toInsert.add(new MarqueWithLocalDateTime(9971178, "False", 1246974, "", 1, "", "CHRYSLER", "", "Y", march23rd2013LocalDateTime, 4, null));
+        toInsert.add(new MarqueWithLocalDateTime(13224369, "False", 1246974, "", 0, "", "VW", "", "Y", april2nd2011LocalDateTime, 4, null));
+        toInsert.add(new MarqueWithLocalDateTime(6664478, "False", 1246974, "", 0, "", "BMW", "", "Y", april2nd2011LocalDateTime, 4, null));
+        toInsert.add(new MarqueWithLocalDateTime(1, "False", 1246974, "", 0, "", "TOYOTA", "", "Y", march23rd2013LocalDateTime, 1, true));
+        toInsert.add(new MarqueWithLocalDateTime(2, "False", 1246974, "", 0, "", "HUMMER", "", "Y", april2nd2011LocalDateTime, 3, null));
 
-		db.insert(toInsert);
-	}
+        actions.addAll(db.insert(toInsert));
+        return actions;
+      }
+    };
+    script.implement(db);
+  }
 
 	public static class MarqueWithEndOfMonthForLocalDateTimeColumn extends MarqueWithLocalDateTime {
 
