@@ -181,14 +181,26 @@ public class DBInsertTest extends AbstractTest {
 
 			TestDefaultInsertValue gotRow = database.getDBTable(row).getRowsByPrimaryKey(row.pk_TestDefaultInsertValue.getValue()).get(0);
 
+      /* 
+      Please note:
+      these tests check that the database has the same value for multiple independent time field. Normally this is fine
+      however there is a potential race condition _within the database_ where the now() function in a single insert may
+      return different values. 
+      
+      I've only seen about 200 milliseconds difference but it does ruin a nice simple check. 
+        
+      The Date values are changed to Instant instances because it reports the millis in error report
+        
+      Values have 1 second added or removed as appropriate to cover for the race condition. It's a solution.
+      */ 
 			assertThat(gotRow.pk_TestDefaultInsertValue.getValue(), is(1L));
 			assertThat(gotRow.name.getValue(), is("def"));
 			assertThat(gotRow.defaultExpression.getValue(), is("def"));
-			assertThat(gotRow.creationDate.getValue(), greaterThanOrEqualTo(startTime));
-			assertThat(gotRow.creationDate.getValue(), lessThanOrEqualTo(gotRow.currentDate.getValue()));
+			assertThat(gotRow.creationDate.getValue().toInstant().plusSeconds(1), greaterThanOrEqualTo(startTime.toInstant()));
+			assertThat(gotRow.creationDate.getValue().toInstant().minusSeconds(1), lessThanOrEqualTo(gotRow.currentDate.getValue().toInstant()));
 			assertThat(gotRow.updateDate.getValue(), nullValue());
-			assertThat(gotRow.creationOrUpdateDate.getValue(), greaterThanOrEqualTo(startTime));
-			assertThat(gotRow.creationOrUpdateDate.getValue(), lessThanOrEqualTo(gotRow.currentDate.getValue()));
+			assertThat(gotRow.creationOrUpdateDate.getValue().toInstant().plusSeconds(1), greaterThanOrEqualTo(startTime.toInstant()));
+			assertThat(gotRow.creationOrUpdateDate.getValue().toInstant().minusSeconds(1), lessThanOrEqualTo(gotRow.currentDate.getValue().toInstant()));
 
 			/* Check that default insert values can be overridden */
 			TestDefaultInsertValue row2 = new TestDefaultInsertValue();
@@ -205,11 +217,11 @@ public class DBInsertTest extends AbstractTest {
 			assertThat(gotRow.pk_TestDefaultInsertValue.getValue(), is(2L));
 			assertThat(gotRow.name.getValue(), is("notdefault"));
 			assertThat(gotRow.defaultExpression.getValue(), is("notdefaulteither"));
-			assertThat(gotRow.creationDate.getValue(), greaterThanOrEqualTo(startTime));
-			assertThat(gotRow.creationDate.getValue(), lessThanOrEqualTo(gotRow.currentDate.getValue()));
+			assertThat(gotRow.creationDate.getValue().toInstant().plusSeconds(1), greaterThanOrEqualTo(startTime.toInstant()));
+			assertThat(gotRow.creationDate.getValue().toInstant().minusSeconds(1), lessThanOrEqualTo(gotRow.currentDate.getValue().toInstant()));
 			assertThat(gotRow.updateDate.getValue(), nullValue());
-			assertThat(gotRow.creationOrUpdateDate.getValue(), greaterThanOrEqualTo(startTime));
-			assertThat(gotRow.creationOrUpdateDate.getValue(), lessThanOrEqualTo(gotRow.currentDate.getValue()));
+			assertThat(gotRow.creationOrUpdateDate.getValue().toInstant().plusSeconds(1), greaterThanOrEqualTo(startTime.toInstant()));
+			assertThat(gotRow.creationOrUpdateDate.getValue().toInstant().minusSeconds(1), lessThanOrEqualTo(gotRow.currentDate.getValue().toInstant()));
 
 			gotRow.name.setValue("blarg");
 			database.update(gotRow);
@@ -218,12 +230,12 @@ public class DBInsertTest extends AbstractTest {
 			assertThat(gotRow.pk_TestDefaultInsertValue.getValue(), is(2L));
 			assertThat(gotRow.name.getValue(), is("blarg"));
 			assertThat(gotRow.defaultExpression.getValue(), is("notdefaulteither"));
-			assertThat(gotRow.creationDate.getValue(), greaterThan(startTime));
-			assertThat(gotRow.creationDate.getValue(), lessThanOrEqualTo(gotRow.currentDate.getValue()));
-			assertThat(gotRow.updateDate.getValue(), greaterThanOrEqualTo(gotRow.creationDate.getValue()));
-			assertThat(gotRow.updateDate.getValue(), lessThanOrEqualTo(gotRow.currentDate.getValue()));
-			assertThat(gotRow.creationOrUpdateDate.getValue(), greaterThanOrEqualTo(gotRow.creationDate.getValue()));
-			assertThat(gotRow.creationOrUpdateDate.getValue(), lessThanOrEqualTo(gotRow.currentDate.getValue()));
+			assertThat(gotRow.creationDate.getValue().toInstant(), greaterThan(startTime.toInstant()));
+			assertThat(gotRow.creationDate.getValue().toInstant().minusSeconds(1), lessThanOrEqualTo(gotRow.currentDate.getValue().toInstant()));
+			assertThat(gotRow.updateDate.getValue().toInstant().plusSeconds(1), greaterThanOrEqualTo(gotRow.creationDate.getValue().toInstant()));
+			assertThat(gotRow.updateDate.getValue().toInstant().minusSeconds(1), lessThanOrEqualTo(gotRow.currentDate.getValue().toInstant()));
+			assertThat(gotRow.creationOrUpdateDate.getValue().toInstant().plusSeconds(1), greaterThanOrEqualTo(gotRow.creationDate.getValue().toInstant()));
+			assertThat(gotRow.creationOrUpdateDate.getValue().toInstant().minusSeconds(1), lessThanOrEqualTo(gotRow.currentDate.getValue().toInstant()));
 			Date formerUpdateDate = gotRow.updateDate.getValue();
 
 			gotRow.name.setValue("blarg");
@@ -235,17 +247,64 @@ public class DBInsertTest extends AbstractTest {
 			assertThat(gotRow.name.getValue(), is("blarg"));
 			assertThat(gotRow.defaultExpression.getValue(), is("notdefaulteither"));
 			assertThat(gotRow.creationDate.getValue(), is(april2nd2011));
-			assertThat(gotRow.updateDate.getValue(), greaterThanOrEqualTo(formerUpdateDate));
-			assertThat(gotRow.updateDate.getValue(), lessThanOrEqualTo(gotRow.currentDate.getValue()));
-			assertThat(gotRow.creationOrUpdateDate.getValue(), greaterThanOrEqualTo(formerUpdateDate));
-			assertThat(gotRow.creationOrUpdateDate.getValue(), lessThanOrEqualTo(gotRow.currentDate.getValue()));
+			assertThat(gotRow.updateDate.getValue().toInstant().plusSeconds(1), greaterThanOrEqualTo(formerUpdateDate.toInstant()));
+			assertThat(gotRow.updateDate.getValue().toInstant().minusSeconds(1), lessThanOrEqualTo(gotRow.currentDate.getValue().toInstant()));
+			assertThat(gotRow.creationOrUpdateDate.getValue().toInstant().plusSeconds(1), greaterThanOrEqualTo(formerUpdateDate.toInstant()));
+			assertThat(gotRow.creationOrUpdateDate.getValue().toInstant().minusSeconds(1), lessThanOrEqualTo(gotRow.currentDate.getValue().toInstant()));
 		} finally {
 			database.preventDroppingOfTables(false);
 			database.dropTableNoExceptions(row);
 		}
 	}
 
-	public static class TestDefaultValueRetrieval extends DBRow {
+  @Test
+  public void testSaveWithDefaultValuesStressTestDateValues() throws Exception {
+    GregorianCalendar cal = new GregorianCalendar();
+    cal.add(GregorianCalendar.MINUTE, -1);
+    Date startTime = cal.getTime();
+
+    TestDefaultInsertValue row = new TestDefaultInsertValue();
+    try {
+      database.preventDroppingOfTables(false);
+      database.dropTableNoExceptions(row);
+      database.createTable(row);
+
+      for (int i = 0; i < 10000; i++) {
+        /* Check that row can be inserted successfully*/
+        database.insert(row);
+
+        TestDefaultInsertValue gotRow = database.getDBTable(row).getRowsByPrimaryKey(row.pk_TestDefaultInsertValue.getValue()).get(0);
+        /* 
+        Please note:
+        these tests check that the database has the same value for multiple independent time field. Normally this is fine
+        however there is a potential race condition _within the database_ where the now() function in a single insert may
+        return different values. 
+      
+        I've only seen about 200 milliseconds difference but it does ruin a nice simple check. 
+        
+        The Date values are changed to Instant instances because it reports the millis in error report
+        
+        Values have 1 second added or removed as appropriate to cover for the race condition. It's a solution.
+         */
+        assertThat(
+                gotRow.creationDate.getValue().toInstant().minusSeconds(1), 
+                lessThanOrEqualTo(gotRow.currentDate.getValue().toInstant()));
+        assertThat(
+                gotRow.creationOrUpdateDate.getValue().toInstant().plusSeconds(1), 
+                greaterThanOrEqualTo(startTime.toInstant()));
+        assertThat(
+                gotRow.creationOrUpdateDate.getValue().toInstant().minusSeconds(1), 
+                lessThanOrEqualTo(gotRow.currentDate.getValue().toInstant()));
+
+        row = new TestDefaultInsertValue();
+      }
+    } finally {
+      database.preventDroppingOfTables(false);
+      database.dropTableNoExceptions(row);
+    }
+  }
+
+  public static class TestDefaultValueRetrieval extends DBRow {
 
 		private static final long serialVersionUID = 1L;
 
