@@ -115,7 +115,6 @@ public class TemporalStringParser {
 			try {
 				final TemporalAccessor parsed = format.parse(parsableString);
 				zoneddatetime = ZonedDateTime.from(parsed);
-				System.out.println("PARSE SUCCEEDED: " + format.pattern);
 				return zoneddatetime;
 			} catch (Exception ex1) {
 				printException(parsableString, format, exception);
@@ -130,7 +129,6 @@ public class TemporalStringParser {
 			try {
 				final TemporalAccessor parsed = format.parse(parsableString);
 				zoneddatetime = ZonedDateTime.of(LocalDateTime.from(parsed), ZoneId.of("Z"));
-				System.out.println("PARSE SUCCEEDED: " + format.pattern);
 				return zoneddatetime;
 			} catch (Exception ex1) {
 				printException(parsableString, format, exception);
@@ -141,7 +139,6 @@ public class TemporalStringParser {
 		try {
 			Timestamp timestamp = Timestamp.valueOf(parsableString);
 			zoneddatetime = ZonedDateTime.of(timestamp.toLocalDateTime(), ZoneId.of("Z"));
-			System.out.println("PARSE SUCCEEDED:  Timestamp.valueOf(" + parsableString + ")");
 			LOG.debug("PARSE SUCCEEDED: Timestamp.valueOf(" + parsableString + ")");
 			LOG.debug("PARSED STR: " + parsableString);
 			LOG.debug("TO: " + zoneddatetime);
@@ -154,7 +151,6 @@ public class TemporalStringParser {
 		try {
 			Timestamp timestamp = Timestamp.valueOf(parsableString);
 			zoneddatetime = ZonedDateTime.of(timestamp.toLocalDateTime(), ZoneId.of("Z"));
-			System.out.println("PARSE SUCCEEDED:  Timestamp.valueOf(" + parsableString + ")");
 			LOG.debug("PARSE SUCCEEDED: Timestamp.valueOf(" + parsableString + ")");
 			LOG.debug("PARSED inputDateString: " + parsableString);
 			LOG.debug("TO: " + zoneddatetime);
