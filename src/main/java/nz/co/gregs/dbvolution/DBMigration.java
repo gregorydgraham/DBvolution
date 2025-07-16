@@ -390,53 +390,6 @@ public class DBMigration<M extends DBRow> extends RowDefinition implements Seria
 	}
 
 	/**
-	 * Sets the sort order of DBReport (field and/or method) by the given column
-	 * providers.
-	 *
-	 * <p>
-	 * For example the following code snippet will sort by just the name column:
-	 * <pre>
-	 * CustomerReport customers = ...;
-	 * customers.setSortOrder(customers.column(customers.name));
-	 * </pre>
-	 *
-	 * @param columns a list of columns to sort the query by.
-	 * @return this DBReport instance
-	 */
-//	public DBMigration<M> setSortOrder(SortProvider... columns) {
-//		sortColumns.clear();
-//		sortColumns.addAll(Arrays.asList(columns));
-//		return this;
-//	}
-
-	/**
-	 * Sets the sort order of migration (field and/or method) by the given column
-	 * providers.
-	 *
-	 * <p>
-	 * ONLY USE FIELDS FROM THE SAME INSTANCE.
-	 * <p>
-	 * For example the following code snippet will sort by the name and
-	 * accountNumber columns:
-	 * <pre>
-	 * CustomerReport customers = ...;
-	 * customers.setSortOrder(customers.name, customers.accountNumber);
-	 * </pre>
-	 *
-	 * @param columns a list of columns to sort the query by.
-	 * @return this DBReport instance
-	 */
-//	public DBMigration<M> setSortOrder(QueryableDatatype<?>... columns) {
-//		List<SortProvider> columnProviders = new ArrayList<>();
-//		for (QueryableDatatype<?> qdt : columns) {
-//			final ColumnProvider expr = this.column(qdt);
-//			columnProviders.add(expr.getSortProvider());
-//		}
-//		sortColumns.addAll(columnProviders);
-//		return this;
-//	}
-
-	/**
 	 * Add the rows as optional tables in the query.
 	 *
 	 * <p>
