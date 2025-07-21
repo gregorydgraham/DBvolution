@@ -300,7 +300,7 @@ public class DBDatabaseClusterTest extends AbstractTest {
 	@Test
 	public synchronized void testAutoRebuildRecreatesData() throws SQLException {
 		if (!database.isMemoryDatabase()) {
-			final String nameOfCluster = "testAutoRebuildRearrangesCluster";
+			final String nameOfCluster = "testAutoRebuildRecreatesData";
 			{
 				DBDatabaseCluster cluster
 						= new DBDatabaseCluster(
@@ -311,12 +311,17 @@ public class DBDatabaseClusterTest extends AbstractTest {
 				H2MemoryDB soloDB2 = H2MemoryDB.createANewRandomDatabase();
 				try {
 					cluster.addDatabase(soloDB2);
+          cluster.waitUntilSynchronised();
 					assertThat(cluster.size(), is(2));
 
 					cluster.delete(cluster.getDBTable(new DBDatabaseClusterTestTable()).setBlankQueryAllowed(true).getAllRows());
 					cluster.insert(createData(new Date(), new Date()));
+          cluster.waitUntilDatabaseIsSynchronised(database);
 					DBQuery query = cluster.getDBQuery(new DBDatabaseClusterTestTable()).setBlankQueryAllowed(true);
 					assertThat(query.getAllRows().size(), is(22));
+          assertThat(cluster.getDBTable(new DBDatabaseClusterTestTable()).setBlankQueryAllowed(true).getAllRows().size(), is(22));
+					assertThat(soloDB2.getDBTable(new DBDatabaseClusterTestTable()).setBlankQueryAllowed(true).getAllRows().size(), is(22));
+					assertThat(database.getDBTable(new DBDatabaseClusterTestTable()).setBlankQueryAllowed(true).getAllRows().size(), is(22));
 					dismantleCluster = false;
 				} finally {
 					if (dismantleCluster) {
