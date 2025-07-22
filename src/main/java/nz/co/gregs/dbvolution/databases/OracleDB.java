@@ -26,6 +26,8 @@ import nz.co.gregs.dbvolution.databases.supports.SupportsPolygonDatatype;
 import nz.co.gregs.dbvolution.exceptions.ExceptionDuringDatabaseFeatureSetup;
 import nz.co.gregs.dbvolution.internal.query.StatementDetails;
 import nz.co.gregs.regexi.Regex;
+import static nz.co.gregs.dbvolution.databases.DBDatabaseImplementation.ResponseToException.*;
+import static nz.co.gregs.dbvolution.databases.QueryIntention.*;
 
 /**
  * Super class for connecting the different versions of the Oracle DB.
@@ -39,138 +41,163 @@ import nz.co.gregs.regexi.Regex;
  */
 public abstract class OracleDB extends DBDatabaseImplementation implements SupportsPolygonDatatype {
 
-	public static final String ORACLE_JDBC_DRIVER = "oracle.jdbc.driver.OracleDriver";
-	public static final long serialVersionUID = 1l;
-	public static final int DEFAULT_PORT = 1521;
+  public static final String ORACLE_JDBC_DRIVER = "oracle.jdbc.driver.OracleDriver";
+  public static final long serialVersionUID = 1l;
+  public static final int DEFAULT_PORT = 1521;
 
-	/**
-	 * Creates an Oracle connection for the DatabaseConnectionSettings.
-	 *
-	 * @param builder settings required to connect to the database server
-	 * @throws java.sql.SQLException database errors
-	 */
-	public OracleDB(AbstractOracleSettingsBuilder<?, ?> builder) throws SQLException {
-		super(builder);
-	}
+  /**
+   * Creates an Oracle connection for the DatabaseConnectionSettings.
+   *
+   * @param builder settings required to connect to the database server
+   * @throws java.sql.SQLException database errors
+   */
+  public OracleDB(AbstractOracleSettingsBuilder<?, ?> builder) throws SQLException {
+    super(builder);
+  }
 
-	/**
-	 * Creates an Oracle connection for the DatabaseConnectionSettings.
-	 *
-	 * @param dcs	dcs
-	 * @throws java.sql.SQLException database errors
-	 */
-	@Deprecated
-	public OracleDB(DatabaseConnectionSettings dcs) throws SQLException {
-		this(new OracleDBDefinition(), dcs);
-	}
+  /**
+   * Creates an Oracle connection for the DatabaseConnectionSettings.
+   *
+   * @param dcs	dcs
+   * @throws java.sql.SQLException database errors
+   */
+  @Deprecated
+  public OracleDB(DatabaseConnectionSettings dcs) throws SQLException {
+    this(new OracleDBDefinition(), dcs);
+  }
 
-	/**
-	 * Creates an Oracle connection for the DatabaseConnectionSettings.
-	 *
-	 * @param dcs	dcs
-	 * @param defn the oracle database definition
-	 * @throws java.sql.SQLException database errors
-	 */
-	@Deprecated
-	public OracleDB(OracleDBDefinition defn, DatabaseConnectionSettings dcs) throws SQLException {
-		super(new Oracle11XESettingsBuilder().fromSettings(dcs).setDefinition(defn));
-	}
+  /**
+   * Creates an Oracle connection for the DatabaseConnectionSettings.
+   *
+   * @param dcs	dcs
+   * @param defn the oracle database definition
+   * @throws java.sql.SQLException database errors
+   */
+  @Deprecated
+  public OracleDB(OracleDBDefinition defn, DatabaseConnectionSettings dcs) throws SQLException {
+    super(new Oracle11XESettingsBuilder().fromSettings(dcs).setDefinition(defn));
+  }
 
-	/**
-	 * Creates a DBDatabase instance for the definition and data source.
-	 *
-	 * <p>
-	 * You should probably be using {@link Oracle11XEDB#Oracle11XEDB(java.lang.String, int, java.lang.String, java.lang.String, java.lang.String)
-	 * } or
-	 * {@link Oracle12DB#Oracle12DB(java.lang.String, int, java.lang.String, java.lang.String, java.lang.String)}
-	 *
-	 * @param definition definition
-	 * @param driverName the database driver class name
-	 * @param password password
-	 * @param jdbcURL jdbcURL
-	 * @param username username
-	 * @throws java.sql.SQLException database errors
-	 */
-	@Deprecated
-	public OracleDB(DBDefinition definition, String driverName, String jdbcURL, String username, String password) throws SQLException {
-		this(new Oracle11XESettingsBuilder().fromJDBCURL(jdbcURL, username, password).setDefinition(definition).setDriverName(driverName));
-	}
+  /**
+   * Creates a DBDatabase instance for the definition and data source.
+   *
+   * <p>
+   * You should probably be using {@link Oracle11XEDB#Oracle11XEDB(java.lang.String, int, java.lang.String, java.lang.String, java.lang.String)
+   * } or {@link Oracle12DB#Oracle12DB(java.lang.String, int, java.lang.String, java.lang.String, java.lang.String)}
+   *
+   * @param definition definition
+   * @param driverName the database driver class name
+   * @param password password
+   * @param jdbcURL jdbcURL
+   * @param username username
+   * @throws java.sql.SQLException database errors
+   */
+  @Deprecated
+  public OracleDB(DBDefinition definition, String driverName, String jdbcURL, String username, String password) throws SQLException {
+    this(new Oracle11XESettingsBuilder().fromJDBCURL(jdbcURL, username, password).setDefinition(definition).setDriverName(driverName));
+  }
 
-	/**
-	 * Creates a DBDatabase instance.
-	 *
-	 * @param dbDefinition an oracle database definition instance
-	 * @param dataSource a data source to an Oracle database
-	 * @throws java.sql.SQLException database errors
-	 */
-	@Deprecated
-	public OracleDB(DBDefinition dbDefinition, AbstractOracleSettingsBuilder<?, ?> dataSource) throws SQLException {
-		this(dbDefinition, ORACLE_JDBC_DRIVER, dataSource);
-	}
+  /**
+   * Creates a DBDatabase instance.
+   *
+   * @param dbDefinition an oracle database definition instance
+   * @param dataSource a data source to an Oracle database
+   * @throws java.sql.SQLException database errors
+   */
+  @Deprecated
+  public OracleDB(DBDefinition dbDefinition, AbstractOracleSettingsBuilder<?, ?> dataSource) throws SQLException {
+    this(dbDefinition, ORACLE_JDBC_DRIVER, dataSource);
+  }
 
-	/**
-	 * Creates a DBDatabase instance.
-	 *
-	 * @param dbDefinition an oracle database definition instance
-	 * @param driverName the database driver class name
-	 * @param dataSource a data source to an Oracle database
-	 * @throws java.sql.SQLException database errors
-	 */
-	@Deprecated
-	public OracleDB(DBDefinition dbDefinition, String driverName, AbstractOracleSettingsBuilder<?, ?> dataSource) throws SQLException {
-		super(dataSource.setDefinition(dbDefinition).setDriverName(driverName));
-	}
+  /**
+   * Creates a DBDatabase instance.
+   *
+   * @param dbDefinition an oracle database definition instance
+   * @param driverName the database driver class name
+   * @param dataSource a data source to an Oracle database
+   * @throws java.sql.SQLException database errors
+   */
+  @Deprecated
+  public OracleDB(DBDefinition dbDefinition, String driverName, AbstractOracleSettingsBuilder<?, ?> dataSource) throws SQLException {
+    super(dataSource.setDefinition(dbDefinition).setDriverName(driverName));
+  }
 
-	@Override
-	public DBDatabase clone() throws CloneNotSupportedException {
-		return super.clone();
-	}
+  @Override
+  public DBDatabase clone() throws CloneNotSupportedException {
+    return super.clone();
+  }
 
-	@Override
-	public void addDatabaseSpecificFeatures(Statement statement) throws ExceptionDuringDatabaseFeatureSetup {
-		for (StringFunctions fn : StringFunctions.values()) {
-			try {
-				fn.add(statement);
-			} catch (Exception ex) {
-				throw new ExceptionDuringDatabaseFeatureSetup("FAILED TO ADD FEATURE: " + fn.name(), ex);
-			}
-		}
-	}
+  @Override
+  public void addDatabaseSpecificFeatures(Statement statement) throws ExceptionDuringDatabaseFeatureSetup {
+    for (StringFunctions fn : StringFunctions.values()) {
+      try {
+        fn.add(statement);
+      } catch (Exception ex) {
+        throw new ExceptionDuringDatabaseFeatureSetup("FAILED TO ADD FEATURE: " + fn.name(), ex);
+      }
+    }
+  }
 
-	private final static Regex SEQUENCE_DOES_NOT_EXIST = Regex.empty().literal("ORA-02289: sequence does not exist").toRegex();
-	private final static Regex TRIGGER_DOES_NOT_EXIST = Regex.empty().literal("ORA-04080: trigger ").anyCharacter().optionalMany().literal(" does not exist").toRegex();
-	private final static Regex TABLE_ALREADY_EXISTS = Regex.empty().literal("ORA-00955: name is already used by an existing object").toRegex();
-	private final static Regex TABLE_DOES_NOT_EXIST = Regex.empty().literal("ORA-00942: table or view does not exist").toRegex();
-	private final static Regex LOOP_IN_RECURSIVE_QUERY = Regex.empty().literal("ORA-32044: cycle detected while executing recursive WITH query").toRegex();
+  private final static Regex SEQUENCE_DOES_NOT_EXIST = Regex.empty().literal("ORA-02289: sequence does not exist").toRegex();
+  private final static Regex TRIGGER_DOES_NOT_EXIST = Regex.empty().literal("ORA-04080: trigger ").anyCharacter().optionalMany().literal(" does not exist").toRegex();
+  private final static Regex TABLE_ALREADY_EXISTS = Regex.empty().literal("ORA-00955: name is already used by an existing object").toRegex();
+  private final static Regex TABLE_DOES_NOT_EXIST = Regex.empty().literal("ORA-00942: table or view does not exist").toRegex();
+  private final static Regex LOOP_IN_RECURSIVE_QUERY = Regex.empty().literal("ORA-32044: cycle detected while executing recursive WITH query").toRegex();
+  private final static Regex COLUMN_ALREADY_EXISTS = Regex.startingFromTheBeginning().literal("ORA-01430: column being added already exists in table").toRegex();
+  private static KnownCase[] knownCases = new KnownCase[0];
+  
+  @Override
+  public ResponseToException addFeatureToFixException(Exception exp, QueryIntention intent, StatementDetails details) throws Exception {
 
-	@Override
-	public ResponseToException addFeatureToFixException(Exception exp, QueryIntention intent, StatementDetails details) throws Exception {
-		final String message = exp.getMessage();
-		if ((intent.is(QueryIntention.CHECK_TABLE_EXISTS) && TABLE_DOES_NOT_EXIST.matchesWithinString(message))) {
-			return ResponseToException.SKIPQUERY;
-		} else if ((intent.isOneOf(QueryIntention.DROP_SEQUENCE, QueryIntention.CREATE_TRIGGER_BASED_IDENTITY)) && SEQUENCE_DOES_NOT_EXIST.matchesWithinString(message)) {
-			return ResponseToException.SKIPQUERY;
-		} else if ((intent.is(QueryIntention.DROP_TABLE) && TABLE_DOES_NOT_EXIST.matchesWithinString(message))) {
-			return ResponseToException.SKIPQUERY;
-		} else if (intent.is(QueryIntention.CHECK_TABLE_EXISTS)) {
-			if (TABLE_DOES_NOT_EXIST.matchesWithinString(message)) {
-				return ResponseToException.SKIPQUERY;
-			}
-		} else if (TABLE_ALREADY_EXISTS.matchesWithinString(message)) {
-			return ResponseToException.SKIPQUERY;
-		} else if (TRIGGER_DOES_NOT_EXIST.matchesWithinString(message)) {
-			return ResponseToException.SKIPQUERY;
-		} else if (LOOP_IN_RECURSIVE_QUERY.matchesWithinString(message)) {
-			return ResponseToException.EMULATE_RECURSIVE_QUERY;
-		} else {
-		}
+    final String message = exp.getMessage();
+    
+    if (knownCases.length == 0) {
+      knownCases = new KnownCase[]{
+        new KnownCase(SKIPQUERY, TABLE_DOES_NOT_EXIST, CHECK_TABLE_EXISTS, DROP_TABLE),
+        new KnownCase(SKIPQUERY, SEQUENCE_DOES_NOT_EXIST, DROP_TABLE, DROP_SEQUENCE, CREATE_TABLE, CREATE_TRIGGER_BASED_IDENTITY),
+        new KnownCase(SKIPQUERY, COLUMN_ALREADY_EXISTS, ADD_COLUMN_TO_TABLE, ALTER_TABLE_ADD_COLUMN),
+        new KnownCase(SKIPQUERY, TABLE_ALREADY_EXISTS),
+        new KnownCase(SKIPQUERY, TRIGGER_DOES_NOT_EXIST),
+        new KnownCase(EMULATE_RECURSIVE_QUERY, LOOP_IN_RECURSIVE_QUERY)
+      };
+    }
+    
+    for (KnownCase knownCase : knownCases) {
+      var response = canRespond(intent, message, knownCase);
+      if (ResponseToException.NOT_HANDLED.equals(response)){
+        // NOT HANDLED so we need to continue
+      }else{
+        return response;
+      }
+    }
+    return super.addFeatureToFixException(exp, intent, details);
+  }
 
-		return super.addFeatureToFixException(exp, intent, details);
-	}
+  private ResponseToException canRespond(QueryIntention intent, String message, KnownCase example) {
+    if ((example.intentions.length == 0 || intent.isOneOf(example.intentions))
+            && example.regex.matchesWithinString(message)) {
+      return example.expectedResponse;
+    } else {
+      return ResponseToException.NOT_HANDLED;
+    }
+  }
+  
+  private class KnownCase{
+    ResponseToException expectedResponse;
+    Regex regex;
+    QueryIntention[] intentions;
 
-	@Override
-	public Integer getDefaultPort() {
-		return 1521;
-	}
+    private KnownCase(ResponseToException expectedResponse, Regex regex, QueryIntention... intentions) {
+      this.expectedResponse=expectedResponse;
+      this.intentions=intentions;
+      this.regex=regex;
+    }
+    
+  }
+
+  @Override
+  public Integer getDefaultPort() {
+    return 1521;
+  }
 
 }
