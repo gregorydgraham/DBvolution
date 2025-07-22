@@ -496,7 +496,7 @@ public class DBInsert extends DBAction {
 		setRefetchStatus(RefetchRequirement.DO_NOT_REFETCH);
 	}
 
-	protected static class InsertFields {
+	public static class InsertFields {
 
 		private final StringBuilder allColumns = new StringBuilder();
 		private final StringBuilder allValues = new StringBuilder();
@@ -506,19 +506,19 @@ public class DBInsert extends DBAction {
 		public InsertFields() {
 		}
 
-		StringBuilder getAllColumns() {
+		public StringBuilder getAllColumns() {
 			return this.allColumns;
 		}
 
-		StringBuilder getAllValues() {
+		public StringBuilder getAllValues() {
 			return this.allValues;
 		}
 
-		StringBuilder getAllChangedColumns() {
+		public StringBuilder getAllChangedColumns() {
 			return this.allChangedColumns;
 		}
 
-		StringBuilder getAllSetValues() {
+		public StringBuilder getAllSetValues() {
 			return this.allSetValues;
 		}
 	}
