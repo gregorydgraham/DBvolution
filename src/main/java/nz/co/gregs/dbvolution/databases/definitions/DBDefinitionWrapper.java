@@ -42,6 +42,7 @@ import java.util.List;
 import java.util.TimeZone;
 import nz.co.gregs.dbvolution.DBRow;
 import nz.co.gregs.dbvolution.DBTable;
+import nz.co.gregs.dbvolution.actions.DBInsert;
 import nz.co.gregs.dbvolution.databases.DBDatabase;
 import nz.co.gregs.dbvolution.datatypes.DBLargeObject;
 import nz.co.gregs.dbvolution.datatypes.QueryableDatatype;
@@ -56,6 +57,7 @@ import nz.co.gregs.dbvolution.internal.query.QueryOptions;
 import nz.co.gregs.dbvolution.internal.query.QueryState;
 import nz.co.gregs.dbvolution.query.RowDefinition;
 import nz.co.gregs.regexi.Regex;
+import nz.co.gregs.separatedstring.Encoder;
 import org.joda.time.Period;
 
 /**
@@ -2609,4 +2611,9 @@ class DBDefinitionWrapper extends DBDefinition {
 	public String doFormatAsDateRepeatSeconds(String numericSQL) {
 		return base.doFormatAsDateRepeatSeconds(numericSQL);
 	}
+
+  @Override
+  public Encoder getBulkInsertFormatter(DBRow row, DBInsert.InsertFields fields) {
+    return base.getBulkInsertFormatter(row, fields);
+  }
 }
