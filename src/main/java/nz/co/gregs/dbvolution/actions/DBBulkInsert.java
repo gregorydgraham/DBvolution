@@ -41,6 +41,8 @@ import nz.co.gregs.dbvolution.databases.QueryIntention;
 import nz.co.gregs.dbvolution.databases.definitions.DBDefinition;
 import nz.co.gregs.dbvolution.datatypes.DBLargeObject;
 import nz.co.gregs.dbvolution.datatypes.QueryableDatatype;
+import nz.co.gregs.separatedstring.Builder;
+import nz.co.gregs.separatedstring.Encoder;
 
 /**
  *
@@ -51,10 +53,6 @@ public class DBBulkInsert extends DBAction {
 	public static final long serialVersionUID = 1l;
 
 	ArrayList<DBRow> rows = new ArrayList<>();
-
-	private <R extends DBRow> DBBulkInsert(R row) {
-		super(row, QueryIntention.BULK_INSERT);
-	}
 
 	public <R extends DBRow> DBBulkInsert() {
 		super(null, QueryIntention.BULK_INSERT);
@@ -92,7 +90,7 @@ public class DBBulkInsert extends DBAction {
 
 	@Override
 	public ArrayList<String> getSQLStatements(DBDatabase db) {
-		ArrayList<String> sqlStatements = new ArrayList<String>();
+		ArrayList<String> sqlStatements = new ArrayList<>();
 		List<DBRow> accumulated = new ArrayList<>();
 		for (DBRow currentRow : rows) {
 			QueryableDatatype<?>[] pks = currentRow.getPrimaryKeysAsArray();
@@ -112,18 +110,14 @@ public class DBBulkInsert extends DBAction {
 		return sqlStatements;
 	}
 
-	private DBInsert.InsertFields processAllFieldsForInsert(DBDatabase database, DBRow row, boolean isFirstRow) {
+	private DBInsert.InsertFields processAllFieldsForInsert(DBDatabase database, DBRow row) {
 		DBInsert.InsertFields fields = new DBInsert.InsertFields();
-		StringBuilder allColumns = fields.getAllColumns();
-		StringBuilder allValues = fields.getAllValues();
-		StringBuilder allChangedColumns = fields.getAllChangedColumns();
-		StringBuilder allSetValues = fields.getAllSetValues();
+    Encoder allColumnsEncoder = Builder.byCommaSpace().encoder();
+    Encoder allValuesEncoder = Builder.byCommaSpace().encoder();
+    Encoder allChangedColumnsEncoder = Builder.byCommaSpace().encoder();
+    Encoder allSetValuesEncoder = Builder.byCommaSpace().encoder();
 		DBDefinition defn = database.getDefinition();
 		var props = row.getColumnPropertyWrappers();
-		String allColumnSeparator = "";
-		String columnSeparator = "";
-		String valuesSeparator = isFirstRow ? defn.beginValueClause() : defn.beginValueSeparatorClause();
-		String allValuesSeparator = isFirstRow ? defn.beginValueClause() : defn.beginValueSeparatorClause();
 		for (var prop : props) {
 			if (prop.isColumn() && !prop.hasColumnExpression()) {
 				final QueryableDatatype<?> qdt = prop.getQueryableDatatype();
@@ -132,51 +126,33 @@ public class DBBulkInsert extends DBAction {
 					if (!(qdt instanceof DBLargeObject)) {
 						//support for inserting empty rows in a table with an autoincrementing pk
 						if (!prop.isAutoIncrement() || qdt.hasBeenSet()) {
-							allColumns
-									.append(allColumnSeparator)
-									.append(" ")
-									.append(defn.formatColumnName(prop.columnName()));
-							allColumnSeparator = defn.getValuesClauseColumnSeparator();
+              allColumnsEncoder.add(defn.formatColumnName(prop.columnName()));
 							// add the value
-							allValues.append(allValuesSeparator);
 							if (!qdt.hasBeenSet() && qdt.hasDefaultInsertValue()) {
-								allValues.append(
-										qdt.getDefaultInsertValueSQLString(database.getDefinition())
-								);
+                allValuesEncoder.add(qdt.getDefaultInsertValueSQLString(database.getDefinition()));
 							} else {
-								allValues.append(
-										qdt.toSQLString(database.getDefinition())
-								);
+                allValuesEncoder.add(qdt.toSQLString(database.getDefinition()));
 							}
-							allValuesSeparator = defn.getValuesClauseValueSeparator();
 						}
 						if (qdt.hasBeenSet() || qdt.hasDefaultInsertValue()) {
 							// nice normal columns
 							// Add the column
-							allChangedColumns
-									.append(columnSeparator)
-									.append(" ")
-									.append(defn.formatColumnName(prop.columnName()));
-							columnSeparator = defn.getValuesClauseColumnSeparator();
-							allSetValues.append(valuesSeparator);
+              allChangedColumnsEncoder.add(defn.formatColumnName(prop.columnName()));
 							// add the value
 							if (qdt.hasBeenSet()) {
-								allSetValues.append(
-										qdt.toSQLString(database.getDefinition())
-								);
+                allSetValuesEncoder.add(qdt.toSQLString(database.getDefinition()));
 							} else if (qdt.hasDefaultInsertValue()) {
-								allSetValues.append(
-										qdt.getDefaultInsertValueSQLString(database.getDefinition())
-								);
+                allSetValuesEncoder.add(qdt.getDefaultInsertValueSQLString(database.getDefinition()));
 							}
-							valuesSeparator = defn.getValuesClauseValueSeparator();
 						}
 					}
 				}
 			}
 		}
-		allValues.append(defn.endValueClause());
-		allSetValues.append(defn.endValueClause());
+    fields.getAllChangedColumns().append(allChangedColumnsEncoder.encode());
+    fields.getAllColumns().append(allColumnsEncoder.encode());
+    fields.getAllSetValues().append(allSetValuesEncoder.encode());
+    fields.getAllValues().append(allValuesEncoder.encode());
 		return fields;
 	}
 
@@ -207,30 +183,26 @@ public class DBBulkInsert extends DBAction {
 	/* In this method we need to generate the SQL and execute it */
 	private ArrayList<String> generateSQLForAccumulatedRows(DBDatabase database, List<DBRow> accumulated) {
 		ArrayList<String> strs = new ArrayList<>();
-		StringBuilder inserts = new StringBuilder();
 		if (accumulated.size() > 0) {
 			//generate and execute the SQL
 			DBRow table = accumulated.get(0);
 			DBDefinition defn = database.getDefinition();
-			DBInsert.InsertFields fields = processAllFieldsForInsert(database, table, true);
-
+			DBInsert.InsertFields fields = processAllFieldsForInsert(database, table);
+      Encoder formatter = defn.getBulkInsertFormatter(accumulated.get(0), fields);
+      
+      // Needed for MS SQLServer identity inserting
 			strs.addAll(defn.getInsertPreparation(table));
-			inserts.append(defn.beginInsertLine())
-					.append(defn.formatTableName(table))
-					.append(defn.beginInsertColumnList())
-					.append(fields.getAllColumns())
-					.append(defn.endInsertColumnList());
-			boolean isFirstRow = true;
-			for (DBRow currentRow : rows) {
-				fields = processAllFieldsForInsert(database, currentRow, isFirstRow);
-				inserts.append(fields.getAllValues().toString());
-				isFirstRow = false;
+			for (DBRow currentRow : accumulated) {
+				fields = processAllFieldsForInsert(database, currentRow);
+        formatter.add(fields.getAllValues().toString());
 			}
-			inserts.append(defn.endInsertLine());
-			strs.add(inserts.toString());
+      final String encoded = formatter.encode();
+      strs.add(encoded);
+      
+      // Needed for Microsoft SQLServer identity inserts
 			strs.addAll(defn.getInsertCleanUp(table));
 		}
-		return strs;
+    return strs;
 	}
 
 	public void addAll(DBRow[] listOfRowsToInsert) {
@@ -240,5 +212,4 @@ public class DBBulkInsert extends DBAction {
 	private boolean canBeBulkInserted(DBRow row) {
 		return row.getDefined();
 	}
-
 }
