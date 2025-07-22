@@ -22,6 +22,7 @@ import java.util.Date;
 import java.util.List;
 import nz.co.gregs.dbvolution.DBRow;
 import nz.co.gregs.dbvolution.DBTable;
+import nz.co.gregs.dbvolution.actions.DBInsert;
 import nz.co.gregs.dbvolution.databases.DBDatabase;
 import nz.co.gregs.dbvolution.databases.metadata.DBDatabaseMetaData;
 import nz.co.gregs.dbvolution.datatypes.DBBoolean;
@@ -45,7 +46,6 @@ import nz.co.gregs.dbvolution.expressions.InstantExpression;
 import nz.co.gregs.dbvolution.expressions.LocalDateExpression;
 import nz.co.gregs.dbvolution.expressions.LocalDateTimeExpression;
 import nz.co.gregs.dbvolution.expressions.StringExpression;
-import nz.co.gregs.dbvolution.generation.DataRepo;
 import nz.co.gregs.dbvolution.internal.oracle.StringFunctions;
 import nz.co.gregs.dbvolution.internal.properties.PropertyWrapper;
 import nz.co.gregs.dbvolution.internal.query.LargeObjectHandlerType;
@@ -54,6 +54,8 @@ import nz.co.gregs.dbvolution.internal.query.QueryState;
 import nz.co.gregs.dbvolution.results.AnyResult;
 import nz.co.gregs.regexi.Regex;
 import nz.co.gregs.regexi.RegexReplacement;
+import nz.co.gregs.separatedstring.Builder;
+import nz.co.gregs.separatedstring.Encoder;
 
 /**
  * Defines the features of the Oracle database that differ from the standard
@@ -926,5 +928,15 @@ public class OracleDBDefinition extends DBDefinition {
 		result.add(sql);
 		return result;
 	}
-
+  
+  @Override
+  public Encoder getBulkInsertFormatter(DBRow row, DBInsert.InsertFields fields) {
+    Encoder sep = Builder.start().startsWith("INSERT ALL \n ")
+            .separatedBy("\n")
+            .withEachTermWrappedWith(" INTO "+ formatTableName(row) + " (" + fields.getAllColumns() + ") VALUES (", ")\n")
+            .withSuffix("SELECT 1 FROM DUAL")
+            .encoder();
+    return sep;
+  }
+  
 }
