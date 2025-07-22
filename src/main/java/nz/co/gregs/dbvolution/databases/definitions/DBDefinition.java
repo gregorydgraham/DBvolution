@@ -67,6 +67,7 @@ import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
 import nz.co.gregs.dbvolution.DBTable;
+import nz.co.gregs.dbvolution.actions.DBInsert;
 import nz.co.gregs.dbvolution.datatypes.DBDuration;
 import nz.co.gregs.dbvolution.expressions.BooleanExpression;
 import nz.co.gregs.dbvolution.generation.DataRepo;
@@ -7265,6 +7266,15 @@ public abstract class DBDefinition implements Serializable {
 	public String wrapNameForDatabase(String objectName) {
 		return objectName;
 	}
+  
+  public Encoder getBulkInsertFormatter(DBRow row, DBInsert.InsertFields fields) {
+    Encoder sep = Builder.start().startsWith("INSERT INTO " + formatTableName(row) + "(" + fields.getAllColumns() + ") VALUES ")
+            .separatedBy(",\n")
+            .withEachTermWrappedWith("(", ")")
+            .withSuffix(";")
+            .encoder();
+    return sep;
+  }
 
 	public static enum GroupByClauseMethod {
 		GROUPBYEXPRESSION,
