@@ -449,6 +449,26 @@
             <postgres.password>${postgres.password}</postgres.password>
             <postgres.schema>${postgres.schema}</postgres.schema>
             <postgres.extras>${postgres.extras}</postgres.extras>
+
+            <mysqlfullcluster.url>${mysqlfullcluster.url}</mysqlfullcluster.url>
+            <mysqlfullcluster.host>${mysqlfullcluster.host}</mysqlfullcluster.host>
+            <mysqlfullcluster.port>${mysqlfullcluster.port}</mysqlfullcluster.port>
+            <mysqlfullcluster.database>${mysqlfullcluster.database}</mysqlfullcluster.database>
+            <mysqlfullcluster.instance>${mysqlfullcluster.instance}</mysqlfullcluster.instance>
+            <mysqlfullcluster.username>${mysqlfullcluster.username}</mysqlfullcluster.username>
+            <mysqlfullcluster.password>${mysqlfullcluster.password}</mysqlfullcluster.password>
+            <mysqlfullcluster.schema>${mysqlfullcluster.schema}</mysqlfullcluster.schema>
+            <mysqlfullcluster.extras>${mysqlfullcluster.extras}</mysqlfullcluster.extras>
+
+            <oraclexefullcluster.url>${oraclexefullcluster.url}</oraclexefullcluster.url>
+            <oraclexefullcluster.host>${oraclexefullcluster.host}</oraclexefullcluster.host>
+            <oraclexefullcluster.port>${oraclexefullcluster.port}</oraclexefullcluster.port>
+            <oraclexefullcluster.database>${oraclexefullcluster.database}</oraclexefullcluster.database>
+            <oraclexefullcluster.instance>${oraclexefullcluster.instance}</oraclexefullcluster.instance>
+            <oraclexefullcluster.username>${oraclexefullcluster.username}</oraclexefullcluster.username>
+            <oraclexefullcluster.password>${oraclexefullcluster.password}</oraclexefullcluster.password>
+            <oraclexefullcluster.schema>${oraclexefullcluster.schema}</oraclexefullcluster.schema>
+            <oraclexefullcluster.extras>${oraclexefullcluster.extras}</oraclexefullcluster.extras>
 						
             <postgresfullcluster.url>${postgresfullcluster.url}</postgresfullcluster.url>
             <postgresfullcluster.host>${postgresfullcluster.host}</postgresfullcluster.host>
@@ -459,6 +479,16 @@
             <postgresfullcluster.password>${postgresfullcluster.password}</postgresfullcluster.password>
             <postgresfullcluster.schema>${postgresfullcluster.schema}</postgresfullcluster.schema>
             <postgresfullcluster.extras>${postgresfullcluster.extras}</postgresfullcluster.extras>
+
+            <sqlserverfullcluster.url>${sqlserverfullcluster.url}</sqlserverfullcluster.url>
+            <sqlserverfullcluster.host>${sqlserverfullcluster.host}</sqlserverfullcluster.host>
+            <sqlserverfullcluster.port>${sqlserverfullcluster.port}</sqlserverfullcluster.port>
+            <sqlserverfullcluster.database>${sqlserverfullcluster.database}</sqlserverfullcluster.database>
+            <sqlserverfullcluster.instance>${sqlserverfullcluster.instance}</sqlserverfullcluster.instance>
+            <sqlserverfullcluster.username>${sqlserverfullcluster.username}</sqlserverfullcluster.username>
+            <sqlserverfullcluster.password>${sqlserverfullcluster.password}</sqlserverfullcluster.password>
+            <sqlserverfullcluster.schema>${sqlserverfullcluster.schema}</sqlserverfullcluster.schema>
+            <sqlserverfullcluster.extras>${sqlserverfullcluster.extras}</sqlserverfullcluster.extras>
 
           </systemPropertyVariables>
         </configuration>
@@ -659,15 +689,14 @@
                 <testH2FileDB>true</testH2FileDB>
                 <testH2DataSourceDB>true</testH2DataSourceDB>
                 <testH2MemoryDB>true</testH2MemoryDB>
-                <testH2BlankDB>true</testH2BlankDB>
                 <testMySQL>true</testMySQL>
                 <testPostgresSQL>true</testPostgresSQL>
-                <testBundledCluster>true</testBundledCluster>
-                <testOpenSourceCluster>true</testOpenSourceCluster>
-                <!--<testFullCluster>true</testFullCluster>-->
+                <!--<testBundledCluster>true</testBundledCluster>-->
+                <!--<testOpenSourceCluster>true</testOpenSourceCluster>-->
+                <testFullCluster>true</testFullCluster>
                 <!--<testMSSQLServer>true</testMSSQLServer>-->
-                <!--<testMSSQLServerLocal>true</testMSSQLServerLocal>-->
-                <!--<testOracleXE>true</testOracleXE>-->
+                <testMSSQLServerLocal>true</testMSSQLServerLocal>
+                <testOracleXE>true</testOracleXE>
               </systemPropertyVariables>
             </configuration>
           </plugin>
@@ -697,7 +726,6 @@
     <profile>
       <id>DBs-Proprietary</id>
       <build>
-            
         <plugins>
           <plugin>
             <groupId>org.apache.maven.plugins</groupId>
@@ -712,18 +740,10 @@
           </plugin>
         </plugins>
       </build>
-      <dependencies>
-        <!--				<dependency>
-          <groupId>com.oracle.jdbc</groupId>
-          <artifactId>ojdbc10</artifactId>
-          <version>19.3.0.0</version>
-        </dependency>-->
-      </dependencies>
     </profile>
     <profile>
       <id>DBs-Supported</id>
       <build>
-            
         <plugins>
           <plugin>
             <groupId>org.apache.maven.plugins</groupId>
@@ -736,24 +756,15 @@
                 <testH2FileDB>true</testH2FileDB>
                 <testH2DataSourceDB>true</testH2DataSourceDB>
                 <testH2MemoryDB>true</testH2MemoryDB>
-                <testH2BlankDB>true</testH2BlankDB>
                 <testPostgresSQL>true</testPostgresSQL>
                 <testMySQL>true</testMySQL>
                 <testOracleXE>true</testOracleXE>
-                <testMSSQLServer>true</testMSSQLServer>
                 <testMSSQLServerLocal>true</testMSSQLServerLocal>
               </systemPropertyVariables>
             </configuration>
           </plugin>
         </plugins>
       </build>
-      <dependencies>
-        <!--				<dependency>
-          <groupId>com.oracle.jdbc</groupId>
-          <artifactId>ojdbc10</artifactId>
-          <version>19.3.0.0</version>
-        </dependency>-->
-      </dependencies>
     </profile>
     <profile>
       <id>SQLiteTest</id>
@@ -779,13 +790,6 @@
     </profile>
     <profile>
       <id>OracleXETest</id>
-      <dependencies>
-        <!--				<dependency>
-          <groupId>com.oracle.jdbc</groupId>
-          <artifactId>ojdbc10</artifactId>
-          <version>19.3.0.0</version>
-        </dependency>-->
-      </dependencies>
       <build>
         <plugins>
           <plugin>
@@ -808,13 +812,6 @@
     </profile>
     <profile>
       <id>OracleXEContainerTest</id>
-      <dependencies>
-        <!--				<dependency>
-          <groupId>com.oracle.jdbc</groupId>
-          <artifactId>ojdbc10</artifactId>
-          <version>19.3.0.0</version>
-        </dependency>-->
-      </dependencies>
       <build>
         <plugins>
           <plugin>

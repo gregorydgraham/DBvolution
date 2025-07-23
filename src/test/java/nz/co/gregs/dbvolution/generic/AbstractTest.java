@@ -159,13 +159,15 @@ public abstract class AbstractTest {
 //			final H2MemoryDB h2Mem = H2MemoryTestDB.getFromSettings("h2memory");
       final SQLiteDB sqlite = getSQLiteDBFromSystem("full");
       final PostgresDB postgres = new PostgresSettingsBuilder().fromSystemUsingPrefix("postgresfullcluster").getDBDatabase();
-      final MySQLDB mysql = new MySQLSettingsBuilder().fromSystemUsingPrefix("mysql").getDBDatabase();
-      final MSSQLServerDB sqlserver = MSSQLServerLocalTestDB.getFromSettings("sqlserver");
-      final Oracle11XEDB oracle = new Oracle11XESettingsBuilder().fromSystemUsingPrefix("oraclexe").getDBDatabase();
-      final DBDatabaseCluster cluster = new DBDatabaseCluster("testFullCluster", DBDatabaseCluster.Configuration.autoStart(), h2Mem, sqlite,
-              postgres, mysql, sqlserver,
-              oracle);
-      cluster.setLabel("ClusteredDB-H2+SQLite+Postgres+MySQL+SQLServer+Oracle");
+      final MySQLDB mysql = new MySQLSettingsBuilder().fromSystemUsingPrefix("mysqlfullcluster").getDBDatabase();
+      final MSSQLServerDB sqlserver = new MSSQLServerSettingsBuilder().fromSystemUsingPrefix("sqlserverfullcluster").getDBDatabase();
+      final Oracle11XEDB oracle = new Oracle11XESettingsBuilder().fromSystemUsingPrefix("oraclexefullcluster").getDBDatabase();
+      final DBDatabaseCluster cluster = 
+              new DBDatabaseCluster(
+                      "testFullCluster", DBDatabaseCluster.Configuration.autoStart(), 
+                      h2Mem, sqlite,postgres, mysql, sqlserver,oracle
+              );
+      cluster.setLabel("FullClusteredDB-H2+SQLite+Postgres+MySQL+SQLServer+Oracle");
       cluster.waitUntilSynchronised();
       databases.add(new Object[]{cluster.getLabel(), cluster});
     }

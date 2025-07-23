@@ -14,8 +14,10 @@ docker pull oracleinanutshell/oracle-xe-11g
 -- -p 1521:1521 is the port of the host and container
 -- -d is detach "Run container in background and print container ID"
 docker run --name oracle_container -v /Users/gregorygraham/Projects/Oracle:/Oracle -i --cap-add=SYS_TIME -e 'TZ=Pacific/Auckland' -p 1521:1521 -d oracleinanutshell/oracle-xe-11g
+docker run --name oraclefullclusterdb_container -v /Users/gregorygraham/Projects/Oraclefullcluster:/Oraclefullcluster -i --cap-add=SYS_TIME -e 'TZ=Pacific/Auckland' -p 1522:1521 -d oracleinanutshell/oracle-xe-11g
 
 
 -- Stop and remove the container
 docker container stop oracle_container ; docker container rm oracle_container
+docker container stop oraclefullclusterdb_container ; docker container rm oraclefullclusterdb_container
 
