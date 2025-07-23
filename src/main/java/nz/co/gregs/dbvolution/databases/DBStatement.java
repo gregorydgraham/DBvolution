@@ -560,7 +560,7 @@ public class DBStatement implements AutoCloseable {
 		details.execute(stmt);
 	}
 
-	static final Regex DROP_INTENTION_MATCHER = Regex.startingAnywhere().literal("DROP").toRegex();
+	static final Regex DROP_INTENTION_MATCHER = Regex.startingFromTheBeginning().literal("DROP").toRegex();
 	static final Regex DROP_EXCEPTION_MATCHER = Regex.startingAnywhere().beginCaseInsensitiveSection().anyOf("does not exist", "doesn't exist").endCaseInsensitiveSection().toRegex();
 
 	private void addFeatureAndAttemptExecuteAgain(StatementDetails details, List<String> previousExceptions) throws SQLException {
@@ -571,7 +571,7 @@ public class DBStatement implements AutoCloseable {
 		if (DROP_INTENTION_MATCHER.matchesWithinString(details.getIntention().name())
 				&& DROP_EXCEPTION_MATCHER.matchesWithinString(exp.getMessage())) {
 			// discard as we've tried to drop something that doesn't exist and that's ok
-			LOG.info("Attempted to drop an entity that doesn't exist - continuing: " + exp.getMessage());
+			// LOG.info("Attempted to drop an entity that doesn't exist - continuing: " + exp.getMessage());
 		} else {
 			if (!checkForBrokenConnection(exp)) {
 				try {
