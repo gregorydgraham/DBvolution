@@ -416,7 +416,7 @@ public class QueryDetails implements DBQueryable, Serializable {
 			innerSelectOptions.setUseStarInsteadOfColumns(true);
 			final List<String> sqlForQueryInternal = getSQLForQueryInternal(new QueryState(details), QueryType.SELECT, innerSelectOptions);
 			String endStatement = options.getQueryDefinition().endSQLStatement();
-			RegexReplacement removeTrailingSemiColons = Regex.empty().literal(";").literal(" ").optionalMany().endOfTheString().toRegex().replaceWith().literal("");
+			RegexReplacement removeTrailingSemiColons = Regex.empty().literal(";").literal(" ").optionalManyGreedy().endOfTheString().toRegex().replaceWith().literal("");
 			return sqlForQueryInternal
 					.stream()
 					.map((sql) -> "SELECT COUNT(*) FROM (" + removeTrailingSemiColons.replaceAll(sql) + ") A" + endStatement)
@@ -715,6 +715,8 @@ public class QueryDetails implements DBQueryable, Serializable {
 				sqlList.clear();
 				sqlList.addAll(collected);
 			}
+      //Regex r = Regex.startingAnywhere().beginSetExcluding().excludeWhitespace().endSet().oneOrMorePossessive().toRegex();
+      //sqlList = sqlList.stream().filter((s)->{return r.matchesWithinString(s);}).collect(Collectors.toList());
 			return sqlList;
 		} catch (Throwable e) {
 			StackTraceElement[] trace = e.getStackTrace();
@@ -1008,7 +1010,7 @@ public class QueryDetails implements DBQueryable, Serializable {
 			unionOperator = defn.getUnionOperator();
 		}
 
-		RegexReplacement removeTerminatingSemicolon = Regex.empty().literal(";").literal(" ").optionalMany().endOfTheString().replaceWith().literal(" ");
+		RegexReplacement removeTerminatingSemicolon = Regex.empty().literal(";").literal(" ").optionalManyGreedy().endOfTheString().replaceWith().literal(" ");
 		RegexReplacement replaceFullJoinWithLeftJoin = Regex.empty().literal(defn.beginFullOuterJoin()).replaceWith().literal(defn.beginLeftOuterJoin());
 
 		if (defn.supportsRightOuterJoinNatively()) {

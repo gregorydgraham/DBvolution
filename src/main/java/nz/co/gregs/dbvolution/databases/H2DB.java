@@ -229,9 +229,9 @@ public class H2DB extends DBDatabaseImplementation {
 
 	private final static Regex BROKEN_CONNECTION_PATTERN = Regex.startingAnywhere().literal("Connection is broken: \"session closed\"").toRegex();
 	private final static Regex ALREADY_CLOSED_PATTERN = Regex.startingAnywhere().literal("The object is already closed").toRegex();
-	private final static Regex DROPPING_NONEXISTENT_TABLE_PATTERN = Regex.startingAnywhere().literal("Table \"").beginNamedCapture("table").noneOfTheseCharacters("\"").oneOrMore().endNamedCapture().literal("\" not found; SQL statement:").anyCharacter().optionalMany().literal("DROP TABLE ").namedBackReference("table").toRegex();
-	private final static Regex TABLE_NOT_FOUND_WHILE_CHECKING_EXISTENCE_PATTERN = Regex.startingAnywhere().literal("Table \"").noneOfTheseCharacters("\"").oneOrMore().literal("\" not found").anyCharacterIncludingLineEnd().optionalMany().literal("SQL statement:").anyCharacterIncludingLineEnd().optionalMany().literal("SELECT COUNT(").star().literal(")").toRegex();
-	private final static Regex CREATING_EXISTING_TABLE_PATTERN = Regex.startingAnywhere().literal("Table \"").anythingButThis("\"").oneOrMore().literal("\" already exists; SQL statement:").toRegex();
+	private final static Regex DROPPING_NONEXISTENT_TABLE_PATTERN = Regex.startingAnywhere().literal("Table \"").beginNamedCapture("table").noneOfTheseCharacters("\"").oneOrMoreGreedy().endNamedCapture().literal("\" not found; SQL statement:").anyCharacter().optionalManyGreedy().literal("DROP TABLE ").namedBackReference("table").toRegex();
+	private final static Regex TABLE_NOT_FOUND_WHILE_CHECKING_EXISTENCE_PATTERN = Regex.startingAnywhere().literal("Table \"").noneOfTheseCharacters("\"").oneOrMoreGreedy().literal("\" not found").anyCharacterIncludingLineEnd().optionalManyGreedy().literal("SQL statement:").anyCharacterIncludingLineEnd().optionalManyGreedy().literal("SELECT COUNT(").star().literal(")").toRegex();
+	private final static Regex CREATING_EXISTING_TABLE_PATTERN = Regex.startingAnywhere().literal("Table \"").anythingButThis("\"").oneOrMoreGreedy().literal("\" already exists; SQL statement:").toRegex();
 
 	@Override
 	public ResponseToException addFeatureToFixException(Exception exp, QueryIntention intent, StatementDetails details) throws Exception {

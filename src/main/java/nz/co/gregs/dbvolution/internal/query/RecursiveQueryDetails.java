@@ -255,7 +255,7 @@ public class RecursiveQueryDetails<T extends DBRow> extends QueryDetails {
 	}
 
 	private static final RegexReplacement REMOVE_TRAILING_SEMICOLON_REPLACER = Regex.empty()
-			.anyCharacterIn(" \t\r\n").optionalMany().literal(";").anyCharacterIn(" \t\r\n").optionalMany().endOfTheString()
+			.anyCharacterIn(" \t\r\n").optionalManyGreedy().literal(";").anyCharacterIn(" \t\r\n").optionalManyGreedy().endOfTheString()
 			.replaceWith().literal(System.getProperty("line.separator"));
 
 	private synchronized String removeTrailingSemicolon(String sql) {

@@ -4011,7 +4011,7 @@ public abstract class DBDefinition implements Serializable {
 	 * @return default is ".*" so all tables are included.
 	 */
 	public Regex getSystemTableExclusionPattern() {
-		return Regex.startingAnywhere().anyCharacter().zeroOrMore().toRegex();
+		return Regex.startingAnywhere().anyCharacter().zeroOrMoreGreedy().toRegex();
 	}
 
 	/**
@@ -7055,19 +7055,19 @@ public abstract class DBDefinition implements Serializable {
 
 	private Regex getIntervalMultiUnitRegex() {
 		return Regex.startingAnywhere()
-				.beginCaseInsensitiveSection().literal("INTERVAL ").endCaseInsensitiveSection().onceOrNotAtAll()
-				.literal("'").onceOrNotAtAll()
-				.beginNamedCapture(INTERVAL_MULTIUNIT_DAYS).numberLike().onceOrNotAtAll().endNamedCapture()
+				.beginCaseInsensitiveSection().literal("INTERVAL ").endCaseInsensitiveSection().onceOrNotAtAllGreedy()
+				.literal("'").onceOrNotAtAllGreedy()
+				.beginNamedCapture(INTERVAL_MULTIUNIT_DAYS).numberLike().onceOrNotAtAllGreedy().endNamedCapture()
 				.beginGroup().space().once()
-				.beginCaseInsensitiveSection().literal("day").once().literal('s').onceOrNotAtAll().endCaseInsensitiveSection()
-				.onceOrNotAtAll().space().onceOrNotAtAll().endGroup().onceOrNotAtAll()
+				.beginCaseInsensitiveSection().literal("day").once().literal('s').onceOrNotAtAllGreedy().endCaseInsensitiveSection()
+				.onceOrNotAtAllGreedy().space().onceOrNotAtAllGreedy().endGroup().onceOrNotAtAllGreedy()
 				.beginNamedCapture(INTERVAL_MULTIUNIT_HOURS).numberLike().once().endNamedCapture()
 				.literal(":")
 				.beginNamedCapture(INTERVAL_MULTIUNIT_MINUTES).numberLike().once().endNamedCapture()
 				.literal(":")
 				.beginNamedCapture(INTERVAL_MULTIUNIT_SECONDS).numberLikeIncludingScientificNotation().once().endNamedCapture()
-				.beginNamedCapture(INTERVAL_MULTIUNIT_NANOS).number().onceOrNotAtAll().endNamedCapture()
-				.literal("'").onceOrNotAtAll().toRegex();
+				.beginNamedCapture(INTERVAL_MULTIUNIT_NANOS).number().onceOrNotAtAllGreedy().endNamedCapture()
+				.literal("'").onceOrNotAtAllGreedy().toRegex();
 	}
 
 	protected static final String INTERVAL_SINGLEUNIT_UNIT = "unit";
@@ -7075,15 +7075,15 @@ public abstract class DBDefinition implements Serializable {
 
 	private Regex getSingleUnitIntervalStringRegex() {
 		return Regex.startingAnywhere()
-				.literalCaseInsensitive("interval").onceOrNotAtAll()
-				.space().onceOrNotAtAll()
+				.literalCaseInsensitive("interval").onceOrNotAtAllGreedy()
+				.space().onceOrNotAtAllGreedy()
 				.beginNamedCapture(INTERVAL_SINGLEUNIT_VALUE)
 				.numberIncludingScientificNotation().once()
 				.endNamedCapture()
 				.space().once()
 				.beginNamedCapture(INTERVAL_SINGLEUNIT_UNIT)
 				.beginCaseInsensitiveSection()
-				.anyOf("DAY", "HOUR", "MINUTE", "SECOND").once().literal("S").onceOrNotAtAll()
+				.anyOf("DAY", "HOUR", "MINUTE", "SECOND").once().literal("S").onceOrNotAtAllGreedy()
 				.endCaseInsensitiveSection()
 				.endNamedCapture()
 				.endOfTheString().toRegex();

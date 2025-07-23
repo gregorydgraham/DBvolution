@@ -311,15 +311,15 @@ public class MSSQLServerDB extends DBDatabaseImplementation implements SupportsP
   }
 
   //Invalid object name 'TableThatDoesntExistOnTheCluster'.
-  private final static Regex NONEXISTENT_TABLE_PATTERN = Regex.empty().literal("Invalid object name '").noneOfTheseCharacters("'").optionalMany().literal("'.").toRegex();
+  private final static Regex NONEXISTENT_TABLE_PATTERN = Regex.empty().literal("Invalid object name '").noneOfTheseCharacters("'").optionalManyGreedy().literal("'.").toRegex();
   //There is already an object named 'TableThatDoesExistOnTheCluster' in the database.
-  private final static Regex CREATING_EXISTING_TABLE_PATTERN = Regex.empty().literal("There is already an object named '").noneOfTheseCharacters("'").optionalMany().literal("' in the database.").toRegex();
+  private final static Regex CREATING_EXISTING_TABLE_PATTERN = Regex.empty().literal("There is already an object named '").noneOfTheseCharacters("'").optionalManyGreedy().literal("' in the database.").toRegex();
   //Cannot find the object "TableThatDoesntExistOnTheCluster" because it does not exist or you do not have permissions.
-  private final static Regex UNABLE_TO_FIND_DATABASE_OBJECT_PATTERN = Regex.empty().literal("Cannot find the object \"").noneOfTheseCharacters("\"").optionalMany().literal("\" because it does not exist or you do not have permissions.").toRegex();
+  private final static Regex UNABLE_TO_FIND_DATABASE_OBJECT_PATTERN = Regex.empty().literal("Cannot find the object \"").noneOfTheseCharacters("\"").optionalManyGreedy().literal("\" because it does not exist or you do not have permissions.").toRegex();
   //message.matches("IDENTITY_INSERT is already ON for table '[^']*'. Cannot perform SET operation for table.*"
-  private final static Regex CANNOT_PERFORM_SET_OPERATION = Regex.empty().literal("IDENTITY_INSERT is already ON for table '").namedCapture("table").noneOfThisCharacter('\'').optionalMany().endNamedCapture().literal("'. Cannot perform SET operation for table").toRegex();
+  private final static Regex CANNOT_PERFORM_SET_OPERATION = Regex.empty().literal("IDENTITY_INSERT is already ON for table '").namedCapture("table").noneOfThisCharacter('\'').optionalManyGreedy().endNamedCapture().literal("'. Cannot perform SET operation for table").toRegex();
   // Cannot insert explicit value for identity column in table 'TestDefaultInsertWithInstantValue' when IDENTITY_INSERT is set to OFF. : Original Query: 
-  private final static Regex IDENTITY_INSERT_IS_OFF = Regex.empty().literal("Cannot insert explicit value for identity column in table '").namedCapture("table").noneOfThisCharacter('\'').optionalMany().endNamedCapture().literal("' when IDENTITY_INSERT is set to OFF").toRegex();
+  private final static Regex IDENTITY_INSERT_IS_OFF = Regex.empty().literal("Cannot insert explicit value for identity column in table '").namedCapture("table").noneOfThisCharacter('\'').optionalManyGreedy().endNamedCapture().literal("' when IDENTITY_INSERT is set to OFF").toRegex();
 
   @Override
   public ResponseToException addFeatureToFixException(Exception exp, QueryIntention intent, StatementDetails details) throws Exception {

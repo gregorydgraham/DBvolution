@@ -436,7 +436,7 @@ public class OracleDBDefinition extends DBDefinition {
 	 */
 	@Override
 	public Regex getSystemTableExclusionPattern() {
-		return Regex.startingFromTheBeginning().excludeSet("$").zeroOrMore().endOfTheString().toRegex();
+		return Regex.startingFromTheBeginning().excludeSet("$").zeroOrMoreGreedy().endOfTheString().toRegex();
 	}
 
 	@Override

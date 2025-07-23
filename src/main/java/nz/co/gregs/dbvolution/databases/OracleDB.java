@@ -139,7 +139,7 @@ public abstract class OracleDB extends DBDatabaseImplementation implements Suppo
   }
 
   private final static Regex SEQUENCE_DOES_NOT_EXIST = Regex.empty().literal("ORA-02289: sequence does not exist").toRegex();
-  private final static Regex TRIGGER_DOES_NOT_EXIST = Regex.empty().literal("ORA-04080: trigger ").anyCharacter().optionalMany().literal(" does not exist").toRegex();
+  private final static Regex TRIGGER_DOES_NOT_EXIST = Regex.empty().literal("ORA-04080: trigger ").anyCharacter().optionalManyGreedy().literal(" does not exist").toRegex();
   private final static Regex TABLE_ALREADY_EXISTS = Regex.empty().literal("ORA-00955: name is already used by an existing object").toRegex();
   private final static Regex TABLE_DOES_NOT_EXIST = Regex.empty().literal("ORA-00942: table or view does not exist").toRegex();
   private final static Regex LOOP_IN_RECURSIVE_QUERY = Regex.empty().literal("ORA-32044: cycle detected while executing recursive WITH query").toRegex();

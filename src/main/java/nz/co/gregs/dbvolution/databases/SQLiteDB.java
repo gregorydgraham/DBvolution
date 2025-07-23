@@ -168,7 +168,7 @@ public class SQLiteDB extends DBDatabaseImplementation {
 	}
 
 	private static final Regex TABLE_ALREADY_EXISTS = Regex.empty()
-			.literal("[SQLITE_ERROR] SQL error or missing database (table ").noneOfThisCharacter(' ').optionalMany()
+			.literal("[SQLITE_ERROR] SQL error or missing database (table ").noneOfThisCharacter(' ').optionalManyGreedy()
 			.literal(" already exists)").toRegex();
 	private static final Regex TABLE_DOESNT_EXIST_REGEX = Regex.empty()
 			.literal("[SQLITE_ERROR] SQL error or missing database (no such table: ")

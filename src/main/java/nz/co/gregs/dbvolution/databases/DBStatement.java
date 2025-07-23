@@ -1147,19 +1147,19 @@ public class DBStatement implements AutoCloseable {
 	}
 //Could not create connection to database server
 	private static final PartialRegex COULDNT_CREATE_CONNECTION_REGEX = Regex.empty()
-			.literalCaseInsensitive("create").anyCharacter().zeroOrMore().literalCaseInsensitive("connection");
+			.literalCaseInsensitive("create").anyCharacter().zeroOrMoreGreedy().literalCaseInsensitive("connection");
 	private static final PartialRegex CONNECTION_FAILED_REGEX = Regex.empty()
-			.literalCaseInsensitive("connection").anyCharacter().optionalMany().literalCaseInsensitive("failed");
+			.literalCaseInsensitive("connection").anyCharacter().optionalManyGreedy().literalCaseInsensitive("failed");
 	private static final PartialRegex CONNECTION_BROKEN_REGEX = Regex.empty()
-			.literalCaseInsensitive("connection").anyCharacter().optionalMany().literalCaseInsensitive("broken");
+			.literalCaseInsensitive("connection").anyCharacter().optionalManyGreedy().literalCaseInsensitive("broken");
 	private static final PartialRegex CONNECTION_CLOSED_REGEX = Regex.empty()
-			.literalCaseInsensitive("connection").anyCharacter().optionalMany().literalCaseInsensitive("closed");
+			.literalCaseInsensitive("connection").anyCharacter().optionalManyGreedy().literalCaseInsensitive("closed");
 	private static final PartialRegex CONNECTION_RESET_REGEX = Regex.empty()
-			.literalCaseInsensitive("connection").anyCharacter().optionalMany().literalCaseInsensitive("reset");
+			.literalCaseInsensitive("connection").anyCharacter().optionalManyGreedy().literalCaseInsensitive("reset");
 	private static final PartialRegex STATEMENT_BROKEN_REGEX = Regex.empty()
-			.literalCaseInsensitive("statement").anyCharacter().optionalMany().literalCaseInsensitive("broken");
+			.literalCaseInsensitive("statement").anyCharacter().optionalManyGreedy().literalCaseInsensitive("broken");
 	private static final PartialRegex STATEMENT_CLOSED_REGEX = Regex.empty()
-			.literalCaseInsensitive("statement").anyCharacter().optionalMany().literalCaseInsensitive("closed");
+			.literalCaseInsensitive("statement").anyCharacter().optionalManyGreedy().literalCaseInsensitive("closed");
 	private static final PartialRegex INSUFFICIENT_MEMORY_REGEX = Regex.empty()
 			.literalCaseInsensitive("There is insufficient system memory in resource pool ")
 			.charactersWrappedBy('\'')
