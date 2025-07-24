@@ -46,7 +46,11 @@ public class Encrypted {
 	}
 
 	public static Encrypted fromCipherText(byte[] value) {
-		return new Encrypted(new String(value, StandardCharsets.UTF_8));
+    if (value==null){
+      return new Encrypted("");
+    }
+    final String string = new String(value, StandardCharsets.UTF_8);
+		return new Encrypted(string);
 	}
 
 	private final String cipherText;
