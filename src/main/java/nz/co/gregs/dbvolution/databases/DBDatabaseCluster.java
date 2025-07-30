@@ -161,6 +161,10 @@ public class DBDatabaseCluster extends DBDatabaseImplementation {
 		getDetails().waitUntilSynchronised();
 	}
 
+  public void waitUntilSynchronised(long timeoutInMilliseconds) {
+    details.waitUntilSynchronised(timeoutInMilliseconds);
+  }
+
 	public void waitUntilDatabaseIsSynchronised(DBDatabase database) {
 		getDetails().waitUntilDatabaseHasSynchronised(database);
 	}
@@ -198,10 +202,6 @@ public class DBDatabaseCluster extends DBDatabaseImplementation {
 	public SettingsBuilder<?, ?> getURLInterpreter() {
 		return new DBDatabaseClusterSettingsBuilder();
 	}
-
-  public void waitUntilSynchronised(long timeoutInMilliseconds) {
-    details.waitUntilSynchronised(timeoutInMilliseconds);
-  }
 
 	public static enum Status {
 		/**
