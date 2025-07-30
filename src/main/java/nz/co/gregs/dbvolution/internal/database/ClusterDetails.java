@@ -708,6 +708,20 @@ public class ClusterDetails implements Serializable {
 		}
 	}
 
+	public void waitUntilSynchronised(long timeoutInMilliseconds) {
+    long actualTimeout = timeoutInMilliseconds > 0 ? timeoutInMilliseconds : 1000;
+    synchronisingLock.lock();
+    try {
+      if (isNotSynchronized() && stillRunning) {
+        allDatabasesAreSynchronised.await(actualTimeout, TimeUnit.MILLISECONDS);
+      }
+    } catch (InterruptedException ex) {
+      Logger.getLogger(ClusterDetails.class.getName()).log(Level.SEVERE, null, ex);
+    } finally {
+      synchronisingLock.unlock();
+    }
+  }
+
 	public void waitUntilDatabaseHasSynchronised(DBDatabase db) {
 		waitUntilDatabaseHasSynchronised(db, 0L);
 	}
