@@ -199,6 +199,10 @@ public class DBDatabaseCluster extends DBDatabaseImplementation {
 		return new DBDatabaseClusterSettingsBuilder();
 	}
 
+  public void waitUntilSynchronised(long timeoutInMilliseconds) {
+    details.waitUntilSynchronised(timeoutInMilliseconds);
+  }
+
 	public static enum Status {
 		/**
 		 * A READY database has fully implemented the database schema and has
