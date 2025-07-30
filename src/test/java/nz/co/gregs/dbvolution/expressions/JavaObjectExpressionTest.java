@@ -28,21 +28,18 @@ import nz.co.gregs.dbvolution.annotations.DBAutoIncrement;
 import nz.co.gregs.dbvolution.annotations.DBColumn;
 import nz.co.gregs.dbvolution.annotations.DBPrimaryKey;
 import nz.co.gregs.dbvolution.columns.JavaObjectColumn;
+import nz.co.gregs.dbvolution.databases.DBDatabaseCluster;
 import nz.co.gregs.dbvolution.databases.definitions.DBDefinition;
 import nz.co.gregs.dbvolution.datatypes.*;
 import nz.co.gregs.dbvolution.exceptions.AutoCommitActionDuringTransactionException;
 import nz.co.gregs.dbvolution.generic.AbstractTest;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.*;
-import org.junit.After;
 import static org.junit.Assert.assertEquals;
 import org.junit.Test;
 import org.junit.Before;
 
 /**
- *
- * <p style="color: #F90;">Support DBvolution at
- * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
  *
  * @author gregorygraham
  */
@@ -52,17 +49,35 @@ public class JavaObjectExpressionTest extends AbstractTest {
 		super(testIterationName, db);
 	}
 
-	@After
-	public void after() throws AutoCommitActionDuringTransactionException, SQLException {
-		database.preventDroppingOfTables(false);
-		database.dropTableNoExceptions(new JavaObjectExpressionTable());
-	}
-
 	@Before
 	public void before() throws AutoCommitActionDuringTransactionException, SQLException {
 		database.preventDroppingOfTables(false);
 		database.dropTableNoExceptions(new JavaObjectExpressionTable());
+    
+		database.preventDroppingOfTables(false);
+		database.dropTableNoExceptions(new JavaObjectExpressionTable());
 		database.createTable(new JavaObjectExpressionTable());
+  
+    var row = new JavaObjectExpressionTable(1,"toyota_logo.jpg",new SomeClass(4, "Testing is not null"));
+    database.insert(row);
+
+    row = new JavaObjectExpressionTable(2);
+    database.insert(row);
+    
+    
+    row = new JavaObjectExpressionTable(3,"Very testy",new SomeClass(0, "Very testy"));
+    database.insert(row);
+    
+    if (database instanceof DBDatabaseCluster){
+      // Because we're using a lot of blobs, 
+      // we'll be doing about 4x as many updates
+      // as inserts so we need to force a synch
+      // onto the cluster.
+      // this shouldn't be necessary for a normal
+      // sitation.
+      ((DBDatabaseCluster)database).waitUntilSynchronised(120000l);
+    }
+    
 	}
 
 	@Test
@@ -78,7 +93,7 @@ public class JavaObjectExpressionTest extends AbstractTest {
 	public void testGetQueryableDatatypeForExpressionValue() {
 		var companyLogo = new JavaObjectExpressionTable();
 		var instance = companyLogo.column(companyLogo.someRandomClass);
-		DBJavaObject<SomeClass> expResult = new DBJavaObject<SomeClass>();
+		DBJavaObject<SomeClass> expResult = new DBJavaObject<>();
 		DBJavaObject<SomeClass> result = instance.getQueryableDatatypeForExpressionValue();
 		assertEquals(expResult.getClass(), result.getClass());
 	}
@@ -94,79 +109,58 @@ public class JavaObjectExpressionTest extends AbstractTest {
 	@Test
 	public void testGetTablesInvolved() {
 		var companyLogo = new JavaObjectExpressionTable();
-		var instance = new JavaObjectExpression<SomeClass>(companyLogo.column(companyLogo.someRandomClass));
+		var instance = new JavaObjectExpression<>(companyLogo.column(companyLogo.someRandomClass));
 		Set<DBRow> result = instance.getTablesInvolved();
 		DBRow[] resultArray = result.toArray(new DBRow[]{});
-		assertThat(result.size(), is(1));
-		assertThat(resultArray[0].getClass().getSimpleName(), is(companyLogo.getClass().getSimpleName()));
-	}
+    assertThat(result.size(), is(1));
+    assertThat(resultArray[0].getClass().getSimpleName(), is(companyLogo.getClass().getSimpleName()));
+  }
 
-	@Test
-	public void testIsNotNull() throws SQLException, IOException {
-		var row = new JavaObjectExpressionTable();
+  @Test
+  public void testIsNotNull() throws SQLException, IOException {
+    JavaObjectExpressionTable row = new JavaObjectExpressionTable();
+    List<DBQueryRow> allRows = database.getDBQuery(row).setBlankQueryAllowed(true).setSortOrder(row.column(row.colInt)).getAllRows();
+    assertThat(allRows.size(), is(3));
+    database.print(allRows);
+    
+    final JavaObjectExpressionTable newRow = new JavaObjectExpressionTable();
+    DBQuery dbQuery = database.getDBQuery(newRow).setBlankQueryAllowed(true);
+    dbQuery.addCondition(newRow.column(newRow.someRandomClass).isNotNull());
+    dbQuery.setSortOrder(newRow.column(newRow.colInt).ascending());
+    database.setPrintSQLBeforeExecuting(true);
+    allRows = dbQuery.getAllRows();
+    database.setPrintSQLBeforeExecuting(false);
 
-		DBQuery dbQuery = database.getDBQuery(row);
-		JavaObjectColumn<SomeClass> someRandomClassColumn = row.column(row.someRandomClass);
-		dbQuery.addCondition(someRandomClassColumn.isNotNull());
-		List<DBQueryRow> allRows = dbQuery.getAllRows();
-		assertThat(allRows.size(), is(0));
+    database.print(allRows);
+    assertThat(allRows.size(), is(2));
+    assertThat(allRows.get(0).get(row).colInt.intValue(), is(1));
+    assertThat(allRows.get(1).get(row).colInt.intValue(), is(3));
+  }
 
-		row = new JavaObjectExpressionTable();
-		row.colInt.setValue(1);
-		row.javaInteger.setValue(1);//Toyota
-		row.javaString.setValue("toyota_logo.jpg");
-		row.someRandomClass.setValue(new SomeClass(4, "Testing is not null"));
-		database.insert(row);
+  @Test
+  public void testIsNull() throws SQLException, IOException {
+    JavaObjectExpressionTable joTable = new JavaObjectExpressionTable();
 
-		row = new JavaObjectExpressionTable();
-		row.colInt.setValue(2);
-		database.insert(row);
+    final JavaObjectExpressionTable newRow = new JavaObjectExpressionTable();
 
-		dbQuery = database.getDBQuery(new JavaObjectExpressionTable()).setBlankQueryAllowed(true);
-		dbQuery.addCondition(someRandomClassColumn.isNotNull());
-		allRows = dbQuery.getAllRows();
+    DBQuery dbQuery = database.getDBQuery(newRow).setBlankQueryAllowed(true);
+    dbQuery.addCondition(newRow.column(newRow.someRandomClass).isNull());
+    dbQuery.setSortOrder(newRow.column(newRow.colInt).ascending());
+    List<DBQueryRow> allRows = dbQuery.getAllRows();
+    database.print(allRows);
 
-		assertThat(allRows.size(), is(1));
-		assertThat(allRows.get(0).get(row).colInt.intValue(), is(1));
-	}
+    assertThat(allRows.size(), is(1));
+    assertThat(allRows.get(0).get(joTable).colInt.intValue(), is(2));
+  }
 
-	@Test
-	public void testIsNull() throws SQLException, IOException {
-		var joTable = new JavaObjectExpressionTable();
-
-		DBQuery dbQuery = database.getDBQuery(joTable);
-		JavaObjectColumn<SomeClass> randomClassColumn = joTable.column(joTable.someRandomClass);
-		dbQuery.addCondition(randomClassColumn.isNotNull());
-		List<DBQueryRow> allRows = dbQuery.getAllRows();
-		assertThat(allRows.size(), is(0));
-
-		joTable = new JavaObjectExpressionTable();
-		joTable.colInt.setValue(1);
-		joTable.javaInteger.setValue(1);//Toyota
-		joTable.javaString.setValue("toyota_logo.jpg");
-		joTable.someRandomClass.setValue(new SomeClass(0, "Very testy"));
-		database.insert(joTable);
-
-		joTable = new JavaObjectExpressionTable();
-		joTable.colInt.setValue(2);
-		database.insert(joTable);
-
-		dbQuery = database.getDBQuery(new JavaObjectExpressionTable()).setBlankQueryAllowed(true);
-		dbQuery.addCondition(randomClassColumn.isNull());
-		allRows = dbQuery.getAllRows();
-
-		assertThat(allRows.size(), is(1));
-		assertThat(allRows.get(0).get(joTable).colInt.intValue(), is(2));
-	}
-
-	@Test
-	public void testGetIncludesNull() {
-		JavaObjectExpression<SomeClass> instance = new JavaObjectExpression<SomeClass>();
-		boolean expResult = false;
+  @Test
+  public void testGetIncludesNull() {
+    JavaObjectExpression<SomeClass> instance = new JavaObjectExpression<>();
+    boolean expResult = false;
 		boolean result = instance.getIncludesNull();
 		assertEquals(expResult, result);
 
-		instance = new JavaObjectExpression<SomeClass>(null);
+		instance = new JavaObjectExpression<>(null);
 		expResult = true;
 		result = instance.getIncludesNull();
 		assertEquals(expResult, result);
@@ -174,8 +168,7 @@ public class JavaObjectExpressionTest extends AbstractTest {
 
 	@Test
 	public void testIsPurelyFunctional() {
-		JavaObjectExpression<SomeClass> instance = new JavaObjectExpression<SomeClass>();
-		boolean result = instance.isPurelyFunctional();
+		JavaObjectExpression<SomeClass> instance = new JavaObjectExpression<>();
 		assertEquals(true, instance.isPurelyFunctional());
 
 		var joTable = new JavaObjectExpressionTable();
@@ -202,6 +195,23 @@ public class JavaObjectExpressionTest extends AbstractTest {
 
 		@DBColumn
 		DBJavaObject<SomeClass> someRandomClass = new DBJavaObject<SomeClass>();
+
+    public JavaObjectExpressionTable() {
+    }
+
+    public JavaObjectExpressionTable(int integer) {
+      pkcolumn.setValue(integer);
+      colInt.setValue(integer);
+      javaInteger.setValue(integer);
+    }
+
+    public JavaObjectExpressionTable(int integer, String str, SomeClass someClass) {
+      pkcolumn.setValue(integer);
+      colInt.setValue(integer);
+      javaInteger.setValue(integer);
+      javaString.setValue(str);
+      someRandomClass.setValue(someClass);
+    }
 	}
 
 	public static class SomeClass implements Serializable {
