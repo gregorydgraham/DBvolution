@@ -41,7 +41,6 @@ import java.util.Date;
 import java.util.List;
 import java.util.stream.Collectors;
 import nz.co.gregs.regexi.Regex;
-import nz.co.gregs.regexi.RegexReplacement;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
@@ -93,7 +92,7 @@ public class TemporalStringParser {
 		// oracle sometimes produces unpadded time zone offsets
 		String parsableString = inputDateString;
 		Regex regex = Regex.empty().literal("+").namedCapture("offset").digit().literal(":").digit().digit().endNamedCapture().toRegex();
-		RegexReplacement replacer = regex.replaceWith().literal("+0").namedReference("offset");
+		var replacer = regex.replaceWith().literal("+0").namedReference("offset").getReplacer();
 		parsableString = replacer.replaceFirst(parsableString);
 		
 		DateTimeParseException exception = new DateTimeParseException("Failed to parse datetime '"+parsableString+"'", parsableString, 0);
