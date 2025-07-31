@@ -310,6 +310,7 @@ public class OuterJoinTest extends AbstractTest {
 				containsString(testableSQL("\"_78874071\".name) >= 'ford'")),
 				containsString(testableSQL("(isnull(isnull(__78874071.name,n''),n'')) >= n'ford'")),
 				containsString(testableSQL("(coalesce(coalesce(__78874071.name,''),'')) >= 'ford'")),
+				containsString(testableSQL("(coalesce(coalesce(__78874071.\"name\",''),'')) >= 'ford'")),
 				containsString(testableSQL("(__78874071.\"name\") >= 'ford'"))
 		);
 
