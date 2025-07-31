@@ -83,6 +83,7 @@ public class DBEncryptedTextTest extends AbstractTest {
 	public void testDBEncryptedStringEasyAPI() throws SQLException, IncorrectPasswordException, CannotEncryptInputException, UnableToDecryptInput {
 
 		EncryptedTextTestTable insertRow = new EncryptedTextTestTable();
+    insertRow.pkid.setValue(1);
 		String passphrase = "very secret phraseAAA!!!{}|!@#$%^&*()_+-=';:/?.,<>\"";
 		String correctSecret = "correct secretAAA!!!{}|!@#$%^&*()_+-=';:/?.,<>\"insertRow.encryptedString.setValue(passphrase, correctSecret);\n"
 				+ "		final EncryptedString encryptedValue = insertRow.encryptedString.getEncryptedValue();\n"
@@ -138,14 +139,13 @@ public class DBEncryptedTextTest extends AbstractTest {
 		assertThat(insertRow.encryptedString.getEncryptedValue().toString(), startsWith("BASE64_AES/GCM/NoPadding|"));
 		assertThat(insertRow.encryptedString.getDecryptedValue(passphrase), is(correctSecret));
 
-		database.preventDroppingOfTables(false);
-		database.dropTableNoExceptions(insertRow);
-		database.createTableNoExceptions(insertRow);
+    database.deleteAllRowsFromTable(insertRow);
 		database.insert(insertRow);
 		DBTable<EncryptedTextTestTable> table = database.getDBTable(new EncryptedTextTestTable());
 		table.setBlankQueryAllowed(true);
 
 		List<EncryptedTextTestTable> allRows = table.getAllRows();
+    assertThat(allRows.size(), is(1));
 		for (EncryptedTextTestTable row : allRows) {
 			assertThat(row.encryptedString.getEncryptedValue(), is(encryptedValue));
 			assertThat(row.encryptedString.getEncryptedValue(), not(correctSecret));
