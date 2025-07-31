@@ -39,7 +39,7 @@ import nz.co.gregs.dbvolution.example.*;
 import nz.co.gregs.dbvolution.exceptions.NoAvailableDatabaseException;
 import nz.co.gregs.dbvolution.utility.StringCheck;
 import nz.co.gregs.regexi.Regex;
-import nz.co.gregs.regexi.RegexReplacement;
+import nz.co.gregs.regexi.RegexReplacer;
 import org.h2.jdbcx.JdbcDataSource;
 import org.junit.After;
 import org.junit.Before;
@@ -121,7 +121,7 @@ public abstract class AbstractTest {
               = new DBDatabaseCluster(
                       "testSmallCluster",
                       DBDatabaseCluster.Configuration.autoStart(),
-                      getSQLiteDBFromSystem(),
+                      getSQLiteDBFromSystem(), 
                       H2MemoryDB.createANewRandomDatabase("CLUSTER-SMALL-H2Mem-", "")
               );
       cluster.setLabel("ClusteredDB-H2+SQLite");
@@ -131,7 +131,7 @@ public abstract class AbstractTest {
     }
     if (System.getProperty("testBundledCluster") != null) {
       final DBDatabaseCluster cluster = new DBDatabaseCluster("testBundledCluster", DBDatabaseCluster.Configuration.autoStart(),
-              getSQLiteDBFromSystem("bundle"),
+              getSQLiteDBFromSystem("bundle"), 
               H2MemoryDB.createANewRandomDatabase("CLUSTER-BUNDLED-H2Mem-", "")
       );
       cluster.setLabel("ClusteredDB-H2+SQLite");
@@ -143,9 +143,8 @@ public abstract class AbstractTest {
       final DBDatabaseCluster cluster
               = new DBDatabaseCluster(
                       "testOpenSourceCluster",
-                      DBDatabaseCluster.Configuration.autoStart(),
+                      DBDatabaseCluster.Configuration.autoStart(), 
                       H2MemoryDB.createANewRandomDatabase("CLUSTER-OPENSOURCE-H2Mem-", ""),
-                      //							H2MemoryTestDB.getFromSettings("h2memory"),
                       getSQLiteDBFromSystem("open"),
                       postgresDB,
                       new MySQLSettingsBuilder().fromSystemUsingPrefix("mysql").setDatabaseName("dbvcluster").getDBDatabase()
@@ -156,7 +155,6 @@ public abstract class AbstractTest {
     }
     if (System.getProperty("testFullCluster") != null) {
       final H2MemoryDB h2Mem = H2MemoryDB.createANewRandomDatabase("CLUSTER-FULL-H2Mem-", "");
-//			final H2MemoryDB h2Mem = H2MemoryTestDB.getFromSettings("h2memory");
       final SQLiteDB sqlite = getSQLiteDBFromSystem("full");
       final PostgresDB postgres = new PostgresSettingsBuilder().fromSystemUsingPrefix("postgresfullcluster").getDBDatabase();
       final MySQLDB mysql = new MySQLSettingsBuilder().fromSystemUsingPrefix("mysqlfullcluster").getDBDatabase();
@@ -303,77 +301,85 @@ public abstract class AbstractTest {
 
   public String testableSQL(String str) {
     if (str != null) {
-      String trimStr = REMOVE_COMMENTS.replaceAll(str);
-      trimStr = trimStr
+      String result = REMOVE_COMMENTS.replaceAll(str);
+      result = result
               .toLowerCase()
               .trim()
               .replaceAll("[ \\r\\n]+", " ")
               .replaceAll(" +", " ")
               .replaceAll(", ", ",")
-              .replaceAll("`", "");
-      if ((database instanceof OracleDB) || (database instanceof JavaDB)) {
-        return trimStr
+              .replaceAll("`", "")
+              .replaceAll("\\[dbo\\]\\.", "");
+      if ((database instanceof OracleDB)
+              || (database instanceof JavaDB)
+              || (database instanceof DBDatabaseCluster)) {
+        result = result
                 .replaceAll("\"", "")
                 .replaceAll(" oo", " ")
                 .replaceAll("\\b_+", "")
                 .replaceAll(" +[aA][sS] +", " ")
                 .replaceAll(" *; *$", "");
-      } else if (database instanceof H2DB) {
-        return trimStr
-                .replaceAll("\"", "");
-      } else if (database instanceof PostgresDB) {
-        return trimStr.replaceAll("::[a-zA-Z]*", "");
-      } else if ((database instanceof NuoDB)) {
-        return trimStr.replaceAll("\\(\\(([^)]*)\\)=true\\)", "$1");
-      } else if (database instanceof MSSQLServerDB) {
-        return trimStr
-                .replaceAll("\\[dbo\\]\\.", "")
-                .replaceAll("[\\[\\]]", "");
-      } else {
-        return trimStr;
       }
+      if ((database instanceof H2DB) || (database instanceof DBDatabaseCluster)) {
+        result = result.replaceAll("\"", "");
+      }
+      if ((database instanceof PostgresDB) || (database instanceof DBDatabaseCluster)) {
+        result = result.replaceAll("::[a-zA-Z]*", "");
+      }
+      if ((database instanceof NuoDB) || (database instanceof DBDatabaseCluster)) {
+        result = result.replaceAll("\\(\\(([^)]*)\\)=true\\)", "$1");
+      }
+      if ((database instanceof MSSQLServerDB) || (database instanceof DBDatabaseCluster)) {
+        result = result.replaceAll("[\\[\\]]", "");
+      }
+      return result;
     } else {
       return str;
     }
   }
 
-  private static final RegexReplacement REMOVE_COMMENTS = Regex.startingAnywhere().literal("/").asterisk().anyCharacterExcept('*').asterisk().literal("/").replaceWith().nothing();
+  private static final RegexReplacer REMOVE_COMMENTS = Regex.startingAnywhere().literal("/").asterisk().anyCharacterExcept('*').asterisk().literal("/").replaceWith().nothing();
+  private static final RegexReplacer REMOVE_ALIASES = Regex.startingAnywhere().space().literalCaseInsensitive("DB").anyCharacterIn("_0123456789").oneOrMoreGreedy().replaceWith().nothing();
 
   public String testableSQLWithoutColumnAliases(String str) {
     if (StringCheck.isEmptyOrNull(str)) {
       return str;
     }else{
-      String trimStr = REMOVE_COMMENTS.replaceAll(str);
-//			System.out.println("STR: "+trimStr);
-      trimStr = trimStr
-              .trim()
-              .replaceAll(" [dD][bB][_0-9]+", "")
-              .replaceAll("[ \\r\\n]+", " ")
-              .replaceAll(", ", ",")
-              .replaceAll("`", "")
-              .replaceAll("\\[dbo\\]\\.", "")
-              .toLowerCase();
+      String result = str.trim();
+      result = REMOVE_COMMENTS.replaceAll(result);
+      result = REMOVE_ALIASES.replaceAll(result);
+      // compress the whitespace to single spaces
+      result = Regex.empty().whitespace().oneOrMoreGreedy().replaceWith().literal(" ").getReplacer().replaceAll(result);
+      // reduce comma-spaces to just commas
+      result = Regex.empty().literal(", ").replaceWith().literal(",").getReplacer().replaceAll(result);
+      // remove all backtick quoting because it's weird and confusing
+      result = Regex.empty().literal('`').remove().replaceAll(result);
+      result = result.toLowerCase();
+
       if ((database instanceof OracleDB)
-              || (database instanceof JavaDB)) {
-        return trimStr
+              || (database instanceof JavaDB)
+              || (database instanceof DBDatabaseCluster)) {
+        result = result
                 .replaceAll("\"", "")
                 .replaceAll("\\boo", "__")
                 .replaceAll("\\b_+", "")
                 .replaceAll(" *; *$", "")
                 .replaceAll(" as ", " ");
-      } else if (database instanceof H2DB) {
-        return trimStr
-                .replaceAll("\"", "");
-      } else if ((database instanceof NuoDB)) {
-        return trimStr.replaceAll("\\(\\(([^)]*)\\)=true\\)", "$1");
-      } else if ((database instanceof MSSQLServerDB)) {
-        return trimStr
+      }
+      if (database instanceof H2DB||(database instanceof DBDatabaseCluster)) {
+        result = result.replaceAll("\"", "");
+      }
+      if ((database instanceof NuoDB)|| (database instanceof DBDatabaseCluster)) {
+       result = result.replaceAll("\\(\\(([^)]*)\\)=true\\)", "$1");
+      } 
+      if ((database instanceof MSSQLServerDB)|| (database instanceof DBDatabaseCluster)) {
+        result = result
+                .replaceAll("\\[dbo\\]\\.", "")
                 .replaceAll("\\[", "")
                 .replaceAll("\\]", "")
                 .replaceAll(" *;", "");
-      } else {
-        return trimStr;
       }
+      return result;
     }
   }
 
