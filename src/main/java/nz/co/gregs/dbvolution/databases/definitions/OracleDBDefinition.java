@@ -53,7 +53,7 @@ import nz.co.gregs.dbvolution.internal.query.QueryOptions;
 import nz.co.gregs.dbvolution.internal.query.QueryState;
 import nz.co.gregs.dbvolution.results.AnyResult;
 import nz.co.gregs.regexi.Regex;
-import nz.co.gregs.regexi.RegexReplacement;
+import nz.co.gregs.regexi.RegexReplacer;
 import nz.co.gregs.separatedstring.Builder;
 import nz.co.gregs.separatedstring.Encoder;
 
@@ -105,9 +105,9 @@ public class OracleDBDefinition extends DBDefinition {
 		return true;
 	}
 
-	private final RegexReplacement REMOVE_ILLEGAL_STARTING_CHARS = Regex.startingFromTheBeginning().anyOf("_", "-").once().replaceWith().literal("O");
-	private final RegexReplacement REMOVE_HYPHENS = Regex.empty().literal("-").once().replaceWith().literal("_");
-	private final RegexReplacement REMOVE_DOTS = Regex.empty().literal(".").once().replaceWith().literal("__");
+	private final RegexReplacer REMOVE_ILLEGAL_STARTING_CHARS = Regex.startingFromTheBeginning().anyOf("_", "-").once().replaceWith().literal("O").getReplacer();
+	private final RegexReplacer REMOVE_HYPHENS = Regex.empty().literal("-").once().replaceWith().literal("_").getReplacer();
+	private final RegexReplacer REMOVE_DOTS = Regex.empty().literal(".").once().replaceWith().literal("__").getReplacer();
 
 	@Override
 	protected String formatNameForDatabase(final String sqlObjectName) {
