@@ -305,10 +305,10 @@ public abstract class AbstractTest {
     if (str != null) {
       String trimStr = REMOVE_COMMENTS.replaceAll(str);
       trimStr = trimStr
+              .toLowerCase()
               .trim()
               .replaceAll("[ \\r\\n]+", " ")
               .replaceAll(" +", " ")
-              .toLowerCase()
               .replaceAll(", ", ",")
               .replaceAll("`", "");
       if ((database instanceof OracleDB) || (database instanceof JavaDB)) {
@@ -351,6 +351,7 @@ public abstract class AbstractTest {
               .replaceAll("[ \\r\\n]+", " ")
               .replaceAll(", ", ",")
               .replaceAll("`", "")
+              .replaceAll("\\[dbo\\]\\.", "")
               .toLowerCase();
       if ((database instanceof OracleDB)
               || (database instanceof JavaDB)) {
@@ -367,7 +368,6 @@ public abstract class AbstractTest {
         return trimStr.replaceAll("\\(\\(([^)]*)\\)=true\\)", "$1");
       } else if ((database instanceof MSSQLServerDB)) {
         return trimStr
-                .replaceAll("\\[dbo\\]\\.", "")
                 .replaceAll("\\[", "")
                 .replaceAll("\\]", "")
                 .replaceAll(" *;", "");
