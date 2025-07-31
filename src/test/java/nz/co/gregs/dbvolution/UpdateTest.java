@@ -70,6 +70,7 @@ public class UpdateTest extends AbstractTest {
 						testableSQL("UPDATE MARQUE SET INTINDALLOCALLOWED = 'Y' WHERE (UID_MARQUE = 4893059);"),
 						testableSQL("UPDATE MARQUE SET INTINDALLOCALLOWED = N'Y' WHERE (UID_MARQUE = 4893059);"),
 						testableSQL("update [marque] set intindallocallowed = n'y' where (uid_marque = 4893059);"),
+						testableSQL("update [marque] set intindallocallowed = n'y' where (\"uid_marque\" = 4893059);"),
 						testableSQL("update marque set intindallocallowed = 'y' where (uid_marque = 4893059)"),
 						testableSQL("update marque set \"intindallocallowed\" = 'y' where (uid_marque = 4893059);"),
 						testableSQL("update marque set \"intindallocallowed\" = 'y' where (\"uid_marque\" = 4893059);"),
