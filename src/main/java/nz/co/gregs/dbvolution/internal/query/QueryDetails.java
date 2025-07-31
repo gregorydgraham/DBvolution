@@ -52,7 +52,7 @@ import nz.co.gregs.dbvolution.internal.properties.PropertyWrapperDefinition;
 import nz.co.gregs.dbvolution.internal.querygraph.QueryGraph;
 import nz.co.gregs.dbvolution.utility.StringCheck;
 import nz.co.gregs.regexi.Regex;
-import nz.co.gregs.regexi.RegexReplacement;
+import nz.co.gregs.regexi.RegexReplacer;
 import nz.co.gregs.separatedstring.Builder;
 import nz.co.gregs.separatedstring.Encoder;
 
@@ -416,7 +416,7 @@ public class QueryDetails implements DBQueryable, Serializable {
 			innerSelectOptions.setUseStarInsteadOfColumns(true);
 			final List<String> sqlForQueryInternal = getSQLForQueryInternal(new QueryState(details), QueryType.SELECT, innerSelectOptions);
 			String endStatement = options.getQueryDefinition().endSQLStatement();
-			RegexReplacement removeTrailingSemiColons = Regex.empty().literal(";").literal(" ").optionalManyGreedy().endOfTheString().toRegex().replaceWith().literal("");
+			var removeTrailingSemiColons = Regex.empty().literal(";").literal(" ").optionalManyGreedy().endOfTheString().toRegex().replaceWith().literal("").getReplacer();
 			return sqlForQueryInternal
 					.stream()
 					.map((sql) -> "SELECT COUNT(*) FROM (" + removeTrailingSemiColons.replaceAll(sql) + ") A" + endStatement)
@@ -1010,8 +1010,8 @@ public class QueryDetails implements DBQueryable, Serializable {
 			unionOperator = defn.getUnionOperator();
 		}
 
-		RegexReplacement removeTerminatingSemicolon = Regex.empty().literal(";").literal(" ").optionalManyGreedy().endOfTheString().replaceWith().literal(" ");
-		RegexReplacement replaceFullJoinWithLeftJoin = Regex.empty().literal(defn.beginFullOuterJoin()).replaceWith().literal(defn.beginLeftOuterJoin());
+		var removeTerminatingSemicolon = Regex.empty().literal(";").literal(" ").optionalManyGreedy().endOfTheString().replaceWith().literal(" ").getReplacer();
+		var replaceFullJoinWithLeftJoin = Regex.empty().literal(defn.beginFullOuterJoin()).replaceWith().literal(defn.beginLeftOuterJoin()).getReplacer();
 
 		if (defn.supportsRightOuterJoinNatively()) {
 			// Fake the outer join by using 2 queries, one of left joins and one with right joins
@@ -1023,7 +1023,7 @@ public class QueryDetails implements DBQueryable, Serializable {
 			// Extend the query we have so far with a union
 			sqlForQuery += unionOperator;
 			// Extend the query we have so far with the right join version of the original query
-			RegexReplacement replaceFullJoinWithRightJoin = Regex.empty().literal(defn.beginFullOuterJoin()).replaceWith().literal(defn.beginRightOuterJoin());
+			var replaceFullJoinWithRightJoin = Regex.empty().literal(defn.beginFullOuterJoin()).replaceWith().literal(defn.beginRightOuterJoin()).getReplacer();
 			sqlForQuery += replaceFullJoinWithRightJoin.replaceAll(existingSQL);
 		} else {
 			// Fake the outer join by using 2 queries, one of left joins and a reversed one also with left joins
