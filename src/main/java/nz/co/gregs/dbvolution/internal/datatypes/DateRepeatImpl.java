@@ -20,7 +20,7 @@ import java.util.Date;
 import java.util.GregorianCalendar;
 import java.util.Optional;
 import nz.co.gregs.regexi.Regex;
-import nz.co.gregs.regexi.RegexReplacement;
+import nz.co.gregs.regexi.RegexReplacer;
 import nz.co.gregs.regexi.RegexSplitter;
 import nz.co.gregs.regexi.RegexValueFinder;
 import org.joda.time.Period;
@@ -196,7 +196,7 @@ public class DateRepeatImpl {
 		return cal.getTime();
 	}
 
-	private static final RegexReplacement NORMALISE_DATEREPEAT = Regex.empty().beginSetExcluding().excludeLiterals(".PYMDhns").excludeRange('0', '9').excludeMinus().endSet().oneOrMore().remove();
+	private static final RegexReplacer NORMALISE_DATEREPEAT = Regex.empty().beginSetExcluding().excludeLiterals(".PYMDhns").excludeRange('0', '9').excludeMinus().endSet().oneOrMoreGreedy().remove();
 
 	/**
 	 *
@@ -365,19 +365,19 @@ public class DateRepeatImpl {
 
 	private static Integer parseValue(RegexValueFinder finder, String intervalStr) throws NumberFormatException {
 		Optional<String> value = finder.getValueFrom(intervalStr);
-		return value.isPresent() ? Integer.parseInt(value.get()) : null;
+		return value.isPresent() ? Integer.valueOf(value.get()) : null;
 	}
 
 	private static Double parseValueDouble(RegexValueFinder finder, String intervalStr) throws NumberFormatException {
 		Optional<String> value = finder.getValueFrom(intervalStr);
-		return value.isPresent() ? Double.parseDouble(value.get()) : null;
+		return value.isPresent() ? Double.valueOf(value.get()) : null;
 	}
 
 	private static final RegexValueFinder FIND_YEAR_VALUE = Regex.startingAnywhere()
 			.literal("P")
 			.beginNamedCapture("value")
 			.numberLike()
-			.oneOrMore()
+			.oneOrMoreGreedy()
 			.endNamedCapture()
 			.literal("Y").returnValueFor("value");
 
@@ -385,7 +385,7 @@ public class DateRepeatImpl {
 			.literal("Y")
 			.beginNamedCapture("value")
 			.numberLike()
-			.oneOrMore()
+			.oneOrMoreGreedy()
 			.endNamedCapture()
 			.literal("M").returnValueFor("value");
 
@@ -393,7 +393,7 @@ public class DateRepeatImpl {
 			.literal("M")
 			.beginNamedCapture("value")
 			.numberLike()
-			.oneOrMore()
+			.oneOrMoreGreedy()
 			.endNamedCapture()
 			.literal("D").returnValueFor("value");
 
@@ -401,7 +401,7 @@ public class DateRepeatImpl {
 			.literal("D")
 			.beginNamedCapture("value")
 			.numberLike()
-			.oneOrMore()
+			.oneOrMoreGreedy()
 			.endNamedCapture()
 			.literal("h").returnValueFor("value");
 
@@ -409,7 +409,7 @@ public class DateRepeatImpl {
 			.literal("h")
 			.beginNamedCapture("value")
 			.numberLike()
-			.oneOrMore()
+			.oneOrMoreGreedy()
 			.endNamedCapture()
 			.literal("n").returnValueFor("value");
 
@@ -417,7 +417,7 @@ public class DateRepeatImpl {
 			.literal("n")
 			.beginNamedCapture("value")
 			.numberLike()
-			.oneOrMore()
+			.oneOrMoreGreedy()
 			.endNamedCapture()
 			.literal("s").returnValueFor("value");
 }
