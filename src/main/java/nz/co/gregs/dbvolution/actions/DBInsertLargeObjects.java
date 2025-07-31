@@ -51,9 +51,17 @@ public class DBInsertLargeObjects extends DBUpdateLargeObjects {
 	@Override
 	protected ArrayList<PropertyWrapper<?, ?, ?>> getInterestingLargeObjects(DBRow row) {
 		ArrayList<PropertyWrapper<?, ?, ?>> returnList = new ArrayList<>();
-		for (QueryableDatatype<?> qdt : row.getLargeObjects()) {
-			returnList.add(row.getPropertyWrapperOf(qdt));
-		}
+    for (QueryableDatatype<?> qdt : row.getLargeObjects()) {
+      if (qdt.hasChanged()) {
+        if (qdt.isNull()) {
+          // while technically true, because values default to NULL in both
+          // Java and DBs, this is actually an error we should correct.
+          qdt.setUnchanged();
+        } else {
+          returnList.add(row.getPropertyWrapperOf(qdt));
+        }
+      }
+    }
 		return returnList;
 	}
 
