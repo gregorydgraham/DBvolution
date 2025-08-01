@@ -100,20 +100,17 @@ public class Brake implements Serializable {
 	}
 
 	public void checkBrake() {
-		synchronized (monitor) {
-			while (brakeRequired) {
-				try {
-					if (timeout > 0) {
-						monitor.wait(timeout);
-					} else {
-						monitor.wait(100);
-					}
-				} catch (InterruptedException ex) {
-					Logger.getLogger(Brake.class.getName()).log(Level.SEVERE, null, ex);
-				}
-			}
-		}
-	}
+    long actualTimeout = timeout > 0 ? timeout : 100;
+    synchronized (monitor) {
+      while (brakeRequired) {
+        try {
+          monitor.wait(actualTimeout);
+        } catch (InterruptedException ex) {
+          Logger.getLogger(Brake.class.getName()).log(Level.SEVERE, "Brake has been released by an interrupt.", ex);
+        }
+      }
+    }
+  }
 
 	/**
 	 * @param timeout the timeout to set
