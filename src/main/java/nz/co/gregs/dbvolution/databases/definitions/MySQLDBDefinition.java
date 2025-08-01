@@ -796,7 +796,7 @@ public class MySQLDBDefinition extends DBDefinition {
 			= Regex
 					.startingAnywhere()
 					.literalCaseInsensitive("Duplicate column name '")
-					.anyCharacterExcept("'").atLeastOnce()
+					.anyCharacterExcept("'").atLeastOnceGreedy()
 					.literal("' :")
 					.toRegex();
 
