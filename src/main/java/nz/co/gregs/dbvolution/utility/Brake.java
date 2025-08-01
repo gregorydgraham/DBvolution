@@ -35,90 +35,89 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
- * A, probably completely superfluous class, to encapsulate the wait/notifyAll
- * pattern.
+ * A, probably completely superfluous class, to encapsulate the wait/notifyAll pattern.
  *
  * <p>
  * Use {@link #checkBrake() } to check if waiting is required and wait. Call {@link #release()
- * } in another thread to permit waiting threads to proceed. The brake can be
- * switched off using {@link #release() } and switched on with {@link #brake() }
+ * } in another thread to permit waiting threads to proceed. The brake can be switched off using {@link #release() } and switched on with {@link #brake() }
  * or {@link #apply() }.</p>
  *
  * <p>
  * {@link #brake() } and {@link #apply() } are synonyms.</p>
  * <p>
- * With in the external thread use {@link #release() } to allow the process to
- * continue.</p>
+ * With in the external thread use {@link #release() } to allow the process to continue.</p>
  *
  * @author gregorygraham
  */
 public class Brake implements Serializable {
 
-	private static final long serialVersionUID = 1L;
+  private static final long serialVersionUID = 1L;
+  private static final Logger LOG = Logger.getLogger(Brake.class.getName());
 
-	private boolean brakeRequired;
-	private transient final Object monitor = new Object();
-	private long timeout = 10000;
+  private boolean brakeRequired;
+  private transient final Object monitor = new Object();
+  private long timeout = 10000;
 
-	public Brake() {
-		brakeRequired = false;
-	}
+  public Brake() {
+    brakeRequired = false;
+  }
 
-	public static final Brake withTimeoutInMilliseconds(long milliseconds) {
-		var result = new Brake();
-		result.timeout = milliseconds;
-		return result;
-	}
+  public static final Brake withTimeoutInMilliseconds(long milliseconds) {
+    var result = new Brake();
+    result.timeout = milliseconds;
+    return result;
+  }
 
-	public static final Brake untilReleased() {
-		var result = new Brake();
-		result.apply();
-		result.timeout = 0;
-		return result;
-	}
+  public static final Brake untilReleased() {
+    var result = new Brake();
+    result.apply();
+    result.timeout = 0;
+    return result;
+  }
 
-	public static final Brake defaultSettings() {
-		var result = new Brake();
-		return result;
-	}
+  public static final Brake defaultSettings() {
+    var result = new Brake();
+    return result;
+  }
 
-	public void brake() {
-		apply();
-	}
+  public void brake() {
+    apply();
+  }
 
-	public void apply() {
-		synchronized (monitor) {
-			this.brakeRequired = true;
-		}
-	}
+  public void apply() {
+    synchronized (monitor) {
+      this.brakeRequired = true;
+    }
+  }
 
-	public void release() {
-		synchronized (monitor) {
-			this.brakeRequired = false;
-			monitor.notifyAll();
-		}
-	}
+  public void release() {
+    synchronized (monitor) {
+      this.brakeRequired = false;
+      monitor.notifyAll();
+    }
+  }
 
-	public void checkBrake() {
+  public void checkBrake() {
     long actualTimeout = timeout > 0 ? timeout : 100;
     synchronized (monitor) {
       while (brakeRequired) {
         try {
           monitor.wait(actualTimeout);
         } catch (InterruptedException ex) {
-          Logger.getLogger(Brake.class.getName()).log(Level.SEVERE, "Brake has been released by an interrupt.", ex);
+          LOG.log(Level.SEVERE, "Brake has been released by an interrupt.", ex);
+          this.release();
         }
       }
     }
   }
 
-	/**
-	 * @param timeout the timeout to set
-	 */
-	public void setTimeout(long timeout) {
-		synchronized (monitor) {
-			this.timeout = timeout;
-		}
-	}
+  /**
+   * @param timeout the timeout to set
+   */
+  public void setTimeout(long timeout) {
+    synchronized (monitor) {
+      this.timeout = timeout;
+    }
+  }
 
 }
