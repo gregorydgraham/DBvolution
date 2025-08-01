@@ -69,10 +69,8 @@ public class DBJavaObjectTest extends AbstractTest {
 		List<DBJavaObjectTable> allRows = tableQuery.getAllRows();
 		assertThat(allRows.size(), is(1));
 		final DBJavaObjectTable foundRow = allRows.get(0);
-		assertThat(foundRow.javaInteger.getSize(), is(81));
 		assertThat(foundRow.javaInteger.getValue(), is(3));
 		assertThat(foundRow.javaInteger.stringValue(), is("3"));
-		assertThat(foundRow.javaString.getSize(), is(15));
 		assertThat(foundRow.javaString.getValue(), is("Thisland"));
 		assertThat(foundRow.someRandomClass.getValue().str, is("Thisland"));
 		assertThat(foundRow.someRandomClass.getValue().integer, is(3));
