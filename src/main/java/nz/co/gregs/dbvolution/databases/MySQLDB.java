@@ -148,9 +148,9 @@ public class MySQLDB extends DBDatabaseImplementation implements SupportsPolygon
 		return 3306;
 	}
 
-	private final static Regex FUNCTION_DOES_NOT_EXIST = Regex.startingAnywhere().literal("FUNCTION ").noneOfThisCharacter(' ').atLeastOnce().literal(" does not exist").toRegex();
+	private final static Regex FUNCTION_DOES_NOT_EXIST = Regex.startingAnywhere().literal("FUNCTION ").noneOfThisCharacter(' ').atLeastOnceGreedy().literal(" does not exist").toRegex();
 	private final static Regex TABLE_ALREADY_EXISTS = Regex.startingAnywhere().literal("Table ").charactersWrappedBy('\'').literal(" already exists").toRegex();
-	private final static Regex TABLE_DOES_NOT_EXIST = Regex.startingAnywhere().literal("Table ").noneOfThisCharacter(' ').atLeastOnce().literal(" does not exist").toRegex();
+	private final static Regex TABLE_DOES_NOT_EXIST = Regex.startingAnywhere().literal("Table ").noneOfThisCharacter(' ').atLeastOnceGreedy().literal(" does not exist").toRegex();
 
 	@Override
 	public ResponseToException addFeatureToFixException(Exception exp, QueryIntention intent, StatementDetails details) throws Exception {
