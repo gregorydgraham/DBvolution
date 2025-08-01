@@ -1382,9 +1382,9 @@ public class MSSQLServerDBDefinition extends DBDefinition {
 			= Regex
 					.startingAnywhere()
 					.literalCaseInsensitive("Column names in each table must be unique. Column name '")//Column names in each table must be unique. Column name 'name' in table 'RequiredTableShouldBeCreatedAutomatically' is specified more than once.
-					.anyCharacterExcept("'").atLeastOnce()
+					.anyCharacterExcept("'").atLeastOnceGreedy()
 					.literalCaseInsensitive("' in table '")
-					.anyCharacterExcept("'").atLeastOnce()
+					.anyCharacterExcept("'").atLeastOnceGreedy()
 					.literalCaseInsensitive("' is specified more than once.")
 					.toRegex();
 
