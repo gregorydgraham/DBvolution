@@ -1118,9 +1118,9 @@ public class PostgresDBDefinition extends DBDefinition {
 					.literalCaseInsensitive("duplicate key value violates unique constraint")
 					.or()
 					.literalCaseInsensitive("ERROR: column \"")
-					.anyCharacterExcept('"').oneOrMore()
+					.anyCharacterExcept('"').oneOrMoreGreedy()
 					.literalCaseInsensitive("\" of relation \"")
-					.anyCharacterExcept('"').oneOrMore()
+					.anyCharacterExcept('"').oneOrMoreGreedy()
 					.literalCaseInsensitive("\" already exists")
 					.endOrGroup()
 					.toRegex();
