@@ -7217,7 +7217,7 @@ public abstract class DBDefinition implements Serializable {
 			.literalCaseInsensitive("table")
 			.space().doublequote()
 			.anythingButThis("\"")
-			.atLeastOnce()
+			.atLeastOnceGreedy()
 			.doublequote().space()
 			.literalCaseInsensitive("not found")
 			.toRegex();
