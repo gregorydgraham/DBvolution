@@ -121,17 +121,14 @@ public class JavaObjectExpressionTest extends AbstractTest {
     JavaObjectExpressionTable row = new JavaObjectExpressionTable();
     List<DBQueryRow> allRows = database.getDBQuery(row).setBlankQueryAllowed(true).setSortOrder(row.column(row.colInt)).getAllRows();
     assertThat(allRows.size(), is(3));
-    database.print(allRows);
     
     final JavaObjectExpressionTable newRow = new JavaObjectExpressionTable();
     DBQuery dbQuery = database.getDBQuery(newRow).setBlankQueryAllowed(true);
     dbQuery.addCondition(newRow.column(newRow.someRandomClass).isNotNull());
     dbQuery.setSortOrder(newRow.column(newRow.colInt).ascending());
-    database.setPrintSQLBeforeExecuting(true);
+    
     allRows = dbQuery.getAllRows();
-    database.setPrintSQLBeforeExecuting(false);
-
-    database.print(allRows);
+    
     assertThat(allRows.size(), is(2));
     assertThat(allRows.get(0).get(row).colInt.intValue(), is(1));
     assertThat(allRows.get(1).get(row).colInt.intValue(), is(3));
