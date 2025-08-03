@@ -144,7 +144,6 @@ public class JavaObjectExpressionTest extends AbstractTest {
     dbQuery.addCondition(newRow.column(newRow.someRandomClass).isNull());
     dbQuery.setSortOrder(newRow.column(newRow.colInt).ascending());
     List<DBQueryRow> allRows = dbQuery.getAllRows();
-    database.print(allRows);
 
     assertThat(allRows.size(), is(1));
     assertThat(allRows.get(0).get(joTable).colInt.intValue(), is(2));
