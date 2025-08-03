@@ -1228,18 +1228,11 @@ public class BooleanExpressionTest extends AbstractTest {
 
 			for (int i = 0; i < allRows.size(); i++) {
 				got = allRows.get(i).get(marq);
-//				System.out.println("" + got.toString());
 				Object[] expect = expectedValues.get(i);
 				assertThat(got.changeBooleanToNullOrItself.getValue(), is((Boolean) expect[4]));
 				assertThat(got.changeBooleanToItsValueOrNull.getValue(), is((Boolean) expect[4]));
 			}
 		} catch (Exception e) {
-			System.out.println("" + e.getLocalizedMessage());
-			System.out.println("" + e.getStackTrace()[0]);
-			System.out.println("" + e.getStackTrace()[1]);
-			System.out.println("" + e.getStackTrace()[2]);
-			System.out.println("" + e.getStackTrace()[3]);
-			System.out.println("" + e.getStackTrace()[4]);
 			throw e;
 		}
 	}
