@@ -1149,13 +1149,7 @@ public class BooleanExpressionTest extends AbstractTest {
 				assertThat(got.lead.getValue(), is((Boolean) expect[5]));
 				assertThat(got.case1.getValue(), is((Boolean) expect[6]));
 			}
-		} catch (Exception e) {
-			System.out.println("" + e.getLocalizedMessage());
-			System.out.println("" + e.getStackTrace()[0]);
-			System.out.println("" + e.getStackTrace()[1]);
-			System.out.println("" + e.getStackTrace()[2]);
-			System.out.println("" + e.getStackTrace()[3]);
-			System.out.println("" + e.getStackTrace()[4]);
+		} catch (SQLException | AccidentalBlankQueryException | AccidentalCartesianJoinException e) {
 			throw e;
 		}
 	}
