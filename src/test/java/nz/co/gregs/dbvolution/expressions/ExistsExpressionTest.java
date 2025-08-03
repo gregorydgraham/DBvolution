@@ -47,28 +47,12 @@ public class ExistsExpressionTest extends AbstractTest {
 				= database.getDBQuery()
 						.add(carCompany)
 						.add(new CompanyLogo());
-		if (database instanceof DBDatabaseCluster) {
-			DBDatabaseCluster cluster = (DBDatabaseCluster) database;
-			System.out.println("CLUSTER: " + cluster.getClusterStatus());
-			DBDatabase[] allDatabases = cluster.getDetails().getAllDatabases();
-			Arrays
-					.asList(allDatabases)
-					.stream()
-					.forEach((db) -> {
-						if (db instanceof MySQLDB) {
-							cluster.getDetails().setPreferredDatabase(db);
-						};
-					});
-		}
-		System.out.println(existsTables.getSQLForQuery());
 
 		Marque marque = new Marque();
 		DBQuery outerQuery = database.getDBQuery(marque);
 
 		DBQuery marquesQuery = database.getDBQuery(marque);
 		marquesQuery.addCondition(new ExistsExpression(outerQuery, existsTables));
-
-		System.out.println(marquesQuery.getSQLForQuery());
 
 		List<Marque> rowList = marquesQuery.getAllInstancesOf(marque);
 
