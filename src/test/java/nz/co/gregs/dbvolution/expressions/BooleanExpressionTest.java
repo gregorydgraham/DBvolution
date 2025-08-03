@@ -1071,7 +1071,6 @@ public class BooleanExpressionTest extends AbstractTest {
 
 			for (int i = 0; i < allRows.size(); i++) {
 				got = allRows.get(i).get(marq);
-//				System.out.println("" + got.toString());
 				Object[] expect = expectedValues.get(i);
 				assertThat(got.countOfAllRows.intValue(), is((Integer) expect[0]));
 				assertThat(got.rowNumber.intValue(), is((Integer) expect[1]));
