@@ -154,12 +154,6 @@ public class CaseExpression {
 						clazz = clazz.getSuperclass();
 					} while (AnyExpression.class.isAssignableFrom(clazz));
 			} catch (Exception ex) {
-				System.out.println("" + ex.getLocalizedMessage());
-				System.out.println("" + ex.getStackTrace()[0]);
-				System.out.println("" + ex.getStackTrace()[1]);
-				System.out.println("" + ex.getStackTrace()[2]);
-				System.out.println("" + ex.getStackTrace()[3]);
-				System.out.println("" + ex.getStackTrace()[4]);
 				Logger.getLogger(WhenExpression.class.getName()).log(Level.SEVERE, null, ex);
 			}
 			return null;
