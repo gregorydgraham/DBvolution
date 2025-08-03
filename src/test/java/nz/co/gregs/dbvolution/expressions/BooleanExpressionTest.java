@@ -1078,13 +1078,7 @@ public class BooleanExpressionTest extends AbstractTest {
 				assertThat(got.countOfEnabled.intValue(), is((Integer) expect[2]));
 				assertThat(got.rowWithinCarCo.intValue(), is((Integer) expect[3]));
 			}
-		} catch (Exception e) {
-			System.out.println("" + e.getLocalizedMessage());
-			System.out.println("" + e.getStackTrace()[0]);
-			System.out.println("" + e.getStackTrace()[1]);
-			System.out.println("" + e.getStackTrace()[2]);
-			System.out.println("" + e.getStackTrace()[3]);
-			System.out.println("" + e.getStackTrace()[4]);
+		} catch (SQLException | AccidentalBlankQueryException | AccidentalCartesianJoinException e) {
 			throw e;
 		}
 	}
