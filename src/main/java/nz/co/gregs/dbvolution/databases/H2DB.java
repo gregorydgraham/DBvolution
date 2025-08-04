@@ -23,6 +23,8 @@ import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.sql.DataSource;
+import static nz.co.gregs.dbvolution.databases.DBDatabaseImplementation.DUPLICATE_COLUMN_NAME;
+import static nz.co.gregs.dbvolution.databases.DBDatabaseImplementation.ResponseToException.SKIPQUERY;
 import nz.co.gregs.dbvolution.databases.metadata.DBDatabaseMetaData;
 import nz.co.gregs.dbvolution.databases.metadata.H2DBDatabaseMetaData;
 import nz.co.gregs.dbvolution.databases.metadata.Options;
@@ -232,71 +234,75 @@ public class H2DB extends DBDatabaseImplementation {
 	private final static Regex DROPPING_NONEXISTENT_TABLE_PATTERN = Regex.startingAnywhere().literal("Table \"").beginNamedCapture("table").noneOfTheseCharacters("\"").oneOrMoreGreedy().endNamedCapture().literal("\" not found; SQL statement:").anyCharacter().optionalManyGreedy().literal("DROP TABLE ").namedBackReference("table").toRegex();
 	private final static Regex TABLE_NOT_FOUND_WHILE_CHECKING_EXISTENCE_PATTERN = Regex.startingAnywhere().literal("Table \"").noneOfTheseCharacters("\"").oneOrMoreGreedy().literal("\" not found").anyCharacterIncludingLineEnd().optionalManyGreedy().literal("SQL statement:").anyCharacterIncludingLineEnd().optionalManyGreedy().literal("SELECT COUNT(").star().literal(")").toRegex();
 	private final static Regex CREATING_EXISTING_TABLE_PATTERN = Regex.startingAnywhere().literal("Table \"").anythingButThis("\"").oneOrMoreGreedy().literal("\" already exists; SQL statement:").toRegex();
+  private final static Regex FUNCTION_NOT_FOUND = Regex.empty().beginOrGroup().literalCaseInsensitive("Function").or().literalCaseInsensitive("Method").endOrGroup().whitespace().optionalManyGreedy().literal("\"DBV_").anyCharacterExcept('"').zeroOrMoreGreedy().literal("\" not found").endRegex();
+  private final static Regex UNKNOWN_DATA_TYPE = Regex.empty().literalCaseInsensitive("Unknown data type: \"DBV_").endRegex();
 
 	@Override
 	public ResponseToException addFeatureToFixException(Exception exp, QueryIntention intent, StatementDetails details) throws Exception {
-		boolean handledException = false;
 		if ((exp instanceof JdbcException)) {
 			String message = exp.getMessage();
 			if (message != null) {
 				if (BROKEN_CONNECTION_PATTERN.matchesWithinString(message)
 						|| ALREADY_CLOSED_PATTERN.matchesWithinString(message)) {
 					return ResponseToException.REPLACECONNECTION;
-				} else if (DROPPING_NONEXISTENT_TABLE_PATTERN.matchesWithinString(message)) {
+				} 
+        if (QueryIntention.ALTER_TABLE_ADD_COLUMN.equals(intent)&& DUPLICATE_COLUMN_NAME.matchesWithinString(exp.getMessage())) {
+          return SKIPQUERY;
+        }
+        if (QueryIntention.DROP_TABLE.equals(intent) && DROPPING_NONEXISTENT_TABLE_PATTERN.matchesWithinString(message)) {
 					return ResponseToException.SKIPQUERY;
-				} else if (QueryIntention.CHECK_TABLE_EXISTS.equals(intent) && TABLE_NOT_FOUND_WHILE_CHECKING_EXISTENCE_PATTERN.matchesWithinString(message)) {
+				} 
+        if (QueryIntention.CHECK_TABLE_EXISTS.equals(intent) && TABLE_NOT_FOUND_WHILE_CHECKING_EXISTENCE_PATTERN.matchesWithinString(message)) {
 					return ResponseToException.SKIPQUERY;
-				} else if (CREATING_EXISTING_TABLE_PATTERN.matchesWithinString(message)) {
+				} 
+        if (QueryIntention.CREATE_TABLE.equals(intent) && CREATING_EXISTING_TABLE_PATTERN.matchesWithinString(message)) {
 					return ResponseToException.SKIPQUERY;
-				} else {
-					try (DBStatement statement = getConnection().createDBStatement()) {
-						if ((message.startsWith("Function \"DBV_") && message.contains("\" not found"))
-								|| (message.startsWith("Method \"DBV_") && message.contains("\" not found"))) {
-							String[] split = message.split("[\" ]+");
-							String functionName = split[1];
-							DBVFeature functions = FEATURE_MAP.get(functionName);
-							if (functions != null) {
-								functions.add(statement.getInternalStatement());
-								handledException = true;
-							}
-						} else if (message.startsWith("Unknown data type: \"DBV_")) {
-							String[] split = message.split("\"");
-							String functionName = split[1];
-							DBVFeature datatype = FEATURE_MAP.get(functionName);
-							if (datatype != null) {
-								datatype.add(statement.getInternalStatement());
-								handledException = true;
-							}
-						} else if (message.matches(": +method \"DBV_[A-Z_0-9]+")) {
-							String[] split = message.split("method \"");
-							split = split[1].split("\\(");
-							String functionName = split[0];
-
-							DBVFeature functions = FEATURE_MAP.get(functionName);
-							if (functions != null) {
-								functions.add(statement.getInternalStatement());
-								handledException = true;
-							}
-						} else {
-							for (Map.Entry<String, DBVFeature> entrySet : FEATURE_MAP.entrySet()) {
-								String key = entrySet.getKey();
-								DBVFeature value = entrySet.getValue();
-								if (message.contains(key)) {
-									value.add(statement.getInternalStatement());
-									handledException = true;
-								}
-							}
-						}
-					}
-				}
+				} 
+        if (FUNCTION_NOT_FOUND.matchesWithinString(message)) {
+          if (attemptToAddMissingFunction(message)) {
+            return ResponseToException.REQUERY;
+          }
+        }
+        if (UNKNOWN_DATA_TYPE.matchesWithinString(message)) {
+          if (attemptToAddMissingDatatype(message)) {
+            return ResponseToException.REQUERY;
+          }
+        }
 			}
 		}
-		if (!handledException) {
-			throw exp;
-		} else {
-			return ResponseToException.REQUERY;
-		}
+    return super.addFeatureToFixException(exp, intent, details);
 	}
+
+  private boolean attemptToAddMissingFunction(String message) throws SQLException {
+    boolean result = false;
+    try (DBStatement statement = getConnection().createDBStatement()) {
+        for (Map.Entry<String, DBVFeature> entrySet : FEATURE_MAP.entrySet()) {
+          String key = entrySet.getKey();
+          DBVFeature value = entrySet.getValue();
+          if (message.contains(key)) {
+            value.add(statement.getInternalStatement());
+            result = true;
+          }
+        }
+    }
+    return result;
+  }
+
+  private boolean attemptToAddMissingDatatype(String message) throws SQLException {
+    boolean result = false;
+    try (DBStatement statement = getConnection().createDBStatement()) {
+        for (Map.Entry<String, DBVFeature> entrySet : FEATURE_MAP.entrySet()) {
+          String key = entrySet.getKey();
+          DBVFeature value = entrySet.getValue();
+          if (message.contains(key)) {
+            value.add(statement.getInternalStatement());
+            result = true;
+          }
+        }
+//      }
+    }
+    return result;
+  }
 
 	@Override
 	public boolean isMemoryDatabase() {
