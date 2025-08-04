@@ -52,9 +52,9 @@ import nz.co.gregs.dbvolution.internal.properties.PropertyWrapperDefinition;
 import nz.co.gregs.dbvolution.internal.querygraph.QueryGraph;
 import nz.co.gregs.dbvolution.utility.StringCheck;
 import nz.co.gregs.regexi.Regex;
-import nz.co.gregs.regexi.RegexReplacer;
 import nz.co.gregs.separatedstring.Builder;
 import nz.co.gregs.separatedstring.Encoder;
+import nz.co.gregs.dbvolution.expressions.RequiresWorkingDatabase;
 
 /**
  *
@@ -68,24 +68,24 @@ public class QueryDetails implements DBQueryable, Serializable {
 
 	private Long timeoutInMilliseconds = 0l;//DEFAULT_TIMEOUT_MILLISECONDS;
 
-	private final Map<Class<? extends DBRow>, DBRow> emptyRows = Collections.synchronizedMap(new HashMap<>());
+	private transient final Map<Class<? extends DBRow>, DBRow> emptyRows = Collections.synchronizedMap(new HashMap<>());
 
-	private final List<DBRow> allQueryTables = Collections.synchronizedList(new ArrayList<>());
-	private final List<DBRow> requiredQueryTables = Collections.synchronizedList(new ArrayList<>());
-	private final List<DBRow> optionalQueryTables = Collections.synchronizedList(new ArrayList<>());
-	private final List<DBRow> assumedQueryTables = Collections.synchronizedList(new ArrayList<>());
+	private transient final List<DBRow> allQueryTables = Collections.synchronizedList(new ArrayList<>());
+	private transient final List<DBRow> requiredQueryTables = Collections.synchronizedList(new ArrayList<>());
+	private transient final List<DBRow> optionalQueryTables = Collections.synchronizedList(new ArrayList<>());
+	private transient final List<DBRow> assumedQueryTables = Collections.synchronizedList(new ArrayList<>());
 
 	private QueryOptions options = new QueryOptions();
-	private final List<DBRow> extraExamples = Collections.synchronizedList(new ArrayList<>());
-	private final List<BooleanExpression> conditions = Collections.synchronizedList(new ArrayList<>());
-	private final Map<Object, QueryableDatatype<?>> expressionColumns = Collections.synchronizedMap(new LinkedHashMap<>());
-	private final Map<Object, DBExpression> dbReportGroupByColumns = Collections.synchronizedMap(new LinkedHashMap<>());
-	private final Map<Class<?>, Map<String, DBRow>> existingInstances = Collections.synchronizedMap(new HashMap<>());
+	private transient final List<DBRow> extraExamples = Collections.synchronizedList(new ArrayList<>());
+	private transient final List<BooleanExpression> conditions = Collections.synchronizedList(new ArrayList<>());
+	private transient final Map<Object, QueryableDatatype<?>> expressionColumns = Collections.synchronizedMap(new LinkedHashMap<>());
+	private transient final Map<Object, DBExpression> dbReportGroupByColumns = Collections.synchronizedMap(new LinkedHashMap<>());
+	private transient final Map<Class<?>, Map<String, DBRow>> existingInstances = Collections.synchronizedMap(new HashMap<>());
 	private boolean groupByRequiredByAggregator = false;
 	private String selectSQLClause = null;
 	private final ArrayList<BooleanExpression> havingColumns = new ArrayList<>();
 	private String rawSQLClause = "";
-	private List<DBQueryRow> results = new ArrayList<>();
+	private transient List<DBQueryRow> results = new ArrayList<>();
 	private final ArrayList<String> resultSQL = new ArrayList<>();
 	private int resultsPageIndex = 0;
 	private Integer resultsRowLimit = -1;
@@ -207,7 +207,7 @@ public class QueryDetails implements DBQueryable, Serializable {
 	 * @return the dbReportGroupByColumns
 	 */
 	public Map<Object, DBExpression> getDBReportGroupByColumns() {
-		final HashMap<Object, DBExpression> newMap = new HashMap<Object, DBExpression>();
+		final HashMap<Object, DBExpression> newMap = new HashMap<>();
 		newMap.putAll(dbReportGroupByColumns);
 		return newMap;
 	}
@@ -219,7 +219,7 @@ public class QueryDetails implements DBQueryable, Serializable {
 	 * @return the existingInstances
 	 */
 	public Map<Class<?>, Map<String, DBRow>> getExistingInstances() {
-		HashMap<Class<?>, Map<String, DBRow>> hashMap = new HashMap<Class<?>, Map<String, DBRow>>();
+		HashMap<Class<?>, Map<String, DBRow>> hashMap = new HashMap<>();
 		hashMap.putAll(existingInstances);
 		return hashMap;
 	}
@@ -370,7 +370,7 @@ public class QueryDetails implements DBQueryable, Serializable {
 	}
 
 	public synchronized void clearResults() {
-		setResults(new ArrayList<DBQueryRow>());
+		setResults(new ArrayList<>());
 		setResultSQL(null);
 	}
 
@@ -579,9 +579,19 @@ public class QueryDetails implements DBQueryable, Serializable {
 			}
 
 			for (BooleanExpression expression : queryState.getRemainingExpressions()) {
-				whereClause.append(LINE_SEP).append(defn.beginConditionClauseLine(options)).append("(").append(expression.toSQLString(defn)).append(")");
-				queryState.consumeExpression(expression);
-			}
+        if (expression != null) {
+          if (expression instanceof RequiresWorkingDatabase) {
+            ((RequiresWorkingDatabase) expression).setWorkingDatabase(getWorkingDatabase());
+          }
+          whereClause
+                  .append(LINE_SEP)
+                  .append(defn.beginConditionClauseLine(options))
+                  .append("(")
+                  .append(expression.toSQLString(defn))
+                  .append(")");
+          queryState.consumeExpression(expression);
+        }
+      }
 
 			for (Map.Entry<Object, QueryableDatatype<?>> entry : expressionColumns.entrySet()) {
 				final Object key = entry.getKey();
@@ -720,6 +730,7 @@ public class QueryDetails implements DBQueryable, Serializable {
 			return sqlList;
 		} catch (Throwable e) {
 			StackTraceElement[] trace = e.getStackTrace();
+      System.out.println("Exception during getSQLForQueryInternal: ");
 			System.out.println("" + trace[0]);
 			System.out.println("" + trace[1]);
 			System.out.println("" + trace[2]);
@@ -1207,7 +1218,7 @@ public class QueryDetails implements DBQueryable, Serializable {
 			int stopIndex = rowLimit * (pageNumber + 1);
 			stopIndex = (stopIndex >= results.size() ? results.size() : stopIndex);
 			if (stopIndex - startIndex < 1) {
-				setCurrentPage(new ArrayList<DBQueryRow>());
+				setCurrentPage(new ArrayList<>());
 			} else {
 				setCurrentPage(results.subList(startIndex, stopIndex));
 			}
@@ -1708,13 +1719,13 @@ public class QueryDetails implements DBQueryable, Serializable {
 	}
 
 	@Override
-	public void setQueryDatabase(DBDatabase db) {
-		this.getOptions().setQueryDatabase(db);
+	public void setWorkingDatabase(DBDatabase db) {
+		getOptions().setQueryDatabase(db);
 	}
 
 	@Override
 	public DBDatabase getWorkingDatabase() {
-		return this.getOptions().getQueryDatabase();
+		return getOptions().getQueryDatabase();
 	}
 
 	private static class OrderByClause {
