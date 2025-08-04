@@ -403,9 +403,8 @@ public class PostgresDB extends DBDatabaseImplementation implements SupportsPoly
 			} else {
 				throw exp;
 			}
-		} else {
-			throw exp;
 		}
+    return super.addFeatureToFixException(exp, intent, details);
 	}
 
 	@Override
