@@ -16,12 +16,8 @@
 package nz.co.gregs.dbvolution.expressions;
 
 import java.sql.SQLException;
-import java.util.Arrays;
 import java.util.List;
 import nz.co.gregs.dbvolution.DBQuery;
-import nz.co.gregs.dbvolution.databases.DBDatabase;
-import nz.co.gregs.dbvolution.databases.DBDatabaseCluster;
-import nz.co.gregs.dbvolution.databases.MySQLDB;
 import nz.co.gregs.dbvolution.example.*;
 import nz.co.gregs.dbvolution.generic.AbstractTest;
 import static org.hamcrest.Matchers.*;
