@@ -310,40 +310,48 @@ public class MSSQLServerDB extends DBDatabaseImplementation implements SupportsP
     }
   }
 
+  //Invalid object name 'TableThatDoesntExistOnTheCluster'.
+  final static Regex NONEXISTENT_TABLE_PATTERN = Regex.empty().literal("Invalid object name '").noneOfTheseCharacters("'").optionalManyGreedy().literal("'.").toRegex();
+  //There is already an object named 'TableThatDoesExistOnTheCluster' in the database.
+  final static Regex CREATING_EXISTING_TABLE_PATTERN = Regex.empty().literal("There is already an object named '").noneOfTheseCharacters("'").optionalManyGreedy().literal("' in the database.").toRegex();
+  //Cannot find the object "TableThatDoesntExistOnTheCluster" because it does not exist or you do not have permissions.
+  final static Regex UNABLE_TO_FIND_DATABASE_OBJECT_PATTERN = Regex.empty().literal("Cannot find the object \"").noneOfTheseCharacters("\"").optionalManyGreedy().literal("\" because it does not exist or you do not have permissions.").toRegex();
+  //message.matches("IDENTITY_INSERT is already ON for table '[^']*'. Cannot perform SET operation for table.*"
+  final static Regex CANNOT_PERFORM_SET_OPERATION = Regex.empty().literal("IDENTITY_INSERT is already ON for table '").namedCapture("table").noneOfThisCharacter('\'').optionalManyGreedy().endNamedCapture().literal("'. Cannot perform SET operation for table").toRegex();
+  // Cannot insert explicit value for identity column in table 'TestDefaultInsertWithInstantValue' when IDENTITY_INSERT is set to OFF. : Original Query: 
+  final static Regex IDENTITY_INSERT_IS_OFF = Regex.empty().literal("Cannot insert explicit value for identity column in table '").namedCapture("table").noneOfThisCharacter('\'').optionalManyGreedy().endNamedCapture().literal("' when IDENTITY_INSERT is set to OFF").toRegex();
+  final static Regex COLUMN_IS_NOT_UNIQUE = Regex.empty().literalCaseInsensitive("Column names in each table must be unique").toRegex();
+
+
   @Override
   public ResponseToException addFeatureToFixException(Exception exp, QueryIntention intent, StatementDetails details) throws Exception {
-
-    //Invalid object name 'TableThatDoesntExistOnTheCluster'.
-    final Regex NONEXISTENT_TABLE_PATTERN = Regex.empty().literal("Invalid object name '").noneOfTheseCharacters("'").optionalManyGreedy().literal("'.").toRegex();
-    //There is already an object named 'TableThatDoesExistOnTheCluster' in the database.
-    final Regex CREATING_EXISTING_TABLE_PATTERN = Regex.empty().literal("There is already an object named '").noneOfTheseCharacters("'").optionalManyGreedy().literal("' in the database.").toRegex();
-    //Cannot find the object "TableThatDoesntExistOnTheCluster" because it does not exist or you do not have permissions.
-    final Regex UNABLE_TO_FIND_DATABASE_OBJECT_PATTERN = Regex.empty().literal("Cannot find the object \"").noneOfTheseCharacters("\"").optionalManyGreedy().literal("\" because it does not exist or you do not have permissions.").toRegex();
-    //message.matches("IDENTITY_INSERT is already ON for table '[^']*'. Cannot perform SET operation for table.*"
-    final Regex CANNOT_PERFORM_SET_OPERATION = Regex.empty().literal("IDENTITY_INSERT is already ON for table '").namedCapture("table").noneOfThisCharacter('\'').optionalManyGreedy().endNamedCapture().literal("'. Cannot perform SET operation for table").toRegex();
-    // Cannot insert explicit value for identity column in table 'TestDefaultInsertWithInstantValue' when IDENTITY_INSERT is set to OFF. : Original Query: 
-    final Regex IDENTITY_INSERT_IS_OFF = Regex.empty().literal("Cannot insert explicit value for identity column in table '").namedCapture("table").noneOfThisCharacter('\'').optionalManyGreedy().endNamedCapture().literal("' when IDENTITY_INSERT is set to OFF").toRegex();
     
     final String message = exp.getMessage();
     if (CANNOT_PERFORM_SET_OPERATION.matchesWithinString(message)) {
       // Apparently the IDENTITY_INSERT is already ON so just carry on...
       return ResponseToException.SKIPQUERY;
-    } else if (IDENTITY_INSERT_IS_OFF.matchesWithinString(message)) {
+    }
+    if (intent.equals(QueryIntention.ALTER_TABLE_ADD_COLUMN) && COLUMN_IS_NOT_UNIQUE.matchesWithinString(message)) {
+      return ResponseToException.SKIPQUERY;
+    }
+    if (IDENTITY_INSERT_IS_OFF.matchesWithinString(message)) {
       List<Match> allMatches = IDENTITY_INSERT_IS_OFF.getAllMatches(message);
       String table = allMatches.get(0).getNamedCapture("table");
       DBStatement stmt = details.getDBStatement();
       final String sql = "SET IDENTITY_INSERT [" + table + "] ON;"+System.lineSeparator()+details.getSql()+"SET IDENTITY_INSERT [" + table + "] OFF;";
       stmt.execute(new StatementDetails("Allow identity insertion", QueryIntention.ALLOW_IDENTITY_INSERT, sql, stmt));
       return ResponseToException.SKIPQUERY;
-    } else if (intent.is(QueryIntention.CREATE_TABLE) && CREATING_EXISTING_TABLE_PATTERN.matchesWithinString(message)) {
+    } 
+    if (intent.is(QueryIntention.CREATE_TABLE) && CREATING_EXISTING_TABLE_PATTERN.matchesWithinString(message)) {
       return ResponseToException.SKIPQUERY;
-    } else if (intent.is(QueryIntention.CHECK_TABLE_EXISTS) && NONEXISTENT_TABLE_PATTERN.matchesWithinString(message)) {
+    } 
+    if (intent.is(QueryIntention.CHECK_TABLE_EXISTS) && NONEXISTENT_TABLE_PATTERN.matchesWithinString(message)) {
       return ResponseToException.SKIPQUERY;
-    } else if (QueryIntention.CHECK_TABLE_EXISTS.equals(intent)) {
-      if (NONEXISTENT_TABLE_PATTERN.matchesWithinString(message)) {
+    } 
+    if (QueryIntention.CHECK_TABLE_EXISTS.equals(intent)&&(NONEXISTENT_TABLE_PATTERN.matchesWithinString(message))) {
         return ResponseToException.SKIPQUERY;
-      }
-    } else if (UNABLE_TO_FIND_DATABASE_OBJECT_PATTERN.matchesWithinString(message)) {
+    } 
+    if (UNABLE_TO_FIND_DATABASE_OBJECT_PATTERN.matchesWithinString(message)) {
       return ResponseToException.SKIPQUERY;
     }
     return super.addFeatureToFixException(exp, intent, details);
