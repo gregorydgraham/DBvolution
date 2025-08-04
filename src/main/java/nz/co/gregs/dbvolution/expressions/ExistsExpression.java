@@ -20,6 +20,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import nz.co.gregs.dbvolution.*;
+import nz.co.gregs.dbvolution.databases.DBDatabaseCluster;
 import nz.co.gregs.dbvolution.databases.definitions.DBDefinition;
 import nz.co.gregs.dbvolution.internal.query.QueryDetails;
 
@@ -66,13 +67,13 @@ import nz.co.gregs.dbvolution.internal.query.QueryDetails;
  *
  * @author Gregory Graham
  */
-public class ExistsExpression extends BooleanExpression {
+public class ExistsExpression extends BooleanExpression implements RequiresWorkingDatabase {
 
 	private static final long serialVersionUID = 1l;
 
 	private final QueryDetails outerQuery = new QueryDetails();
 	private final QueryDetails innerQuery = new QueryDetails();
-	private final DBDatabase database;
+	private DBDatabase database;
 
 	/**
 	 * Create an ExistsExpression that connects to the original query via the
@@ -117,15 +118,15 @@ public class ExistsExpression extends BooleanExpression {
 	 */
 	@Override
 	public String toSQLString(DBDefinition defn) {
-		final List<DBRow> allQueryTables = outerQuery.getAllQueryTables();
-		DBQuery dbQuery
-				= database
-						.getDBQuery(innerQuery.getRequiredQueryTables())
-						.addOptional(innerQuery.getOptionalQueryTables())
-						.addAssumedTables(allQueryTables);
-		String sql = dbQuery.getSQLForQuery().replaceAll(";", "");
-		return " EXISTS (" + sql + ")";
-	}
+    final List<DBRow> allQueryTables = outerQuery.getAllQueryTables();
+    DBQuery dbQuery
+            = database
+                    .getDBQuery(innerQuery.getRequiredQueryTables())
+                    .addOptional(innerQuery.getOptionalQueryTables())
+                    .addAssumedTables(allQueryTables);
+    String sql = dbQuery.getSQLForQuery().replaceAll(";", "");
+    return " EXISTS (" + sql + ")";
+  }
 
 	@Override
 	@SuppressWarnings(value = "unchecked")
@@ -146,8 +147,21 @@ public class ExistsExpression extends BooleanExpression {
 
 	@Override
 	public Set<DBRow> getTablesInvolved() {
-		final HashSet<DBRow> hashSet = new HashSet<DBRow>();
+		final HashSet<DBRow> hashSet = new HashSet<>();
 		hashSet.addAll(outerQuery.getAllQueryTables());
 		return hashSet;
 	}
+
+  @Override
+  public void setWorkingDatabase(DBDatabase workingDatabase) {
+    database = workingDatabase;
+    try {
+      innerQuery.setWorkingDatabase(database);
+    } catch (IllegalArgumentException ex) {
+    }
+    try {
+      outerQuery.setWorkingDatabase(database);
+    } catch (IllegalArgumentException ex) {
+    }
+  }
 }
