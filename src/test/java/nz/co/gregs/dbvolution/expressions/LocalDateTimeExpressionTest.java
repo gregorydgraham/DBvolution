@@ -569,6 +569,7 @@ public class LocalDateTimeExpressionTest extends AbstractTest {
 		for (int i = 0; i < allRows.size(); i++) {
 			got = allRows.get(i).get(marq);
 			Object[] expect = expectedValues.get(i);
+      // TODO there should be asserts here
 		}
 	}
 
@@ -583,10 +584,10 @@ public class LocalDateTimeExpressionTest extends AbstractTest {
 	@Test
 	public void testCheckDatabaseLocalDateTime() throws UnexpectedNumberOfRowsException, AccidentalCartesianJoinException, AccidentalBlankQueryException, SQLException {
 		
-		LocalDateTime databaseLocalDateTime = database.getCurrentLocalDatetime();
 
 		final LocalDateTime applicationLocalDateTime = LocalDateTime.now();
 		final LocalDateTime buffered = applicationLocalDateTime.minusMinutes(10);
+		LocalDateTime databaseLocalDateTime = database.getCurrentLocalDatetime();
 
 		assertThat(databaseLocalDateTime, is(greaterThan(buffered)));
 
