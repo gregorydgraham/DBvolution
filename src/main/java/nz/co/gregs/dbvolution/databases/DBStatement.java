@@ -110,10 +110,9 @@ public class DBStatement implements AutoCloseable {
 	}
 
 	private ResultSet executeQueryWithTimeout(StatementDetails details) throws SQLException {
+		ResultSet queryResult = null;
 		final Long timeoutTime = details.getTimeout();
 		QueryTimeout timer = new QueryTimeout(details, timeoutTime);
-
-		ResultSet queryResult = null;
 		try {
 			queryResult = executeQueryWithInternalStatement(details);
 			timer.noLongerRequired();
