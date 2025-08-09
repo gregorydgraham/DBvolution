@@ -283,11 +283,7 @@ public class QueryOptions implements Serializable {
 	}
 
 	public final void setQueryDatabase(DBDatabase db) {
-		if (queryDatabase == null) {
 			queryDatabase = db;
-		} else if (!db.equals(queryDatabase)) {
-			throw new IllegalArgumentException("Attempt to reset database in query detected!");
-		}
 	}
 
 	public DBDatabase getQueryDatabase() {
