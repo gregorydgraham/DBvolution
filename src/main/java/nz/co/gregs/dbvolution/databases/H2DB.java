@@ -25,7 +25,6 @@ import java.util.logging.Logger;
 import javax.sql.DataSource;
 import static nz.co.gregs.dbvolution.databases.DBDatabaseImplementation.DUPLICATE_COLUMN_NAME;
 import static nz.co.gregs.dbvolution.databases.DBDatabaseImplementation.ResponseToException.SKIPQUERY;
-import nz.co.gregs.dbvolution.databases.metadata.DBDatabaseMetaData;
 import nz.co.gregs.dbvolution.databases.metadata.H2DBDatabaseMetaData;
 import nz.co.gregs.dbvolution.databases.metadata.Options;
 import nz.co.gregs.dbvolution.databases.settingsbuilders.H2SettingsBuilder;
@@ -327,7 +326,7 @@ public class H2DB extends DBDatabaseImplementation {
 	}
 
 	@Override
-	public DBDatabaseMetaData getDBDatabaseMetaData(Options options) throws SQLException {
+	public H2DBDatabaseMetaData getDBDatabaseMetaData(Options options) throws SQLException {
 		return new H2DBDatabaseMetaData(options);
 	}
 }
