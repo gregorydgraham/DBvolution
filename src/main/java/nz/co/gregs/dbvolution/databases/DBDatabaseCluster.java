@@ -1039,8 +1039,9 @@ public class DBDatabaseCluster extends DBDatabaseImplementation {
 	@Override
 	public DBQueryable executeDBQuery(DBQueryable query) throws SQLException, UnableToRemoveLastDatabaseFromClusterException, AccidentalCartesianJoinException, AccidentalBlankQueryException, NoAvailableDatabaseException {
 		DBDatabase workingDB = query.getWorkingDatabase();
-		if (workingDB == null) {
+		if (workingDB == null||workingDB.equals(this)) {
 			workingDB = getReadyDatabase();
+      query.setWorkingDatabase(workingDB);
 		}
 		workingDB.setQuietExceptionsPreference(this.getQuietExceptionsPreference());
 		HandlerAdvice advice;
