@@ -39,9 +39,15 @@ import static nz.co.gregs.dbvolution.databases.DBDatabaseImplementation.Response
  */
 class QueryExceptionHandler {
 
-  static ResponseToException handle(QueryExceptionHandler[] knownCases, QueryIntention intent, String message) {
+  static ResponseToException handle(QueryExceptionHandler[] knownCases, QueryIntention intent, Exception exception) {
     for (QueryExceptionHandler knownCase : knownCases) {
-      ResponseToException response = knownCase.canRespond(intent, message);
+      ResponseToException response = knownCase.canRespond(intent, exception.getMessage());
+      if (ResponseToException.NOT_HANDLED.equals(response)) {
+        // NOT HANDLED so we need to continue
+      } else {
+        return response;
+      }
+      response = knownCase.canRespond(intent, exception.getLocalizedMessage());
       if (ResponseToException.NOT_HANDLED.equals(response)) {
         // NOT HANDLED so we need to continue
       } else {
