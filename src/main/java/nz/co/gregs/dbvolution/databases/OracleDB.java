@@ -138,61 +138,33 @@ public abstract class OracleDB extends DBDatabaseImplementation implements Suppo
     }
   }
 
-  private final static Regex SEQUENCE_DOES_NOT_EXIST = Regex.empty().literal("ORA-02289: sequence does not exist").toRegex();
-  private final static Regex TRIGGER_DOES_NOT_EXIST = Regex.empty().literal("ORA-04080: trigger ").anyCharacter().optionalManyGreedy().literal(" does not exist").toRegex();
-  private final static Regex TABLE_ALREADY_EXISTS = Regex.empty().literal("ORA-00955: name is already used by an existing object").toRegex();
-  private final static Regex TABLE_DOES_NOT_EXIST = Regex.empty().literal("ORA-00942: table or view does not exist").toRegex();
-  private final static Regex LOOP_IN_RECURSIVE_QUERY = Regex.empty().literal("ORA-32044: cycle detected while executing recursive WITH query").toRegex();
-  private final static Regex COLUMN_ALREADY_EXISTS = Regex.startingFromTheBeginning().literal("ORA-01430: column being added already exists in table").toRegex();
-  private static KnownCase[] knownCases = new KnownCase[0];
-  
+  private final static Regex SEQUENCE_DOES_NOT_EXIST_REGEX = Regex.empty().literal("ORA-02289: sequence does not exist").toRegex();
+  private final static Regex TRIGGER_DOES_NOT_EXIST_REGEX = Regex.empty().literal("ORA-04080: trigger ").anyCharacter().optionalManyGreedy().literal(" does not exist").toRegex();
+  private final static Regex TABLE_ALREADY_EXISTS_REGEX = Regex.empty().literal("ORA-00955: name is already used by an existing object").toRegex();
+  private final static Regex TABLE_DOES_NOT_EXIST_REGEX = Regex.empty().literal("ORA-00942: table or view does not exist").toRegex();
+  private final static Regex LOOP_IN_RECURSIVE_QUERY_REGEX = Regex.empty().literal("ORA-32044: cycle detected while executing recursive WITH query").toRegex();
+  private final static Regex COLUMN_ALREADY_EXISTS_REGEX = Regex.startingFromTheBeginning().literal("ORA-01430: column being added already exists in table").toRegex();
+  private static QueryExceptionHandler[] exceptionHandlers = new QueryExceptionHandler[0];
+
   @Override
   public ResponseToException addFeatureToFixException(Exception exp, QueryIntention intent, StatementDetails details) throws Exception {
 
-    final String message = exp.getMessage();
-    
-    if (knownCases.length == 0) {
-      knownCases = new KnownCase[]{
-        new KnownCase(SKIPQUERY, TABLE_DOES_NOT_EXIST, CHECK_TABLE_EXISTS, DROP_TABLE),
-        new KnownCase(SKIPQUERY, SEQUENCE_DOES_NOT_EXIST, DROP_TABLE, DROP_SEQUENCE, CREATE_TABLE, CREATE_TRIGGER_BASED_IDENTITY),
-        new KnownCase(SKIPQUERY, COLUMN_ALREADY_EXISTS, ADD_COLUMN_TO_TABLE, ALTER_TABLE_ADD_COLUMN),
-        new KnownCase(SKIPQUERY, TABLE_ALREADY_EXISTS),
-        new KnownCase(SKIPQUERY, TRIGGER_DOES_NOT_EXIST),
-        new KnownCase(EMULATE_RECURSIVE_QUERY, LOOP_IN_RECURSIVE_QUERY)
+    if (exceptionHandlers.length == 0) {
+      exceptionHandlers = new QueryExceptionHandler[]{
+        new QueryExceptionHandler(SKIPQUERY, TABLE_DOES_NOT_EXIST_REGEX, CHECK_TABLE_EXISTS, DROP_TABLE),
+        new QueryExceptionHandler(SKIPQUERY, SEQUENCE_DOES_NOT_EXIST_REGEX, DROP_TABLE, DROP_SEQUENCE, CREATE_TABLE, CREATE_TRIGGER_BASED_IDENTITY),
+        new QueryExceptionHandler(SKIPQUERY, COLUMN_ALREADY_EXISTS_REGEX, ADD_COLUMN_TO_TABLE, ALTER_TABLE_ADD_COLUMN),
+        new QueryExceptionHandler(SKIPQUERY, TABLE_ALREADY_EXISTS_REGEX),
+        new QueryExceptionHandler(SKIPQUERY, TRIGGER_DOES_NOT_EXIST_REGEX),
+        new QueryExceptionHandler(EMULATE_RECURSIVE_QUERY, LOOP_IN_RECURSIVE_QUERY_REGEX)
       };
     }
-    
-    for (KnownCase knownCase : knownCases) {
-      var response = canRespond(intent, message, knownCase);
-      if (ResponseToException.NOT_HANDLED.equals(response)){
-        // NOT HANDLED so we need to continue
-      }else{
-        return response;
-      }
-    }
-    return super.addFeatureToFixException(exp, intent, details);
-  }
-
-  private ResponseToException canRespond(QueryIntention intent, String message, KnownCase example) {
-    if ((example.intentions.length == 0 || intent.isOneOf(example.intentions))
-            && example.regex.matchesWithinString(message)) {
-      return example.expectedResponse;
+    ResponseToException response = QueryExceptionHandler.handle(exceptionHandlers, intent, exp);
+    if (response == null || NOT_HANDLED.equals(response)) {
+      return super.addFeatureToFixException(exp, intent, details);
     } else {
-      return ResponseToException.NOT_HANDLED;
+      return response;
     }
-  }
-  
-  private class KnownCase{
-    ResponseToException expectedResponse;
-    Regex regex;
-    QueryIntention[] intentions;
-
-    private KnownCase(ResponseToException expectedResponse, Regex regex, QueryIntention... intentions) {
-      this.expectedResponse=expectedResponse;
-      this.intentions=intentions;
-      this.regex=regex;
-    }
-    
   }
 
   @Override
