@@ -52,6 +52,7 @@ public class StatementDetails {
 	private String namedPKColumn;
 	private DBStatement activeStatement;
 	private Long timeout;
+  private int attemptCount = 0;
 
 	public StatementDetails(String label, QueryIntention intent, String sql, DBStatement statement) {
 		this(label, intent, sql, null, false, false, "", statement);
@@ -118,6 +119,7 @@ public class StatementDetails {
 	 * @throws SQLException database errors are propagated
 	 */
 	public void execute(Statement stmt) throws SQLException {
+    attemptCount++;
 		if (StringCheck.isNotEmptyNorNull(namedPKColumn)) {
 			stmt.execute(sql, new String[]{namedPKColumn});
 		} else if (requiresGeneratedKeys()) {
@@ -158,4 +160,7 @@ public class StatementDetails {
 		return timeout;
 	}
 
+  public int getAttemptCount() {
+    return attemptCount;
+  }
 }
