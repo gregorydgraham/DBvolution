@@ -22,6 +22,7 @@ import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 import java.sql.SQLException;
 import java.text.SimpleDateFormat;
+import java.time.Instant;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Date;
@@ -42,6 +43,7 @@ import nz.co.gregs.regexi.Regex;
 import nz.co.gregs.regexi.RegexReplacer;
 import org.h2.jdbcx.JdbcDataSource;
 import org.junit.After;
+import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
@@ -92,11 +94,13 @@ public abstract class AbstractTest {
   public static String secondDateStr = "2/April/2011 1:02:03";
   public static Date march23rd2013 = (new GregorianCalendar(2013, 2, 23, 12, 34, 56)).getTime();
   public static Date april2nd2011 = (new GregorianCalendar(2011, 3, 2, 1, 2, 3)).getTime();
+  public static final Instant startuptime = Instant.now();
 
   @Parameters(name = "{0}")
   public static List<Object[]> data() throws IOException, SQLException, ClassNotFoundException, NoSuchMethodException, SecurityException, InstantiationException, IllegalAccessException, IllegalArgumentException, InvocationTargetException, Exception {
 
     if (databases.isEmpty()) {
+      System.out.println("STARTUP AT: "+startuptime);
       getDatabasesFromSettings();
       databases.forEach(database -> {
         System.out.print("Processing: Database " + database[0]);
