@@ -63,6 +63,10 @@ import nz.co.gregs.dbvolution.expressions.LocalDateTimeExpression;
 import nz.co.gregs.dbvolution.databases.metadata.Options;
 import nz.co.gregs.dbvolution.internal.query.StatementDetails;
 import nz.co.gregs.dbvolution.utility.StringCheck;
+import nz.co.gregs.regexi.Regex;
+import static nz.co.gregs.dbvolution.databases.QueryIntention.*;
+import static nz.co.gregs.dbvolution.databases.DBDatabaseImplementation.ResponseToException.*;
+import nz.co.gregs.regexi.RegexReplacer;
 
 /**
  * DBDatabase is the repository of all knowledge about your database.
@@ -2047,8 +2051,26 @@ public abstract class DBDatabaseImplementation implements DBDatabase, Serializab
 	 */
 	@Override
 	public ResponseToException addFeatureToFixException(Exception exp, QueryIntention intent, StatementDetails details) throws Exception {
-		throw exp;
-	}
+    if (DUPLICATE_COLUMN_NAME.matchesWithinString(exp.getMessage())){
+      return SKIPQUERY;
+    }
+    if ( CHECK_TABLE_EXISTS.equals(intent) && DOESNT_EXIST.matchesWithinString(exp.getMessage())){
+      return SKIPQUERY;
+    }
+    if (details.getAttemptCount() == 0) {
+      LOG.info("DEFAULT ATTEMPT("+details.getAttemptCount()+") - INTENT: "+intent+" EXP: "+exp.getClass().getSimpleName()+" "+" MESSAGE: "+exp.getMessage()+" "+ "QUERY: "+NEWLINES_TO_SPACES.replaceAll(details.getSql()));
+      return REQUERY;
+    }
+    if ((exp instanceof SQLTimeoutException)&& details.getAttemptCount()<6){
+      LOG.info("TIMEOUT ATTEMPT("+details.getAttemptCount()+") WITH INTENT: "+intent+" "+ "QUERY: "+NEWLINES_TO_SPACES.replaceAll(details.getSql()));
+      return REQUERY;
+    }
+    throw exp;
+  }
+  
+  private static final RegexReplacer NEWLINES_TO_SPACES = Regex.empty().space().optionalManyGreedy().newline().replaceWith().literal(" ").getReplacer();
+  protected static final Regex DUPLICATE_COLUMN_NAME = Regex.empty().literalCaseInsensitive("duplicate column name").toRegex();
+  protected static final Regex DOESNT_EXIST = Regex.startingAnywhere().beginCaseInsensitiveSection().anyOf("does not exist", "doesn't exist").endCaseInsensitiveSection().toRegex();
 
 	@Override
 	public final String getUrlFromSettings(DatabaseConnectionSettings oldSettings) {
@@ -2483,13 +2505,13 @@ public abstract class DBDatabaseImplementation implements DBDatabase, Serializab
 	public synchronized void stop() {
 		terminated = true;
 		String stopping = "STOPPING: " + getLabel();
-		LOG.info(stopping);
-		LOG.info(stopping+ " Regular Processors");
+		LOG.debug(stopping);
+		LOG.debug(stopping+ " Regular Processors");
 		for (RegularProcess regularProcessor : getRegularProcessors()) {
-			LOG.info(stopping+ " " + regularProcessor.getSimpleName());
+			LOG.debug(stopping+ " " + regularProcessor.getSimpleName());
 			regularProcessor.stop();
 		}
-		LOG.info(stopping+ " Regular Processor");
+		LOG.debug(stopping+ " Regular Processor");
 		if (regularThreadPoolFuture != null) {
 			regularThreadPoolFuture.cancel(true);
 			regularThreadPoolFuture = null;
@@ -2504,7 +2526,7 @@ public abstract class DBDatabaseImplementation implements DBDatabase, Serializab
 			}
 			if (transactionConnection != null) {
 				try {
-					LOG.info(stopping+ " transaction connection");
+					LOG.debug(stopping+ " transaction connection");
 					discardConnection(transactionConnection);
 				} catch (Exception ex) {
 				}
@@ -2513,7 +2535,7 @@ public abstract class DBDatabaseImplementation implements DBDatabase, Serializab
 			synchronized (freeConnections) {
 				final DBConnection[] free = freeConnections.toArray(new DBConnection[]{});
 				for (DBConnection connection : free) {
-					LOG.info(stopping+ " free connection");
+					LOG.debug(stopping+ " free connection");
 					discardConnection(connection);
 				}
 			}
@@ -2521,13 +2543,13 @@ public abstract class DBDatabaseImplementation implements DBDatabase, Serializab
 			synchronized (busyConnections) {
 				final DBConnection[] busy = busyConnections.toArray(new DBConnection[]{});
 				for (DBConnection connection : busy) {
-					LOG.info(stopping+ " busy connection");
+					LOG.debug(stopping+ " busy connection");
 					discardConnection(connection);
 				}
 			}
 			try {
 				if (storedConnection != null) {
-					LOG.info(stopping+ " stored connection");
+					LOG.debug(stopping+ " stored connection");
 					storedConnection.close();
 				}
 			} catch (SQLException ex) {
