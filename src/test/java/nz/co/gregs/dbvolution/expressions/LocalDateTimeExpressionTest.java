@@ -536,40 +536,42 @@ public class LocalDateTimeExpressionTest extends AbstractTest {
 
 		DBQuery query = database.getDBQuery(marq)
 				.setBlankQueryAllowed(true)
-				.setSortOrder(marq.column(marq.carCompany));
+				.setSortOrder(marq.column(marq.carCompany), marq.column(marq.name));
 
 		List<DBQueryRow> allRows = query.getAllRows();
 
 		assertThat(allRows.size(), is(22));
 
-		MarqueWithComplexWindowingFunction got;// = allRows.get(0).get(marq);
+		MarqueWithComplexWindowingFunction got;
 		ArrayList<Object[]> expectedValues = new ArrayList<>();
-		expectedValues.add(new Object[]{2, march23rd2013LocalDateTime, march23rd2013LocalDateTime});
-		expectedValues.add(new Object[]{2, march23rd2013LocalDateTime, march23rd2013LocalDateTime});
-		expectedValues.add(new Object[]{1, march23rd2013LocalDateTime, march23rd2013LocalDateTime});
-		expectedValues.add(new Object[]{3, march23rd2013LocalDateTime, april2nd2011});
-		expectedValues.add(new Object[]{3, march23rd2013LocalDateTime, april2nd2011});
-		expectedValues.add(new Object[]{3, march23rd2013LocalDateTime, april2nd2011});
-		expectedValues.add(new Object[]{15, march23rd2013LocalDateTime, april2nd2011});
-		expectedValues.add(new Object[]{15, march23rd2013LocalDateTime, april2nd2011});
-		expectedValues.add(new Object[]{15, march23rd2013LocalDateTime, april2nd2011});
-		expectedValues.add(new Object[]{15, march23rd2013LocalDateTime, april2nd2011});
-		expectedValues.add(new Object[]{15, march23rd2013LocalDateTime, april2nd2011});
-		expectedValues.add(new Object[]{15, march23rd2013LocalDateTime, april2nd2011});
-		expectedValues.add(new Object[]{15, march23rd2013LocalDateTime, april2nd2011});
-		expectedValues.add(new Object[]{15, march23rd2013LocalDateTime, april2nd2011});
-		expectedValues.add(new Object[]{15, march23rd2013LocalDateTime, april2nd2011});
-		expectedValues.add(new Object[]{15, march23rd2013LocalDateTime, april2nd2011});
-		expectedValues.add(new Object[]{15, march23rd2013LocalDateTime, april2nd2011});
-		expectedValues.add(new Object[]{15, march23rd2013LocalDateTime, april2nd2011});
-		expectedValues.add(new Object[]{15, march23rd2013LocalDateTime, april2nd2011});
-		expectedValues.add(new Object[]{15, march23rd2013LocalDateTime, april2nd2011});
-		expectedValues.add(new Object[]{15, march23rd2013LocalDateTime, april2nd2011});
-		expectedValues.add(new Object[]{15, march23rd2013LocalDateTime, april2nd2011});
+		expectedValues.add(new Object[]{0.0, march23rd2013LocalDateTime, "HYUNDAI"});
+		expectedValues.add(new Object[]{0.0, march23rd2013LocalDateTime, "TOYOTA"});
+		expectedValues.add(new Object[]{0.09523809523809523, march23rd2013LocalDateTime, "FORD"});
+		expectedValues.add(new Object[]{0.14285714285714285, march23rd2013LocalDateTime, "HOLDEN"});
+		expectedValues.add(new Object[]{0.14285714285714285, april2nd2011LocalDateTime, "HUMMER"});
+		expectedValues.add(new Object[]{0.14285714285714285, march23rd2013LocalDateTime, "JEEP"});
+		expectedValues.add(new Object[]{0.2857142857142857, april2nd2011LocalDateTime, "BMW"});
+		expectedValues.add(new Object[]{0.2857142857142857, march23rd2013LocalDateTime, "CHRYSLER"});
+		expectedValues.add(new Object[]{0.2857142857142857, march23rd2013LocalDateTime, "DAEWOO"});
+		expectedValues.add(new Object[]{0.2857142857142857, march23rd2013LocalDateTime, "DAIHATSU"});
+		expectedValues.add(new Object[]{0.2857142857142857, march23rd2013LocalDateTime, "HONDA"});
+		expectedValues.add(new Object[]{0.2857142857142857, march23rd2013LocalDateTime, "ISUZU"});
+		expectedValues.add(new Object[]{0.2857142857142857, march23rd2013LocalDateTime, "LANDROVER"});
+		expectedValues.add(new Object[]{0.2857142857142857, march23rd2013LocalDateTime, "MAZDA"});
+		expectedValues.add(new Object[]{0.2857142857142857, march23rd2013LocalDateTime, "MITSUBISHI"});
+		expectedValues.add(new Object[]{0.2857142857142857, march23rd2013LocalDateTime, "NISSAN"});
+		expectedValues.add(new Object[]{0.2857142857142857, null, "PEUGEOT"});
+		expectedValues.add(new Object[]{0.2857142857142857, march23rd2013LocalDateTime, "ROVER"});
+		expectedValues.add(new Object[]{0.2857142857142857, march23rd2013LocalDateTime, "SUBARU"});
+		expectedValues.add(new Object[]{0.2857142857142857, march23rd2013LocalDateTime, "SUZUKI"});
+		expectedValues.add(new Object[]{0.2857142857142857, march23rd2013LocalDateTime, "VOLVO"});
+		expectedValues.add(new Object[]{0.2857142857142857, april2nd2011LocalDateTime, "VW"});
 		for (int i = 0; i < allRows.size(); i++) {
 			got = allRows.get(i).get(marq);
 			Object[] expect = expectedValues.get(i);
-      // TODO there should be asserts here
+      assertThat(got.percentileRank.getValue().doubleValue(), is((Double)expect[0]));
+      assertThat(got.creationLocalDateTime.getValue(), is((LocalDateTime)expect[1]));
+      assertThat(got.name.getValue(), is((String)expect[2]));
 		}
 	}
 
