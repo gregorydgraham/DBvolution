@@ -20,6 +20,8 @@ import java.sql.*;
 import nz.co.gregs.dbvolution.exceptions.LoopDetectedInRecursiveSQL;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import nz.co.gregs.dbvolution.databases.DBDatabaseImplementation.ResponseToException;
 import static nz.co.gregs.dbvolution.databases.DBDatabaseImplementation.ResponseToException.*;
 import nz.co.gregs.dbvolution.databases.connections.DBConnection;
@@ -31,8 +33,6 @@ import nz.co.gregs.dbvolution.internal.query.StatementDetails;
 import nz.co.gregs.dbvolution.utility.StringCheck;
 import nz.co.gregs.regexi.Regex;
 import nz.co.gregs.regexi.internal.PartialRegex;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
 
 /**
  * Encapsulates the JDBC Connection and Statement classes.
@@ -55,7 +55,7 @@ import org.apache.commons.logging.LogFactory;
  */
 public class DBStatement implements AutoCloseable {
 
-	static final private Log LOG = LogFactory.getLog(DBStatement.class);
+	static final private Logger LOG = Logger.getLogger(DBStatement.class.getName());
 
 	private Statement internalStatement;
 	final DBDatabase database;
@@ -156,7 +156,7 @@ public class DBStatement implements AutoCloseable {
 						return null;
 					}
 				}
-				throw new SQLException(ex);
+				throw new SQLException(exp.getMessage(), "QUERY: "+details.getSql(), exp);
 			}
 		}
 		try {
@@ -210,7 +210,7 @@ public class DBStatement implements AutoCloseable {
 		} catch (SQLException e) {
 			// Someone please tell me how you are supposed to cope 
 			// with an exception during the close method????????
-			LOG.warn("Exception occurred during close(): " + e.getMessage(), e);
+			LOG.log(Level.WARNING, "Exception occurred during close(): " + e.getMessage(), e);
 		}
 		closeInternalStatement();
 	}
@@ -227,8 +227,8 @@ public class DBStatement implements AutoCloseable {
 			} catch (SQLException e) {
 				// Someone please tell me how you are supposed to cope 
 				// with an exception during the close method????????
-				LOG.warn("Exception occurred during close(): No action required");
-				LOG.warn("Exception occurred during close(): " + e.getMessage(), e);
+				LOG.log(Level.WARNING, "Exception occurred during close(): No action required");
+				LOG.log(Level.WARNING, "Exception occurred during close(): " + e.getMessage(), e);
 			}
 		}
 	}
@@ -388,7 +388,7 @@ public class DBStatement implements AutoCloseable {
 				try {
 					internalStatement.close();
 				} catch (SQLException exp) {
-					LOG.debug(this, exp);
+					LOG.log(Level.FINEST, this.toString(), exp);
 				}
 				internalStatement = null;
 				getInternalStatement();
@@ -527,10 +527,11 @@ public class DBStatement implements AutoCloseable {
 		String sql = details.getSql();
 		final String logSQL = "EXECUTING on " + database.getLabel() + ": " + sql;
 		database.printSQLIfRequested(logSQL);
-		LOG.debug(logSQL);
+		LOG.log(database.isPrintSQLBeforeExecuting()?Level.INFO:Level.FINEST, logSQL);
 		try {
 			executeWithTimeout(details);
-		} catch (SQLException exp) {
+      LOG.log(database.isPrintSQLBeforeExecuting()?Level.INFO:Level.FINEST, "COMPLETED SUCCESSFULLY");
+    } catch (SQLException exp) {
 			StatementDetails statementDetails
 					= details.copy()
 							.withLabel("RETRY EXECUTE")
@@ -962,7 +963,7 @@ public class DBStatement implements AutoCloseable {
 	public int executeUpdate(String string, String[] strings) throws SQLException {
 		final String logSQL = "EXECUTING UPDATE: " + string;
 		database.printSQLIfRequested(logSQL);
-		LOG.debug(logSQL);
+		LOG.log(Level.FINEST, logSQL);
 		return getInternalStatement().executeUpdate(string, strings);
 	}
 
