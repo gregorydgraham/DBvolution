@@ -36,8 +36,12 @@ import nz.co.gregs.dbvolution.exceptions.UnableToDecryptInput;
 import nz.co.gregs.dbvolution.exceptions.CannotEncryptInputException;
 
 /**
+ * An encrypted string value for use with {@link DBEncryptedText}.
  *
- * @author gregorygraham
+ * Use {@link Encrypted#encrypt(java.lang.String, java.lang.String) } to quickly create Encrypted values and {@link Encrypted#decrypt(java.lang.String) } to
+ * quickly decrypt them.
+ *
+ * @author Gregory Graham
  */
 public class Encrypted {
 
