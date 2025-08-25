@@ -386,24 +386,40 @@ public class PostgresDB extends DBDatabaseImplementation implements SupportsPoly
 			.literal("ERROR: relation ")
 			.doublequote().anyCharacterExcept('"').doublequote()
 			.literal(" does not exist").toRegex();
+  private static final Regex GEOMETRY_DOES_NOT_EXIST = Regex.empty().literal("ERROR: type \"geometry\" does not exist").toRegex();
 
 	@Override
 	public ResponseToException addFeatureToFixException(Exception exp, QueryIntention intent, StatementDetails details) throws Exception {
-		if ((exp instanceof org.postgresql.util.PSQLException)) {
-			String message = exp.getMessage();
-			if (intent.is(QueryIntention.CREATE_TABLE) && TABLE_EXISTS.matchesWithinString(message)) { //message.matches("ERROR: relation \"[^\"]*\" already exists.*")) {
-				return ResponseToException.SKIPQUERY;
-			} else if (intent.is(QueryIntention.CHECK_TABLE_EXISTS)) {
-				if (TABLE_DOES_NOT_EXIST.matchesWithinString(message)) {
-					//message.matches("ERROR: relation \"[^\"]*\" does not exist.*")) {
-					return ResponseToException.SKIPQUERY;
-				} else {
-					throw exp;
-				}
-			} else {
-				throw exp;
-			}
-		}
+		String message = exp.getMessage();
+    if (intent.is(QueryIntention.CREATE_TABLE) && TABLE_EXISTS.matchesWithinString(message)) {
+      //message.matches("ERROR: relation \"[^\"]*\" already exists.*")) {
+      return ResponseToException.SKIPQUERY;
+    }
+    if (intent.is(QueryIntention.CHECK_TABLE_EXISTS) && TABLE_DOES_NOT_EXIST.matchesWithinString(message)) {
+      //message.matches("ERROR: relation \"[^\"]*\" does not exist.*")) {
+      return ResponseToException.SKIPQUERY;
+    }
+    if(GEOMETRY_DOES_NOT_EXIST.matchesWithinString(message)){
+      var stmt = details.getDBStatement();
+      var sql = "CREATE EXTENSION postgis;";
+      stmt.execute(new StatementDetails("Enable POSTGIS extensions", QueryIntention.ALLOW_IDENTITY_INSERT, sql, stmt));
+      return ResponseToException.REQUERY;
+    }
+//		if ((exp instanceof org.postgresql.util.PSQLException)) {
+//			String message = exp.getMessage();
+//			if (intent.is(QueryIntention.CREATE_TABLE) && TABLE_EXISTS.matchesWithinString(message)) { //message.matches("ERROR: relation \"[^\"]*\" already exists.*")) {
+//				return ResponseToException.SKIPQUERY;
+//			} else if (intent.is(QueryIntention.CHECK_TABLE_EXISTS)) {
+//				if (TABLE_DOES_NOT_EXIST.matchesWithinString(message)) {
+//					//message.matches("ERROR: relation \"[^\"]*\" does not exist.*")) {
+//					return ResponseToException.SKIPQUERY;
+//				} else {
+//					throw exp;
+//				}
+//			} else {
+//				throw exp;
+//			}
+//		}
     return super.addFeatureToFixException(exp, intent, details);
 	}
 
