@@ -18,22 +18,17 @@ package nz.co.gregs.dbvolution.query;
 import nz.co.gregs.dbvolution.internal.querygraph.QueryGraph;
 import java.util.ArrayList;
 import java.util.List;
-import nz.co.gregs.dbvolution.databases.DBDatabase;
 import nz.co.gregs.dbvolution.DBRow;
 import nz.co.gregs.dbvolution.annotations.DBColumn;
 import nz.co.gregs.dbvolution.annotations.DBForeignKey;
 import nz.co.gregs.dbvolution.annotations.DBPrimaryKey;
 import nz.co.gregs.dbvolution.datatypes.DBInteger;
-import nz.co.gregs.dbvolution.expressions.BooleanExpression;
 import nz.co.gregs.dbvolution.generic.AbstractTest;
 import static org.hamcrest.Matchers.*;
 import static org.hamcrest.MatcherAssert.assertThat;
 import org.junit.*;
 
 /**
- *
- * <p style="color: #F90;">Support DBvolution at
- * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
  *
  * @author Gregory Graham
  */
@@ -43,16 +38,6 @@ public class QueryGraphDepthFirstTest extends AbstractTest {
 		super(testIterationName, db);
 	}
 
-	@Override
-	public void tearDown(DBDatabase database) throws Exception {
-		;
-	}
-
-	@Override
-	public void setup(DBDatabase database) throws Exception {
-		;
-	}
-
 	/**
 	 * Test of toList method, of class QueryGraphDepthFirst.
 	 */
@@ -60,17 +45,17 @@ public class QueryGraphDepthFirstTest extends AbstractTest {
 	@Test
 	public void testToList() {
 
-		List<DBRow> requiredTables = new ArrayList<DBRow>();
+		List<DBRow> requiredTables = new ArrayList<>();
 		requiredTables.add(new TableA());
 		requiredTables.add(new TableB());
 		requiredTables.add(new TableC());
 
-		List<DBRow> optionalTables = new ArrayList<DBRow>();
+		List<DBRow> optionalTables = new ArrayList<>();
 		optionalTables.add(new TableD());
 		optionalTables.add(new TableE());
 
-		QueryGraph graph = new QueryGraph(requiredTables, new ArrayList<BooleanExpression>());
-		graph.addOptionalAndConnectToRelevant(optionalTables, new ArrayList<BooleanExpression>());
+		QueryGraph graph = new QueryGraph(requiredTables, new ArrayList<>());
+		graph.addOptionalAndConnectToRelevant(optionalTables, new ArrayList<>());
 
 		List<DBRow> result = graph.toList();
 
@@ -85,17 +70,17 @@ public class QueryGraphDepthFirstTest extends AbstractTest {
 	@Test
 	public void testAllOptional() {
 
-		List<DBRow> requiredTables = new ArrayList<DBRow>();
+		List<DBRow> requiredTables = new ArrayList<>();
 
-		List<DBRow> optionalTables = new ArrayList<DBRow>();
+		List<DBRow> optionalTables = new ArrayList<>();
 		optionalTables.add(new TableA());
 		optionalTables.add(new TableB());
 		optionalTables.add(new TableC());
 		optionalTables.add(new TableD());
 		optionalTables.add(new TableE());
 
-		QueryGraph graph = new QueryGraph(requiredTables, new ArrayList<BooleanExpression>());
-		graph.addOptionalAndConnectToRelevant(optionalTables, new ArrayList<BooleanExpression>());
+		QueryGraph graph = new QueryGraph(requiredTables, new ArrayList<>());
+		graph.addOptionalAndConnectToRelevant(optionalTables, new ArrayList<>());
 
 		List<DBRow> result = graph.toList();
 
@@ -107,17 +92,17 @@ public class QueryGraphDepthFirstTest extends AbstractTest {
 	@Test
 	public void testAllOptionalFirstDoesNotStartTheList() {
 
-		List<DBRow> requiredTables = new ArrayList<DBRow>();
+		List<DBRow> requiredTables = new ArrayList<>();
 
-		List<DBRow> optionalTables = new ArrayList<DBRow>();
+		List<DBRow> optionalTables = new ArrayList<>();
 		optionalTables.add(new TableA());
 		optionalTables.add(new TableB());
 		optionalTables.add(new TableC());
 		requiredTables.add(new TableD());
 		requiredTables.add(new TableE());
 
-		QueryGraph graph = new QueryGraph(requiredTables, new ArrayList<BooleanExpression>());
-		graph.addOptionalAndConnectToRelevant(optionalTables, new ArrayList<BooleanExpression>());
+		QueryGraph graph = new QueryGraph(requiredTables, new ArrayList<>());
+		graph.addOptionalAndConnectToRelevant(optionalTables, new ArrayList<>());
 
 		List<? extends DBRow> result = graph.toList();
 
@@ -132,9 +117,9 @@ public class QueryGraphDepthFirstTest extends AbstractTest {
 	@Test
 	public void testAllRequiredTableWithConditionsDoesStartTheList() {
 
-		List<DBRow> requiredTables = new ArrayList<DBRow>();
+		List<DBRow> requiredTables = new ArrayList<>();
 
-		List<DBRow> optionalTables = new ArrayList<DBRow>();
+		List<DBRow> optionalTables = new ArrayList<>();
 		final TableA tableA = new TableA();
 		final TableB tableB = new TableB();
 		final TableC tableC = new TableC();
@@ -151,8 +136,8 @@ public class QueryGraphDepthFirstTest extends AbstractTest {
 		requiredTables.add(tableD);
 		requiredTables.add(tableE);
 
-		QueryGraph graph = new QueryGraph(requiredTables, new ArrayList<BooleanExpression>());
-		graph.addOptionalAndConnectToRelevant(optionalTables, new ArrayList<BooleanExpression>());
+		QueryGraph graph = new QueryGraph(requiredTables, new ArrayList<>());
+		graph.addOptionalAndConnectToRelevant(optionalTables, new ArrayList<>());
 
 		List<DBRow> result = graph.toList();
 
@@ -167,9 +152,9 @@ public class QueryGraphDepthFirstTest extends AbstractTest {
 	@Test
 	public void testAllOptionalTableWithConditionsDoesNotStartTheList() {
 
-		List<DBRow> requiredTables = new ArrayList<DBRow>();
+		List<DBRow> requiredTables = new ArrayList<>();
 
-		List<DBRow> optionalTables = new ArrayList<DBRow>();
+		List<DBRow> optionalTables = new ArrayList<>();
 		final TableA tableA = new TableA();
 		final TableB tableB = new TableB();
 		final TableC tableC = new TableC();
@@ -184,8 +169,8 @@ public class QueryGraphDepthFirstTest extends AbstractTest {
 		requiredTables.add(tableD);
 		requiredTables.add(tableE);
 
-		QueryGraph graph = new QueryGraph(requiredTables, new ArrayList<BooleanExpression>());
-		graph.addOptionalAndConnectToRelevant(optionalTables, new ArrayList<BooleanExpression>());
+		QueryGraph graph = new QueryGraph(requiredTables, new ArrayList<>());
+		graph.addOptionalAndConnectToRelevant(optionalTables, new ArrayList<>());
 
 		List<DBRow> result = graph.toList();
 
