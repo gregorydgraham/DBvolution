@@ -122,15 +122,17 @@ public class DBLargeTextTest extends AbstractTest {
 		int primaryKey = 3;
 		blobTable.textID.setValue(primaryKey);
 		blobTable.carCompany.setValue(1);//Toyota
-		blobTable.textFilename.setValue("history.txt");
-		File image = new File("history.txt");
+    final String filename = "history.txt";
+		blobTable.textFilename.setValue(filename);
+		File image = new File(filename);
 		blobTable.fileText.setFromFileSystem(image);
 		database.insert(blobTable);
 
 		blobTable = new CompanyTextForRetreivingBinaryObject();
 
 		CompanyTextForRetreivingBinaryObject firstRow = database.getDBTable(blobTable).getRowsByPrimaryKey(primaryKey).get(0);
-		final String valueOf = firstRow.fileText.stringValue();//new String(firstRow.fileText.getBytes());
+    assertThat(firstRow.textFilename.getValue(), is(filename));
+		final String valueOf = firstRow.fileText.stringValue();
 		assertThat(valueOf, containsString("Maranhāo"));
 	}
 
@@ -146,13 +148,15 @@ public class DBLargeTextTest extends AbstractTest {
 		int primaryKey = 4;
 		clobTable.textID.setValue(primaryKey);
 		clobTable.carCompany.setValue(1);
-		clobTable.textFilename.setValue("history.txt");
+    final String filename = "history.txt";
+		clobTable.textFilename.setValue(filename);
 		clobTable.filetext.setValue(SOURCEDATAASSTRING);
 		database.insert(clobTable);
 
 		CompanyTextForRetreivingString firstRow = database.getDBTable(new CompanyTextForRetreivingString()).getRowsByPrimaryKey(primaryKey).get(0);
 
 		String stringValue = firstRow.filetext.stringValue();
+    assertThat(firstRow.textFilename.getValue(), is(filename));
 		assertThat(stringValue, is(SOURCEDATAASSTRING));
 	}
 
@@ -165,18 +169,17 @@ public class DBLargeTextTest extends AbstractTest {
 		database.createTable(testRow);
 
 		testRow.carCompany.setValue(1);
-		testRow.imageFilename.setValue("history.txt");
-		File image = new File("history.txt");
+    final String filename = "history.txt";
+		testRow.imageFilename.setValue(filename);
+		File image = new File(filename);
 		testRow.imageBytes.setValue(SOURCEDATAASSTRING);
 		database.insert(testRow);
 
 		TextObjectWithAutoIncrement firstRow = database.getDBTable(new TextObjectWithAutoIncrement()).setBlankQueryAllowed(true).getOnlyRow();
 
+    assertThat(firstRow.imageFilename.getValue(),is(filename));
 		String stringValue = firstRow.imageBytes.stringValue();
 		assertThat(stringValue, is(SOURCEDATAASSTRING));
-
-//		database.preventDroppingOfTables(false);
-//		database.dropTableNoExceptions(testRow);
 	}
 
 	@DBTableName("textwithautoincrement")
