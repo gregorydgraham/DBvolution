@@ -39,8 +39,9 @@ import java.util.logging.Logger;
 import nz.co.gregs.dbvolution.databases.DBStatement;
 
 /**
- *
- * @author gregorygraham
+ * A timer class that will automatically cancel a database query.
+ * 
+ * @author Gregory Graham
  */
 public class QueryTimeout {
 
@@ -49,7 +50,6 @@ public class QueryTimeout {
 
 	private final DBStatement statement;
 	private final Date timestamp;
-	private final String sql;
 	private boolean timeoutOccured = false;
 	private StatementDetails details = null;
 	private boolean stillRequired = true;
@@ -57,11 +57,13 @@ public class QueryTimeout {
 	private static final long DEFAULT_TIMEOUT_MILLISECONDS = 15000L;
 	private ScheduledFuture<?> timeoutHandler;
 	private final TimeOut timeout = new TimeOut();
+  private final String identifier;
+  private double runDuration;
 
 	public QueryTimeout(StatementDetails details, Long timeoutTime) {
 		this.details = details;
 		this.statement = details.getDBStatement();
-		this.sql = details.getSql();
+		this.identifier = details.getLabel()+" => "+details.getSql();
 		this.timestamp = new Date();
 		scheduleIfRequired(timeoutTime);
 	}
@@ -116,30 +118,22 @@ public class QueryTimeout {
 
 		@Override
 		public void run() {
+      runDuration = (0.0 + ((new Date()).getTime() - timestamp.getTime())) / 1000.0;
+      var logObjects = new Object[]{runDuration, identifier};
 			if (stillRequired) {
 				try {
 					if (details != null && !details.isIgnoreExceptions()) {
-						System.out.format("TIMEOUT: Cancelling query after {0} seconds {1} => {2}",
-								(0.0 + ((new Date()).getTime() - timestamp.getTime())) / 1000.0,
-								details.getLabel(),
-								sql);
-						LOGGER.log(
-								Level.WARNING,
-								"TIMEOUT: Cancelling query after {0} seconds {1} => {2}",
-								new Object[]{
-									(0.0 + ((new Date()).getTime() - timestamp.getTime())) / 1000.0,
-									details.getLabel(),
-									sql
-								});
+						LOGGER.log(Level.WARNING, "TIMEOUT: Cancelling query after {0} seconds {1}", logObjects);
 					}
 					statement.cancel();
-				} catch (SQLException ex) {
-					Logger.getLogger(QueryDetails.class.getName()).log(Level.SEVERE, "QueryCanceller caught an exception", ex);
-				} finally {
+        } catch (SQLException ex) {
+          if (details != null && !details.isIgnoreExceptions()) {
+            LOGGER.log(Level.WARNING, "EXCEPTION DURING QUERY CANCELLATION: ", ex);
+          }
+        } finally {
 					timeoutOccured = true;
 				}
 			}
 		}
-
 	}
 }
