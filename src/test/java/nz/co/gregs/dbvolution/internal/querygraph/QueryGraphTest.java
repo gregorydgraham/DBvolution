@@ -26,16 +26,12 @@ import static org.hamcrest.Matchers.*;
 import static org.hamcrest.MatcherAssert.assertThat;
 import org.junit.After;
 import org.junit.AfterClass;
-import static org.junit.Assert.assertNotNull;
 
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
 /**
- *
- * <p style="color: #F90;">Support DBvolution at
- * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
  *
  * @author gregorygraham
  */
@@ -51,16 +47,6 @@ public class QueryGraphTest extends AbstractTest {
 
 	public QueryGraphTest(Object testIterationName, Object db) {
 		super(testIterationName, db);
-	}
-
-	@Before
-	@Override
-	public void setUp() {
-	}
-
-	@After
-	@Override
-	public void tearDown() {
 	}
 
 	/**
