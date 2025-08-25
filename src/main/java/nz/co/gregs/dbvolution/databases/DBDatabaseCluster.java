@@ -352,7 +352,7 @@ public class DBDatabaseCluster extends DBDatabaseImplementation {
 	}
 
 	private void initDatabaseMembers(DBDatabase[] databases) {
-		LinkedList<DBDatabase> listedDatabases = new LinkedList<DBDatabase>(Arrays.asList(databases));
+		LinkedList<DBDatabase> listedDatabases = new LinkedList<>(Arrays.asList(databases));
 		boolean done = false;
 		while (!done && listedDatabases.size() > 0) {
 			DBDatabase firstDB = listedDatabases.get(0);
@@ -981,7 +981,7 @@ public class DBDatabaseCluster extends DBDatabaseImplementation {
 	private synchronized DBActionList executeDBActionOnClusterMembers(DBAction action) throws NoAvailableDatabaseException, SQLException {
 		LOG.debug("EXECUTING ACTION: " + action.getSQLStatements(this));
 		addActionToQueue(action);
-		List<ActionTask> tasks = new ArrayList<ActionTask>();
+		List<ActionTask> tasks = new ArrayList<>();
 		DBActionList actionsPerformed = new DBActionList();
 		try {
 			final DBDatabase[] databases = getDetails().getReadyDatabases();
@@ -1373,7 +1373,7 @@ public class DBDatabaseCluster extends DBDatabaseImplementation {
 	private static final Cleaner cleaner = Cleaner.create();
 
 	private ClusterCleanupActions clusterCleanupActions;
-	private transient Cleaner.Cleanable cleanable;
+  private transient Cleaner.Cleanable cleanable;
 
 	private void addCleaner() {
 		clusterCleanupActions = new ClusterCleanupActions(getDetails(), LOG, ACTION_THREAD_POOL);
