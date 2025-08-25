@@ -57,11 +57,6 @@ public class DBPolygon2DTest extends AbstractTest {
 		return createPolygon;
 	}
 
-	@Override
-	public void setup(DBDatabase db) throws Exception {
-		super.setup(db);
-	}
-
 	@Test
 	public void basicSpatialTest() throws SQLException {
 		if (database instanceof SupportsPolygonDatatype) {
