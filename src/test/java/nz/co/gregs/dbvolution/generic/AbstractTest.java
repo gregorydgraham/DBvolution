@@ -23,6 +23,7 @@ import java.lang.reflect.InvocationTargetException;
 import java.sql.SQLException;
 import java.text.SimpleDateFormat;
 import java.time.Instant;
+import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Date;
@@ -43,7 +44,6 @@ import nz.co.gregs.regexi.Regex;
 import nz.co.gregs.regexi.RegexReplacer;
 import org.h2.jdbcx.JdbcDataSource;
 import org.junit.After;
-import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
@@ -101,6 +101,7 @@ public abstract class AbstractTest {
 
     if (databases.isEmpty()) {
       System.out.println("STARTUP AT: "+startuptime);
+      System.out.println(" LOCALTIME: "+startuptime.atZone(ZoneId.systemDefault()));
       getDatabasesFromSettings();
       databases.forEach(database -> {
         System.out.print("Processing: Database " + database[0]);
