@@ -13,11 +13,14 @@ docker pull postgis/postgis:10-3.0-alpine
 -- -e 'TZ=Pacific/Auckland' sets the container timezone to the time where I do my test (needs improving)
 -- -p 6543:5432 is the port of the host and container
 --  -e POSTGRES_PASSWORD=mysecretpassword is the password for connecting to the postgres database
--- -d is detach "Run container in background and print container ID"
+-- -d is detach "Run container in background and print container 
+docker run --name postgres_arm_full -e 'TZ=Pacific/Auckland' -p 6543:5432 -e POSTGRES_PASSWORD=mysecretpassword -d arm64v8/postgresID"
 docker run --name postgres_full -e 'TZ=Pacific/Auckland' -p 6543:5432 -e POSTGRES_PASSWORD=mysecretpassword -d postgis/postgis:10-3.0-alpine
 docker run --name postgres_fullcluster -e 'TZ=Pacific/Auckland' -p 16543:5432 -e POSTGRES_PASSWORD=mysecretpassword -d postgis/postgis:10-3.0-alpine
-
 
 -- Stop and remove the container
 docker container stop postgres_fullcluster ; docker container rm postgres_fullcluster
 
+-- Apple silicon postgres image that doesn't have postgis so it can't be used currently
+
+docker run --name postgres_arm_full -e 'TZ=Pacific/Auckland' -p 6544:5432 -e POSTGRES_PASSWORD=mysecretpassword -d arm64v8/postgres
