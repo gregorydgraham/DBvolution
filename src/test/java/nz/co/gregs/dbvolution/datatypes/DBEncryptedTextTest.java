@@ -31,7 +31,11 @@
 package nz.co.gregs.dbvolution.datatypes;
 
 import java.sql.SQLException;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import nz.co.gregs.dbvolution.DBRow;
 import nz.co.gregs.dbvolution.DBTable;
 import nz.co.gregs.dbvolution.annotations.DBAutoIncrement;
@@ -154,6 +158,97 @@ public class DBEncryptedTextTest extends AbstractTest {
 	}
 
 	public static class EncryptedTextTestTable extends DBRow {
+
+		private final static long serialVersionUID = 1l;
+
+		@DBAutoIncrement
+		@DBPrimaryKey
+		@DBColumn("pkid")
+		public DBInteger pkid = new DBInteger();
+
+		@DBColumn("encryptedcol")
+		public DBEncryptedText encryptedString = new DBEncryptedText();
+
+		@DBColumn()
+		public DBInteger dummy = new DBInteger(1);
+
+	}
+
+	@Test
+	public void testDBEncryptedStringWithLotsOfBackgroundThreads() throws SQLException, IncorrectPasswordException, CannotEncryptInputException, UnableToDecryptInput {
+
+		var insertRow = new EncryptedTextTestTableWithThreads();
+		String passphrase = "very secret phraseAAA!!!{}|!@#$%^&*()_+-=';:/?.,<>\"";
+		String correctSecret = "correct secretAAA!!!{}|!@#$%^&*()_+-=';:/?.,<>\"";
+
+		insertRow.encryptedString.setValue(Encrypted.encrypt(passphrase, correctSecret));
+		final Encrypted encryptedValue = insertRow.encryptedString.getEncryptedValue();
+		assertThat(insertRow.encryptedString.getEncryptedValue().toString(), startsWith("BASE64_AES/GCM/NoPadding|"));
+		assertThat(insertRow.encryptedString.decryptWith(passphrase), is(correctSecret));
+
+		database.preventDroppingOfTables(false);
+		database.dropTableNoExceptions(insertRow);
+		database.createTableNoExceptions(insertRow);
+    
+    // Make a threadpool for all our background threads
+    // taking up CPU time
+		ExecutorService threadpool = Executors.newFixedThreadPool(1000);
+    ArrayList<Callable<String>> taskGroup = new ArrayList<>();
+    
+    // Make a lot of background threads
+    for (int index = 0; index < 50; index++) {
+      addBackgroundThread(index, taskGroup);
+    }
+    // insert the actual task into the middle of the background threads
+    taskGroup.add(() -> {
+      try{
+        database.setPrintSQLBeforeExecuting(true);
+        database.insert(insertRow);
+        DBTable<EncryptedTextTestTableWithThreads> table = database.getDBTable(new EncryptedTextTestTableWithThreads());
+        table.setBlankQueryAllowed(true);
+
+        var allRows = table.getAllRows();
+        for (var row : allRows) {
+          System.out.println("ENCRYPTEDSTRING ID: " + row.pkid.stringValue());
+          database.print(allRows);
+          System.out.println("DECRYPTED STRING: " + row.encryptedString.decryptWith(passphrase));
+          assertThat(row.encryptedString.getEncryptedValue(), is(encryptedValue));
+          assertThat(row.encryptedString.getEncryptedValue(), not(correctSecret));
+          assertThat(row.encryptedString.decryptWith(passphrase), is(correctSecret));
+        }
+      } finally {
+        database.setPrintSQLBeforeExecuting(false);
+      }
+      return null;
+    });
+    // Add the other half of the background threads
+    for (int index = 50; index < 100; index++) {
+      addBackgroundThread(index, taskGroup);
+    }
+    
+    // Set the whole thing off and hope that it works
+    try {
+      threadpool.invokeAll(taskGroup);
+    } catch (InterruptedException ex) {
+      System.getLogger(DBEncryptedTextTest.class.getName()).log(System.Logger.Level.ERROR, (String) null, ex);
+    }
+    
+    threadpool.shutdownNow();
+	}
+
+  private void addBackgroundThread(int index, ArrayList<Callable<String>> taskGroup) {
+    long finalIndex = index;
+    taskGroup.add(() -> {
+      final String passphrase = "very secret phraseAAA!!!{}|!@#$%^&*()_+-=';:/?.,<>\""+index;
+      final String cipherText = ""+finalIndex+" - nz.co.gregs.dbvolution.datatypes.DBEncryptedTextTest.testDBEncryptedStringWithLotsOfBackgroundTasks(): ";
+      var encrypt = Encrypted.encrypt(passphrase, cipherText);
+      String result = encrypt.decrypt(passphrase);
+//      System.out.println(result);
+      return result;
+    });
+  }
+
+	public static class EncryptedTextTestTableWithThreads extends DBRow {
 
 		private final static long serialVersionUID = 1l;
 
