@@ -523,7 +523,7 @@ public class DBTable<E extends DBRow> {
 	 * number of rows that would have been returned had
 	 * {@link #getAllRows() getAllRows()} been called.
 	 *
-	 * @return the number of rows that have or will be retrieved. 1 Database
+	 * @return the number of rows that have or will be retrieved. Database
 	 * exceptions may be thrown
 	 * @throws java.sql.SQLException java.sql.SQLException
 	 */
