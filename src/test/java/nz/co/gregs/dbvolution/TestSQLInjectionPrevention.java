@@ -40,6 +40,7 @@ public class TestSQLInjectionPrevention extends AbstractTest {
 		newMarque1.getNumericCode().setValue(10);
 
 		DBActionList changes = database.insert(newMarque1);
+    DBTable<Marque> marquesTable = database.getDBTable(new Marque());
 		List<Marque> allRows = marquesTable.setBlankQueryAllowed(true).getAllRows();
 		assertThat(allRows.size(), is(23));
 
@@ -60,6 +61,7 @@ public class TestSQLInjectionPrevention extends AbstractTest {
 		List<Marque> allRows1 = database.getDBTable(newMarque1).getAllRows();
 		assertThat(allRows1.size(), is(0));
 
+    DBTable<Marque> marquesTable = database.getDBTable(new Marque());
 		List<Marque> allRows = marquesTable.setBlankQueryAllowed(true).getAllRows();
 		assertThat(allRows.size(), is(22));
 	}
