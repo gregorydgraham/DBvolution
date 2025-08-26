@@ -34,24 +34,24 @@ import org.junit.Test;
  * @author Gregory Graham
  */
 public class DBTableInsertTest extends AbstractTest {
-
-	Marque myTableRow = new Marque();
-
+  
 	public DBTableInsertTest(Object testIterationName, Object db) {
 		super(testIterationName, db);
 	}
 
 	@Test
 	public void testInsertRows() throws SQLException {
-		myTableRow.getUidMarque().setValue(999);
-		myTableRow.getName().setValue("TOYOTA");
-		myTableRow.getNumericCode().setValue(10);
-		marquesTable.insert(myTableRow);
+    var marque = new Marque();
+		marque.getUidMarque().setValue(999);
+		marque.getName().setValue("TOYOTA");
+		marque.getNumericCode().setValue(10);
+    DBTable<Marque> marquesTable = database.getDBTable(new Marque());
+		marquesTable.insert(marque);
 		List<Marque> allRows = marquesTable.setBlankQueryAllowed(true).getAllRows();
 		assertThat(allRows.size(), is(23));
 
 		Date creationDate = new Date();
-		List<Marque> myTableRows = new ArrayList<Marque>();
+		List<Marque> myTableRows = new ArrayList<>();
 		myTableRows.add(new Marque(3, "False", 1246974, "", 3, "UV", "TVR", "", "Y", creationDate, 4, null));
 
 		marquesTable.insert(myTableRows);
