@@ -41,7 +41,7 @@ public class DBTableTransactionTest extends AbstractTest {
 
 	@Test
 	public void testInsertRowsSucceeds() throws SQLException, Exception {
-		List<Marque> original = marquesTable.setBlankQueryAllowed(true).getRowsByExample(new Marque());
+		List<Marque> original = database.getDBTable(new Marque()).setBlankQueryAllowed(true).getRowsByExample(new Marque());
 		DBTable<Marque> transacted = database.doTransaction(new DBTransaction<DBTable<Marque>>() {
 			@Override
 			public DBTable<Marque> doTransaction(DBDatabase dbDatabase) throws ExceptionThrownDuringTransaction {
@@ -66,13 +66,13 @@ public class DBTableTransactionTest extends AbstractTest {
 				}
 			}
 		}, true);
-		List<Marque> added = marquesTable.getRowsByExample(new Marque());
+		List<Marque> added = database.getDBTable(new Marque()).getRowsByExample(new Marque());
 		assertTrue("Length of list after insert should be longer than the original", added.size() == original.size() + 2);
 	}
 
 	@Test
 	public void testInsertRowsFailure() throws SQLException {
-		List<Marque> original = marquesTable.setBlankQueryAllowed(true).getRowsByExample(new Marque());
+		List<Marque> original = database.getDBTable(new Marque()).setBlankQueryAllowed(true).getRowsByExample(new Marque());
 		try {
 			database.setQuietExceptionsPreference(true);
 			DBTable<Marque> transacted = database.doTransaction(new DBTransaction<DBTable<Marque>>() {
@@ -103,6 +103,7 @@ public class DBTableTransactionTest extends AbstractTest {
 		} finally {
 			database.setQuietExceptionsPreference(false);
 		}
+    final DBTable<Marque> marquesTable = database.getDBTable(new Marque());
 		final List<Marque> addedRows = marquesTable.getRowsByExample(new Marque());
 		List<Marque> added = marquesTable.toList();
 		assertTrue("Length of list after insert should be the same as the original", added.size() == original.size());
