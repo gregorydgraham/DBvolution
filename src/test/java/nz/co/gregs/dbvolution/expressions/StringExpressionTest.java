@@ -36,7 +36,7 @@ import nz.co.gregs.dbvolution.example.CarCompany;
 import nz.co.gregs.dbvolution.generic.AbstractTest;
 import nz.co.gregs.dbvolution.results.NumberResult;
 import static org.hamcrest.Matchers.*;
-import static org.hamcrest.MatcherAssert.assertThat;;
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.Assert.assertEquals;
 
 import org.junit.Test;
@@ -107,7 +107,7 @@ public class StringExpressionTest extends AbstractTest {
 		Marque likeQuery = new Marque();
 		final DBString str = new DBString("%e%");
 		likeQuery.name.excludedPattern(new StringExpression(str).uppercase());
-		List<Marque> rowsByExample = marquesTable.getRowsByExample(likeQuery);
+		List<Marque> rowsByExample = database.getDBTable(new Marque()).getRowsByExample(likeQuery);
 
 		assertEquals(14, rowsByExample.size());
 	}
@@ -115,9 +115,8 @@ public class StringExpressionTest extends AbstractTest {
 	@Test
 	public void testIsNotLikeStringExpressionUsingNullDBString() throws SQLException {
 		Marque likeQuery = new Marque();
-		final DBString str = new DBString("%e%");
 		likeQuery.name.excludedPattern(new StringExpression((DBString) null).uppercase());
-		List<Marque> rowsByExample = marquesTable.getRowsByExample(likeQuery);
+		List<Marque> rowsByExample = database.getDBTable(new Marque()).getRowsByExample(likeQuery);
 
 		assertEquals(22, rowsByExample.size());
 	}
@@ -126,7 +125,7 @@ public class StringExpressionTest extends AbstractTest {
 	public void testIsNotLikeStringExpressionUsingNumber() throws SQLException {
 		Marque likeQuery = new Marque();
 		likeQuery.name.excludedPattern(new StringExpression(5).uppercase());
-		List<Marque> rowsByExample = marquesTable.getRowsByExample(likeQuery);
+		List<Marque> rowsByExample = database.getDBTable(new Marque()).getRowsByExample(likeQuery);
 
 		assertEquals(22, rowsByExample.size());
 	}
@@ -137,7 +136,7 @@ public class StringExpressionTest extends AbstractTest {
 		final NumberExpression num = new NumberExpression(5);
 		likeQuery.name.excludedPattern(new StringExpression(num).uppercase());
 
-		List<Marque> rowsByExample = marquesTable.getRowsByExample(likeQuery);
+		List<Marque> rowsByExample = database.getDBTable(new Marque()).getRowsByExample(likeQuery);
 
 		assertEquals(22, rowsByExample.size());
 	}
@@ -146,7 +145,7 @@ public class StringExpressionTest extends AbstractTest {
 	public void testIsNotLikeStringExpressionUsingNullNumberResult() throws SQLException {
 		Marque likeQuery = new Marque();
 		likeQuery.name.excludedPattern(new StringExpression((NumberResult) null).uppercase());
-		List<Marque> rowsByExample = marquesTable.getRowsByExample(likeQuery);
+		List<Marque> rowsByExample = database.getDBTable(new Marque()).getRowsByExample(likeQuery);
 		assertEquals(22, rowsByExample.size());
 	}
 
@@ -156,7 +155,7 @@ public class StringExpressionTest extends AbstractTest {
 		final StringExpression nullExpr = StringExpression.nullString();
 		likeQuery.individualAllocationsAllowed.excludedValues(nullExpr);
 
-		List<Marque> rowsByExample = marquesTable.getRowsByExample(likeQuery);
+		List<Marque> rowsByExample = database.getDBTable(new Marque()).getRowsByExample(likeQuery);
 
 		if (database.supportsDifferenceBetweenNullAndEmptyString()) {
 			assertEquals(20, rowsByExample.size());
