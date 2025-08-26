@@ -1261,12 +1261,13 @@ public abstract class DBDatabaseImplementation implements DBDatabase, Serializab
 	 * used during a DBTransaction or DBScript
 	 */
 	@Override
-	public void createTableNoExceptions(boolean includeForeignKeyClauses, DBRow newTable) throws AutoCommitActionDuringTransactionException {
+	public DBActionList createTableNoExceptions(boolean includeForeignKeyClauses, DBRow newTable) throws AutoCommitActionDuringTransactionException {
 		try {
-			createTable(newTable, includeForeignKeyClauses);
+			return createTable(newTable, includeForeignKeyClauses);
 		} catch (SQLException ex) {
 			LOG.info(ex.getLocalizedMessage());
 		}
+    return new DBActionList();
 	}
 
 	/**
@@ -1284,12 +1285,13 @@ public abstract class DBDatabaseImplementation implements DBDatabase, Serializab
 	 * used during a DBTransaction or DBScript
 	 */
 	@Override
-	public void createTableNoExceptions(DBRow newTable) throws AutoCommitActionDuringTransactionException {
+	public DBActionList createTableNoExceptions(DBRow newTable) throws AutoCommitActionDuringTransactionException {
 		try {
-			createTable(newTable, false);
+			return createTable(newTable, false);
 		} catch (SQLException ex) {
 			LOG.info(ex.getLocalizedMessage());
 		}
+    return new DBActionList();
 	}
 
 	/**
@@ -1306,10 +1308,11 @@ public abstract class DBDatabaseImplementation implements DBDatabase, Serializab
 	 * used during a DBTransaction or DBScript
 	 */
 	@Override
-	public void createTablesNoExceptions(boolean includeForeignKeyClauses, DBRow... newTables) {
+	public DBActionList createTablesNoExceptions(boolean includeForeignKeyClauses, DBRow... newTables) {
 		for (DBRow tab : newTables) {
-			createTableNoExceptions(includeForeignKeyClauses, tab);
+			return createTableNoExceptions(includeForeignKeyClauses, tab);
 		}
+    return new DBActionList();
 	}
 
 	/**
@@ -1326,10 +1329,12 @@ public abstract class DBDatabaseImplementation implements DBDatabase, Serializab
 	 * used during a DBTransaction or DBScript
 	 */
 	@Override
-	public void createTablesNoExceptions(DBRow... newTables) {
+	public DBActionList createTablesNoExceptions(DBRow... newTables) {
+    DBActionList acts = new DBActionList();
 		for (DBRow tab : newTables) {
-			createTableNoExceptions(false, tab);
+			acts.addAll(createTableNoExceptions(false, tab));
 		}
+    return acts;
 	}
 
 	/**
@@ -1358,13 +1363,14 @@ public abstract class DBDatabaseImplementation implements DBDatabase, Serializab
 	 *
 	 */
 	@Override
-	public void createTablesWithForeignKeysNoExceptions(DBRow... newTables) {
+	public DBActionList createTablesWithForeignKeysNoExceptions(DBRow... newTables) {
 		for (DBRow tab : newTables) {
 			try {
-				createTable(tab, true);
+				return createTable(tab, true);
 			} catch (SQLException | AutoCommitActionDuringTransactionException ex) {
 			}
 		}
+    return new DBActionList();
 	}
 
 	/**
@@ -1381,8 +1387,8 @@ public abstract class DBDatabaseImplementation implements DBDatabase, Serializab
 	 * used during a DBTransaction or DBScript
 	 */
 	@Override
-	public void createTable(DBRow newTableRow) throws SQLException, AutoCommitActionDuringTransactionException {
-		createTable(newTableRow, false);
+	public DBActionList createTable(DBRow newTableRow) throws SQLException, AutoCommitActionDuringTransactionException {
+		return createTable(newTableRow, false);
 	}
 
 	/**
@@ -1394,13 +1400,14 @@ public abstract class DBDatabaseImplementation implements DBDatabase, Serializab
 	 * DBRow.
 	 *
 	 * @param newTableRow the table to create
+	 * @return a DBActionList provided by the script
 	 * @throws SQLException database exceptions
 	 * @throws AutoCommitActionDuringTransactionException thrown if this action is
 	 * used during a DBTransaction or DBScript
 	 */
 	@Override
-	public void createOrUpdateTable(DBRow newTableRow) throws SQLException, AutoCommitActionDuringTransactionException {
-		updateTableToMatchDBRow(newTableRow);
+	public DBActionList createOrUpdateTable(DBRow newTableRow) throws SQLException, AutoCommitActionDuringTransactionException {
+		return updateTableToMatchDBRow(newTableRow);
 	}
 
 	/**
@@ -1427,12 +1434,13 @@ public abstract class DBDatabaseImplementation implements DBDatabase, Serializab
 	 * might be better off without them.
 	 *
 	 * @param newTableRow table
+	 * @return a DBActionList provided by the script of the actions performed
 	 * @throws SQLException database exceptions
 	 *
 	 */
 	@Override
-	public void createTableWithForeignKeys(DBRow newTableRow) throws SQLException, AutoCommitActionDuringTransactionException {
-		createTable(newTableRow, true);
+	public DBActionList createTableWithForeignKeys(DBRow newTableRow) throws SQLException, AutoCommitActionDuringTransactionException {
+		return createTable(newTableRow, true);
 	}
 
 	@Override
@@ -2120,7 +2128,7 @@ public abstract class DBDatabaseImplementation implements DBDatabase, Serializab
 	 */
 	@Override
 	public <T extends DBRow> DBRecursiveQuery<T> getDBRecursiveQuery(DBQuery query, ColumnProvider keyToFollow, T dbRow) {
-		return new DBRecursiveQuery<T>(query, keyToFollow);
+		return new DBRecursiveQuery<>(query, keyToFollow);
 	}
 
 	public boolean isDBDatabaseCluster() {
@@ -2143,7 +2151,6 @@ public abstract class DBDatabaseImplementation implements DBDatabase, Serializab
 
 	@Override
 	public void setDefinitionBasedOnConnectionMetaData(Properties clientInfo, DatabaseMetaData metaData) {
-		;
 	}
 
 	@Override
@@ -2402,19 +2409,20 @@ public abstract class DBDatabaseImplementation implements DBDatabase, Serializab
 	 * the table, if necessary, or adding any columns that are missing.
 	 *
 	 * @param table the database table representation that is correct
+	 * @return a DBActionList provided by the script
 	 * @throws java.sql.SQLException database errors
 	 */
 	@Override
-	public void updateTableToMatchDBRow(DBRow table) throws SQLException {
+	public DBActionList updateTableToMatchDBRow(DBRow table) throws SQLException {
 		if (!tableExists(table)) {
-			createTable(table);
+			return createTable(table);
 		} else {
-			addMissingColumnsToTable(table);
+			return addMissingColumnsToTable(table);
 		}
 	}
 
-	private synchronized void addMissingColumnsToTable(DBRow table) throws SQLException {
-		executeDBAction(new DBAddMissingColumnsToTable(table));
+	private synchronized DBActionList addMissingColumnsToTable(DBRow table) throws SQLException {
+		return executeDBAction(new DBAddMissingColumnsToTable(table));
 	}
 
 	/**
@@ -2452,7 +2460,6 @@ public abstract class DBDatabaseImplementation implements DBDatabase, Serializab
 	}
 
 	protected void startServerIfRequired() {
-		;
 	}
 
 	@Override

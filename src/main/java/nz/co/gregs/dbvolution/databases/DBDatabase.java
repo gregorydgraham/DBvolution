@@ -139,9 +139,9 @@ public interface DBDatabase extends Serializable {
 
 	public boolean tableExists(DBRow table) throws SQLException;
 
-	List<DBAction> createTable(DBRow newTableRow, boolean includeForeignKeyClauses) throws SQLException, AutoCommitActionDuringTransactionException;
+	DBActionList createTable(DBRow newTableRow, boolean includeForeignKeyClauses) throws SQLException, AutoCommitActionDuringTransactionException;
 
-	List<DBAction> dropTable(DBRow newTableRow) throws SQLException, AutoCommitActionDuringTransactionException;
+	DBActionList dropTable(DBRow newTableRow) throws SQLException, AutoCommitActionDuringTransactionException;
 
 	public DBQueryable executeDBQuery(DBQueryable query) throws SQLException, AccidentalCartesianJoinException, AccidentalBlankQueryException, NoAvailableDatabaseException;
 
@@ -368,9 +368,10 @@ public interface DBDatabase extends Serializable {
 	 * the table, if necessary, or adding any columns that are missing.
 	 *
 	 * @param table the database table representation that is correct
+	 * @return a DBActionList provided by the script
 	 * @throws java.sql.SQLException database errors
 	 */
-	void updateTableToMatchDBRow(DBRow table) throws SQLException;
+	DBActionList updateTableToMatchDBRow(DBRow table) throws SQLException;
 
 	/**
 	 * Convenience method to test a DBScript on this database
@@ -795,11 +796,12 @@ public interface DBDatabase extends Serializable {
 	 * DBRow.
 	 *
 	 * @param newTableRow the table to create
+	 * @return a DBActionList provided by the script
 	 * @throws SQLException database exceptions
 	 * @throws AutoCommitActionDuringTransactionException thrown if this action is
 	 * used during a DBTransaction or DBScript
 	 */
-	void createTable(DBRow newTableRow) throws SQLException, AutoCommitActionDuringTransactionException;
+	DBActionList createTable(DBRow newTableRow) throws SQLException, AutoCommitActionDuringTransactionException;
 
 	boolean getPrintSQLBeforeExecuting();
 
@@ -812,11 +814,12 @@ public interface DBDatabase extends Serializable {
 	 * DBRow.
 	 *
 	 * @param newTableRow the table to create
+	 * @return a DBActionList provided by the script
 	 * @throws SQLException database exceptions
 	 * @throws AutoCommitActionDuringTransactionException thrown if this action is
 	 * used during a DBTransaction or DBScript
 	 */
-	void createOrUpdateTable(DBRow newTableRow) throws SQLException, AutoCommitActionDuringTransactionException;
+	DBActionList createOrUpdateTable(DBRow newTableRow) throws SQLException, AutoCommitActionDuringTransactionException;
 
 	/**
 	 * Creates tables on the database based on the DBRows.
@@ -829,10 +832,11 @@ public interface DBDatabase extends Serializable {
 	 * database using the default data types supplied by the fields of the DBRows.
 	 *
 	 * @param newTable the table to create
+	 * @return a DBActionList provided by the script
 	 * @throws AutoCommitActionDuringTransactionException thrown if this action is
 	 * used during a DBTransaction or DBScript
 	 */
-	void createTableNoExceptions(DBRow newTable) throws AutoCommitActionDuringTransactionException;
+	DBActionList createTableNoExceptions(DBRow newTable) throws AutoCommitActionDuringTransactionException;
 
 	/**
 	 * Creates tables on the database based on the DBRows.
@@ -844,10 +848,11 @@ public interface DBDatabase extends Serializable {
 	 * @param includeForeignKeyClauses should explicit FK references be created in
 	 * the database?
 	 * @param newTable the table to create
+	 * @return a DBActionList provided by the script
 	 * @throws AutoCommitActionDuringTransactionException thrown if this action is
 	 * used during a DBTransaction or DBScript
 	 */
-	void createTableNoExceptions(boolean includeForeignKeyClauses, DBRow newTable) throws AutoCommitActionDuringTransactionException;
+	DBActionList createTableNoExceptions(boolean includeForeignKeyClauses, DBRow newTable) throws AutoCommitActionDuringTransactionException;
 
 	/**
 	 * Creates a table on the database based on the DBRow, and creates the
@@ -873,10 +878,11 @@ public interface DBDatabase extends Serializable {
 	 * might be better off without them.
 	 *
 	 * @param newTableRow table
+	 * @return a DBActionList provided by the script
 	 * @throws SQLException database exceptions
 	 *
 	 */
-	void createTableWithForeignKeys(DBRow newTableRow) throws SQLException, AutoCommitActionDuringTransactionException;
+	DBActionList createTableWithForeignKeys(DBRow newTableRow) throws SQLException, AutoCommitActionDuringTransactionException;
 
 	/**
 	 * Creates tables on the database based on the DBRows.
@@ -888,10 +894,11 @@ public interface DBDatabase extends Serializable {
 	 * database using the default data types supplied by the fields of the DBRows.
 	 *
 	 * @param newTables the tables to create
+	 * @return a DBActionList provided by the script
 	 * @throws AutoCommitActionDuringTransactionException thrown if this action is
 	 * used during a DBTransaction or DBScript
 	 */
-	void createTablesNoExceptions(DBRow... newTables);
+	DBActionList createTablesNoExceptions(DBRow... newTables);
 
 	/**
 	 * Creates tables on the database based on the DBRows.
@@ -903,10 +910,11 @@ public interface DBDatabase extends Serializable {
 	 * @param includeForeignKeyClauses should explicit FK references be created in
 	 * the database?
 	 * @param newTables the tables to create
+	 * @return a DBActionList provided by the script
 	 * @throws AutoCommitActionDuringTransactionException thrown if this action is
 	 * used during a DBTransaction or DBScript
 	 */
-	void createTablesNoExceptions(boolean includeForeignKeyClauses, DBRow... newTables);
+	DBActionList createTablesNoExceptions(boolean includeForeignKeyClauses, DBRow... newTables);
 
 	/**
 	 * Creates tables on the database based on the DBRows, and creates the
@@ -931,9 +939,10 @@ public interface DBDatabase extends Serializable {
 	 * might be better off without them.
 	 *
 	 * @param newTables table
+	 * @return a DBActionList provided by the script
 	 *
 	 */
-	void createTablesWithForeignKeysNoExceptions(DBRow... newTables);
+	DBActionList createTablesWithForeignKeysNoExceptions(DBRow... newTables);
 
 	/**
 	 * The worst idea EVAH.
@@ -1189,7 +1198,7 @@ public interface DBDatabase extends Serializable {
 	 *
 	 * @param <R> the row affected
 	 * @param exampleRow the example
-	 * @return a list of the selected rows
+	 * @return a count of the selected rows
 	 * @throws SQLException database exceptions
 	 * @throws AccidentalCartesianJoinException Thrown when a query will create a
 	 * Cartesian Join and cartesian joins have not been explicitly permitted.

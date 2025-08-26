@@ -831,49 +831,50 @@ public class DBDatabaseCluster extends DBDatabaseImplementation {
 	}
 
 	@Override
-	public void createTableWithForeignKeys(DBRow newTableRow) throws SQLException, AutoCommitActionDuringTransactionException {
+	public DBActionList createTableWithForeignKeys(DBRow newTableRow) throws SQLException, AutoCommitActionDuringTransactionException {
 		addTrackedTable(newTableRow);
-		super.createTableWithForeignKeys(newTableRow);
+		return super.createTableWithForeignKeys(newTableRow);
 	}
 
 	@Override
-	public void createTable(DBRow newTableRow) throws SQLException, AutoCommitActionDuringTransactionException {
+	public DBActionList createTable(DBRow newTableRow) throws SQLException, AutoCommitActionDuringTransactionException {
 		addTrackedTable(newTableRow);
-		super.createTable(newTableRow);
+		return super.createTable(newTableRow);
 	}
 
 	@Override
-	public void createTablesWithForeignKeysNoExceptions(DBRow... newTables) {
+	public DBActionList createTablesWithForeignKeysNoExceptions(DBRow... newTables) {
 		addTrackedTables(newTables);
-		super.createTablesWithForeignKeysNoExceptions(newTables);
+		return super.createTablesWithForeignKeysNoExceptions(newTables);
 	}
 
 	@Override
-	public void createTablesNoExceptions(DBRow... newTables) {
+	public DBActionList createTablesNoExceptions(DBRow... newTables) {
 		addTrackedTables(newTables);
-		super.createTablesNoExceptions(newTables);
+		return super.createTablesNoExceptions(newTables);
 	}
 
 	@Override
-	public void createTablesNoExceptions(boolean includeForeignKeyClauses, DBRow... newTables) {
+	public DBActionList createTablesNoExceptions(boolean includeForeignKeyClauses, DBRow... newTables) {
 		addTrackedTables(newTables);
-		super.createTablesNoExceptions(includeForeignKeyClauses, newTables);
+		return super.createTablesNoExceptions(includeForeignKeyClauses, newTables);
 	}
 
 	@Override
-	public void createTableNoExceptions(DBRow newTable) throws AutoCommitActionDuringTransactionException {
+	public DBActionList createTableNoExceptions(DBRow newTable) throws AutoCommitActionDuringTransactionException {
 		addTrackedTable(newTable);
-		super.createTableNoExceptions(newTable);
+		return super.createTableNoExceptions(newTable);
 	}
 
 	@Override
-	public void createTableNoExceptions(boolean includeForeignKeyClauses, DBRow newTable) throws AutoCommitActionDuringTransactionException {
+	public DBActionList createTableNoExceptions(boolean includeForeignKeyClauses, DBRow newTable) throws AutoCommitActionDuringTransactionException {
 		addTrackedTable(newTable);
-		super.createTableNoExceptions(includeForeignKeyClauses, newTable);
+		return super.createTableNoExceptions(includeForeignKeyClauses, newTable);
 	}
 
 	@Override
-	public void updateTableToMatchDBRow(DBRow table) throws SQLException {
+	public DBActionList updateTableToMatchDBRow(DBRow table) throws SQLException {
+    DBActionList acts = new DBActionList();
 		boolean finished = false;
 		do {
 			DBDatabase[] dbs = getDetails().getReadyDatabases();
@@ -883,7 +884,7 @@ public class DBDatabaseCluster extends DBDatabaseImplementation {
 				for (DBDatabase next : dbs) {
 					synchronized (next) {
 						try {
-							next.updateTableToMatchDBRow(table);
+							acts.addAll(next.updateTableToMatchDBRow(table));
 							finished = true;
 						} catch (Exception e) {
 							if (handleExceptionDuringQuery(e, next).equals(HandlerAdvice.ABORT)) {
@@ -894,6 +895,7 @@ public class DBDatabaseCluster extends DBDatabaseImplementation {
 				}
 			}
 		} while (!finished);
+    return acts;
 	}
 
 	@Override

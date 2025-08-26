@@ -91,38 +91,38 @@ public class DBDatabaseHandle implements DBDatabase {
 	}
 
 	@Override
-	public void createOrUpdateTable(DBRow newTableRow) throws SQLException, AutoCommitActionDuringTransactionException {
-		wrappedDatabase.createOrUpdateTable(newTableRow);
+	public DBActionList createOrUpdateTable(DBRow newTableRow) throws SQLException, AutoCommitActionDuringTransactionException {
+		return wrappedDatabase.createOrUpdateTable(newTableRow);
 	}
 
 	@Override
-	public void createTableNoExceptions(DBRow newTable) throws AutoCommitActionDuringTransactionException {
-		wrappedDatabase.createTableNoExceptions(newTable);
+	public DBActionList createTableNoExceptions(DBRow newTable) throws AutoCommitActionDuringTransactionException {
+		return wrappedDatabase.createTableNoExceptions(newTable);
 	}
 
 	@Override
-	public void createTableNoExceptions(boolean includeForeignKeyClauses, DBRow newTable) throws AutoCommitActionDuringTransactionException {
-		wrappedDatabase.createTableNoExceptions(includeForeignKeyClauses, newTable);
+	public DBActionList createTableNoExceptions(boolean includeForeignKeyClauses, DBRow newTable) throws AutoCommitActionDuringTransactionException {
+		return wrappedDatabase.createTableNoExceptions(includeForeignKeyClauses, newTable);
 	}
 
 	@Override
-	public void createTableWithForeignKeys(DBRow newTableRow) throws SQLException, AutoCommitActionDuringTransactionException {
-		wrappedDatabase.createTableWithForeignKeys(newTableRow);
+	public DBActionList createTableWithForeignKeys(DBRow newTableRow) throws SQLException, AutoCommitActionDuringTransactionException {
+		return wrappedDatabase.createTableWithForeignKeys(newTableRow);
 	}
 
 	@Override
-	public void createTablesNoExceptions(DBRow... newTables) {
-		wrappedDatabase.createTablesNoExceptions(newTables);
+	public DBActionList createTablesNoExceptions(DBRow... newTables) {
+		return wrappedDatabase.createTablesNoExceptions(newTables);
 	}
 
 	@Override
-	public void createTablesNoExceptions(boolean includeForeignKeyClauses, DBRow... newTables) {
-		wrappedDatabase.createTablesNoExceptions(includeForeignKeyClauses, newTables);
+	public DBActionList createTablesNoExceptions(boolean includeForeignKeyClauses, DBRow... newTables) {
+		return wrappedDatabase.createTablesNoExceptions(includeForeignKeyClauses, newTables);
 	}
 
 	@Override
-	public void createTablesWithForeignKeysNoExceptions(DBRow... newTables) {
-		wrappedDatabase.createTablesWithForeignKeysNoExceptions(newTables);
+	public DBActionList createTablesWithForeignKeysNoExceptions(DBRow... newTables) {
+		return wrappedDatabase.createTablesWithForeignKeysNoExceptions(newTables);
 	}
 
 	@Override
@@ -206,8 +206,8 @@ public class DBDatabaseHandle implements DBDatabase {
 	}
 
 	@Override
-	public void createTable(DBRow newTableRow) throws SQLException, AutoCommitActionDuringTransactionException {
-		wrappedDatabase.createTable(newTableRow);
+	public DBActionList createTable(DBRow newTableRow) throws SQLException, AutoCommitActionDuringTransactionException {
+		return wrappedDatabase.createTable(newTableRow);
 	}
 
 	@Override
@@ -401,8 +401,8 @@ public class DBDatabaseHandle implements DBDatabase {
 	}
 
 	@Override
-	public void updateTableToMatchDBRow(DBRow table) throws SQLException {
-		wrappedDatabase.updateTableToMatchDBRow(table);
+	public DBActionList updateTableToMatchDBRow(DBRow table) throws SQLException {
+		return wrappedDatabase.updateTableToMatchDBRow(table);
 	}
 
 	@Override
@@ -581,7 +581,7 @@ public class DBDatabaseHandle implements DBDatabase {
 	 */
 	@Override
 	public DBDatabaseHandle clone() throws CloneNotSupportedException {
-		return new DBDatabaseHandle(wrappedDatabase.clone());
+    return new DBDatabaseHandle(wrappedDatabase.clone());
 	}
 
 	@Override
@@ -649,7 +649,7 @@ public class DBDatabaseHandle implements DBDatabase {
 	}
 
 	@Override
-	public List<DBAction> createTable(DBRow newTableRow, boolean includeForeignKeyClauses) throws SQLException, AutoCommitActionDuringTransactionException {
+	public DBActionList createTable(DBRow newTableRow, boolean includeForeignKeyClauses) throws SQLException, AutoCommitActionDuringTransactionException {
 		return wrappedDatabase.createTable(newTableRow, includeForeignKeyClauses);
 	}
 
@@ -674,7 +674,7 @@ public class DBDatabaseHandle implements DBDatabase {
 	}
 
 	@Override
-	public List<DBAction> dropTable(DBRow newTableRow) throws SQLException, AutoCommitActionDuringTransactionException {
+	public DBActionList dropTable(DBRow newTableRow) throws SQLException, AutoCommitActionDuringTransactionException {
 		return wrappedDatabase.dropTable(newTableRow);
 	}
 
