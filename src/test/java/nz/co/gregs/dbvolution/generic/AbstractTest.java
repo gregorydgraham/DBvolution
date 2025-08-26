@@ -38,6 +38,7 @@ import nz.co.gregs.dbvolution.databases.*;
 import nz.co.gregs.dbvolution.databases.definitions.H2DBDefinition;
 import nz.co.gregs.dbvolution.databases.settingsbuilders.*;
 import nz.co.gregs.dbvolution.example.*;
+import nz.co.gregs.dbvolution.exceptions.AccidentalCartesianJoinException;
 import nz.co.gregs.dbvolution.exceptions.NoAvailableDatabaseException;
 import nz.co.gregs.dbvolution.utility.StringCheck;
 import nz.co.gregs.regexi.Regex;
@@ -55,6 +56,8 @@ import org.junit.runners.Parameterized.Parameters;
  */
 @RunWith(Parameterized.class)
 public abstract class AbstractTest {
+  
+  final static System.Logger LOG = System.getLogger(AbstractTest.class.getName());
 
   private static void findWellSpecifiedDatabases(List<Object[]> databases) {
     Set<Map.Entry<Object, Object>> entrySet = System.getProperties().entrySet();
@@ -81,11 +84,7 @@ public abstract class AbstractTest {
 
   public DBDatabase database;
   static List<Object[]> databases = new ArrayList<>(0);
-  Marque myMarqueRow = new Marque();
-  CarCompany myCarCompanyRow = new CarCompany();
-  public DBTable<Marque> marquesTable;
-  DBTable<CarCompany> carCompanies;
-  public List<Marque> marqueRows = new ArrayList<>();
+  public static List<Marque> marqueRows = null;
   public List<CarCompany> carTableRows = new ArrayList<>();
   public static final SimpleDateFormat DATETIME_FORMAT = new SimpleDateFormat("dd/MMM/yyyy HH:mm:ss", Locale.UK);
   public static final DateTimeFormatter LOCALDATETIME_FORMAT = DateTimeFormatter.ofPattern("dd/MMMM/y HH:mm:ss");
@@ -98,15 +97,25 @@ public abstract class AbstractTest {
 
   @Parameters(name = "{0}")
   public static List<Object[]> data() throws IOException, SQLException, ClassNotFoundException, NoSuchMethodException, SecurityException, InstantiationException, IllegalAccessException, IllegalArgumentException, InvocationTargetException, Exception {
-
     if (databases.isEmpty()) {
-      System.out.println("STARTUP AT: "+startuptime);
-      System.out.println(" LOCALTIME: "+startuptime.atZone(ZoneId.systemDefault()));
+      System.out.println("STARTUP AT: " + startuptime);
+      System.out.println(" LOCALTIME: " + startuptime.atZone(ZoneId.systemDefault()));
       getDatabasesFromSettings();
-      databases.forEach(database -> {
-        System.out.print("Processing: Database " + database[0]);
-        System.out.println(" = " + ((DBDatabase) database[1]).getJdbcURL());
-      });
+      databases.stream()
+              .filter((a) -> a[1] != null)
+              .filter((a) -> a[1] instanceof DBDatabase)
+              .forEach(
+                      database -> {
+                        try {
+                          DBDatabase db = (DBDatabase) database[1];
+                          System.out.print("Processing: Database " + database[0]);
+                          System.out.println(" = " + db.getJdbcURL());
+                          setup(db);
+                        } catch (Exception ex) {
+                          System.getLogger(AbstractTest.class.getName()).log(System.Logger.Level.ERROR, (String) null, ex);
+                        }
+                      }
+              );
     }
     return databases;
   }
@@ -388,13 +397,7 @@ public abstract class AbstractTest {
     }
   }
 
-  @Before
-  @SuppressWarnings("empty-statement")
-  public void setUp() throws Exception {
-    setup(database);
-  }
-
-  public synchronized void setup(DBDatabase database) throws Exception {
+  public static synchronized void setup(DBDatabase database) throws Exception {
     try {
       if (database != null) {
         if (database instanceof DBDatabaseCluster) {
@@ -407,51 +410,18 @@ public abstract class AbstractTest {
             throw ex;
           }
         }
-        database.preventDroppingOfTables(false);
-        database.dropTableIfExists(new Marque());
-        database.createTable(myMarqueRow);
-
-        database.preventDroppingOfTables(false);
-        database.dropTableNoExceptions(myCarCompanyRow);
-        database.createTable(myCarCompanyRow);
-
-        marquesTable = DBTable.getInstance(database, myMarqueRow);
-        DBTable<Marque> marqueTable = DBTable.getInstance(database, myMarqueRow);
-        carCompanies = DBTable.getInstance(database, myCarCompanyRow);
-        carCompanies.insert(new CarCompany("TOYOTA", 1));
-        carTableRows.clear();
-        carTableRows.add(new CarCompany("Ford", 2));
-        carTableRows.add(new CarCompany("GENERAL MOTORS", 3));
-        carTableRows.add(new CarCompany("OTHER", 4));
-        carCompanies.insert(carTableRows);
-
         Date firstDate = DATETIME_FORMAT.parse(firstDateStr);
         Date secondDate = DATETIME_FORMAT.parse(secondDateStr);
 
-        marqueRows.add(new Marque(4893059, "True", 1246974, null, 3, "UV", "PEUGEOT", null, "Y", null, 4, true));
-        marqueRows.add(new Marque(4893090, "False", 1246974, "", 1, "UV", "FORD", "", "Y", firstDate, 2, false));
-        marqueRows.add(new Marque(4893101, "False", 1246974, "", 2, "UV", "HOLDEN", "", "Y", firstDate, 3, null));
-        marqueRows.add(new Marque(4893112, "False", 1246974, "", 2, "UV", "MITSUBISHI", "", "Y", firstDate, 4, null));
-        marqueRows.add(new Marque(4893150, "False", 1246974, "", 3, "UV", "SUZUKI", "", "Y", firstDate, 4, null));
-        marqueRows.add(new Marque(4893263, "False", 1246974, "", 2, "UV", "HONDA", "", "Y", firstDate, 4, null));
-        marqueRows.add(new Marque(4893353, "False", 1246974, "", 4, "UV", "NISSAN", "", "Y", firstDate, 4, null));
-        marqueRows.add(new Marque(4893557, "False", 1246974, "", 2, "UV", "SUBARU", "", "Y", firstDate, 4, null));
-        marqueRows.add(new Marque(4894018, "False", 1246974, "", 2, "UV", "MAZDA", "", "Y", firstDate, 4, null));
-        marqueRows.add(new Marque(4895203, "False", 1246974, "", 2, "UV", "ROVER", "", "Y", firstDate, 4, null));
-        marqueRows.add(new Marque(4896300, "False", 1246974, null, 2, "UV", "HYUNDAI", null, "Y", firstDate, 1, null));
-        marqueRows.add(new Marque(4899527, "False", 1246974, "", 1, "UV", "JEEP", "", "Y", firstDate, 3, null));
-        marqueRows.add(new Marque(7659280, "False", 1246972, "Y", 3, "", "DAIHATSU", "", "Y", firstDate, 4, null));
-        marqueRows.add(new Marque(7681544, "False", 1246974, "", 2, "UV", "LANDROVER", "", "Y", firstDate, 4, null));
-        marqueRows.add(new Marque(7730022, "False", 1246974, "", 2, "UV", "VOLVO", "", "Y", firstDate, 4, null));
-        marqueRows.add(new Marque(8376505, "False", 1246974, "", null, "", "ISUZU", "", "Y", firstDate, 4, null));
-        marqueRows.add(new Marque(8587147, "False", 1246974, "", null, "", "DAEWOO", "", "Y", firstDate, 4, null));
-        marqueRows.add(new Marque(9971178, "False", 1246974, "", 1, "", "CHRYSLER", "", "Y", firstDate, 4, null));
-        marqueRows.add(new Marque(13224369, "False", 1246974, "", 0, "", "VW", "", "Y", secondDate, 4, null));
-        marqueRows.add(new Marque(6664478, "False", 1246974, "", 0, "", "BMW", "", "Y", secondDate, 4, null));
-        marqueRows.add(new Marque(1, "False", 1246974, "", 0, "", "TOYOTA", "", "Y", firstDate, 1, true));
-        marqueRows.add(new Marque(2, "False", 1246974, "", 0, "", "HUMMER", "", "Y", secondDate, 3, null));
+        var marque = new Marque();
+        database.preventDroppingOfTables(false);
+        database.dropTableIfExists(new Marque());
+        database.createTable(marque);
 
-        marqueTable.insert(marqueRows);
+        database.preventDroppingOfTables(false);
+        var carCompany = new CarCompany();
+        database.dropTableNoExceptions(carCompany);
+        database.createTable(carCompany);
 
         database.preventDroppingOfTables(false);
         database.dropTableNoExceptions(new CompanyLogo());
@@ -464,6 +434,12 @@ public abstract class AbstractTest {
         database.preventDroppingOfTables(false);
         database.dropTableNoExceptions(new LinkCarCompanyAndLogo());
         database.createOrUpdateTable(new LinkCarCompanyAndLogo());
+        
+        
+        insertCarCompanies(database);
+
+        insertMarques(database, firstDate, secondDate);
+
       }
     } catch (Exception ex) {
       ex.printStackTrace();
@@ -471,6 +447,77 @@ public abstract class AbstractTest {
     }
   }
 
+  private static void insertMarques(DBDatabase database, Date firstDate, Date secondDate) throws SQLException {
+    fillMarqueRows(firstDate, secondDate);
+    DBTable<Marque> table = DBTable.getInstance(database, new Marque());
+    table.insert(marqueRows);
+  }
+
+  private static synchronized void fillMarqueRows(Date firstDate, Date secondDate) {
+    if (marqueRows == null) {
+      marqueRows = new ArrayList<>();
+      marqueRows.add(new Marque(4893059, "True", 1246974, null, 3, "UV", "PEUGEOT", null, "Y", null, 4, true));
+      marqueRows.add(new Marque(4893090, "False", 1246974, "", 1, "UV", "FORD", "", "Y", firstDate, 2, false));
+      marqueRows.add(new Marque(4893101, "False", 1246974, "", 2, "UV", "HOLDEN", "", "Y", firstDate, 3, null));
+      marqueRows.add(new Marque(4893112, "False", 1246974, "", 2, "UV", "MITSUBISHI", "", "Y", firstDate, 4, null));
+      marqueRows.add(new Marque(4893150, "False", 1246974, "", 3, "UV", "SUZUKI", "", "Y", firstDate, 4, null));
+      marqueRows.add(new Marque(4893263, "False", 1246974, "", 2, "UV", "HONDA", "", "Y", firstDate, 4, null));
+      marqueRows.add(new Marque(4893353, "False", 1246974, "", 4, "UV", "NISSAN", "", "Y", firstDate, 4, null));
+      marqueRows.add(new Marque(4893557, "False", 1246974, "", 2, "UV", "SUBARU", "", "Y", firstDate, 4, null));
+      marqueRows.add(new Marque(4894018, "False", 1246974, "", 2, "UV", "MAZDA", "", "Y", firstDate, 4, null));
+      marqueRows.add(new Marque(4895203, "False", 1246974, "", 2, "UV", "ROVER", "", "Y", firstDate, 4, null));
+      marqueRows.add(new Marque(4896300, "False", 1246974, null, 2, "UV", "HYUNDAI", null, "Y", firstDate, 1, null));
+      marqueRows.add(new Marque(4899527, "False", 1246974, "", 1, "UV", "JEEP", "", "Y", firstDate, 3, null));
+      marqueRows.add(new Marque(7659280, "False", 1246972, "Y", 3, "", "DAIHATSU", "", "Y", firstDate, 4, null));
+      marqueRows.add(new Marque(7681544, "False", 1246974, "", 2, "UV", "LANDROVER", "", "Y", firstDate, 4, null));
+      marqueRows.add(new Marque(7730022, "False", 1246974, "", 2, "UV", "VOLVO", "", "Y", firstDate, 4, null));
+      marqueRows.add(new Marque(8376505, "False", 1246974, "", null, "", "ISUZU", "", "Y", firstDate, 4, null));
+      marqueRows.add(new Marque(8587147, "False", 1246974, "", null, "", "DAEWOO", "", "Y", firstDate, 4, null));
+      marqueRows.add(new Marque(9971178, "False", 1246974, "", 1, "", "CHRYSLER", "", "Y", firstDate, 4, null));
+      marqueRows.add(new Marque(13224369, "False", 1246974, "", 0, "", "VW", "", "Y", secondDate, 4, null));
+      marqueRows.add(new Marque(6664478, "False", 1246974, "", 0, "", "BMW", "", "Y", secondDate, 4, null));
+      marqueRows.add(new Marque(1, "False", 1246974, "", 0, "", "TOYOTA", "", "Y", firstDate, 1, true));
+      marqueRows.add(new Marque(2, "False", 1246974, "", 0, "", "HUMMER", "", "Y", secondDate, 3, null));
+    }
+  }
+
+  private static void insertCarCompanies(DBDatabase db) throws SQLException {
+    var table = db.getDBTable(new CarCompany());
+    List<CarCompany> newCompanies = new ArrayList<>();
+    newCompanies.clear();
+    newCompanies.add(new CarCompany("TOYOTA", 1));
+    newCompanies.add(new CarCompany("Ford", 2));
+    newCompanies.add(new CarCompany("GENERAL MOTORS", 3));
+    newCompanies.add(new CarCompany("OTHER", 4));
+    table.insert(newCompanies);
+  }
+
+  @Before
+  public void beforeAllTheSubClasses() {
+    try {
+      database.deleteAllRowsFromTable(new LinkCarCompanyAndLogo());
+      database.deleteAllRowsFromTable(new CompanyText());
+      database.deleteAllRowsFromTable(new CompanyLogo());
+      final CarCompany carCompany = new CarCompany();
+      final Marque marque = new Marque();
+      if (database.getCount(carCompany) != 4) {
+        database.deleteAllRowsFromTable(marque);
+        database.deleteAllRowsFromTable(carCompany);
+        insertCarCompanies(database);
+        insertMarques(database, march23rd2013, april2nd2011);
+      } else if (marqueRows == null
+              || marqueRows.size() == 0
+              || database.getCount(marque) != marqueRows.size()) {
+        database.deleteAllRowsFromTable(marque);
+        insertMarques(database, march23rd2013, april2nd2011);
+      }
+    } catch (SQLException ex) {
+      LOG.log(System.Logger.Level.ERROR, (String) null, ex);
+    } catch (AccidentalCartesianJoinException ex) {
+      LOG.log(System.Logger.Level.ERROR, (String) null, ex);
+    }
+  }
+  
   @After
   public void tearDown() throws Exception {
     tearDown(database);
