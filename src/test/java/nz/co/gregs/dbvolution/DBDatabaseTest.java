@@ -42,8 +42,6 @@ import org.junit.Test;
 
 /**
  *
- * <p style="color: #F90;">Support DBvolution at
- * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
  *
  * @author Gregory Graham
  */
@@ -54,10 +52,7 @@ public class DBDatabaseTest extends AbstractTest {
 	}
 
 	@Before
-	@SuppressWarnings("empty-statement")
-	@Override
-	public void setUp() throws Exception {
-		super.setUp();
+	public synchronized void setUp() throws Exception {
 		if (database instanceof DBDatabaseCluster) {
 			((DBDatabaseCluster) database).waitUntilSynchronised();
 		}
@@ -67,7 +62,7 @@ public class DBDatabaseTest extends AbstractTest {
 
 	@After
 	@Override
-	public void tearDown() throws Exception {
+	public synchronized void tearDown() throws Exception {
 		database.preventDroppingOfTables(false);
 		database.dropTableNoExceptions(new DropTable2TestClass());
 		super.tearDown();
