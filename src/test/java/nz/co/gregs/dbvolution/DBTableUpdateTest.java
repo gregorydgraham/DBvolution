@@ -37,6 +37,7 @@ public class DBTableUpdateTest extends AbstractTest {
 		Marque marqueExample = new Marque();
 		marqueExample.getUidMarque().permittedValues(1);
 
+    DBTable<Marque> marquesTable = database.getDBTable(new Marque());
 		marquesTable.getRowsByExample(marqueExample);
 		Marque toyota = marquesTable.getOnlyRowByExample(marqueExample);
 		toyota.uidMarque.setValue(99999);
@@ -75,6 +76,7 @@ public class DBTableUpdateTest extends AbstractTest {
 		Marque myTableRow = new Marque();
 		myTableRow.getUidMarque().permittedValues(1);
 
+    DBTable<Marque> marquesTable = database.getDBTable(new Marque());
 		marquesTable.getRowsByExample(myTableRow);
 
 		Marque toyota = marquesTable.getFirstRow();
