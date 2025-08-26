@@ -30,6 +30,7 @@ import static org.hamcrest.Matchers.*;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
+import org.junit.Before;
 import org.junit.Test;
 
 /**
@@ -43,26 +44,26 @@ public class MultiPoint2DExpressionTest extends AbstractTest {
 		super(testIterationName, db);
 	}
 
-	@Override
-	public void setup(DBDatabase db) throws Exception {
+  @Before
+  public synchronized void setup() throws Exception {
 		MultiPoint2DTestTable lineTestTable = new MultiPoint2DTestTable();
 
-		db.preventDroppingOfTables(false);
-		db.dropTableNoExceptions(lineTestTable);
-		db.createTable(lineTestTable);
+		database.preventDroppingOfTables(false);
+		database.dropTableNoExceptions(lineTestTable);
+		database.createTable(lineTestTable);
 
 		Coordinate coordinate1 = new Coordinate(2, 3);
 		Coordinate coordinate2 = new Coordinate(3, 4);
 		Coordinate coordinate3 = new Coordinate(4, 5);
 		lineTestTable.multipoint.setValue(coordinate1, coordinate2);
-		db.insert(lineTestTable);
+		database.insert(lineTestTable);
 
 		lineTestTable = new MultiPoint2DTestTable();
 		lineTestTable.multipoint.setValue(geometryFactory.createMultiPoint(new Coordinate[]{coordinate1, coordinate2, coordinate3}));
 
 		MultiPoint2DTestTable lineTestTable2 = new MultiPoint2DTestTable();
 		lineTestTable2.multipoint.setValue(geometryFactory.createPoint(coordinate2), geometryFactory.createPoint(coordinate3));
-		db.insert(lineTestTable, lineTestTable2);
+		database.insert(lineTestTable, lineTestTable2);
 	}
 
 	public static class MultiPoint2DTestTable extends DBRow {
