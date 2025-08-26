@@ -33,6 +33,7 @@ public class UpdateTest extends AbstractTest {
 	public void updateNewRow() throws SQLException, ClassNotFoundException {
 		Marque myMarqueRow = new Marque();
 		myMarqueRow.uidMarque.setValue(4);
+    DBTable<Marque> marquesTable = database.getDBTable(new Marque());
 		marquesTable.insert(myMarqueRow);
 		Marque insertedRow = marquesTable.getRowsByPrimaryKey(4).get(0);
 		insertedRow.individualAllocationsAllowed.setValue("Y");
@@ -58,6 +59,7 @@ public class UpdateTest extends AbstractTest {
 	public void updateExistingRow() throws SQLException {
 		Marque marque = new Marque();
 		marque.name.permittedValues("PEUGEOT");
+    DBTable<Marque> marquesTable = database.getDBTable(new Marque());
 		List<Marque> rowsByExample = marquesTable.getRowsByExample(marque);
 		assertThat(rowsByExample.size(), is(1));
 		Marque peugeot = rowsByExample.get(0);
