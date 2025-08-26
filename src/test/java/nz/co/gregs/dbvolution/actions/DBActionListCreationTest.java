@@ -48,6 +48,7 @@ public class DBActionListCreationTest extends AbstractTest {
 	public void simpleActionCreation() throws SQLException, UnexpectedNumberOfRowsException {
 		Marque marqueExample = new Marque();
 		marqueExample.getUidMarque().permittedValues(1);
+    DBTable<Marque> marquesTable = database.getDBTable(new Marque());
 		Marque toyota = marquesTable.getOnlyRowByExample(marqueExample);
 
 		toyota.uidMarque.setValue(99999);
@@ -84,6 +85,7 @@ public class DBActionListCreationTest extends AbstractTest {
 		final Long toyotaUID = 1L;
 		marqueExample.getUidMarque().permittedValues(toyotaUID);
 
+    DBTable<Marque> marquesTable = database.getDBTable(new Marque());
 		Marque toyota = marquesTable.getOnlyRowByExample(marqueExample);
 		toyota.uidMarque.setValue(999999);
 
@@ -253,12 +255,13 @@ public class DBActionListCreationTest extends AbstractTest {
 		final int toyotaUID = 1;
 		example.getUidMarque().permittedValues(toyotaUID);
 
+    DBTable<Marque> marquesTable = database.getDBTable(new Marque());
 		Marque toyota = marquesTable.getOnlyRowByExample(example);
 		toyota.uidMarque.setValue(999999);
 
 		example = new Marque();
 		example.name.permittedValuesIgnoreCase("ford");
-		Marque ford = marquesTable.getOnlyRowByExample(example);
+    Marque ford = marquesTable.getOnlyRowByExample(example);
 		final Integer fordOriginalUpdateCount = ford.updateCount.getValue().intValue();
 		ford.updateCount.setValue(fordOriginalUpdateCount + 10);
 
@@ -303,6 +306,7 @@ public class DBActionListCreationTest extends AbstractTest {
 	public void simpleDeferredActionCreation() throws SQLException, UnexpectedNumberOfRowsException {
 		Marque marqueExample = new Marque();
 		marqueExample.getUidMarque().permittedValues(1);
+    DBTable<Marque> marquesTable = database.getDBTable(new Marque());
 		Marque toyota = marquesTable.getOnlyRowByExample(marqueExample);
 
 		toyota.uidMarque.setValue(99999);
