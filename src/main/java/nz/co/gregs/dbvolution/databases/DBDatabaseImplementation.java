@@ -527,9 +527,6 @@ public abstract class DBDatabaseImplementation implements DBDatabase, Serializab
 	 */
 	public DBActionList save(DBRow row) throws SQLException {
 		return insertOrUpdate(row);
-//		DBActionList changes = new DBActionList();
-//		changes.addAll(insertOrUpdate(row));
-//		return changes;
 	}
 
 	/**
@@ -542,8 +539,6 @@ public abstract class DBDatabaseImplementation implements DBDatabase, Serializab
 	 */
 	public DBActionList save(DBRow... rows) throws SQLException {
 		return insertOrUpdate(rows);
-//		final DBActionList save = save(Arrays.asList(rows));
-//		return save;
 	}
 
 	/**
@@ -556,11 +551,6 @@ public abstract class DBDatabaseImplementation implements DBDatabase, Serializab
 	 */
 	public DBActionList save(Collection<DBRow> rows) throws SQLException {
 		return insertOrUpdate(rows);
-//		DBActionList actions = new DBActionList();
-//		for (DBRow row : rows) {
-//			actions.addAll(save(row));
-//		}
-//		return actions;
 	}
 
 	/**
@@ -2365,13 +2355,8 @@ public abstract class DBDatabaseImplementation implements DBDatabase, Serializab
 	}
 
 	private boolean checkTableExistsViaMetaData(DBRow table) throws SQLException {
-//		boolean tableExists = false;
 		ResultSet rset = getMetaDataForTable(table);
 		return checkMetaDataForTable(table, rset);
-//		if (rset.next()) {
-//			tableExists = true;
-//		}
-//		return tableExists;
 	}
 
 	protected boolean checkMetaDataForTable(DBRow table, ResultSet rset) throws SQLException {
