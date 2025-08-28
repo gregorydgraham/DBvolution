@@ -77,6 +77,11 @@ public class UnexpectedNumberOfRowsException extends DBRuntimeException {
 
 	}
 
+  public UnexpectedNumberOfRowsException(int actual) {
+    super("Unexpected Number Of Rows Found: expected at least one row but none were found");
+    actualRows = actual;
+  }
+
 	/**
 	 * <p style="color: #F90;">Support DBvolution at
 	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
