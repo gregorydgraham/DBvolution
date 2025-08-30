@@ -185,11 +185,6 @@ public class H2MemoryDB extends H2DB {
 	public H2MemoryDB clone() throws CloneNotSupportedException {
 		return (H2MemoryDB) super.clone();
 	}
-  
-  @Override
-  final public DBConnection getConnection() throws UnableToCreateDatabaseConnectionException, UnableToFindJDBCDriver, SQLException{
-    return super.getConnection();
-  }
 
 	@Override
 	public H2MemorySettingsBuilder getURLInterpreter() {
