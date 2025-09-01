@@ -112,6 +112,8 @@ public class Brake implements Serializable {
   }
 
   /**
+   * The timeout to apply in milliseconds.
+   * 
    * @param timeout the timeout to set
    */
   public void setTimeout(long timeout) {
