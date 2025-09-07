@@ -58,6 +58,7 @@ public class DBInsert extends DBAction {
 	private final DBRow originalRow;
 	private boolean primaryKeyWasGenerated = false;
 	private Long primaryKeyGenerated = null;
+  private long rowsInserted;
 
 	/**
 	 * Creates a DBInsert action for the row.
@@ -297,13 +298,14 @@ public class DBInsert extends DBAction {
 
 	private void executeStatementAndHandleIntegrityConstraintViolation(final DBStatement statement, StatementDetails statementDetails, DBDatabase db, DBRow row) throws SQLException {
 		try {
-			statement.execute(statementDetails);
+      long rowsInserted = statement.execute(statementDetails);
+      addAlteredRows(rowsInserted);
 		} catch (SQLException ohNo) {
 			boolean throwException = true;
 			if (db.getDefinition().isPrimaryKeyAlreadyExistsException(ohNo)) {
 				if (row.getPrimaryKeysAllHaveValue()) {
 					db.delete(row);
-					statement.execute(statementDetails);
+					addAlteredRows(statement.execute(statementDetails));
 					throwException = false;
 				}
 			}

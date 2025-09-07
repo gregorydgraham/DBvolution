@@ -150,7 +150,8 @@ public class DBUpdateLargeObjects extends DBUpdate {
 			prep.execute();
 		}
 
-		statement.execute("UPDATING LARGE OBJECTS IN ROW", QueryIntention.UPDATE_ROW, sqlString);
+    long rows = statement.execute("UPDATING LARGE OBJECTS IN ROW", QueryIntention.UPDATE_ROW, sqlString);
+    addAlteredRows(rows);
 	}
 
 	private void setToNullUsingStringValue(DBDefinition defn, DBRow row, final String col, final DBLargeObject<?> largeObject, DBDatabase db, DBStatement statement) throws SQLException {
@@ -164,7 +165,8 @@ public class DBUpdateLargeObjects extends DBUpdate {
 				+ getPrimaryKeySQL(db, row)
 				+ defn.endSQLStatement();
 		LOG.debug(sqlString);
-		statement.execute("Updating large object to null", QueryIntention.UPDATE_ROW, sqlString);
+		long rows = statement.execute("Updating large object to null", QueryIntention.UPDATE_ROW, sqlString);
+    addAlteredRows(rows);
 	}
 
 	private void setUsingBinaryStream(DBDefinition defn, DBRow row, final String col, final DBLargeObject<?> largeObject, DBDatabase db, DBStatement statement) throws SQLException {

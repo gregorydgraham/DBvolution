@@ -59,6 +59,7 @@ public abstract class DBAction implements Serializable {
 	private RefetchRequirement refetchStatus = RefetchRequirement.REFETCH;
 
 	protected final QueryIntention intention;
+  private long rowsAltered = 0;
 
 	/**
 	 * Standard action constructor.
@@ -101,6 +102,27 @@ public abstract class DBAction implements Serializable {
 	 * order they need to enacted.
 	 */
 	protected abstract DBActionList getRevertDBActionList();
+  
+  /**
+   * Indicates the number of changes made to the database in terms of rows altered.
+   * 
+   * @return the number of rows altered, may be zero for queries and DDL statements.
+   */
+  public long getRowsAltered(){
+    return rowsAltered;
+  }
+  
+  /**
+   * set the number of changes made to the database in terms of rows altered.
+   *
+   * <p>
+   * the default is zero</p>
+   *
+   * @param alteredRows the number of rows altered, may be zero for queries and DDL statements.
+   */
+  protected void addAlteredRows(long alteredRows) {
+    rowsAltered += alteredRows;
+  }
 
 	/**
 	 * Returns a copy of the row supplied during creation.
@@ -216,20 +238,20 @@ public abstract class DBAction implements Serializable {
 	}
 
 	protected void executeOnStatement(DBDatabase db) throws SQLException {
-		try (final DBStatement statement = db.getDBStatement()) {
-			for (String sql : getSQLStatements(db)) {
-				statement.execute(getIntent(), sql);
-			}
-		}
-	}
+    try (final DBStatement statement = db.getDBStatement()) {
+      for (String sql : getSQLStatements(db)) {
+        rowsAltered += statement.execute(getIntent(), sql);
+      }
+    }
+  }
 
-	protected void executeOnStatement(DBDatabase db, DBActionList actions) throws SQLException {
-		try (final DBStatement statement = db.getDBStatement()) {
-			for (String sql : actions.getSQL(db)) {
-				statement.execute(getIntent(), sql);
-			}
-		}
-	}
+  protected void executeOnStatement(DBDatabase db, DBActionList actions) throws SQLException {
+    try (final DBStatement statement = db.getDBStatement()) {
+      for (String sql : actions.getSQL(db)) {
+        rowsAltered += statement.execute(getIntent(), sql);
+      }
+    }
+  }
 
 	public DBActionList execute2(DBDatabase db) throws SQLException {
 		DBActionList actions = prepareActionList(db);

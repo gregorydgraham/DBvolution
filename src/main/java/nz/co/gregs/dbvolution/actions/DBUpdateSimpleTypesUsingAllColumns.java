@@ -50,7 +50,7 @@ public class DBUpdateSimpleTypesUsingAllColumns extends DBUpdateSimpleTypes {
 		DBActionList actions = new DBActionList(new DBUpdateSimpleTypesUsingAllColumns(table));
 		try (DBStatement statement = db.getDBStatement()) {
 			for (String sql : getSQLStatements(db)) {
-				statement.execute("Update row", QueryIntention.UPDATE_ROW, sql);
+				addAlteredRows(statement.execute("Update row", QueryIntention.UPDATE_ROW, sql));
 			}
 		}
 		refetchIfClusterRequires(db, originalRow);

@@ -71,13 +71,13 @@ public class DBDeleteByPrimaryKey extends DBDelete {
 		for (DBRow deletingRow : rowsToBeDeleted) {
 			newDeleteAction.savedRows.add(DBRow.copyDBRow(deletingRow));
 		}
-		try (DBStatement statement = db.getDBStatement()) {
-			for (String sql : getSQLStatements(db)) {
-				statement.execute("DELETE ROW", QueryIntention.DELETE_ROW,sql);
-			}
-		}
-		return actions;
-	}
+    try (DBStatement statement = db.getDBStatement()) {
+      for (String sql : getSQLStatements(db)) {
+        addAlteredRows(statement.execute("DELETE ROW", QueryIntention.DELETE_ROW, sql));
+      }
+    }
+    return actions;
+  }
 
 	@Override
 	public ArrayList<String> getSQLStatements(DBDatabase db) {

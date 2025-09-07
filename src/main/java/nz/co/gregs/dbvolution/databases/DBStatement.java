@@ -64,6 +64,7 @@ public class DBStatement implements AutoCloseable {
 	private final List<String> localBatchList = new ArrayList<>();
 	private final Long TIMEOUT_IN_MILLISECONDS = 10000L;
   private boolean autoCommit = true;
+  private long rowsAltered;
 
 	/**
 	 * Creates a statement object for the given DBDatabase and Connection.
@@ -474,10 +475,11 @@ public class DBStatement implements AutoCloseable {
 	 * @param label the display name for this execution
 	 * @param queryIntention the expected outcome of this execution
 	 * @param sql the actual SQL to execute
+   * @return the number of rows altered by this execution rows alter
 	 * @throws SQLException Database exceptions may be thrown
 	 */
-	public void execute(String label, QueryIntention queryIntention, String sql) throws SQLException {
-		execute(new StatementDetails(label, queryIntention, sql, this));
+	public long execute(String label, QueryIntention queryIntention, String sql) throws SQLException {
+		return execute(new StatementDetails(label, queryIntention, sql, this));
 	}
 
 	/**
@@ -498,10 +500,11 @@ public class DBStatement implements AutoCloseable {
 	 *
 	 * @param queryIntention the expected outcome of this execution
 	 * @param sql the actual SQL to execute
+   * @return the number of rows altered by this execution
 	 * @throws SQLException Database exceptions may be thrown
 	 */
-	public void execute(QueryIntention queryIntention, String sql) throws SQLException {
-		execute(new StatementDetails(queryIntention.toString(), queryIntention, sql, this));
+	public long execute(QueryIntention queryIntention, String sql) throws SQLException {
+    return execute(new StatementDetails(queryIntention.toString(), queryIntention, sql, this));
 	}
 
 	/**
@@ -521,55 +524,66 @@ public class DBStatement implements AutoCloseable {
 	 *
 	 * @param details the full details of the query including the SQL to be
 	 * executed
+   * 
+   * @return the number of rows altered, zero for queries and DDL.
 	 *
 	 * @throws SQLException Database exceptions may be thrown
 	 */
-	public void execute(StatementDetails details) throws SQLException {
-		executeWithRecovery(details);
-	}
+	public long execute(StatementDetails details) throws SQLException {
+    long executeWithRecovery = executeWithRecovery(details);
+    this.rowsAltered = executeWithRecovery;
+    return executeWithRecovery;
+  }
 
-	private void executeWithRecovery(StatementDetails details) throws SQLException {
+	private long executeWithRecovery(StatementDetails details) throws SQLException {
 		details.setDBStatement(this);
 		String sql = details.getSql();
 		final String logSQL = "EXECUTING on " + database.getLabel() + ": " + sql;
 		database.printSQLIfRequested(logSQL);
 		LOG.log(database.isPrintSQLBeforeExecuting()?Level.INFO:Level.FINEST, logSQL);
 		try {
-			executeWithTimeout(details);
-      LOG.log(database.isPrintSQLBeforeExecuting()?Level.INFO:Level.FINEST, "COMPLETED SUCCESSFULLY");
+      long executeWithTimeout = executeWithTimeout(details);
+      return executeWithTimeout;
     } catch (SQLException exp) {
 			StatementDetails statementDetails
 					= details.copy()
 							.withLabel("RETRY EXECUTE")
 							.withException(exp);
-			addFeatureAndAttemptExecuteAgain(statementDetails,new ArrayList<>(0));
+			return addFeatureAndAttemptExecuteAgain(statementDetails,new ArrayList<>(0));
 		}
 	}
 
-	private void executeWithTimeout(StatementDetails details) throws SQLException {
+	private long executeWithTimeout(StatementDetails details) throws SQLException {
 		final Long timeoutTime = this.getTIMEOUT_IN_MILLISECONDS();
 		QueryTimeout timer = new QueryTimeout(details, timeoutTime);
 
 		try {
-			executeOnInternalStatement(details);
+      long executeOnInternalStatement = executeOnInternalStatement(details);
 			timer.noLongerRequired();
 			if (timer.queryTimedOut()) {
 				throw new SQLTimeoutException("Execution Timed Out");
 			}
+      return executeOnInternalStatement;
 		} finally {
 			timer.noLongerRequired();
 		}
 	}
 
-	private void executeOnInternalStatement(StatementDetails details) throws UnableToCreateDatabaseConnectionException, SQLException, UnableToFindJDBCDriver {
-		Statement stmt = getInternalStatement();
-		details.execute(stmt);
-	}
+	private long executeOnInternalStatement(StatementDetails details) throws UnableToCreateDatabaseConnectionException, SQLException, UnableToFindJDBCDriver {
+    Statement stmt = getInternalStatement();
+    if (details.getIntention().isDML()) {
+      long executeUpdate = details.executeUpdate(stmt);
+      return executeUpdate;
+    } else {
+      details.execute(stmt);
+      return 0;
+    }
+  }
 
 	static final Regex DROP_INTENTION_MATCHER = Regex.startingFromTheBeginning().literal("DROP").toRegex();
 	static final Regex DROP_EXCEPTION_MATCHER = Regex.startingAnywhere().beginCaseInsensitiveSection().anyOf("does not exist", "doesn't exist").endCaseInsensitiveSection().toRegex();
 
-	private void addFeatureAndAttemptExecuteAgain(StatementDetails details, List<String> previousExceptions) throws SQLException {
+	private long addFeatureAndAttemptExecuteAgain(StatementDetails details, List<String> previousExceptions) throws SQLException {
 		details.setDBStatement(this);
 		String sql = details.getSql();
 		Exception exp = details.getException();
@@ -578,19 +592,20 @@ public class DBStatement implements AutoCloseable {
 				&& DROP_EXCEPTION_MATCHER.matchesWithinString(exp.getMessage())) {
 			// discard as we've tried to drop something that doesn't exist and that's ok
 			// LOG.info("Attempted to drop an entity that doesn't exist - continuing: " + exp.getMessage());
+      return 0;
 		} else {
 			if (!checkForBrokenConnection(exp)) {
 				try {
 					ResponseToException response = handleResponseFromFixingException(exp, intent, details);
 					if (response.equals(ResponseToException.SKIPQUERY)) {
-						return;
+						return 0;
 					}
 				} catch (Exception ex) {
 					throw new SQLException("Failed To Add Support On " + database.getJdbcURL() + " For SQL: " + exp.getMessage() + " : \nIntent: "+details.getIntention()+"; Original Query: " + sql, ex);
 				}
 			}
 			try {
-				executeWithTimeout(details);
+				return executeWithTimeout(details);
       } catch (SQLException exp2) {
         final String exp2GetMessage = exp2.getMessage();
         final String exp2GetLocalizedMessage = exp2.getLocalizedMessage();
@@ -601,7 +616,7 @@ public class DBStatement implements AutoCloseable {
 					= details.copy()
 							.withLabel("RETRY EXECUTE")
 							.withException(exp2);
-					addFeatureAndAttemptExecuteAgain(newDetails,previousExceptions);
+					return addFeatureAndAttemptExecuteAgain(newDetails,previousExceptions);
 				} else {
 					throw new SQLException(exp);
 				}

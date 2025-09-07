@@ -144,24 +144,24 @@ public class DBMigrationAction<R extends DBRow> extends DBAction {
 	}
 
 	@Override
-	public DBActionList execute(DBDatabase db) throws SQLException {
-		DBActionList actions = new DBActionList(new DBMigrationAction<>(sourceMigration, getRow(), extraExamples));
+  public DBActionList execute(DBDatabase db) throws SQLException {
+    DBActionList actions = new DBActionList(new DBMigrationAction<>(sourceMigration, getRow(), extraExamples));
 
-		try (DBStatement statement = db.getDBStatement()) {
-			for (String sql : getSQLStatements(db)) {
-				try {
-					statement.execute("MIGRATION INSERT", QueryIntention.BULK_INSERT, sql);
-				} catch (SQLException sqlex) {
-					try {
-						statement.execute("MIGRATION INSERT", QueryIntention.BULK_INSERT, sql);
-					} catch (SQLException ex) {
-						throw new SQLException(ex.getLocalizedMessage() + ":" + sql, ex);
-					}
-				}
-			}
-		}
-		return actions;
-	}
+    try (DBStatement statement = db.getDBStatement()) {
+      for (String sql : getSQLStatements(db)) {
+        try {
+          addAlteredRows(statement.execute("MIGRATION INSERT", QueryIntention.BULK_INSERT, sql));
+        } catch (SQLException sqlex) {
+          try {
+            addAlteredRows(statement.execute("MIGRATION INSERT", QueryIntention.BULK_INSERT, sql));
+          } catch (SQLException ex) {
+            throw new SQLException(ex.getLocalizedMessage() + ":" + sql, ex);
+          }
+        }
+      }
+    }
+    return actions;
+  }
 
 	private String processAllFieldsForMigration(DBDatabase database, R row) {
 		StringBuilder allColumns = new StringBuilder();

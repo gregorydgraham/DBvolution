@@ -110,6 +110,10 @@ public enum QueryIntention {
 		}
 		return result;
 	}
+  
+  boolean isDML(){
+    return isOneOf(UPDATE_ROW,UPDATE_ROW_WITH_LARGE_OBJECT,DELETE_ALL_ROWS, DELETE_BY_EXAMPLE,DELETE_ROW, INSERT_QUERY, INSERT_ROW,INSERT_ROW_WITH_LARGE_OBJECT);
+  }
 	
 	@Override
 	public String toString(){

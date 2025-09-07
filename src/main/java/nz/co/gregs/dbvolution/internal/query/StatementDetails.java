@@ -53,6 +53,7 @@ public class StatementDetails {
 	private DBStatement activeStatement;
 	private Long timeout;
   private int attemptCount = 0;
+  private long rowCount;
 
 	public StatementDetails(String label, QueryIntention intent, String sql, DBStatement statement) {
 		this(label, intent, sql, null, false, false, "", statement);
@@ -129,6 +130,28 @@ public class StatementDetails {
 		}
 	}
 
+	/**
+	 * Calls the appropriate executeUpdate method on the Statement and returns the
+	 * boolean result.
+	 *
+	 * @param stmt the statement on which to execute this SQL command
+   * @return 
+	 * @throws SQLException database errors are propagated
+	 */
+	public long executeUpdate(Statement stmt) throws SQLException {
+    attemptCount++;
+    long result = 0l;
+		if (StringCheck.isNotEmptyNorNull(namedPKColumn)) {
+			 result = stmt.executeLargeUpdate(sql, new String[]{namedPKColumn});
+		} else if (requiresGeneratedKeys()) {
+			 result = stmt.executeLargeUpdate(sql, Statement.RETURN_GENERATED_KEYS);
+		} else {
+			 result = stmt.executeLargeUpdate(sql);
+		}
+    this.rowCount = result;
+    return result;
+	}
+
 	public StatementDetails withException(SQLException exp2) {
 		this.exception = exp2;
 		return this;
@@ -162,5 +185,9 @@ public class StatementDetails {
 
   public int getAttemptCount() {
     return attemptCount;
+  }
+
+  public long getRowCount() {
+    return rowCount;
   }
 }

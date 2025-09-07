@@ -166,7 +166,7 @@ public class DBBulkInsert extends DBAction {
 		if (allRowsCanBeBulkInserted) {
 			try (DBStatement statement = db.getDBStatement()) {
 				for (String sql : getSQLStatements(db)) {
-					statement.execute("BULK INSERT", QueryIntention.BULK_INSERT, sql);
+					     addAlteredRows(statement.execute("BULK INSERT", QueryIntention.BULK_INSERT, sql));
 				}
 			}
 			for (DBRow current : rows) {

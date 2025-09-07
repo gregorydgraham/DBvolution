@@ -178,15 +178,15 @@ public class DBUpdateForcedOnSimpleTypesUsingPrimaryKey extends DBUpdateSimpleTy
 
 	@Override
 	public DBActionList execute(DBDatabase db) throws SQLException {
-		DBRow table = originalRow;
-		DBActionList actions = new DBActionList(new DBUpdateForcedOnSimpleTypesUsingPrimaryKey(table));
-		try ( DBStatement statement = db.getDBStatement()) {
-			for (String sql : getSQLStatements(db)) {
-				statement.execute("Update row", QueryIntention.UPDATE_ROW, sql);
-			}
-		}
-		refetchIfClusterRequires(db, originalRow);
-		return actions;
-	}
+    DBRow table = originalRow;
+    DBActionList actions = new DBActionList(new DBUpdateForcedOnSimpleTypesUsingPrimaryKey(table));
+    try (DBStatement statement = db.getDBStatement()) {
+      for (String sql : getSQLStatements(db)) {
+        addAlteredRows(statement.execute("Update row", QueryIntention.UPDATE_ROW, sql));
+      }
+    }
+    refetchIfClusterRequires(db, originalRow);
+    return actions;
+  }
 
 }

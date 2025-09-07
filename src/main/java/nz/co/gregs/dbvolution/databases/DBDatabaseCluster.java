@@ -1007,12 +1007,12 @@ public class DBDatabaseCluster extends DBDatabaseImplementation {
 				for (DBDatabase next : databases) {
 					if (action.requiresRunOnIndividualDatabaseBeforeCluster() && next.equals(firstDatabase)) {
 						// skip this database as it's already been actioned
-					} else {
-						if (action.runOnDatabaseDuringCluster(firstDatabase, next)) {
+            continue;
+					} 
+          if (action.runOnDatabaseDuringCluster(firstDatabase, next)) {
 							final ActionTask task = new ActionTask(this, next, action);
 							tasks.add(task);
 							removeActionFromQueue(next, action);
-						}
 					}
 				}
 				ACTION_THREAD_POOL.invokeAll(tasks);
