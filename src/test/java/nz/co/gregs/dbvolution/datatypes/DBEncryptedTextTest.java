@@ -143,6 +143,7 @@ public class DBEncryptedTextTest extends AbstractTest {
 		assertThat(insertRow.encryptedString.getEncryptedValue().toString(), startsWith("BASE64_AES/GCM/NoPadding|"));
 		assertThat(insertRow.encryptedString.getDecryptedValue(passphrase), is(correctSecret));
 
+    database.setPreventAccidentalDeletingAllRowsFromTable(false);
     database.deleteAllRowsFromTable(insertRow);
 		database.insert(insertRow);
 		DBTable<EncryptedTextTestTable> table = database.getDBTable(new EncryptedTextTestTable());
