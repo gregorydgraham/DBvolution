@@ -70,6 +70,7 @@ public class OracleCompatibilityTest extends AbstractTest {
 	@After
 	public void removeOracleCompatibility() {
     try {
+      database.setPreventAccidentalDeletingAllRowsFromTable(false);
       database.deleteAllRowsFromTable(new Marque());
     } catch (SQLException ex) {
       System.getLogger(OracleCompatibilityTest.class.getName()).log(System.Logger.Level.ERROR, (String) null, ex);
