@@ -39,6 +39,7 @@ public class DBUpdateTest extends AbstractTest {
   
   @After
   public void cleanup() throws SQLException{
+    database.setPreventAccidentalDeletingAllRowsFromTable(false);
     database.deleteAllRowsFromTable(new LinkCarCompanyAndLogo());
   }
 
