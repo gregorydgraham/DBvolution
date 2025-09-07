@@ -31,6 +31,7 @@ import java.util.*;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -99,7 +100,7 @@ public abstract class DBDatabaseImplementation implements DBDatabase, Serializab
 	private boolean printSQLBeforeExecuting = false;
 	boolean isInATransaction = false;
 	transient DBTransactionStatement transactionStatement;
-	private DBDefinition definition = null;
+	protected DBDefinition definition = null;
 	private boolean batchIfPossible = true;
 	private boolean preventAccidentalDroppingOfTables = true;
 	private boolean preventAccidentalDroppingDatabase = true;
@@ -109,7 +110,7 @@ public abstract class DBDatabaseImplementation implements DBDatabase, Serializab
 	private static final transient Map<String, List<DBConnection>> BUSY_CONNECTIONS = new HashMap<>();
 	private static final transient Map<String, List<DBConnection>> FREE_CONNECTIONS = new HashMap<>();
 	private Boolean needToAddDatabaseSpecificFeatures = true;
-	private final DatabaseConnectionSettings settings = new DatabaseConnectionSettings();
+	protected final DatabaseConnectionSettings settings = new DatabaseConnectionSettings();
 	private boolean terminated = false;
 	private transient final List<RegularProcess> REGULAR_PROCESSORS = new ArrayList<>();
 	private static final ScheduledExecutorService REGULAR_THREAD_POOL = Executors.newSingleThreadScheduledExecutor();
@@ -149,7 +150,7 @@ public abstract class DBDatabaseImplementation implements DBDatabase, Serializab
 	 * @throws CloneNotSupportedException not likely
 	 */
 	@Override
-	public DBDatabase clone() throws CloneNotSupportedException {
+	public synchronized DBDatabase clone() throws CloneNotSupportedException {
 		Object clone = super.clone();
 		DBDatabase newInstance = (DBDatabase) clone;
 		return newInstance;
@@ -245,8 +246,6 @@ public abstract class DBDatabaseImplementation implements DBDatabase, Serializab
 	 * @see NuoDB
 	 */
 	protected DBDatabaseImplementation() {
-		SLEEP_BETWEEN_CONNECTION_RETRIES_MILLIS = 10;
-		MAX_CONNECTION_RETRIES = 6;
 		startRegularProcessor();
 	}
 
@@ -287,11 +286,10 @@ public abstract class DBDatabaseImplementation implements DBDatabase, Serializab
 		initDriver(suppliedSettings);
 		settings.copy(suppliedSettings.toSettings());
 		if (suppliedSettings instanceof NamedDatabaseCapableSettingsBuilder) {
-			setDatabaseName(((NamedDatabaseCapableSettingsBuilder) suppliedSettings).getDatabaseName());
+			settings.setDatabaseName(((NamedDatabaseCapableSettingsBuilder) suppliedSettings).getDatabaseName());
 		}
 		setDBDatabaseClassInSettings(suppliedSettings);
 		createRequiredTables();
-		checkForTimezoneIssues();
 	}
 
 	private void initDriver(SettingsBuilder<?, ?> settings) {
@@ -319,7 +317,7 @@ public abstract class DBDatabaseImplementation implements DBDatabase, Serializab
 			return (DBTransactionStatement) dbStatement;
 		} else {
 			return new DBTransactionStatement(this, dbStatement);
-		}
+    }
 	}
 
 	/**
@@ -341,11 +339,11 @@ public abstract class DBDatabaseImplementation implements DBDatabase, Serializab
 		DBStatement statement;
 		synchronized (getStatementSynchronizeObject) {
 			if (isInATransaction) {
-				statement = transactionStatement;
+        statement = transactionStatement;
 				if (statement.isClosed()) {
 					transactionStatement = new DBTransactionStatement(this, getLowLevelStatement());
-				}
-				/* TODO: this looks like it can return a closed statement unnecessarily */
+        }
+        /* TODO: this looks like it can return a closed statement unnecessarily */
 			} else {
 				statement = getLowLevelStatement();
 			}
@@ -354,21 +352,21 @@ public abstract class DBDatabaseImplementation implements DBDatabase, Serializab
 	}
 
 	protected synchronized DBStatement getLowLevelStatement() throws UnableToCreateDatabaseConnectionException, UnableToFindJDBCDriver, SQLException {
-		if (!terminated) {
-			DBConnection connection = getConnection();
-			try {
+    if (!terminated) {
+      DBConnection connection = getConnection();
+      try {
 				while (connection.isClosed()) {
-					discardConnection(connection);
-					connection = getConnection();
-				}
-				return new DBStatement(this, connection);
-			} catch (SQLException cantCreateStatement) {
-				discardConnection(connection);
-				throw new UnableToCreateDatabaseConnectionException(getJdbcURL(), getUsername(), cantCreateStatement);
-			}
-		}
-		return null;
-	}
+          discardConnection(connection);
+          connection = getConnection();
+        }
+        return new DBStatement(this, connection);
+      } catch (SQLException cantCreateStatement) {
+        discardConnection(connection);
+        throw new UnableToCreateDatabaseConnectionException(getJdbcURL(), getUsername(), cantCreateStatement);
+      }
+    }
+    return null;
+  }
 
 	/**
 	 * Retrieve the Connection used internally.
@@ -441,7 +439,7 @@ public abstract class DBDatabaseImplementation implements DBDatabase, Serializab
 						throw new UnableToFindJDBCDriver(getDriverName(), noDriver);
 					}
 					startServerIfRequired();
-					while (connection == null) {
+					while (connection == null && !terminated) {
 						try {
 							connection = getDatabaseSpecificDBConnection(getConnectionFromDriverManager());
 							DatabaseMetaData metaData = connection.getMetaData();
@@ -452,9 +450,9 @@ public abstract class DBDatabaseImplementation implements DBDatabase, Serializab
 							if (retries < MAX_CONNECTION_RETRIES) {
 								retries++;
 								try {
-									getConnectionSynchronizeObject.wait(SLEEP_BETWEEN_CONNECTION_RETRIES_MILLIS);
+									getConnectionSynchronizeObject.wait(SLEEP_BETWEEN_CONNECTION_RETRIES_MILLIS+ThreadLocalRandom.current().nextInt(10));
 								} catch (InterruptedException ex) {
-									Logger.getLogger(DBDatabase.class.getName()).log(Level.SEVERE, null, ex);
+									LOG.error("Caught interrupt while waiting for DBDatabaseImplementation.getRawConnection", ex);
 								}
 							} else {
 								throw noConnection;
@@ -470,17 +468,17 @@ public abstract class DBDatabaseImplementation implements DBDatabase, Serializab
 				}
 			}
 			synchronized (this) {
-				if (needToAddDatabaseSpecificFeatures) {
-					try (DBStatement createStatement = connection.createDBStatement()) {
-						try {
-							addDatabaseSpecificFeatures(createStatement.getInternalStatement());
-						} catch (ExceptionDuringDatabaseFeatureSetup exceptionDuringDBCreation) {
-							System.out.println("AN EXCEPTION OCCURRED DURING DATABASE SETUP: " + exceptionDuringDBCreation.getMessage());
-						}
-						needToAddDatabaseSpecificFeatures = false;
-					}
-				}
-			}
+        if (needToAddDatabaseSpecificFeatures && connection != null) {
+          try (DBStatement createStatement = connection.createDBStatement()) {
+            try {
+              addDatabaseSpecificFeatures(createStatement.getInternalStatement());
+            } catch (ExceptionDuringDatabaseFeatureSetup exceptionDuringDBCreation) {
+              System.out.println("AN EXCEPTION OCCURRED DURING DATABASE SETUP: " + exceptionDuringDBCreation.getMessage());
+            }
+            needToAddDatabaseSpecificFeatures = false;
+          }
+        }
+      }
 			getFreeConnections().add(connection);
 			return connection;
 		}
@@ -491,8 +489,8 @@ public abstract class DBDatabaseImplementation implements DBDatabase, Serializab
 		return new DBConnectionSingle(this, connection);
 	}
 
-	private final int SLEEP_BETWEEN_CONNECTION_RETRIES_MILLIS;
-	private int MAX_CONNECTION_RETRIES = 6;
+	private final int SLEEP_BETWEEN_CONNECTION_RETRIES_MILLIS = 10;
+	private final int MAX_CONNECTION_RETRIES = 6;
 
 	/**
 	 * Used to hold the database open if required by the database.
@@ -890,7 +888,6 @@ public abstract class DBDatabaseImplementation implements DBDatabase, Serializab
 	 * transaction
 	 *
 	 * @param <V> the return type of the transaction, can be anything
-	 * @param dbTransaction the transaction to execute
 	 * @param commit commit=true or rollback=false.
 	 * @return the object returned by the transaction
 	 * @throws SQLException database exceptions
@@ -905,7 +902,7 @@ public abstract class DBDatabaseImplementation implements DBDatabase, Serializab
 	@Override
 	public synchronized <V> V doTransaction(DBTransaction<V> dbTransaction, Boolean commit) throws SQLException, ExceptionThrownDuringTransaction {
 		DBDatabaseImplementation db;
-		try {
+    try {
 			db = (DBDatabaseImplementation) clone();
 		} catch (CloneNotSupportedException ex) {
 			throw new UnsupportedOperationException("Unable to drop database due to incorrecte DBDatabase implementation: correct the implementation of clone()", ex);
@@ -918,14 +915,14 @@ public abstract class DBDatabaseImplementation implements DBDatabase, Serializab
 			db.transactionConnection.setAutoCommit(false);
 			try {
 				returnValues = dbTransaction.doTransaction(db);
-				if (commit) {
+      if (commit) {
 					db.transactionConnection.commit();
-				} else {
+      } else {
 					try {
 						db.transactionConnection.rollback();
 					} catch (SQLException rollbackFailed) {
 						discardConnection(db.transactionConnection);
-					}
+      }
 				}
 			} catch (SQLException | ExceptionThrownDuringTransaction ex) {
 				try {
@@ -935,69 +932,86 @@ public abstract class DBDatabaseImplementation implements DBDatabase, Serializab
 				}
 				throw ex;
 			}
-		} finally {
+    } finally {
 			db.isInATransaction = false;
 			db.transactionStatement.transactionFinished();
 			discardConnection(db.transactionConnection);
 			db.transactionConnection = null;
 			db.transactionStatement = null;
-		}
+    }
 		return returnValues;
+  }
+
+	@Override
+	public synchronized <V> IncompleteTransaction<V> doTransactionWithoutCompleting(DBTransaction<V> dbTransaction) throws ExceptionThrownDuringTransaction {
+		try {
+      DBDatabaseImplementation db;
+      try {
+        db = (DBDatabaseImplementation) clone();
+      } catch (CloneNotSupportedException ex) {
+        throw new UnsupportedOperationException("Unable to clone database due to incorrect DBDatabase implementation: correct the implementation of clone()", ex);
+      }
+      IncompleteTransaction<V> results = null;
+      db.transactionStatement = db.getDBTransactionStatement();
+      db.isInATransaction = true;
+      db.transactionConnection = db.transactionStatement.getConnection();
+      db.transactionConnection.setAutoCommit(false);
+      try {
+        results = new IncompleteTransaction<>(db, dbTransaction.doTransaction(db));
+      } catch (ExceptionThrownDuringTransaction ex) {
+        try {
+          db.transactionConnection.rollback();
+        } catch (SQLException excp) {
+          LOG.warn("Exception Occurred During Rollback: " + ex.getLocalizedMessage());
+        }
+        throw ex;
+      }
+      return results;
+    } catch (SQLException ex) {
+      throw new ExceptionThrownDuringTransaction("SQLException thrown while trying to initiate transaction", ex);
+		}
 	}
 
 	@Override
-	public synchronized <V> IncompleteTransaction<V> doTransactionWithoutCompleting(DBTransaction<V> dbTransaction) throws SQLException, ExceptionThrownDuringTransaction {
-		DBDatabaseImplementation db;
-		try {
-			db = (DBDatabaseImplementation) clone();
-		} catch (CloneNotSupportedException ex) {
-			throw new UnsupportedOperationException("Unable to clone database due to incorrect DBDatabase implementation: correct the implementation of clone()", ex);
-		}
-		IncompleteTransaction<V> results = null;
-		db.transactionStatement = db.getDBTransactionStatement();
-		db.isInATransaction = true;
-		db.transactionConnection = db.transactionStatement.getConnection();
-		db.transactionConnection.setAutoCommit(false);
-		try {
-			results = new IncompleteTransaction<>(db, dbTransaction.doTransaction(db));
-		} catch (ExceptionThrownDuringTransaction ex) {
-			try {
-				db.transactionConnection.rollback();
-			} catch (SQLException excp) {
-				LOG.warn("Exception Occurred During Rollback: " + ex.getLocalizedMessage());
-			}
-			throw ex;
-		}
-		return results;
-	}
-
-	@Override
-	public void commitTransaction() throws SQLException {
-		try {
-			transactionConnection.commit();
-		} finally {
-			isInATransaction = false;
-      if(transactionStatement!=null){
+  public void commitTransaction() throws SQLException {
+    try {
+      transactionConnection.commit();
+    } finally {
+      isInATransaction = false;
+      if (transactionStatement != null) {
         transactionStatement.transactionFinished();
       }
-			discardConnection(transactionConnection);
-			transactionConnection = null;
-			transactionStatement = null;
-		}
-	}
+      discardConnection(transactionConnection);
+      transactionConnection = null;
+      transactionStatement = null;
+    }
+  }
 
 	@Override
-	public void rollbackTransaction() throws SQLException {
+  public void rollbackTransaction() throws SQLException {
 		try {
-			transactionConnection.rollback();
+      transactionConnection.rollback();
 		} finally {
 			isInATransaction = false;
 			transactionStatement.transactionFinished();
 			discardConnection(transactionConnection);
 			transactionConnection = null;
 			transactionStatement = null;
-		}
-	}
+    }
+  }
+
+	@Override
+  public void finishTransaction() throws SQLException {
+		try {
+      transactionConnection.rollback();
+		} finally {
+			isInATransaction = false;
+			transactionStatement.transactionFinished();
+			discardConnection(transactionConnection);
+			transactionConnection = null;
+			transactionStatement = null;
+    }
+  }
 
 	/**
 	 * Performs the transaction on this database.
@@ -1720,7 +1734,7 @@ public abstract class DBDatabaseImplementation implements DBDatabase, Serializab
 	 * @param databaseName	databaseName
 	 */
 	public synchronized void setDatabaseName(String databaseName) {
-		getSettings().setDatabaseName(databaseName);
+		settings.setDatabaseName(databaseName);
 	}
 
 	/**
@@ -2052,7 +2066,7 @@ public abstract class DBDatabaseImplementation implements DBDatabase, Serializab
     if (DUPLICATE_COLUMN_NAME.matchesWithinString(exp.getMessage())){
       return SKIPQUERY;
     }
-    if ( CHECK_TABLE_EXISTS.equals(intent) && DOESNT_EXIST.matchesWithinString(exp.getMessage())){
+    if ( intent.isOneOf(CHECK_TABLE_EXISTS, DELETE_ALL_ROWS) && DOESNT_EXIST.matchesWithinString(exp.getMessage())){
       return SKIPQUERY;
     }
     if (details.getAttemptCount() == 0) {
@@ -2200,12 +2214,8 @@ public abstract class DBDatabaseImplementation implements DBDatabase, Serializab
 		}
 	}
 
-	private void checkForTimezoneIssues() throws SQLException {
-	}
-
 	@Override
 	public void handleErrorDuringExecutingSQL(DBDatabase suspectDatabase, Throwable sqlException, String sqlString) {
-		;
 	}
 
 	public boolean supportsPolygonDatatype() {
@@ -2323,7 +2333,7 @@ public abstract class DBDatabaseImplementation implements DBDatabase, Serializab
 	public boolean tableExists(DBRow table) throws SQLException {
 		boolean tableExists;
 
-		if (getDefinition().supportsTableCheckingViaMetaData()) {
+		if (definition.supportsTableCheckingViaMetaData()) {
 			tableExists = checkTableExistsViaMetaData(table);
 		} else {
 			tableExists = checkTableExistsViaQuery(table);
@@ -2380,7 +2390,7 @@ public abstract class DBDatabaseImplementation implements DBDatabase, Serializab
 	}
 
 	private void createRequiredTables() throws SQLException {
-		if (!hasCreatedRequiredTables()) {
+		if (!hasCreatedRequiredTables) {
 			Set<DBRow> tables = DataModel.getRequiredTables();
 			for (DBRow table : tables) {
 				updateTableToMatchDBRow(table);
@@ -2580,17 +2590,17 @@ public abstract class DBDatabaseImplementation implements DBDatabase, Serializab
 		if (regularThreadPoolFuture != null) {
 			regularThreadPoolFuture.cancel(true);
 		}
-		regularThreadPoolFuture = getRegularThreadPool().scheduleWithFixedDelay(new RunRegularProcessors(), 1, 1, TimeUnit.MINUTES);
+		regularThreadPoolFuture = REGULAR_THREAD_POOL.scheduleWithFixedDelay(new RunRegularProcessors(), 10, 10, TimeUnit.SECONDS);
 	}
 
 	public final void addRegularProcess(RegularProcess processor) {
 		processor.setDatabase(this);
-		getRegularProcessors().add(processor);
+		REGULAR_PROCESSORS.add(processor);
 	}
 
 	public final void removeRegularProcess(RegularProcess processor) {
 		processor.stop();
-		getRegularProcessors().remove(processor);
+		REGULAR_PROCESSORS.remove(processor);
 	}
 
 	protected final Class<? extends DBDatabase> getBaseDBDatabaseClass() {

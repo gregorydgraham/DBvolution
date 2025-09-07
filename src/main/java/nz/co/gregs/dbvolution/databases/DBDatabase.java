@@ -413,11 +413,13 @@ public interface DBDatabase extends Serializable {
 
 	DBTransactionStatement getDBTransactionStatement() throws SQLException;
 
-	void commitTransaction() throws SQLException;
+	void commitTransaction() throws SQLException; 
 
 	void rollbackTransaction() throws SQLException;
 
-	<V> IncompleteTransaction<V> doTransactionWithoutCompleting(DBTransaction<V> dbTransaction) throws SQLException, ExceptionThrownDuringTransaction;
+  void finishTransaction() throws SQLException;
+
+	<V> IncompleteTransaction<V> doTransactionWithoutCompleting(DBTransaction<V> dbTransaction) throws ExceptionThrownDuringTransaction;
 
 	void setQuietExceptionsPreference(boolean b);
 

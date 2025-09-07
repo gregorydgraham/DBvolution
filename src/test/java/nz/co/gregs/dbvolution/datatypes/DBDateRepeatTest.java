@@ -159,7 +159,6 @@ public class DBDateRepeatTest extends AbstractTest {
 		allRows = query.getAllRows();
 
 		if (allRows.size() != 1) {
-			query.setPrintSQLBeforeExecution(true);
 			allRows = query.getAllRows();
 			allRows.stream().forEachOrdered(r -> System.out.println("" + r));
 			allRows.stream().forEachOrdered(r -> System.out.println("CREATION DATE SHOULD BE NULL: " + "'" + r.get(marq).creationDate.getValue()));
@@ -197,7 +196,6 @@ public class DBDateRepeatTest extends AbstractTest {
 		allRows = query.getAllRows();
 
 		if (allRows.size() != 1) {
-			query.setPrintSQLBeforeExecution(true);
 			allRows = query.getAllRows();
 			allRows.stream().forEachOrdered(r -> System.out.println("" + r));
 			allRows.stream().forEachOrdered(r -> System.out.println("CREATION DATE SHOULD BE NULL: " + "'" + r.get(marq).creationDate.getValue()));

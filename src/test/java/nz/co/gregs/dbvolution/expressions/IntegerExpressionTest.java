@@ -572,7 +572,7 @@ public class IntegerExpressionTest extends AbstractTest {
 	@Test
 	public void testGreatestOf() throws SQLException {
 		Marque marq = new Marque();
-		DBQuery dbQuery = database.getDBQuery(marq);
+		DBQuery dbQuery = database.getDBQuery(marq).setSortOrder(marq.column(marq.uidMarque));
 		dbQuery.addCondition(
 				IntegerExpression.greatestOf(marq.column(marq.uidMarque),
 						IntegerExpression.value(900000), IntegerExpression.value(800000)
@@ -636,7 +636,7 @@ public class IntegerExpressionTest extends AbstractTest {
 	@Test
 	public void testGreatestOfCollection() throws SQLException {
 		Marque marq = new Marque();
-		DBQuery dbQuery = database.getDBQuery(marq);
+		DBQuery dbQuery = database.getDBQuery(marq).setSortOrder(marq.column(marq.uidMarque));
 		List<IntegerResult> vals = new ArrayList<IntegerResult>();
 		vals.add(marq.column(marq.uidMarque));
 		vals.add(IntegerExpression.value(900000));

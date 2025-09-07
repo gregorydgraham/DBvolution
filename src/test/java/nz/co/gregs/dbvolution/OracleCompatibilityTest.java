@@ -69,7 +69,11 @@ public class OracleCompatibilityTest extends AbstractTest {
 
 	@After
 	public void removeOracleCompatibility() {
-//		database.setRequiredToProduceEmptyStringsForNull(false);
+    try {
+      database.deleteAllRowsFromTable(new Marque());
+    } catch (SQLException ex) {
+      System.getLogger(OracleCompatibilityTest.class.getName()).log(System.Logger.Level.ERROR, (String) null, ex);
+    }
 	}
 
 	@Test
@@ -193,7 +197,6 @@ public class OracleCompatibilityTest extends AbstractTest {
 				= database
 						.getDBTable(marque)
 						.setReturnEmptyStringForNullString(true)
-						.setPrintSQLBeforeExecution(false)
 						.setBlankQueryAllowed(true)
 						.setSortOrder(marque.column(marque.individualAllocationsAllowed)
 								.ascending()

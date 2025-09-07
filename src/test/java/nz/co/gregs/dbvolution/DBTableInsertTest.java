@@ -26,6 +26,7 @@ import nz.co.gregs.dbvolution.example.Marque;
 import nz.co.gregs.dbvolution.generic.AbstractTest;
 import static org.hamcrest.Matchers.*;
 import static org.hamcrest.MatcherAssert.assertThat;
+import org.junit.After;
 import org.junit.Test;
 
 /**
@@ -38,6 +39,15 @@ public class DBTableInsertTest extends AbstractTest {
 	public DBTableInsertTest(Object testIterationName, Object db) {
 		super(testIterationName, db);
 	}
+  
+  @After
+  public void clearoutTheAlteredMarques(){
+    try {
+      database.deleteAllRowsFromTable(new Marque());
+    } catch (SQLException ex) {
+      System.getLogger(DBTableInsertTest.class.getName()).log(System.Logger.Level.ERROR, (String) null, ex);
+    }
+  }
 
 	@Test
 	public void testInsertRows() throws SQLException {
@@ -75,5 +85,10 @@ public class DBTableInsertTest extends AbstractTest {
 			assertThat(sql.toUpperCase(), not(containsString("CREATION_DATE")));
 			assertThat(sql.toUpperCase(), not(containsString("FK_CARCOMPANY")));
 		}
+		
+    assertThat(database.getDBQuery(new Marque()).setBlankQueryAllowed(true).getAllRows().size(), is(22));
+    database.insert(marque);
+		assertThat(database.getDBQuery(new Marque()).setBlankQueryAllowed(true).getAllRows().size(), is(23));
+    
 	}
 }

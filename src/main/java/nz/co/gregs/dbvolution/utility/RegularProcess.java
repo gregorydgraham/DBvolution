@@ -71,7 +71,7 @@ public abstract class RegularProcess implements Serializable {
 
 	public static final long serialVersionUID = 1l;
 
-	final Log LOG = LogFactory.getLog(RegularProcess.class);
+	final transient Log LOG = LogFactory.getLog(RegularProcess.class);
 
 	private Instant nextRun = Instant.now();
 	ChronoUnit timeField = ChronoUnit.MINUTES;
@@ -155,7 +155,7 @@ public abstract class RegularProcess implements Serializable {
 	 * @param ex the exception that has occurred
 	 */
 	public void handleExceptionDuringProcessing(Exception ex) {
-		LOG.warn(this, ex);
+		LOG.warn("Exception during regular processor "+this.getSimpleName(), ex);
 	}
 
 	/**
@@ -189,11 +189,7 @@ public abstract class RegularProcess implements Serializable {
 	 * @param db the database this process interacts with
 	 */
 	public final void setDatabase(DBDatabase db) {
-		try {
-			this.dbDatabase = db.clone();
-		} catch (CloneNotSupportedException ex) {
-			Logger.getLogger(RegularProcess.class.getName()).log(Level.SEVERE, null, ex);
-		}
+		this.dbDatabase = db;
 	}
 
 	public final void stop() {

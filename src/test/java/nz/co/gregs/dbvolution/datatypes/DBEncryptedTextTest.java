@@ -202,7 +202,6 @@ public class DBEncryptedTextTest extends AbstractTest {
     // insert the actual task into the middle of the background threads
     taskGroup.add(() -> {
       try{
-        database.setPrintSQLBeforeExecuting(true);
         database.insert(insertRow);
         DBTable<EncryptedTextTestTableWithThreads> table = database.getDBTable(new EncryptedTextTestTableWithThreads());
         table.setBlankQueryAllowed(true);
@@ -217,7 +216,6 @@ public class DBEncryptedTextTest extends AbstractTest {
           assertThat(row.encryptedString.decryptWith(passphrase), is(correctSecret));
         }
       } finally {
-        database.setPrintSQLBeforeExecuting(false);
       }
       return null;
     });

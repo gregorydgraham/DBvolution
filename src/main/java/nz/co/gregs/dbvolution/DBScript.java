@@ -38,9 +38,6 @@ import nz.co.gregs.dbvolution.exceptions.ExceptionThrownDuringTransaction;
  * {@link DBScript#implement(nz.co.gregs.dbvolution.databases.DBDatabase) } to run the
  * script within a Committed Transaction.
  *
- * <p style="color: #F90;">Support DBvolution at
- * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
- *
  * @author Gregory Graham
  */
 public abstract class DBScript {
@@ -55,8 +52,6 @@ public abstract class DBScript {
 	 * later use.
 	 *
 	 * @param db	db
-	 * <p style="color: #F90;">Support DBvolution at
-	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
 	 * @return DBActionList the actions performed by the script
 	 * @throws java.lang.Exception any exceptions required to be handled
 	 *
@@ -78,15 +73,13 @@ public abstract class DBScript {
 	 * and made permanent.
 	 *
 	 * @param db	db
-	 * <p style="color: #F90;">Support DBvolution at
-	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
 	 * @return a DBActionList of all the actions performed on the database
 	 * @throws java.lang.Exception java.lang.Exception
 	 *
 	 */
 	public final DBActionList implement(DBDatabase db) throws Exception {
 		DBTransaction<DBActionList> trans = getDBTransaction();
-		DBActionList revertScript = db.doTransaction(trans);
+		DBActionList revertScript = db.doTransaction(trans,true);
 		return revertScript;
 	}
 
@@ -94,7 +87,7 @@ public abstract class DBScript {
 	 * Run the script in a read-only transaction.
 	 *
 	 * Test() wraps the {@link #script(nz.co.gregs.dbvolution.databases.DBDatabase) }
-	 * method in a transaction but rolls it back.
+	 * method in a transaction and rolls it back.
 	 *
 	 * <p>
 	 * Any changes will be safely rolled back.
@@ -103,8 +96,6 @@ public abstract class DBScript {
 	 * Any exceptions will cause the script to abort and rollback safely.
 	 *
 	 * @param db	db
-	 * <p style="color: #F90;">Support DBvolution at
-	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
 	 * @return a DBActionList of all the actions performed on the database
 	 * @throws java.sql.SQLException Database exceptions
 	 * @throws nz.co.gregs.dbvolution.exceptions.ExceptionThrownDuringTransaction DBvolution exceptions
@@ -112,26 +103,34 @@ public abstract class DBScript {
 	 */
 	public final DBActionList test(DBDatabase db) throws SQLException, ExceptionThrownDuringTransaction {
 		DBTransaction<DBActionList> trans = getDBTransaction();
-		DBActionList revertScript = db.doReadOnlyTransaction(trans);
+		DBActionList revertScript = db.doTransaction(trans,false);
 		return revertScript;
 	}
 
 	/**
-	 * Creates and returns a DBtransaction for this DBScript.
-	 *
-	 * <p style="color: #F90;">Support DBvolution at
-	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 * Creates and returns a DBTransaction for this DBScript.
 	 *
 	 * @return the transaction required to run the script.
 	 */
 	public final DBTransaction<DBActionList> getDBTransaction() {
-		return (DBDatabase db) -> {
-			try {
-				DBActionList revertScript = script(db);
-				return revertScript;
-			} catch (Exception ex) {
-				throw new ExceptionThrownDuringTransaction(ex);
-			}
-		};
-	}
+    final DBTransaction<DBActionList> transaction;
+    transaction = new DBScriptTransaction();
+    return transaction;
+  }
+
+  private class DBScriptTransaction implements DBTransaction<DBActionList> {
+
+    public DBScriptTransaction() {
+    }
+
+    @Override
+    public DBActionList doTransaction(DBDatabase database) throws ExceptionThrownDuringTransaction {
+      try {
+        DBActionList revertScript = script(database);
+        return revertScript;
+      } catch (Exception ex) {
+        throw new ExceptionThrownDuringTransaction(ex);
+      }
+    }
+  }
 }

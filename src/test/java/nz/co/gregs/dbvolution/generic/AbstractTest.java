@@ -28,6 +28,7 @@ import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.GregorianCalendar;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -105,10 +106,13 @@ public abstract class AbstractTest {
               .filter((a) -> a[1] != null)
               .filter((a) -> a[1] instanceof DBDatabase)
               .forEach(
-                      database -> {
+                      databaseStruct -> {
                         try {
-                          DBDatabase db = (DBDatabase) database[1];
-                          System.out.print("Processing: Database " + database[0]);
+                          DBDatabase db = (DBDatabase) databaseStruct[1];
+                          System.out.print("Processing: Database " + databaseStruct[0]);
+                          if(db instanceof DBDatabaseCluster) {
+                            ((DBDatabaseCluster) db).waitUntilSynchronised();
+                          }
                           System.out.println(" = " + db.getJdbcURL());
                           setup(db);
                         } catch (Exception ex) {
@@ -267,7 +271,10 @@ public abstract class AbstractTest {
 
   private static SQLiteDB getSQLiteDBFromSystem(String clusterName) throws Exception {
     final SQLiteSettingsBuilder sqliteBuilder = new SQLiteSettingsBuilder().fromSystemUsingPrefix("sqlite");
-    sqliteBuilder.setFilename(sqliteBuilder.getFilename() + "-" + clusterName + "cluster.sqlite");
+    Regex actualFilenameRegex = Regex.empty().literal("/").beginNamedCapture("filename").anyCharacterExcept("/.").atLeastOnceGreedy().endNamedCapture().negativeLookAhead(".sqlite").toRegex();
+    final HashMap<String, String> captures = actualFilenameRegex.getAllNamedCapturesOfFirstMatchWithinString(sqliteBuilder.getFilename());
+    String filename = StringCheck.checkNotNull(captures.get("filename"), "dbvolutionTesting");
+    sqliteBuilder.setFilename(filename + "-" + clusterName + "cluster.sqlite");
     return sqliteBuilder.getDBDatabase();
   }
 
@@ -495,19 +502,25 @@ public abstract class AbstractTest {
   @Before
   public void beforeAllTheSubClasses() {
     try {
+      database.setPreventAccidentalDeletingAllRowsFromTable(false);
       database.deleteAllRowsFromTable(new LinkCarCompanyAndLogo());
+      database.setPreventAccidentalDeletingAllRowsFromTable(false);
       database.deleteAllRowsFromTable(new CompanyText());
+      database.setPreventAccidentalDeletingAllRowsFromTable(false);
       database.deleteAllRowsFromTable(new CompanyLogo());
       final CarCompany carCompany = new CarCompany();
       final Marque marque = new Marque();
       if (database.getCount(carCompany) != 4) {
+        database.setPreventAccidentalDeletingAllRowsFromTable(false);
         database.deleteAllRowsFromTable(marque);
+        database.setPreventAccidentalDeletingAllRowsFromTable(false);
         database.deleteAllRowsFromTable(carCompany);
         insertCarCompanies(database);
         insertMarques(database, march23rd2013, april2nd2011);
       } else if (marqueRows == null
               || marqueRows.size() == 0
               || database.getCount(marque) != marqueRows.size()) {
+        database.setPreventAccidentalDeletingAllRowsFromTable(false);
         database.deleteAllRowsFromTable(marque);
         insertMarques(database, march23rd2013, april2nd2011);
       }

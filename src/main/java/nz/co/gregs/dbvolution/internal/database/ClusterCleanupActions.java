@@ -42,7 +42,7 @@ import org.apache.commons.logging.Log;
  * Cleans up the cluster's databases after the cluster exits scope.
  *
  * <p>
- * Removes all databases from the cluster without terminating them and shutdown
+ * Removes all databases from the cluster without terminating them and shuts down
  * all cluster processes.
  *
  * <p>
@@ -57,7 +57,7 @@ import org.apache.commons.logging.Log;
  * This process is similar to {@link DBDatabaseCluster#stop()
  * } but does not stop or dismantle the individual databases.
  */
-public class ClusterCleanupActions implements Runnable, Serializable {
+public class ClusterCleanupActions implements Runnable {
 
 	private static final long serialVersionUID = 1L;
 

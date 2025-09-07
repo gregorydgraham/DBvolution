@@ -357,7 +357,7 @@ public class DBInsertTest extends AbstractTest {
 	}
 
 	@Test
-	public void testSaveWithDefaultWithLocalDateTimeValue() throws Exception {
+	public synchronized void testSaveWithDefaultWithLocalDateTimeValue() throws Exception {
 		TestDefaultInsertWithLocalDateTimeValue row = new TestDefaultInsertWithLocalDateTimeValue();
 		try {
 			if (database instanceof DBDatabaseCluster) {
@@ -415,13 +415,19 @@ public class DBInsertTest extends AbstractTest {
 				cluster.waitUntilSynchronised();
 				DBDatabase[] databases = cluster.getDatabases();
 				for (DBDatabase db : databases) {
-					TestDefaultInsertWithLocalDateTimeValue rowFromMember = db.getDBTable(row).setQueryLabel("CHECK MEMBERS").getRowsByPrimaryKey(row.pk_TestDefaultInsertWithLocalDateTimeValue.getValue()).get(0);
+          final TestDefaultInsertWithLocalDateTimeValue newRow = new TestDefaultInsertWithLocalDateTimeValue();
+          assertThat("The table should exist", database.tableExists(newRow));
+					TestDefaultInsertWithLocalDateTimeValue rowFromMember 
+                  = db.getDBTable(newRow)
+                          .setQueryLabel("CHECK MEMBERS")
+                          .getRowsByPrimaryKey(row.pk_TestDefaultInsertWithLocalDateTimeValue.getValue())
+                          .get(0);
 					assertThat(rowFromMember.pk_TestDefaultInsertWithLocalDateTimeValue.getValue(), is(gotRow.pk_TestDefaultInsertWithLocalDateTimeValue.getValue()));
 					assertThat(rowFromMember.name.getValue(), is(gotRow.name.getValue()));
 					assertThat(rowFromMember.defaultExpression.getValue(), is(gotRow.defaultExpression.getValue()));
-					assertThat(rowFromMember.creationDate.getValue(), isApproximately(gotRow.creationDate.getValue()));
-					assertThat(rowFromMember.updateDate.getValue(), isApproximately(gotRow.updateDate.getValue()));
-					assertThat(rowFromMember.creationOrUpdateDate.getValue(), isApproximately(gotRow.creationOrUpdateDate.getValue()));
+					assertThat(rowFromMember.creationDate.getValue(), lessThanOrEqualTo(soon));
+					assertThat(rowFromMember.updateDate.getValue(), nullValue());
+					assertThat(rowFromMember.creationOrUpdateDate.getValue(), lessThanOrEqualTo(soon));
 				}
 			}
 

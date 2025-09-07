@@ -37,12 +37,18 @@ import nz.co.gregs.dbvolution.generic.AbstractTest;
 import org.junit.Test;
 import static org.hamcrest.Matchers.*;
 import static org.hamcrest.MatcherAssert.assertThat;
+import org.junit.After;
 
 public class DBActionListCreationTest extends AbstractTest {
 
 	public DBActionListCreationTest(Object testIterationName, Object db) {
 		super(testIterationName, db);
-	}
+	}  
+  
+  @After
+  public void cleanup() throws SQLException{
+    database.deleteAllRowsFromTable(new Marque());
+  }
 
 	@Test
 	public void simpleActionCreation() throws SQLException, UnexpectedNumberOfRowsException {

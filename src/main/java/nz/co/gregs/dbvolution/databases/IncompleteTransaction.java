@@ -62,5 +62,9 @@ public class IncompleteTransaction<V> {
 	public void rollback() throws SQLException{
 		database.rollbackTransaction();
 	}
-	
+  
+  public void finish() throws SQLException{
+		database.finishTransaction();
+  }
+  
 }

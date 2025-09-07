@@ -425,8 +425,13 @@ public class DBDatabaseHandle implements DBDatabase {
 		wrappedDatabase.rollbackTransaction();
 	}
 
+  @Override
+  public void finishTransaction() throws SQLException {
+    wrappedDatabase.finishTransaction();
+  }
+
 	@Override
-	public <V> IncompleteTransaction<V> doTransactionWithoutCompleting(DBTransaction<V> dbTransaction) throws SQLException, ExceptionThrownDuringTransaction {
+	public <V> IncompleteTransaction<V> doTransactionWithoutCompleting(DBTransaction<V> dbTransaction) throws ExceptionThrownDuringTransaction {
 		return wrappedDatabase.doTransactionWithoutCompleting(dbTransaction);
 	}
 

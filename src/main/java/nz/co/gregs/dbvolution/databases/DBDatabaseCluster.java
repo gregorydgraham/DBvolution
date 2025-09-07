@@ -114,6 +114,7 @@ public class DBDatabaseCluster extends DBDatabaseImplementation {
 		Configuration config = builder.getConfiguration();
 		final ClusterDetails clusterDetails = getDetails();
 		clusterDetails.setConfiguration(config);
+    definition = new ClusterDatabaseDefinition();
 
 		ACTION_THREAD_POOL = Executors.newCachedThreadPool();
 
@@ -137,6 +138,41 @@ public class DBDatabaseCluster extends DBDatabaseImplementation {
 		if (config.useAutoConnect) {
 			connectSavedDatabases();
 		}
+    
+    addSynchronisationProcessor();
+		addCleaner();
+      
+	}
+
+	public DBDatabaseCluster(String clusterLabel, Configuration config) throws SQLException {
+		this(new DBDatabaseClusterSettingsBuilder().setLabel(clusterLabel).setConfiguration(config));
+	}
+
+	public DBDatabaseCluster() throws SQLException {
+		this(new DBDatabaseClusterSettingsBuilder().setLabel("").setConfiguration(Configuration.autoRebuildReconnectAndStart()));
+	}
+
+	public DBDatabaseCluster(String clusterLabel) throws SQLException {
+		this(new DBDatabaseClusterSettingsBuilder().setLabel(clusterLabel).setConfiguration(Configuration.autoRebuildReconnectAndStart()));
+	}
+
+	public DBDatabaseCluster(DatabaseConnectionSettings settings) throws ClassNotFoundException, NoSuchMethodException, SecurityException, InstantiationException, IllegalAccessException, IllegalArgumentException, InvocationTargetException, SQLException {
+		this(new DBDatabaseClusterSettingsBuilder().fromSettings(settings));
+	}
+
+
+	public DBDatabaseCluster(String clusterLabel, DBDatabase... databases) throws SQLException {
+		this(new DBDatabaseClusterSettingsBuilder().setLabel(clusterLabel));
+    for (DBDatabase database : databases) {
+      addDatabase(database);
+    }
+  }
+  
+	public DBDatabaseCluster(String clusterLabel, Configuration config, DBDatabase... databases) throws SQLException {
+		this(new DBDatabaseClusterSettingsBuilder().setLabel(clusterLabel).setConfiguration(config));
+    for (DBDatabase database : databases) {
+      addDatabase(database);
+    }
 	}
 
 	/**
@@ -146,8 +182,9 @@ public class DBDatabaseCluster extends DBDatabaseImplementation {
 	 */
 	public final ClusterDetails getDetails() {
 		if (details == null) {
-			details = new ClusterDetails(getSettings().getLabel());
-			details.setClusterSettings(getSettings());
+      final String label = settings.getLabel();
+			details = new ClusterDetails(label);
+			details.setClusterSettings(settings);
 		}
 		return details;
 	}
@@ -165,11 +202,11 @@ public class DBDatabaseCluster extends DBDatabaseImplementation {
     details.waitUntilSynchronised(timeoutInMilliseconds);
   }
 
-	public void waitUntilDatabaseIsSynchronised(DBDatabase database) {
-		getDetails().waitUntilDatabaseHasSynchronised(database);
+	public void waitUntilDatabaseIsSynchronised(DBDatabase database) throws UnableToSynchronizeDatabase {
+		waitUntilDatabaseIsSynchronised(database, 0L);
 	}
 
-	public void waitUntilDatabaseIsSynchronised(DBDatabase database, long timeoutInMilliseconds) {
+	public void waitUntilDatabaseIsSynchronised(DBDatabase database, long timeoutInMilliseconds) throws UnableToSynchronizeDatabase {
 		getDetails().waitUntilDatabaseHasSynchronised(database, timeoutInMilliseconds);
 	}
 
@@ -257,7 +294,7 @@ public class DBDatabaseCluster extends DBDatabaseImplementation {
 		 */
 		SYNCHRONIZING;
 
-		public boolean equals(Status... statuses) {
+		public boolean anyOf(Status... statuses) {
 			for (Status status : statuses) {
 				if (this.equals(status)) {
 					return true;
@@ -267,14 +304,6 @@ public class DBDatabaseCluster extends DBDatabaseImplementation {
 		}
 	}
 
-	public DBDatabaseCluster() throws SQLException {
-		this("", Configuration.autoRebuildReconnectAndStart());
-	}
-
-	public DBDatabaseCluster(String clusterLabel, Configuration config) throws SQLException {
-		this(new DBDatabaseClusterSettingsBuilder().setLabel(clusterLabel).setConfiguration(config));
-	}
-
 	private void startupCluster() {
 		if (startupIsNeeded) {
 			addReconnectionProcessor();
@@ -282,6 +311,12 @@ public class DBDatabaseCluster extends DBDatabaseImplementation {
 			startupIsNeeded = false;
 		}
 	}
+
+  private void addSynchronisationProcessor() {
+    SynchroniserProcess synchroniserProcess = new SynchroniserProcess();
+    synchroniserProcess.setTimeOffset(ChronoUnit.SECONDS, 20);
+    addRegularProcess(synchroniserProcess);
+  }
 
 	private void connectSavedDatabases() {
 		List<DBDatabase> loadTheseDatabases = getDetails().getClusterHostsFromPrefs();
@@ -307,71 +342,6 @@ public class DBDatabaseCluster extends DBDatabaseImplementation {
 
 	public boolean isStarted() {
 		return startupIsNeeded == false;
-	}
-
-	public DBDatabaseCluster(String clusterLabel) throws SQLException {
-		this(clusterLabel, Configuration.autoRebuildReconnectAndStart());
-	}
-
-	public DBDatabaseCluster(String clusterLabel, Configuration config, DBDatabase... databases) throws SQLException {
-		this(clusterLabel, config);
-		initDatabase(databases);
-	}
-
-	public DBDatabaseCluster(String clusterLabel, Configuration config, DatabaseConnectionSettings... settings) throws SQLException, ClassNotFoundException, NoSuchMethodException, SecurityException, InstantiationException, IllegalAccessException, IllegalArgumentException, InvocationTargetException {
-		this(clusterLabel, config);
-		setDefinition(new ClusterDatabaseDefinition());
-		for (DatabaseConnectionSettings setting : settings) {
-			this.addDatabase(setting.createDBDatabase());
-		}
-	}
-
-	public DBDatabaseCluster(String clusterLabel, DBDatabase... databases) throws SQLException {
-		this(clusterLabel);
-		initDatabase(databases);
-	}
-
-	public DBDatabaseCluster(DatabaseConnectionSettings settings) throws ClassNotFoundException, NoSuchMethodException, SecurityException, InstantiationException, IllegalAccessException, IllegalArgumentException, InvocationTargetException, SQLException {
-		this(new DBDatabaseClusterSettingsBuilder().fromSettings(settings));
-	}
-
-	public DBDatabaseCluster(String clusterLabel, DatabaseConnectionSettings... settings) throws SQLException, ClassNotFoundException, NoSuchMethodException, SecurityException, InstantiationException, IllegalAccessException, IllegalArgumentException, InvocationTargetException {
-		this(clusterLabel);
-		setDefinition(new ClusterDatabaseDefinition());
-		for (DatabaseConnectionSettings setting : settings) {
-			this.addDatabase(setting.createDBDatabase());
-		}
-	}
-
-	private void initDatabase(DBDatabase[] databases) {
-		initDatabaseMembers(databases);
-		setDefinition(new ClusterDatabaseDefinition());
-		SynchroniserProcess synchroniserProcess = new SynchroniserProcess();
-		addRegularProcess(synchroniserProcess);
-
-	}
-
-	private void initDatabaseMembers(DBDatabase[] databases) {
-		LinkedList<DBDatabase> listedDatabases = new LinkedList<>(Arrays.asList(databases));
-		boolean done = false;
-		while (!done && listedDatabases.size() > 0) {
-			DBDatabase firstDB = listedDatabases.get(0);
-			if (firstDB != null) {
-				try {
-					listedDatabases.remove(firstDB);
-					addDatabaseAndWait(firstDB);
-					for (DBDatabase database : listedDatabases) {
-						addDatabaseWithoutWaiting(database);
-					}
-					done = true;
-				} catch (SQLException exc) {
-					LOG.warn("Exception while trying to init cluster with database " + firstDB.getLabel() + ":" + firstDB.getJdbcURL(), exc);
-					exc.printStackTrace();
-				}
-			} else {
-				done = true;
-			}
-		}
 	}
 
 	/**
@@ -524,7 +494,7 @@ public class DBDatabaseCluster extends DBDatabaseImplementation {
 	}
 
 	private boolean addDatabaseWithoutWaiting(DBDatabase database) {
-		getSettings().addClusterHost(database.getSettings());
+		settings.addClusterHost(database.getSettings());
 		boolean add = getDetails().add(database);
 		return add;
 	}
@@ -564,7 +534,7 @@ public class DBDatabaseCluster extends DBDatabaseImplementation {
 	 * is present (optional operation).If this list does not contain the element,
 	 * it is unchanged.More formally, removes the element with the lowest index
 	 * <code>i</code> such that
-	 * <code>(o==null&nbsp;?&nbsp;get(i)==null&nbsp;:&nbsp;o.equals(get(i)))</code>
+	 * <code>(o==null&nbsp;?&nbsp;get(i)==null&nbsp;:&nbsp;o.anyOf(get(i)))</code>
 	 * (if such an element exists). Returns true if this list contained the
 	 * specified element (or equivalently, if this list changed as a result of the
 	 * call).
@@ -591,7 +561,7 @@ public class DBDatabaseCluster extends DBDatabaseImplementation {
 	 * is present (optional operation).If this list does not contain the element,
 	 * it is unchanged.More formally, removes the element with the lowest index i
 	 * such that
-	 * <code>(o==null&nbsp;?&nbsp;get(i)==null&nbsp;:&nbsp;o.equals(get(i)))</code>
+	 * <code>(o==null&nbsp;?&nbsp;get(i)==null&nbsp;:&nbsp;o.anyOf(get(i)))</code>
 	 * (if such an element exists). Returns <code>true</code> if this list
 	 * contained the specified element (or equivalently, if this list changed as a
 	 * result of the call).
@@ -621,7 +591,7 @@ public class DBDatabaseCluster extends DBDatabaseImplementation {
 	 * is present (optional operation).If this list does not contain the element,
 	 * it is unchanged. More formally, removes the element with the lowest index i
 	 * such that
-	 * <code>(o==null&nbsp;?&nbsp;get(i)==null&nbsp;:&nbsp;o.equals(get(i)))</code>
+	 * <code>(o==null&nbsp;?&nbsp;get(i)==null&nbsp;:&nbsp;o.anyOf(get(i)))</code>
 	 * (if such an element exists). Returns <code>true</code> if this list
 	 * contained the specified element (or equivalently, if this list changed as a
 	 * result of the call).
@@ -915,9 +885,10 @@ public class DBDatabaseCluster extends DBDatabaseImplementation {
 	}
 
 	@Override
-	public synchronized <V> V doTransaction(DBTransaction<V> transaction, Boolean commit) throws SQLException {
+	public synchronized <V> V doTransaction(DBTransaction<V> transaction, Boolean commit) throws ExceptionThrownDuringTransaction {
 		V result = null;
 		boolean rollbackAll = false;
+    ExceptionThrownDuringTransaction caughtException = null;
 		List<IncompleteTransaction<V>> partials = new ArrayList<>();
 		try {
 			final DBDatabase[] readyDatabases = getDetails().getReadyDatabases();
@@ -928,25 +899,46 @@ public class DBDatabaseCluster extends DBDatabaseImplementation {
 					result = partial.getResults();
 					if (!commit) {
 						// we're testing the transaction so rollback immediately
-						partial.rollback();
+						try {
+              partial.rollback();
+            } catch (SQLException ex) {
+              LOG.error("Failed to rollback script: quarantining database "+database.getLabel(), ex);
+              quarantineDatabase(database, ex);
+            }
 					}
 				}
 			}
-		} catch (Exception exc) {
+		} catch (ExceptionThrownDuringTransaction exc) {
 			rollbackAll = true;
-		} finally {
-			for (IncompleteTransaction<V> partial : partials) {
-				if (commit) {
-					if (rollbackAll) {
-						partial.rollback();
-					} else {
-						partial.commit();
-					}
-				}
-			}
-		}
-		return result;
-	}
+      caughtException = exc;
+    } finally {
+      if (commit) {
+        for (IncompleteTransaction<V> partial : partials) {
+          if (rollbackAll) {
+            try {
+              partial.rollback();
+            } catch (SQLException ex) {
+              final DBDatabase database = partial.getDatabase();
+              LOG.error("Failed to rollback script: quarantining database " + database.getLabel(), ex);
+              quarantineDatabase(database, ex);
+            }
+          } else {
+            try {
+              partial.commit();
+            } catch (SQLException ex) {
+              final DBDatabase database = partial.getDatabase();
+              LOG.error("Failed to commit script: quarantining database " + database.getLabel(), ex);
+              quarantineDatabase(database, ex);
+            }
+          }
+        }
+      }
+    }
+    if (caughtException != null) {
+      throw caughtException;
+    }
+    return result;
+  }
 
 	@Override
 	public DBConnection getConnection() throws UnableToCreateDatabaseConnectionException, UnableToFindJDBCDriver, SQLException {
@@ -1374,7 +1366,7 @@ public class DBDatabaseCluster extends DBDatabaseImplementation {
 	 */
 	private static final Cleaner cleaner = Cleaner.create();
 
-	private ClusterCleanupActions clusterCleanupActions;
+	private transient ClusterCleanupActions clusterCleanupActions;
   private transient Cleaner.Cleanable cleanable;
 
 	private void addCleaner() {
@@ -1853,17 +1845,41 @@ public class DBDatabaseCluster extends DBDatabaseImplementation {
 		}
 	}
 
-	private class SynchroniserProcess extends RegularProcess {
+	private static class SynchroniserProcess extends RegularProcess {
 
+    static final private Log LOG = LogFactory.getLog(DBDatabaseCluster.SynchroniserProcess.class);
+  
 		private static final long serialVersionUID = 1L;
 
 		public SynchroniserProcess() {
 		}
 
 		@Override
-		public String process() throws Exception {
-			getDetails().synchronizeSecondaryDatabases();
-			return "Finished Synchronising Databases";
-		}
+    public String process() throws Exception {
+
+      final DBDatabase db = getDatabase();
+      if (db != null) {
+        if (db instanceof DBDatabaseCluster) {
+          DBDatabaseCluster cluster = (DBDatabaseCluster) db;
+          try {
+            // DO THE ACTUAL WORK
+            cluster.getDetails().synchronizeSecondaryDatabases();
+            LOG.warn("Finished Synchronising Database: " + cluster.getLabel());
+            return "Finished Synchronising Databases";
+            // Good job everyone, hi-5!
+          } catch (Exception e) {
+            LOG.error("FAILED TO SYNCHRONISE CLUSTER: " + cluster.getLabel(), e);
+            e.printStackTrace();
+            throw e; // let normal processing continue
+          }
+        } else {
+          LOG.warn("Trying to synchronise database " + db.getLabel() + " which is not a cluster. This is defintely incorrect."); // typo intentional
+          return "Unable to synchronise non-cluster database";
+        }
+      } else {
+        LOG.warn("Trying to synchronise null database. Th1s is definitely incorrect."); //typo intentional
+        return "Unable to synchronise non-cluster database";
+      }
+    }
 	}
 }

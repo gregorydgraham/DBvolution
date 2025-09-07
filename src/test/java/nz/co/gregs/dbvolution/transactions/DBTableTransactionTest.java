@@ -20,10 +20,13 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import nz.co.gregs.dbvolution.DBTable;
-import nz.co.gregs.dbvolution.databases.DBDatabase;
 import nz.co.gregs.dbvolution.example.Marque;
+import nz.co.gregs.dbvolution.exceptions.AccidentalBlankQueryException;
+import nz.co.gregs.dbvolution.exceptions.AccidentalCartesianJoinException;
 import nz.co.gregs.dbvolution.exceptions.ExceptionThrownDuringTransaction;
 import nz.co.gregs.dbvolution.generic.AbstractTest;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.*;
 import static org.junit.Assert.assertTrue;
 
 import org.junit.Test;
@@ -33,8 +36,6 @@ import org.junit.Test;
  */
 public class DBTableTransactionTest extends AbstractTest {
 
-	Marque myTableRow = new Marque();
-
 	public DBTableTransactionTest(Object testIterationName, Object db) {
 		super(testIterationName, db);
 	}
@@ -42,70 +43,62 @@ public class DBTableTransactionTest extends AbstractTest {
 	@Test
 	public void testInsertRowsSucceeds() throws SQLException, Exception {
 		List<Marque> original = database.getDBTable(new Marque()).setBlankQueryAllowed(true).getRowsByExample(new Marque());
-		DBTable<Marque> transacted = database.doTransaction(new DBTransaction<DBTable<Marque>>() {
-			@Override
-			public DBTable<Marque> doTransaction(DBDatabase dbDatabase) throws ExceptionThrownDuringTransaction {
-				try {
-					Marque myTableRow = new Marque();
-					DBTable<Marque> marques = DBTable.getInstance(dbDatabase, myTableRow);
-					myTableRow.getUidMarque().setValue(999);
-					myTableRow.getName().setValue("TOYOTA");
-					myTableRow.getNumericCode().setValue(10);
-					marques.insert(myTableRow);
-					marques.setBlankQueryAllowed(true).getAllRows();
-
-					List<Marque> myTableRows = new ArrayList<Marque>();
-					myTableRows.add(new Marque(3, "False", 1246974, "", 3, "UV", "TVR", "", "Y", new Date(), 4, null));
-
-					marques.insert(myTableRows);
-
-					marques.getAllRows();
-					return marques;
-				} catch (SQLException ex) {
-					throw new ExceptionThrownDuringTransaction(ex);
-				}
-			}
-		}, true);
-		List<Marque> added = database.getDBTable(new Marque()).getRowsByExample(new Marque());
+		DBTable<Marque> transacted = database.doTransaction((dbDatabase) -> {
+      try {
+        Marque myTableRow1 = new Marque();
+        DBTable<Marque> marques = DBTable.getInstance(dbDatabase, myTableRow1);
+        myTableRow1.getUidMarque().setValue(999);
+        myTableRow1.getName().setValue("TOYOTA");
+        myTableRow1.getNumericCode().setValue(10);
+        marques.insert(myTableRow1);
+        marques.setBlankQueryAllowed(true).getAllRows();
+        List<Marque> myTableRows = new ArrayList<>();
+        myTableRows.add(new Marque(3, "False", 1246974, "", 3, "UV", "TVR", "", "Y", new Date(), 4, null));
+        marques.insert(myTableRows);
+        marques.getAllRows();
+        return marques;
+      }catch (SQLException ex) {
+        throw new ExceptionThrownDuringTransaction(ex);
+      }
+    }, true);
+    assertThat(transacted, is(not(nullValue())));
+    assertThat(transacted.count(), is(24l));
+		List<Marque> added = database.getDBTable(new Marque()).setBlankQueryAllowed(true).getRowsByExample(new Marque());
 		assertTrue("Length of list after insert should be longer than the original", added.size() == original.size() + 2);
 	}
 
 	@Test
 	public void testInsertRowsFailure() throws SQLException {
 		List<Marque> original = database.getDBTable(new Marque()).setBlankQueryAllowed(true).getRowsByExample(new Marque());
+    DBTable<Marque> transacted = null;
 		try {
 			database.setQuietExceptionsPreference(true);
-			DBTable<Marque> transacted = database.doTransaction(new DBTransaction<DBTable<Marque>>() {
-				@Override
-				public DBTable<Marque> doTransaction(DBDatabase dbDatabase) throws ExceptionThrownDuringTransaction {
-					try {
-						Marque myTableRow = new Marque();
-						DBTable<Marque> marques = DBTable.getInstance(dbDatabase, myTableRow);
-						myTableRow.getUidMarque().setValue(999);
-						myTableRow.getName().setValue("TOYOTA");
-						myTableRow.getNumericCode().setValue(10);
-						marques.insert(myTableRow);
-
-						List<Marque> myTableRows = new ArrayList<Marque>();
-						myTableRows.add(new Marque(999, "False", 1246974, "", 3, "UV", "TVR", "", "Y", new Date(), 4, null));
-
-						marques.insert(myTableRows);
-						
-						// should cause an AccidentalBlankQueryException, and rollback the transaction 
-						marques.getAllRows();
-						return marques;
-					} catch (Exception ex) {
-						throw new ExceptionThrownDuringTransaction(ex);
-					}
-				}
-			}, true);
+			transacted = database.doTransaction((DB) -> {
+        try {
+          Marque myTableRow1 = new Marque();
+          DBTable<Marque> marques = DBTable.getInstance(DB, myTableRow1);
+          myTableRow1.getUidMarque().setValue(999);
+          myTableRow1.getName().setValue("TOYOTA");
+          myTableRow1.getNumericCode().setValue(10);
+          marques.insert(myTableRow1);
+          List<Marque> myTableRows = new ArrayList<>();
+          myTableRows.add(new Marque(9999, "False", 1246974, "", 3, "UV", "TVR", "", "Y", new Date(), 4, null));
+          marques.insert(myTableRows);
+          // should cause an AccidentalBlankQueryException, and rollback the transaction
+          marques.getAllRows();
+          return marques;
+        }catch (SQLException | AccidentalBlankQueryException | AccidentalCartesianJoinException ex) {
+          ex.printStackTrace();
+          assertThat(ex, is(instanceOf(AccidentalBlankQueryException.class)));
+          throw new ExceptionThrownDuringTransaction(ex);
+        }
+      }, true);
 		} catch (SQLException | ExceptionThrownDuringTransaction e) {
 		} finally {
 			database.setQuietExceptionsPreference(false);
 		}
-    final DBTable<Marque> marquesTable = database.getDBTable(new Marque());
-		final List<Marque> addedRows = marquesTable.getRowsByExample(new Marque());
-		List<Marque> added = marquesTable.toList();
+    assertThat(transacted, is(nullValue()));
+		List<Marque> added = database.getDBTable(new Marque()).setBlankQueryAllowed(true).getRowsByExample(new Marque());
 		assertTrue("Length of list after insert should be the same as the original", added.size() == original.size());
 
 	}

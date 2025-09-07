@@ -63,16 +63,22 @@ public class DBStatement implements AutoCloseable {
 	private boolean isClosed = false;
 	private final List<String> localBatchList = new ArrayList<>();
 	private final Long TIMEOUT_IN_MILLISECONDS = 10000L;
+  private boolean autoCommit = true;
 
 	/**
 	 * Creates a statement object for the given DBDatabase and Connection.
 	 *
 	 * @param db the target database
-	 * @param connection the connection to the database
+   * @param connection a connection to the database
 	 */
 	public DBStatement(DBDatabase db, DBConnection connection) {
 		this.database = db;
-		this.connection = connection;
+    this.connection = connection;
+    try {
+      autoCommit = connection.getAutoCommit();
+    } catch (SQLException ex) {
+      autoCommit = true;
+    }
 	}
 
 	/**
@@ -382,14 +388,14 @@ public class DBStatement implements AutoCloseable {
 	 */
 	protected synchronized void replaceBrokenConnection() throws SQLException, UnableToCreateDatabaseConnectionException, UnableToFindJDBCDriver {
 		try {
-			database.discardConnection(connection);
-			connection = database.getConnection();
+		database.discardConnection(connection);
+		connection = database.getConnection();
 			if (internalStatement != null) {
 				try {
 					internalStatement.close();
 				} catch (SQLException exp) {
 					LOG.log(Level.FINEST, this.toString(), exp);
-				}
+	}
 				internalStatement = null;
 				getInternalStatement();
 			}
@@ -1127,14 +1133,9 @@ public class DBStatement implements AutoCloseable {
 	 * @throws java.sql.SQLException database errors
 	 */
 	protected synchronized Statement getInternalStatement() throws SQLException {
-		if (connection == null) {
-			replaceBrokenConnection();
-		}
-		if (connection.isClosed()) {
-			replaceBrokenConnection();
-		}
 		if (this.internalStatement == null) {
-			this.setInternalStatement(connection.getInternalStatement());
+      final DBConnection connect = getConnection();
+			this.setInternalStatement(connect.getInternalStatement());
 		}
 		return this.internalStatement;
 	}
@@ -1193,4 +1194,28 @@ public class DBStatement implements AutoCloseable {
 	private Long getTIMEOUT_IN_MILLISECONDS() {
 		return TIMEOUT_IN_MILLISECONDS;
 	}
+
+  public boolean getAutoCommit() {
+    return autoCommit;
+  }
+
+  /**
+   * Sets this connection's auto-commit mode to the given state.
+   *
+   * <p>
+   * If a connection is in auto-commit mode, then all its SQL statements will be executed and committed immediately. Otherwise, its SQL
+   * statements are grouped into transactions that are terminated by a call to either the method commit or the method rollback. By default, new connections are
+   * in auto-commit mode.</p>
+   *
+   * @param autocommitsetting the value to set autocommit to: true if you want statements to be committied immediatedly, false if you want statements to be handled as 
+   * transactions and committed/rolled-back explicitly
+   * @throws SQLException
+   */
+  public void setAutoCommit(boolean autocommitsetting) throws SQLException {
+    this.autoCommit = autocommitsetting;
+    if(!autoCommit){
+      DBConnection connect = getConnection();
+      connect.setAutoCommit(autocommitsetting);
+    }
+  }
 }

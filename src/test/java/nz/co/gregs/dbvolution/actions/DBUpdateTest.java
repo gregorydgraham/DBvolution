@@ -23,6 +23,7 @@ import nz.co.gregs.dbvolution.exceptions.AccidentalUpdateOfUndefinedRowException
 import nz.co.gregs.dbvolution.generic.AbstractTest;
 import static org.hamcrest.Matchers.*;
 import static org.hamcrest.MatcherAssert.assertThat;
+import org.junit.After;
 import org.junit.Test;
 
 /**
@@ -35,6 +36,13 @@ public class DBUpdateTest extends AbstractTest {
 	public DBUpdateTest(Object testIterationName, Object db) {
 		super(testIterationName, db);
 	}
+  
+  @After
+  public void cleanup() throws SQLException{
+    database.deleteAllRowsFromTable(new LinkCarCompanyAndLogo());
+  }
+
+
 
 	/**
 	 * Test of getUpdates method, of class DBUpdate.

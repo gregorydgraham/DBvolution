@@ -42,6 +42,7 @@ import java.sql.SQLException;
 import java.sql.SQLWarning;
 import java.sql.SQLXML;
 import java.sql.Savepoint;
+import java.sql.ShardingKey;
 import java.sql.Statement;
 import java.sql.Struct;
 import java.util.Map;
@@ -68,8 +69,36 @@ public class DBConnectionSingle implements DBConnection {
 
 	@Override
 	public DBStatement createDBStatement() throws SQLException {
-		return new DBStatement(database, this);
-	}
+    return new DBStatement(database, this);
+  }
+
+  public Statement createStatement() throws SQLException {
+    return connection.createStatement();
+  }
+
+  public void beginRequest() throws SQLException {
+    connection.beginRequest();
+  }
+
+  public void endRequest() throws SQLException {
+    connection.endRequest();
+  }
+
+  public boolean setShardingKeyIfValid(ShardingKey shardingKey, ShardingKey superShardingKey, int timeout) throws SQLException {
+    return connection.setShardingKeyIfValid(shardingKey, superShardingKey, timeout);
+  }
+
+  public boolean setShardingKeyIfValid(ShardingKey shardingKey, int timeout) throws SQLException {
+    return connection.setShardingKeyIfValid(shardingKey, timeout);
+  }
+
+  public void setShardingKey(ShardingKey shardingKey, ShardingKey superShardingKey) throws SQLException {
+    connection.setShardingKey(shardingKey, superShardingKey);
+  }
+
+  public void setShardingKey(ShardingKey shardingKey) throws SQLException {
+    connection.setShardingKey(shardingKey);
+  }
 
 	@Override
 	public PreparedStatement prepareStatement(String sql) throws SQLException {

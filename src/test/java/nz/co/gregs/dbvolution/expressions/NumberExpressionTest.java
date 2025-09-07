@@ -641,7 +641,7 @@ public class NumberExpressionTest extends AbstractTest {
 	@Test
 	public void testGreatestOf() throws SQLException {
 		Marque marq = new Marque();
-		DBQuery dbQuery = database.getDBQuery(marq);
+		DBQuery dbQuery = database.getDBQuery(marq).setSortOrder(marq.column(marq.uidMarque));
 		dbQuery.addCondition(
 				NumberExpression.greatestOf(marq.column(marq.uidMarque).numberResult(),
 						NumberExpression.value(900000), NumberExpression.value(800000)

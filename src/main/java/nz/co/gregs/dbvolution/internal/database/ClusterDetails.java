@@ -48,6 +48,7 @@ import nz.co.gregs.dbvolution.DBTable;
 import nz.co.gregs.dbvolution.actions.DBAction;
 import nz.co.gregs.dbvolution.databases.DBDatabase;
 import nz.co.gregs.dbvolution.databases.DBDatabaseCluster;
+import nz.co.gregs.dbvolution.databases.DBDatabaseCluster.Status;
 import nz.co.gregs.dbvolution.databases.DatabaseConnectionSettings;
 import nz.co.gregs.dbvolution.exceptions.*;
 import nz.co.gregs.dbvolution.reflection.DataModel;
@@ -169,8 +170,8 @@ public class ClusterDetails implements Serializable {
 				throw new UnableToRemoveLastDatabaseFromClusterException();
 			}
 
-			if (quietExceptions) {
-			} else {
+//			if (quietExceptions) {
+//			} else {
 				LOG.log(Level.WARNING, "QUARANTINING: DATABASE LABEL {0}", database.getLabel());
 				LOG.log(Level.WARNING, "QUARANTINE INFO: JDBCURL {0}", database.getJdbcURL());
 				Throwable e = except;
@@ -180,7 +181,7 @@ public class ClusterDetails implements Serializable {
 					LOG.log(Level.WARNING, "QUARANTINE INFO: LOCALIZED {0}", except.getLocalizedMessage());
 					e = e.getCause();
 				}
-			}
+//			}
 			database.setLastException(except);
 			members.setQuarantined(database);
 			queuedActions.remove(database);
@@ -201,12 +202,12 @@ public class ClusterDetails implements Serializable {
 				throw new UnableToRemoveLastDatabaseFromClusterException();
 			}
 
-			if (quietExceptions) {
-			} else {
+			//if (quietExceptions) {
+			//} else {
 				LOG.log(Level.WARNING, "DEAD: {0}", database.getLabel());
 				LOG.log(Level.WARNING, "DEAD: {0}", database.getSettings().toString());
 				LOG.log(Level.WARNING, "DEAD: {0}", except.getLocalizedMessage());
-			}
+			//}
 			database.setLastException(except);
 			members.setDead(database);
 			queuedActions.remove(database);
@@ -345,15 +346,21 @@ public class ClusterDetails implements Serializable {
 	}
 
 	public DBDatabase getReadyDatabase() throws NoAvailableDatabaseException {
-		if (hasPreferredDatabase() && preferredDatabaseIsReady()) {
-			return preferredDatabase;
-		} else if (hasPreferredDatabase() && preferredDatabaseRequired) {
-			waitUntilDatabaseHasSynchronised(preferredDatabase);
-			return preferredDatabase;
-		} else {
-			return getRandomReadyDatabase();
-		}
-	}
+    if (hasPreferredDatabase() && preferredDatabaseIsReady()) {
+      return preferredDatabase;
+    } else if (hasPreferredDatabase() && preferredDatabaseRequired) {
+      try {
+        waitUntilDatabaseHasSynchronised(preferredDatabase, 0L);
+        return preferredDatabase;
+      } catch (UnableToSynchronizeDatabase ex) {
+        LOG.severe(() -> "Preferred Database was required but preferred database could not be synchronised: " + preferredDatabase.getLabel());
+        LOG.severe(() -> ex.getMessage());
+        throw new NoAvailableDatabaseException();
+      }
+    } else {
+      return getRandomReadyDatabase();
+    }
+  }
 
 	private DBDatabase getRandomReadyDatabase() throws NoAvailableDatabaseException {
 		DBDatabase[] dbs = getReadyDatabases();
@@ -722,28 +729,73 @@ public class ClusterDetails implements Serializable {
     }
   }
 
-	public void waitUntilDatabaseHasSynchronised(DBDatabase db) {
-		waitUntilDatabaseHasSynchronised(db, 0L);
+  /**
+   * Waits until the database has been synchronized.
+   * 
+   * <p>
+   * Throws DatabaseNotSynchronized if the database cannot be synchronized. It might not be in the cluster for instance or the cluster may think the database connection is "dead".
+   * </p>
+   * @param db
+   * @throws nz.co.gregs.dbvolution.exceptions.UnableToSynchronizeDatabase
+   */
+  @Deprecated
+	public void waitUntilDatabaseHasSynchronised(DBDatabase db) throws nz.co.gregs.dbvolution.exceptions.UnableToSynchronizeDatabase {
+    waitUntilDatabaseHasSynchronised(db, 0L);
 	}
 
-	public void waitUntilDatabaseHasSynchronised(DBDatabase database, long timeoutInMilliseconds) {
-		synchronisingLock.lock();
-		try {
-			if (isEligibleForSynchronizing(database) && getStatusOf(database) != DBDatabaseCluster.Status.READY) {
-				if (timeoutInMilliseconds > 0) {
-					aDatabaseHasBeenSynchronised.await(timeoutInMilliseconds, TimeUnit.MILLISECONDS);
-				} else {
-					while (clusterContains(database) && getStatusOf(database) != DBDatabaseCluster.Status.READY && stillRunning) {
-						aDatabaseHasBeenSynchronised.await(100, TimeUnit.MILLISECONDS);
-					}
-				}
-			}
-		} catch (InterruptedException ex) {
-			Logger.getLogger(ClusterDetails.class.getName()).log(Level.SEVERE, null, ex);
-		} finally {
-			synchronisingLock.unlock();
-		}
-	}
+  /**
+   * Waits until the database has been synchronized or until the timeout has been exceeded.
+   *
+   * <p>
+   * Throws DatabaseNotSynchronized if the database cannot be synchronized. It might not be in the cluster for instance or the cluster may think the database
+   * connection is "dead".
+   * </p>
+   *
+   * @param db
+   * @param timeoutInMilliseconds
+   * @throws nz.co.gregs.dbvolution.exceptions.UnableToSynchronizeDatabase
+   */
+  public void waitUntilDatabaseHasSynchronised(DBDatabase db, long timeoutInMilliseconds) throws UnableToSynchronizeDatabase {
+		// simplest case: the database is already synchronised
+    if (getStatusOf(db).equals(Status.READY)) {
+      return;
+    }
+    // if the database isn't in the cluster just throw and go
+    if (!this.clusterContains(db)) {
+      throw new UnableToSynchronizeDatabase(getClusterLabel(), db);
+    }
+    // if the database is dead or weird just throw and go
+    if (getStatusOf(db).anyOf(Status.DEAD, Status.UNKNOWN)) {
+      throw new UnableToSynchronizeDatabase(clusterLabel, db);
+    }
+
+    // ok, now we can wait...
+    waitUntilDatabaseHasSynchronised_internal(db, timeoutInMilliseconds);
+  }
+
+  private void waitUntilDatabaseHasSynchronised_internal(DBDatabase database, long timeoutInMilliseconds) throws UnableToSynchronizeDatabase {
+    synchronisingLock.lock();
+    try {
+      if (isEligibleForSynchronizing(database) && getStatusOf(database) != DBDatabaseCluster.Status.READY) {
+        if (timeoutInMilliseconds > 0) {
+          aDatabaseHasBeenSynchronised.await(timeoutInMilliseconds, TimeUnit.MILLISECONDS);
+        } else {
+          // this waits forever ... or until the database shuts down
+          while (isEligibleForSynchronizing(database) && getStatusOf(database) != DBDatabaseCluster.Status.READY && stillRunning) {
+            aDatabaseHasBeenSynchronised.await(100, TimeUnit.MILLISECONDS);
+          }
+          if (!Status.READY.equals(getStatusOf(database))){
+            throw new UnableToSynchronizeDatabase(clusterLabel, database);
+          }
+        }
+      }
+    } catch (InterruptedException ex) {
+      LOG.log(Level.SEVERE, "Interrupted while trying to synchronize cluster "+clusterLabel, ex);
+      throw new UnableToSynchronizeDatabase(clusterLabel, database, ex);
+    } finally {
+      synchronisingLock.unlock();
+    }
+  }
 
 	private boolean isEligibleForSynchronizing(DBDatabase database) {
 		final DBDatabaseCluster.Status statusOfDatabase = getStatusOf(database);

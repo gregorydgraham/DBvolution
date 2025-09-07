@@ -38,6 +38,9 @@ import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 import java.io.File;
 import java.io.IOException;
 import java.sql.SQLException;
+import java.time.LocalDateTime;
+import java.time.ZoneOffset;
+import java.time.temporal.ChronoUnit;
 import java.util.*;
 import java.util.function.Function;
 import java.util.logging.Level;
@@ -50,6 +53,7 @@ import nz.co.gregs.dbvolution.annotations.DBRequiredTable;
 import nz.co.gregs.dbvolution.databases.DBDatabase;
 import nz.co.gregs.dbvolution.databases.DBDatabaseCluster;
 import nz.co.gregs.dbvolution.databases.DBDatabaseClusterWithConfigFile;
+import nz.co.gregs.dbvolution.databases.DBStatement;
 import nz.co.gregs.dbvolution.databases.DatabaseConnectionSettings;
 import nz.co.gregs.dbvolution.databases.H2MemoryDB;
 import nz.co.gregs.dbvolution.databases.SQLiteDB;
@@ -66,6 +70,7 @@ import nz.co.gregs.looper.Looper;
 import org.hamcrest.Matchers;
 import static org.hamcrest.Matchers.*;
 import static org.hamcrest.MatcherAssert.assertThat;
+import org.junit.After;
 import org.junit.Assert;
 
 import org.junit.Test;
@@ -75,10 +80,18 @@ import org.junit.Test;
  * @author gregorygraham
  */
 public class DBDatabaseClusterTest extends AbstractTest {
-
+  
+  static final private Logger LOG = Logger.getLogger(DBDatabaseClusterTest.class.getName());
+  
 	public DBDatabaseClusterTest(Object testIterationName, Object db) {
 		super(testIterationName, db);
 	}
+  
+  @After
+  public void cleanup() throws SQLException{
+    database.setPreventAccidentalDeletingAllRowsFromTable(false);
+    database.deleteAllRowsFromTable(new Marque());
+  }
 
 	@Test
 	public synchronized void testAutomaticDataCreation() throws SQLException, InterruptedException {
@@ -136,24 +149,28 @@ public class DBDatabaseClusterTest extends AbstractTest {
                     }
                   });
 
-					Looper looper = Looper.loopUntilSuccessOrLimit(5);
-					looper.loop(
-							(index) -> {
-								cluster.waitUntilDatabaseIsSynchronised(slowSynchingDB, 100);
-							},
-							(index) -> cluster.getDatabaseStatus(slowSynchingDB) == DBDatabaseCluster.Status.READY,
-							(index) -> {
-								System.out.println("" + looper.attempts() + "> SYNCHRONISED: elapsed time " + looper.elapsedTime());
-								System.out.println("-----THIS SHOULD NOT HAVE HAPPENED-----");
-                Assert.fail("UNEXPECTED SYNCHRONISATION: Slow synchronising database managed to synchronise despite all impediments");
-							},
-							(index) -> {
-								System.out.println("FAILED TO SYNCHRONISE in " + looper.attempts() + " attempts: elapsed time " + looper.elapsedTime());
-								System.out.println("THIS IS DELIBERATE AND EXPECTED");
-							}
-					);
+          Looper looper = Looper.loopUntilSuccessOrLimit(5);
+          looper.loop(
+                  (index) -> {
+                    try {
+                      cluster.waitUntilDatabaseIsSynchronised(slowSynchingDB, 100);
+                    } catch (UnableToSynchronizeDatabase ex) {
+                      System.getLogger(DBDatabaseClusterTest.class.getName()).log(System.Logger.Level.ERROR, (String) null, ex);
+                    }
+                  },
+                  (index) -> cluster.getDatabaseStatus(slowSynchingDB) == DBDatabaseCluster.Status.READY,
+                  (index) -> {
+                    System.out.println("" + looper.attempts() + "> SYNCHRONISED: elapsed time " + looper.elapsedTime());
+                    System.out.println("-----THIS SHOULD NOT HAVE HAPPENED-----");
+                    Assert.fail("UNEXPECTED SYNCHRONISATION: Slow synchronising database managed to synchronise despite all impediments");
+                  },
+                  (index) -> {
+                    System.out.println("FAILED TO SYNCHRONISE in " + looper.attempts() + " attempts: elapsed time " + looper.elapsedTime());
+                    System.out.println("THIS IS DELIBERATE AND EXPECTED");
+                  }
+          );
 
-					brake.release();
+          brake.release();
 					cluster.waitUntilSynchronised();
 
 					assertThat(looper.attempts(), is(Matchers.greaterThan(1)));
@@ -175,7 +192,7 @@ public class DBDatabaseClusterTest extends AbstractTest {
 	}
 
 	@Test
-	public synchronized void testAutomaticDataUpdating() throws SQLException, InterruptedException, UnexpectedNumberOfRowsException {
+	public synchronized void testAutomaticDataUpdating() throws SQLException, InterruptedException, UnexpectedNumberOfRowsException, UnableToSynchronizeDatabase {
 		final DBDatabaseClusterTestTable2 testTable = new DBDatabaseClusterTestTable2();
 
 		try (DBDatabaseCluster cluster = DBDatabaseCluster.randomManualCluster(database)) {
@@ -311,7 +328,7 @@ public class DBDatabaseClusterTest extends AbstractTest {
 	}
 
 	@Test
-	public synchronized void testAutoRebuildRecreatesData() throws SQLException {
+	public synchronized void testAutoRebuildRecreatesData() throws SQLException, UnableToSynchronizeDatabase {
 		if (!database.isMemoryDatabase()) {
 			final String nameOfCluster = "testAutoRebuildRecreatesData";
 			{
@@ -784,6 +801,15 @@ public class DBDatabaseClusterTest extends AbstractTest {
 	@Test
 	public synchronized void testDatabaseTableExists() throws SQLException {
 		Assert.assertTrue(database.tableExists(new TableThatDoesExistOnTheCluster()));
+		try (DBDatabaseCluster cluster = DBDatabaseCluster.randomManualCluster(database)) {
+			cluster.setLabel("testDatabaseTableExists");
+			H2MemoryDB soloDB2 = H2MemoryDB.createANewRandomDatabase();
+			cluster.addDatabaseAndWait(soloDB2);
+			cluster.setQuietExceptionsPreference(true);
+			final boolean tableExists = cluster.tableExists(new TableThatDoesExistOnTheCluster());
+			cluster.setQuietExceptionsPreference(false);
+			Assert.assertTrue(tableExists);
+		}
 	}
 
 	@Test
@@ -1154,6 +1180,91 @@ public class DBDatabaseClusterTest extends AbstractTest {
 			cluster.dismantle();
 		}
 	}
+  
+  @Test
+  public synchronized void testCanSynchroniseSingleDatabase() throws SQLException{
+    try{
+    final String nameOfCluster = "testCanSynchroniseSingleDatabase";
+		{
+			// make sure there isn't anything left around from a previous version
+			DBDatabaseCluster cluster
+					= new DBDatabaseCluster(
+							nameOfCluster,
+							DBDatabaseCluster.Configuration.fullyManual().withAutoStart().withAutoConnect(),
+							database);
+			cluster.dismantle();
+		}
+		{
+			// construct a new cluster with 2 databases
+			DBDatabaseCluster cluster
+					= new DBDatabaseCluster(
+							nameOfCluster,
+							DBDatabaseCluster.Configuration.fullyManual().withAutoStart(),
+							database);
+
+			H2MemoryDB soloDB2 = H2MemoryDB.createANewRandomDatabase();
+			cluster.addDatabase(soloDB2);
+			assertThat(cluster.size(), is(2));
+		}
+    final DBDatabaseCluster.Configuration autoStartConfig = DBDatabaseCluster.Configuration.fullyManual().withAutoStart();
+		// construct a new empty instance
+		DBDatabaseCluster cluster = new DBDatabaseCluster(
+					nameOfCluster, autoStartConfig);
+    
+    // test that the database can synchronise when added
+    System.out.println("CRITICAL SECTION!!!!!!");
+    System.out.println("CRITICAL SECTION!!!!!!");
+    System.out.println("CRITICAL SECTION!!!!!!");
+    System.out.println("CRITICAL SECTION!!!!!!");
+    System.out.println("CRITICAL SECTION!!!!!!");
+    LOG.severe("CRITICAL SECTION");
+    
+    cluster.setPrintSQLBeforeExecuting(true);
+    DBDatabase newH2DB = H2MemoryDB.createANewRandomDatabase();
+    LocalDateTime start = LocalDateTime.now();
+    long offset = 200000l; // 60s is 60,000 so 200,000 is well over what we need
+    long tooFar = start.plus(offset, ChronoUnit.MILLIS).toEpochSecond(ZoneOffset.UTC);
+    cluster.addDatabase(newH2DB);
+    try {
+      cluster.waitUntilDatabaseIsSynchronised(newH2DB, offset);
+    } catch (UnableToSynchronizeDatabase ex) {
+      ex.printStackTrace();
+      Assert.fail("Failed to synchronise the database");
+    }
+    long stop = LocalDateTime.now().toEpochSecond(ZoneOffset.UTC);
+    assertThat(stop, is(lessThan(tooFar)));
+
+    newH2DB.setPrintSQLBeforeExecuting(true);
+    newH2DB.tableExists(new Marque());
+    // test that the database can synchronise after unsynchronised
+    newH2DB.setPreventAccidentalDeletingAllRowsFromTable(false);
+    newH2DB.deleteAllRowsFromTable(new Marque());
+    Marque toyota = new Marque();
+    toyota.name.permittedPattern("TOYOTA");
+    Marque actual = cluster.get(toyota).get(0);
+    actual.name.setValue(actual.getName().getValue().toLowerCase());
+    start = LocalDateTime.now();
+    tooFar = start.plus(offset, ChronoUnit.MILLIS).toEpochSecond(ZoneOffset.UTC);
+    // Will notice that newH2DB no longer has any Marques, quarantine it, and then synchronise it 
+    cluster.update(actual);
+    try {
+      cluster.waitUntilDatabaseIsSynchronised(newH2DB, offset);
+    } catch (UnableToSynchronizeDatabase ex) {
+      ex.printStackTrace();
+      Assert.fail("Failed to synchronise the database");
+    }
+    stop = LocalDateTime.now().toEpochSecond(ZoneOffset.UTC);
+    assertThat(stop, is(lessThan(tooFar)));
+    }finally{
+    LOG.severe("FINISHED CRITICAL SECTION!!!!!!");
+    System.out.println("FINISHED CRITICAL SECTION!!!!!!");
+    System.out.println("FINISHED CRITICAL SECTION!!!!!!");
+    System.out.println("FINISHED CRITICAL SECTION!!!!!!");
+    System.out.println("FINISHED CRITICAL SECTION!!!!!!");
+    System.out.println("FINISHED CRITICAL SECTION!!!!!!");
+    System.out.println("FINISHED CRITICAL SECTION!!!!!!");
+    }
+  }
 
 	private List<DBDatabaseClusterTestTable> createData(Date firstDate, Date secondDate) {
 		List<DBDatabaseClusterTestTable> data = new ArrayList<>();

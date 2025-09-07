@@ -40,6 +40,9 @@ public class RawSQLTransactionTest extends AbstractTest {
 		mrq.name.permittedValues("PEUGEOT");
 		Marque peugeot = database.getDBTable(mrq).getOnlyRowByExample(mrq);
 		assertThat(peugeot, is(not(nullValue())));
+    // Clean up
+    database.doTransaction(new DBRawSQLTransaction("update marque set name = 'PEUGEOT' where name = 'Peugeot'"), true);
+
 	}
 
 	@Test
@@ -50,7 +53,9 @@ public class RawSQLTransactionTest extends AbstractTest {
 		Marque mrq = new Marque();
 		mrq.name.permittedValues("Peugeot");
 		Marque peugeot = database.getDBTable(mrq).getOnlyRowByExample(mrq);
-		assertThat(peugeot, is(not(nullValue())));
+		assertThat(peugeot, is(not(nullValue())));		
+    // Clean up
+    database.doTransaction(new DBRawSQLTransaction("update marque set name = 'PEUGEOT' where name = 'Peugeot'"), true);
 	}
 
 	@Test
@@ -58,6 +63,7 @@ public class RawSQLTransactionTest extends AbstractTest {
 		DBRawSQLTransaction sqlTrans = new DBRawSQLTransaction(
 				"update marque set name = 'Peugeot' where name = 'PEUGEOT'");
 		Boolean doneTrans = database.doTransaction(sqlTrans, Boolean.TRUE);
+    assertThat(doneTrans, is(true));
 		sqlTrans = new DBRawSQLTransaction(
 				"update marque set name = 'Toyota' where name = 'TOYOTA'");
 		doneTrans = database.doTransaction(sqlTrans, Boolean.TRUE);
@@ -67,5 +73,8 @@ public class RawSQLTransactionTest extends AbstractTest {
 		DBTable<Marque> rows = database.getDBTable(mrq);
 		assertThat(rows.toList(), is(not(Matchers.empty())));
 		assertThat(rows.toList().size(), is(2));
+    // Clean up
+    database.doTransaction(new DBRawSQLTransaction("update marque set name = 'PEUGEOT' where name = 'Peugeot'"), true);
+		database.doTransaction(new DBRawSQLTransaction("update marque set name = 'TOYOTA' where name = 'Toyota'"), true);
 	}
 }
