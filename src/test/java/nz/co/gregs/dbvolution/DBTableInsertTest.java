@@ -35,60 +35,61 @@ import org.junit.Test;
  * @author Gregory Graham
  */
 public class DBTableInsertTest extends AbstractTest {
-  
-	public DBTableInsertTest(Object testIterationName, Object db) {
-		super(testIterationName, db);
-	}
-  
+
+  public DBTableInsertTest(Object testIterationName, Object db) {
+    super(testIterationName, db);
+  }
+
   @After
-  public void clearoutTheAlteredMarques(){
+  public void clearoutTheAlteredMarques() {
     try {
+      database.setPreventAccidentalDeletingAllRowsFromTable(false);
       database.deleteAllRowsFromTable(new Marque());
     } catch (SQLException ex) {
       System.getLogger(DBTableInsertTest.class.getName()).log(System.Logger.Level.ERROR, (String) null, ex);
     }
   }
 
-	@Test
-	public void testInsertRows() throws SQLException {
+  @Test
+  public void testInsertRows() throws SQLException {
     var marque = new Marque();
-		marque.getUidMarque().setValue(999);
-		marque.getName().setValue("TOYOTA");
-		marque.getNumericCode().setValue(10);
+    marque.getUidMarque().setValue(999);
+    marque.getName().setValue("TOYOTA");
+    marque.getNumericCode().setValue(10);
     DBTable<Marque> marquesTable = database.getDBTable(new Marque());
-		marquesTable.insert(marque);
-		List<Marque> allRows = marquesTable.setBlankQueryAllowed(true).getAllRows();
-		assertThat(allRows.size(), is(23));
+    marquesTable.insert(marque);
+    List<Marque> allRows = marquesTable.setBlankQueryAllowed(true).getAllRows();
+    assertThat(allRows.size(), is(23));
 
-		Date creationDate = new Date();
-		List<Marque> myTableRows = new ArrayList<>();
-		myTableRows.add(new Marque(3, "False", 1246974, "", 3, "UV", "TVR", "", "Y", creationDate, 4, null));
+    Date creationDate = new Date();
+    List<Marque> myTableRows = new ArrayList<>();
+    myTableRows.add(new Marque(3, "False", 1246974, "", 3, "UV", "TVR", "", "Y", creationDate, 4, null));
 
-		marquesTable.insert(myTableRows);
-		allRows = marquesTable.getAllRows();
-		assertThat(allRows.size(), is(24));
-	}
+    marquesTable.insert(myTableRows);
+    allRows = marquesTable.getAllRows();
+    assertThat(allRows.size(), is(24));
+  }
 
-	@Test
-	public void testInsertIncompleteRows() throws SQLException {
-		Marque marque = new Marque();
-		marque.getUidMarque().setValue(999);
-		marque.getName().setValue("TOYOTA");
-		marque.getNumericCode().setValue(10);
-		DBActionList insertActions = DBInsert.getInserts(marque);
-		DBAction possibleInsert = insertActions.get(0);
-		assertThat(possibleInsert.getClass().getSimpleName(), is(DBInsert.class.getSimpleName()));
-		if (possibleInsert instanceof DBInsert) {
-			DBInsert insert = (DBInsert) possibleInsert;
-			String sql = insert.getSQLStatements(database).get(0);
-			assertThat(sql.toUpperCase(), containsString("NAME"));
-			assertThat(sql.toUpperCase(), not(containsString("CREATION_DATE")));
-			assertThat(sql.toUpperCase(), not(containsString("FK_CARCOMPANY")));
-		}
-		
+  @Test
+  public void testInsertIncompleteRows() throws SQLException {
+    Marque marque = new Marque();
+    marque.getUidMarque().setValue(999);
+    marque.getName().setValue("TOYOTA");
+    marque.getNumericCode().setValue(10);
+    DBActionList insertActions = DBInsert.getInserts(marque);
+    DBAction possibleInsert = insertActions.get(0);
+    assertThat(possibleInsert.getClass().getSimpleName(), is(DBInsert.class.getSimpleName()));
+    if (possibleInsert instanceof DBInsert) {
+      DBInsert insert = (DBInsert) possibleInsert;
+      String sql = insert.getSQLStatements(database).get(0);
+      assertThat(sql.toUpperCase(), containsString("NAME"));
+      assertThat(sql.toUpperCase(), not(containsString("CREATION_DATE")));
+      assertThat(sql.toUpperCase(), not(containsString("FK_CARCOMPANY")));
+    }
+
     assertThat(database.getDBQuery(new Marque()).setBlankQueryAllowed(true).getAllRows().size(), is(22));
     database.insert(marque);
-		assertThat(database.getDBQuery(new Marque()).setBlankQueryAllowed(true).getAllRows().size(), is(23));
-    
-	}
+    assertThat(database.getDBQuery(new Marque()).setBlankQueryAllowed(true).getAllRows().size(), is(23));
+
+  }
 }
