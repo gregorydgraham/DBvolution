@@ -48,7 +48,7 @@ public class DBDeleteAll extends DBDelete {
 	 * @param row the example to be deleted
 	 */
 	public <R extends DBRow> DBDeleteAll(R row) {
-		super(row,QueryIntention.BULK_DELETE);
+		super(row,QueryIntention.DELETE_ALL_ROWS);
 	}
 
 	private <R extends DBRow> DBDeleteAll(DBDatabase db, R row) throws SQLException {
