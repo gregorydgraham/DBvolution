@@ -37,6 +37,7 @@ public class DBStringTest extends AbstractTest {
 
   @After
   public void cleanup() throws SQLException {
+    database.setPreventAccidentalDeletingAllRowsFromTable(false);
     database.deleteAllRowsFromTable(new Marque());
   }
 
