@@ -38,9 +38,6 @@ import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 import java.io.File;
 import java.io.IOException;
 import java.sql.SQLException;
-import java.time.LocalDateTime;
-import java.time.ZoneOffset;
-import java.time.temporal.ChronoUnit;
 import java.util.*;
 import java.util.function.Function;
 import java.util.logging.Level;
@@ -53,7 +50,6 @@ import nz.co.gregs.dbvolution.annotations.DBRequiredTable;
 import nz.co.gregs.dbvolution.databases.DBDatabase;
 import nz.co.gregs.dbvolution.databases.DBDatabaseCluster;
 import nz.co.gregs.dbvolution.databases.DBDatabaseClusterWithConfigFile;
-import nz.co.gregs.dbvolution.databases.DBStatement;
 import nz.co.gregs.dbvolution.databases.DatabaseConnectionSettings;
 import nz.co.gregs.dbvolution.databases.H2MemoryDB;
 import nz.co.gregs.dbvolution.databases.SQLiteDB;
@@ -855,7 +851,7 @@ public class DBDatabaseClusterTest extends AbstractTest {
 		DatabaseConnectionSettings source2 = new DatabaseConnectionSettings();
 		source2.setDbdatabaseClass(SQLiteDB.class
 				.getCanonicalName());
-		source2.setUrl("jdbc:sqlite:DBDatabaseClusterWithConfigFile.sqlite");
+		source2.setUrl("jdbc:sqlite:target/DBDatabaseClusterWithConfigFile.sqlite");
 		source2.setUsername("admin");
 		source2.setPassword("admin");
 
@@ -894,7 +890,7 @@ public class DBDatabaseClusterTest extends AbstractTest {
 				db = new DBDatabaseClusterWithConfigFile("testYAMLFileProcessing3",
 						DBDatabaseCluster.Configuration.autoStart(), yamlConfigFilename);
 				assertThat(db.getDatabases()[1].getJdbcURL(), containsString("jdbc:h2:mem:DBDatabaseClusterWithConfigFile.h2"));
-				assertThat(db.getDatabases()[0].getJdbcURL(), containsString("jdbc:sqlite:DBDatabaseClusterWithConfigFile.sqlite"));
+				assertThat(db.getDatabases()[0].getJdbcURL(), containsString("jdbc:sqlite:target/DBDatabaseClusterWithConfigFile.sqlite"));
 			} catch (DBDatabaseClusterWithConfigFile.NoDatabaseConfigurationFound | DBDatabaseClusterWithConfigFile.UnableToCreateDatabaseCluster ex) {
 				Logger.getLogger(DBDatabaseClusterTest.class
 						.getName()).log(Level.SEVERE, null, ex);
