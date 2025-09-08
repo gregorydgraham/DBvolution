@@ -60,6 +60,7 @@ public abstract class DBAction implements Serializable {
 
 	protected final QueryIntention intention;
   private long rowsAltered = 0;
+  private long expectedAlteredRows = 0;
 
 	/**
 	 * Standard action constructor.
@@ -267,6 +268,14 @@ public abstract class DBAction implements Serializable {
 	protected void prepareRollbackData(DBDatabase db, DBActionList actions) throws SQLException, DBRuntimeException {
 		throw new UnsupportedOperationException("Not supported yet.");
 	}
+
+  public long getExpectedAlteredRows() {
+    return expectedAlteredRows;
+  }
+
+  public void setExpectedAlteredRows(long expectedResult) {
+    expectedAlteredRows = expectedResult;
+  }
 
 	public static enum RefetchRequirement {
 		REFETCH,
