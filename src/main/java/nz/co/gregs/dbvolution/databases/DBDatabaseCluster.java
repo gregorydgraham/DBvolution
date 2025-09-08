@@ -975,6 +975,7 @@ public class DBDatabaseCluster extends DBDatabaseImplementation {
 	private synchronized DBActionList executeDBActionOnClusterMembers(DBAction action) throws NoAvailableDatabaseException, SQLException {
 		LOG.debug("EXECUTING ACTION: " + action.getSQLStatements(this));
 		addActionToQueue(action);
+    long expectedResult = 0;
 		List<ActionTask> tasks = new ArrayList<>();
 		DBActionList actionsPerformed = new DBActionList();
 		try {
@@ -993,6 +994,7 @@ public class DBDatabaseCluster extends DBDatabaseImplementation {
 					try {
 						actionsPerformed = new ActionTask(this, database, action, false).call();
 						removeActionFromQueue(database, action);
+            expectedResult = action.getRowsAltered();
 						succeeded = true;
 						break;
 					} catch (SQLException ex) {
@@ -1010,7 +1012,7 @@ public class DBDatabaseCluster extends DBDatabaseImplementation {
             continue;
 					} 
           if (action.runOnDatabaseDuringCluster(firstDatabase, next)) {
-							final ActionTask task = new ActionTask(this, next, action);
+							final ActionTask task = new ActionTask(this, next, action, true, expectedResult);
 							tasks.add(task);
 							removeActionFromQueue(next, action);
 					}
@@ -1421,39 +1423,48 @@ public class DBDatabaseCluster extends DBDatabaseImplementation {
 		private final DBDatabaseCluster cluster;
 		private DBActionList actionList = new DBActionList();
 		private boolean quarantineAllowed;
+    private final long expectedResult;
 
 		public ActionTask(DBDatabaseCluster cluster, DBDatabase db, DBAction action) {
-			this.cluster = cluster;
-			this.database = db;
-			this.action = action;
-			this.quarantineAllowed = true;
+      this(cluster, db,action, true,0);
 		}
 
 		public ActionTask(DBDatabaseCluster cluster, DBDatabase db, DBAction action, boolean quarantineAllowed) {
+      this(cluster,db, action, quarantineAllowed,0);
+		}
+
+    private ActionTask(DBDatabaseCluster cluster, DBDatabase db, DBAction action, boolean quarantineAllowed, long expectedResult) {
 			this.cluster = cluster;
 			this.database = db;
 			this.action = action;
 			this.quarantineAllowed = quarantineAllowed;
-		}
+      this.expectedResult = expectedResult;
+    }
 
 		@Override
-		public DBActionList call() throws SQLException, NoAvailableDatabaseException {
-			try {
-				DBActionList actions = database.executeDBAction(action);
-				setActionList(actions);
-				return getActionList();
-			} catch (SQLException | NoAvailableDatabaseException e) {
-				HandlerAdvice handleExceptionDuringAction = cluster.handleExceptionDuringAction(e, database, action, quarantineAllowed);
-				if (handleExceptionDuringAction.equals(HandlerAdvice.ABORT)
-						|| handleExceptionDuringAction.equals(HandlerAdvice.REQUERY)) {
-					throw e;
-				}
-			}
-			return getActionList();
-		}
+    public DBActionList call() throws SQLException, NoAvailableDatabaseException {
+      try {
+        DBActionList actions = database.executeDBAction(action);
+        setActionList(actions);
+        if (expectedResult > 0) {
+          long result = action.getRowsAltered();
+          if (result != expectedResult) {
+            cluster.quarantineDatabase(database, new UnexpectedNumberOfRowsException(expectedResult, result, action.getIntent().toString()));
+          }
+        }
+        return getActionList();
+      } catch (SQLException | NoAvailableDatabaseException e) {
+        HandlerAdvice handleExceptionDuringAction = cluster.handleExceptionDuringAction(e, database, action, quarantineAllowed);
+        if (handleExceptionDuringAction.equals(HandlerAdvice.ABORT)
+                || handleExceptionDuringAction.equals(HandlerAdvice.REQUERY)) {
+          throw e;
+        }
+      }
+      return getActionList();
+    }
 
-		public synchronized DBActionList getActionList() {
-			final DBActionList newList = new DBActionList();
+    public synchronized DBActionList getActionList() {
+      final DBActionList newList = new DBActionList();
 			newList.addAll(actionList);
 			return newList;
 		}
@@ -1467,7 +1478,7 @@ public class DBDatabaseCluster extends DBDatabaseImplementation {
 
 		private final DBDatabaseCluster cluster;
 		private final DBDatabase database;
-
+          
 		public SynchroniseTask(DBDatabaseCluster cluster, DBDatabase db) {
 			this.cluster = cluster;
 			this.database = db;
@@ -1493,7 +1504,7 @@ public class DBDatabaseCluster extends DBDatabaseImplementation {
 		}
 
 		final public Void synchronise(DBDatabaseCluster cluster, DBDatabase database) {
-			cluster.getDetails().synchronizeSecondaryDatabase(database);
+ 			cluster.getDetails().synchronizeSecondaryDatabase(database);
 			return null;
 		}
 	}
@@ -1861,11 +1872,21 @@ public class DBDatabaseCluster extends DBDatabaseImplementation {
       if (db != null) {
         if (db instanceof DBDatabaseCluster) {
           DBDatabaseCluster cluster = (DBDatabaseCluster) db;
+          if (cluster.getAutoReconnect()) {
+            try {
+              cluster.reconnectQuarantinedDatabases();
+            } catch (UnableToRemoveLastDatabaseFromClusterException ex) {
+              LOG.warn("Error while reconnnecting quarantined databases: " + ex.getLocalizedMessage(), ex);
+            } catch (SQLException ex) {
+              LOG.warn("Error while reconnnecting quarantined databases: " + ex.getLocalizedMessage(), ex);
+            }
+          }
           try {
             // DO THE ACTUAL WORK
-            cluster.getDetails().synchronizeSecondaryDatabases();
-            LOG.warn("Finished Synchronising Database: " + cluster.getLabel());
-            return "Finished Synchronising Databases";
+            long results = cluster.getDetails().synchronizeSecondaryDatabases();
+            final String message = "Finished Synchronising cluster: " + cluster.getLabel()+" rsynched "+results+" databases";
+            LOG.warn(message);
+            return message;
             // Good job everyone, hi-5!
           } catch (Exception e) {
             LOG.error("FAILED TO SYNCHRONISE CLUSTER: " + cluster.getLabel(), e);
