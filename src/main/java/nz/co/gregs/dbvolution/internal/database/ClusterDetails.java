@@ -803,26 +803,28 @@ public class ClusterDetails implements Serializable {
 		return clusterContains(database) && (notDead || configuration.isUseAutoReconnect());
 	}
 
-	public void synchronizeSecondaryDatabases() {
-		if (stillRunning) {
-			DBDatabase[] addedDBs;
-			addedDBs = members.getDatabases(DBDatabaseCluster.Status.UNSYNCHRONISED);
-			for (DBDatabase db : addedDBs) {
-				if (stillRunning) {
-					//Do The Synchronising...
-					synchronizeSecondaryDatabase(db);
-				}
-			}
-		}
-	}
+	public long synchronizeSecondaryDatabases() {
+    long sychronisedDBs = 0l;
+    if (stillRunning) {
+      DBDatabase[] addedDBs;
+      addedDBs = members.getDatabases(DBDatabaseCluster.Status.UNSYNCHRONISED);
+      for (DBDatabase db : addedDBs) {
+        if (stillRunning) {
+          //Do The Synchronising...
+          sychronisedDBs += synchronizeSecondaryDatabase(db) ? 1 : 0;
+        }
+      }
+    }
+    return sychronisedDBs;
+  }
 
-	public synchronized void synchronizeSecondaryDatabase(DBDatabase secondary) {
+	public synchronized boolean synchronizeSecondaryDatabase(DBDatabase secondary) {
 		members.setSynchronising(secondary);
 
 		DBDatabase template = null;
 		boolean proceedWithSynchronization = true;
 		final String secondaryLabel = secondary.getLabel();
-		LOG.log(Level.FINEST, "{0} SYNCHRONISING: {1}", new Object[]{clusterLabel, secondaryLabel});
+		LOG.log(Level.INFO, "CLUSTER {0} SYNCHRONISING: {1}", new Object[]{clusterLabel, secondaryLabel});
 		try {
 			// we need to unpause the template no matter what happens so use a finally clause
 			try {
@@ -885,7 +887,7 @@ public class ClusterDetails implements Serializable {
 									}
 								}
 							}
-							LOG.log(Level.FINEST, "{0} FINISHED WITH TABLE: {1}", new Object[]{clusterLabel, tableName});
+							LOG.log(Level.INFO, "{0} FINISHED WITH TABLE: {1}", new Object[]{clusterLabel, tableName});
 						}
 					}
 				}
@@ -899,15 +901,19 @@ public class ClusterDetails implements Serializable {
 				LOG.log(Level.SEVERE, "Throwable during synchronising: {0}", throwable.getLocalizedMessage());
 			}
 			if (proceedWithSynchronization) {
-				LOG.log(Level.FINEST, "{0} START SYNCHRONISING ACTIONS ON: {1}", new Object[]{clusterLabel, secondaryLabel});
+				LOG.log(Level.INFO, "{0} START SYNCHRONISING ACTIONS ON: {1}", new Object[]{clusterLabel, secondaryLabel});
 				synchronizeActions(secondary);
+				LOG.log(Level.INFO, "{0} SUCCESSFULLY SYNCHRONISED: {1}", new Object[]{clusterLabel, secondaryLabel});
 			}
 		} catch (Exception exc) {
+			LOG.log(Level.WARNING, "{0} FAILED TO SYNCHRONISE: {1}", new Object[]{clusterLabel, secondaryLabel});
 			members.setUnsynchronised(secondary);
+      return false;
 		} finally {
 			releaseTemplateDatabase(template);
 		}
 		// Successfully synchronised the new database :)
+    return proceedWithSynchronization;
 	}
 
 	private synchronized void releaseTemplateDatabase(DBDatabase primary) throws NoAvailableDatabaseException {
@@ -915,7 +921,7 @@ public class ClusterDetails implements Serializable {
 			if (clusterContains(primary)) {
 				synchronizeActions(primary);
 			} else {
-				LOG.log(Level.INFO, "SYNCHRONISING - STOPPING {0} {1}", new Object[]{primary.getLabel(), primary.getJdbcURL()});
+				LOG.log(Level.WARNING, "{0} SYNCHRONISING - FAILED TO RELEASE TEMPLATE {1} {2}", new Object[]{clusterLabel, primary.getLabel(), primary.getJdbcURL()});
 				primary.stop();
 			}
 		}
