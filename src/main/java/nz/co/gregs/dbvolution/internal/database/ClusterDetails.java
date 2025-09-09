@@ -689,8 +689,12 @@ public class ClusterDetails implements Serializable {
 
 	public boolean isSynchronized() {
 		if (configuration.isUseAutoReconnect()) {
+      // if we're using AutoReconnect then it is only synchronised when
+      // the number of ready databases is exactly the same as the number of members
 			return members.getDatabases(DBDatabaseCluster.Status.READY).length == members.size();
 		} else {
+      // if we AREN'T using AutoConnect then Quarantined and Dead databases are ignored as well
+      // and it's only new/unsynchronised databases that are counted      
 			return members.getDatabases(
 					DBDatabaseCluster.Status.READY,
 					DBDatabaseCluster.Status.QUARANTINED,
@@ -709,7 +713,7 @@ public class ClusterDetails implements Serializable {
 				allDatabasesAreSynchronised.await(1, TimeUnit.SECONDS);
 			}
 		} catch (InterruptedException ex) {
-			Logger.getLogger(ClusterDetails.class.getName()).log(Level.SEVERE, null, ex);
+			LOG.log(Level.SEVERE, "INTERRUPTED WHILE TRYING TO SYNCHRONISE CLUSTER", ex);
 		} finally {
 			synchronisingLock.unlock();
 		}
