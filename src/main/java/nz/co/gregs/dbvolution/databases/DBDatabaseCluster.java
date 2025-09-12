@@ -56,6 +56,8 @@ import nz.co.gregs.dbvolution.transactions.DBTransaction;
 import nz.co.gregs.dbvolution.internal.database.ClusterCleanupActions;
 import nz.co.gregs.dbvolution.internal.query.StatementDetails;
 import nz.co.gregs.dbvolution.utility.RegularProcess;
+import nz.co.gregs.separatedstring.Encoder;
+import nz.co.gregs.separatedstring.SeparatedString;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
@@ -103,7 +105,9 @@ public class DBDatabaseCluster extends DBDatabaseImplementation {
 	private static final long serialVersionUID = 1l;
 
 	private ClusterDetails details;
-	private transient final ExecutorService ACTION_THREAD_POOL;
+	private transient final ExecutorService ACTION_THREAD_POOL = Executors.newCachedThreadPool();
+  private transient final SynchroniserProcess SYNCHRONISER_PROCESS = new SynchroniserProcess();
+  private transient final ReconnectionProcess RECONNECTION_PROCESS = new ReconnectionProcess();
 	private boolean requeryPermitted = true;
 	private boolean startupIsNeeded = true;
 	private boolean failOnQuarantine = false;
@@ -115,8 +119,6 @@ public class DBDatabaseCluster extends DBDatabaseImplementation {
 		final ClusterDetails clusterDetails = getDetails();
 		clusterDetails.setConfiguration(config);
     definition = new ClusterDatabaseDefinition();
-
-		ACTION_THREAD_POOL = Executors.newCachedThreadPool();
 
 		if (config.useAutoRebuild) {
 			clusterDetails.loadTrackedTables();
@@ -138,9 +140,6 @@ public class DBDatabaseCluster extends DBDatabaseImplementation {
 		if (config.useAutoConnect) {
 			connectSavedDatabases();
 		}
-    
-    addSynchronisationProcessor();
-		addCleaner();
       
 	}
 
@@ -306,16 +305,18 @@ public class DBDatabaseCluster extends DBDatabaseImplementation {
 
 	private void startupCluster() {
 		if (startupIsNeeded) {
-			addReconnectionProcessor();
+      addClusterProcessor(SYNCHRONISER_PROCESS, ChronoUnit.SECONDS, 20);
+      addClusterProcessor(RECONNECTION_PROCESS, ChronoUnit.MINUTES, 1);
 			addCleaner();
 			startupIsNeeded = false;
 		}
 	}
 
-  private void addSynchronisationProcessor() {
-    SynchroniserProcess synchroniserProcess = new SynchroniserProcess();
-    synchroniserProcess.setTimeOffset(ChronoUnit.SECONDS, 20);
-    addRegularProcess(synchroniserProcess);
+  protected void addClusterProcessor(RegularProcess process, ChronoUnit timeUnit, int timeDuration) {
+    process.setTimeOffset(timeUnit, timeDuration);
+    if (!REGULAR_PROCESSORS.contains(process)) {
+      REGULAR_PROCESSORS.add(process);
+    }
   }
 
 	private void connectSavedDatabases() {
@@ -327,12 +328,6 @@ public class DBDatabaseCluster extends DBDatabaseImplementation {
 				Logger.getLogger(DBDatabaseCluster.class.getName()).log(Level.SEVERE, null, ex);
 			}
 		}
-	}
-
-	private void addReconnectionProcessor() {
-		final ReconnectionProcess reconnectionProcessor = new ReconnectionProcess();
-		reconnectionProcessor.setTimeOffset(ChronoUnit.MINUTES, 1);
-		addRegularProcess(reconnectionProcessor);
 	}
 
 	public DBDatabase start() {
@@ -995,6 +990,7 @@ public class DBDatabaseCluster extends DBDatabaseImplementation {
 						actionsPerformed = new ActionTask(this, database, action, false).call();
 						removeActionFromQueue(database, action);
             expectedResult = action.getRowsAltered();
+            LOG.info("EXECUTED - cluster "+getLabel()+" used "+database.getLabel()+" for first execution of "+action.getIntent()+":expect="+action.getExpectedAlteredRows()+":"+action.getSQLStatements(database));
 						succeeded = true;
 						break;
 					} catch (SQLException ex) {
@@ -1123,16 +1119,6 @@ public class DBDatabaseCluster extends DBDatabaseImplementation {
 		}
 	}
 
-	ArrayList<DBStatement> getDBStatements() throws SQLException {
-		ArrayList<DBStatement> arrayList = new ArrayList<>();
-		final DBDatabase[] readyDatabases = getDetails().getReadyDatabases();
-		for (DBDatabase db : readyDatabases) {
-			synchronized (db) {
-				arrayList.add(db.getDBStatement());
-			}
-		}
-		return arrayList;
-	}
 
 	@Override
 	public DBDefinition getDefinition() throws NoAvailableDatabaseException {
@@ -1275,15 +1261,16 @@ public class DBDatabaseCluster extends DBDatabaseImplementation {
 	}
 
 	public String getDatabaseStatuses() {
-		StringBuilder result = new StringBuilder();
+    Encoder encoder = SeparatedString.builder()
+            .separatedBy("\n")
+            .withPrefix("CLUSTER: "+getLabel()+System.lineSeparator())
+            .withKeyValueSeparator(": ")
+            .encoder();    
 		final DBDatabase[] all = getDetails().getAllDatabases();
 		for (DBDatabase db : all) {
-			result.append(this.getDatabaseStatus(db).name())
-					.append(": ")
-					.append(db.getSettings().toString().replaceAll("DATABASECONNECTIONSETTINGS: ", ""))
-					.append("\n");
-		}
-		return result.toString();
+      encoder.add(getDatabaseStatus(db).toString(), db.getLabel()+" - "+db.getJdbcURL());
+    }
+    return encoder.encode();
 	}
 
 	public final boolean getAutoRebuild() {
@@ -1397,7 +1384,7 @@ public class DBDatabaseCluster extends DBDatabaseImplementation {
 		try {
 			getDetails().dismantle();
 		} catch (SQLException ex) {
-			Logger.getLogger(DBDatabaseCluster.class.getName()).log(Level.SEVERE, null, ex);
+			LOG.warn("Cluster "+getLabel()+" threw an exception during dismantling: ", ex);
 		}
 	}
 
@@ -1449,7 +1436,7 @@ public class DBDatabaseCluster extends DBDatabaseImplementation {
         if (expectedResult > 0) {
           long result = action.getRowsAltered();
           if (result != expectedResult) {
-            cluster.quarantineDatabase(database, new UnexpectedNumberOfRowsException(expectedResult, result, action.getIntent().toString()));
+            cluster.quarantineDatabase(database, new UnexpectedNumberOfRowsException(expectedResult, result, "Unexpected Number Of Rows Found during "+action.getIntent().toString()+": expected " + expectedResult + " but found " + result));
           }
         }
         return getActionList();
@@ -1872,20 +1859,11 @@ public class DBDatabaseCluster extends DBDatabaseImplementation {
       if (db != null) {
         if (db instanceof DBDatabaseCluster) {
           DBDatabaseCluster cluster = (DBDatabaseCluster) db;
-          if (cluster.getAutoReconnect()) {
-            try {
-              cluster.reconnectQuarantinedDatabases();
-            } catch (UnableToRemoveLastDatabaseFromClusterException ex) {
-              LOG.warn("Error while reconnnecting quarantined databases: " + ex.getLocalizedMessage(), ex);
-            } catch (SQLException ex) {
-              LOG.warn("Error while reconnnecting quarantined databases: " + ex.getLocalizedMessage(), ex);
-            }
-          }
           try {
             // DO THE ACTUAL WORK
             long results = cluster.getDetails().synchronizeSecondaryDatabases();
-            final String message = "Finished Synchronising cluster: " + cluster.getLabel()+" rsynched "+results+" databases";
-            LOG.warn(message);
+            final String message = "Finished Synchronising cluster: " + cluster.getLabel()+" resynched "+results+" databases";
+            LOG.debug(message);
             return message;
             // Good job everyone, hi-5!
           } catch (Exception e) {
