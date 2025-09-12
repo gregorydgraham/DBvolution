@@ -34,6 +34,8 @@ import nz.co.gregs.dbvolution.utility.TableSet;
 import java.io.Serializable;
 import java.lang.reflect.InvocationTargetException;
 import java.sql.SQLException;
+import java.time.LocalDateTime;
+import java.time.temporal.ChronoUnit;
 import java.util.*;
 import nz.co.gregs.dbvolution.exceptions.NoAvailableDatabaseException;
 import java.util.concurrent.LinkedBlockingQueue;
@@ -72,13 +74,12 @@ public class ClusterDetails implements Serializable {
 	private final DatabaseList members = new DatabaseList();
 
 	private transient final Set<DBRow> requiredTables = Collections.synchronizedSet(DataModel.getRequiredTables());
-	private transient final Set<DBRow> trackedTables = Collections.synchronizedSet(new HashSet<DBRow>());
-	private transient final Map<DBDatabase, Queue<DBAction>> queuedActions = Collections.synchronizedMap(new HashMap<DBDatabase, Queue<DBAction>>(0));
+	private transient final Set<DBRow> trackedTables = Collections.synchronizedSet(new HashSet<>());
+	private transient final Map<DBDatabase, Queue<DBAction>> queuedActions = Collections.synchronizedMap(new HashMap<>(0));
 
 	private transient final PreferencesImproved prefs = PreferencesImproved.userNodeForPackage(this.getClass());
 	private String clusterLabel = "NotDefined";
 	private boolean supportsDifferenceBetweenNullAndEmptyString = true;
-	private final ArrayList<String> allAddedDatabases = new ArrayList<String>();
 	private boolean quietExceptions = false;
 	private DBDatabaseCluster.Configuration configuration = DBDatabaseCluster.Configuration.fullyManual();
 
@@ -170,18 +171,13 @@ public class ClusterDetails implements Serializable {
 				throw new UnableToRemoveLastDatabaseFromClusterException();
 			}
 
-//			if (quietExceptions) {
-//			} else {
-				LOG.log(Level.WARNING, "QUARANTINING: DATABASE LABEL {0}", database.getLabel());
-				LOG.log(Level.WARNING, "QUARANTINE INFO: JDBCURL {0}", database.getJdbcURL());
-				Throwable e = except;
-				while (e != null) {
-					LOG.log(Level.WARNING, "QUARANTINE INFO: EXCEPTION {0}", except.getClass().getCanonicalName());
-					LOG.log(Level.WARNING, "QUARANTINE INFO: MESSAGE {0}", except.getMessage());
-					LOG.log(Level.WARNING, "QUARANTINE INFO: LOCALIZED {0}", except.getLocalizedMessage());
-					e = e.getCause();
-				}
-//			}
+			if (quietExceptions) {
+			} else {
+				LOG.log(Level.WARNING, 
+                "QUARANTINING Database \"{0}\" from cluster {1} due to exception {2} with message \"{3}\"", 
+                new Object[]{database.getLabel(), clusterLabel, except.getClass().getSimpleName(), except.getMessage()}
+        );
+			}
 			database.setLastException(except);
 			members.setQuarantined(database);
 			queuedActions.remove(database);
@@ -189,10 +185,13 @@ public class ClusterDetails implements Serializable {
 			setAuthoritativeDatabase();
 			if (database instanceof DBDatabaseCluster) {
 				DBDatabaseCluster cluster = (DBDatabaseCluster) database;
-				cluster.setHasQuarantined(true);
-			}
-		}
-	}
+        cluster.setHasQuarantined(true);
+      }
+      if (members.getQuarantineCount(database) > 6) {
+        members.setDead(database);
+      }
+    }
+  }
 
 	public synchronized void deadDatabase(DBDatabase database, Throwable except) throws UnableToRemoveLastDatabaseFromClusterException {
 		if (clusterContains(database)) {
@@ -202,12 +201,13 @@ public class ClusterDetails implements Serializable {
 				throw new UnableToRemoveLastDatabaseFromClusterException();
 			}
 
-			//if (quietExceptions) {
-			//} else {
-				LOG.log(Level.WARNING, "DEAD: {0}", database.getLabel());
-				LOG.log(Level.WARNING, "DEAD: {0}", database.getSettings().toString());
-				LOG.log(Level.WARNING, "DEAD: {0}", except.getLocalizedMessage());
-			//}
+			if (quietExceptions) {
+			} else {
+				LOG.log(Level.WARNING, 
+                "DEAD Database \"{0}\" removed from cluster {1} due to exception {2} with message \"{3}\"", 
+                new Object[]{database.getLabel(), clusterLabel, except.getClass().getSimpleName(), except.getMessage()}
+        );
+			}
 			database.setLastException(except);
 			members.setDead(database);
 			queuedActions.remove(database);
@@ -569,6 +569,7 @@ public class ClusterDetails implements Serializable {
 
 	public void removeAllDatabases() throws SQLException {
 		members.clear();
+    preferredDatabase = null;
 	}
 
 	public synchronized void dismantle() throws SQLException {
@@ -621,12 +622,6 @@ public class ClusterDetails implements Serializable {
 			supportsDifference = supportsDifference && database.supportsDifferenceBetweenNullAndEmptyString();
 		}
 		setSupportsDifferenceBetweenNullAndEmptyString(supportsDifference);
-	}
-
-	public void printAllFormerDatabases() {
-		allAddedDatabases.forEach(db -> {
-			System.out.println("DB: " + db);
-		});
 	}
 
 	public void setQuietExceptionsPreference(boolean bln) {
@@ -780,21 +775,24 @@ public class ClusterDetails implements Serializable {
   private void waitUntilDatabaseHasSynchronised_internal(DBDatabase database, long timeoutInMilliseconds) throws UnableToSynchronizeDatabase {
     synchronisingLock.lock();
     try {
+      final LocalDateTime start = LocalDateTime.now();
+      final LocalDateTime end = start.plus(timeoutInMilliseconds, ChronoUnit.MILLIS);
       if (isEligibleForSynchronizing(database) && getStatusOf(database) != DBDatabaseCluster.Status.READY) {
-        if (timeoutInMilliseconds > 0) {
-          aDatabaseHasBeenSynchronised.await(timeoutInMilliseconds, TimeUnit.MILLISECONDS);
-        } else {
-          // this waits forever ... or until the database shuts down
-          while (isEligibleForSynchronizing(database) && getStatusOf(database) != DBDatabaseCluster.Status.READY && stillRunning) {
-            aDatabaseHasBeenSynchronised.await(100, TimeUnit.MILLISECONDS);
-          }
-          if (!Status.READY.equals(getStatusOf(database))){
-            throw new UnableToSynchronizeDatabase(clusterLabel, database);
-          }
+        while (stillRunning
+                && (timeoutInMilliseconds == 0l || (timeoutInMilliseconds > 0l && LocalDateTime.now().isBefore(end)))
+                && isEligibleForSynchronizing(database)
+                && getStatusOf(database) != DBDatabaseCluster.Status.READY) {
+          aDatabaseHasBeenSynchronised.await(100, TimeUnit.MILLISECONDS);
+        }
+        if (!stillRunning) {
+          throw new DatabaseShutdownInProgress();
+        }
+        if (!Status.READY.equals(getStatusOf(database))) {
+          throw new UnableToSynchronizeDatabase(clusterLabel, database);
         }
       }
     } catch (InterruptedException ex) {
-      LOG.log(Level.SEVERE, "Interrupted while trying to synchronize cluster "+clusterLabel, ex);
+      LOG.log(Level.SEVERE, "Interrupted while trying to synchronize cluster " + clusterLabel, ex);
       throw new UnableToSynchronizeDatabase(clusterLabel, database, ex);
     } finally {
       synchronisingLock.unlock();
@@ -828,7 +826,7 @@ public class ClusterDetails implements Serializable {
 		DBDatabase template = null;
 		boolean proceedWithSynchronization = true;
 		final String secondaryLabel = secondary.getLabel();
-		LOG.log(Level.INFO, "CLUSTER {0} SYNCHRONISING: {1}", new Object[]{clusterLabel, secondaryLabel});
+		LOG.log(Level.FINEST, "Cluster {0} preparing for synchronisation of {1} database", new Object[]{clusterLabel, secondaryLabel});
 		try {
 			// we need to unpause the template no matter what happens so use a finally clause
 			try {
@@ -836,26 +834,26 @@ public class ClusterDetails implements Serializable {
 				if (proceedWithSynchronization && template != null) {
 					// Check that we're not synchronising the reference database
 					if (!template.getSettings().equals(secondary.getSettings())) {
-						LOG.log(Level.FINEST, "{0} CAN SYNCHRONISE: {1}", new Object[]{clusterLabel, secondaryLabel});
+						LOG.log(Level.FINEST, "{0} cluster can synchronise {1} database", new Object[]{clusterLabel, secondaryLabel});
 						copyTemplateActionQueueToSecondary(template, secondary);
 						// TODO change to use a queue of tables so we can re-try tables that require another table to exist
 						for (DBRow table : getRequiredAndTrackedTables()) {
 							final String tableName = table.getTableName();
 							if (proceedWithSynchronization) {
-								LOG.log(Level.FINEST, "{0} CHECKING TABLE: {1}", new Object[]{clusterLabel, tableName});
+								LOG.log(Level.FINEST, "{0} cluster checking table {1} exists", new Object[]{clusterLabel, tableName, secondaryLabel});
 								// make sure the table exists in the cluster already
 								if (template.tableExists(table)) {
-									LOG.log(Level.FINEST, "{0} INCLUDES TABLE: {1}", new Object[]{clusterLabel, tableName});
+									LOG.log(Level.FINEST, "{0} cluster includes table {1}", new Object[]{clusterLabel, tableName});
 									// Make sure it exists in the new database
 									if (secondary.tableExists(table) == true) {
-										LOG.log(Level.FINEST, "{0} REMOVING DATA FROM {1}: {2}", new Object[]{clusterLabel, secondaryLabel, tableName});
+										LOG.log(Level.FINEST, "{0} cluster removing data from table {2} on {1} database", new Object[]{clusterLabel, secondaryLabel, tableName});
 										secondary.preventDroppingOfTables(false);
 										secondary.dropTable(table);
-										LOG.log(Level.FINEST, "{0} REMOVED DATA FROM {1}: {2}", new Object[]{clusterLabel, secondaryLabel, tableName});
+										LOG.log(Level.FINEST, "{0} cluster removed data from table {2} on {1} database", new Object[]{clusterLabel, secondaryLabel, tableName});
 									}
-									LOG.log(Level.FINEST, "{0} CREATING ON {1}: {2}", new Object[]{clusterLabel, secondaryLabel, tableName});
+									LOG.log(Level.FINEST, "{0} cluster creating table {2} ON {1} database", new Object[]{clusterLabel, secondaryLabel, tableName});
 									secondary.createTable(table);
-									LOG.log(Level.FINEST, "{0} CREATED ON {1}: {2}", new Object[]{clusterLabel, secondaryLabel, tableName});
+									LOG.log(Level.FINEST, "{0} cluster created table {2} ON {1} database", new Object[]{clusterLabel, secondaryLabel, tableName});
 									// Check that the table has data
 									final DBTable<DBRow> primaryTable = template.getDBTable(table);
 									try {
@@ -864,23 +862,23 @@ public class ClusterDetails implements Serializable {
 											if (primaryTableCount > 0) {
 												final DBTable<DBRow> primaryData = primaryTable.setBlankQueryAllowed(true).setTimeoutToForever();
 												// Check that the new database has data
-												LOG.log(Level.FINEST, "{0} CLUSTER FILLING TABLE ON {1}:{2}", new Object[]{clusterLabel, secondaryLabel, tableName});
+												LOG.log(Level.FINEST, "{0} cluster filling table {2} on {1} database", new Object[]{clusterLabel, secondaryLabel, tableName});
 												List<DBRow> allRows = primaryData.getAllRows();
-												LOG.log(Level.FINEST, "{0} CLUSTER FILLING TABLE ON {1}:{2} with {3} rows", new Object[]{clusterLabel, secondaryLabel, tableName, allRows.size()});
+												LOG.log(Level.FINEST, "{0} cluster filling table {2} ON {1} database with {3} rows", new Object[]{clusterLabel, secondaryLabel, tableName, allRows.size()});
 												final DBTable<DBRow> secondaryTable = secondary.getDBTable(table);
 												try {
 													secondaryTable.insert(allRows);
-													LOG.log(Level.FINEST, "{0} FILLED TABLE ON {1}:{2}", new Object[]{clusterLabel, secondaryLabel, tableName});
+													LOG.log(Level.FINEST, "{0} cluster filling table {2} ON {1} database", new Object[]{clusterLabel, secondaryLabel, tableName});
 												} catch (SQLException ex) {
 													proceedWithSynchronization = false;
-													LOG.log(Level.SEVERE, "QUARANTINING DATABASE {0}: {1}", new Object[]{secondaryLabel, ex.getLocalizedMessage()});
+													LOG.log(Level.SEVERE, "{0} CLUSTER QUARANTINING DATABASE {1} BECAUSE OF {2}", new Object[]{clusterLabel, secondaryLabel, ex.getLocalizedMessage()});
 													quarantineDatabaseAutomatically(secondary, ex);
 													//exit the loop, to avoid unnecessary tests
 													break;
 												}
 											}
 										} catch (SQLException exceptionGettingData) {
-											LOG.log(Level.WARNING, "FAIL TO RETREIVE TABLE DATA: {0} - {1}", new Object[]{tableName, exceptionGettingData.getLocalizedMessage()});
+											LOG.log(Level.WARNING, "FAILED TO RETRIEVE TABLE DATA: {0} - {1}", new Object[]{tableName, exceptionGettingData.getLocalizedMessage()});
 											LOG.log(Level.WARNING, "SKIPPING TABLE: {0} - {1}", new Object[]{tableName, exceptionGettingData.getLocalizedMessage()});
 											// lets just skip this table since it seems to be broken
 										}
@@ -891,7 +889,7 @@ public class ClusterDetails implements Serializable {
 									}
 								}
 							}
-							LOG.log(Level.INFO, "{0} FINISHED WITH TABLE: {1}", new Object[]{clusterLabel, tableName});
+							LOG.log(Level.FINEST, "{0} cluster finished with table: {1}", new Object[]{clusterLabel, tableName});
 						}
 					}
 				}
@@ -905,9 +903,9 @@ public class ClusterDetails implements Serializable {
 				LOG.log(Level.SEVERE, "Throwable during synchronising: {0}", throwable.getLocalizedMessage());
 			}
 			if (proceedWithSynchronization) {
-				LOG.log(Level.INFO, "{0} START SYNCHRONISING ACTIONS ON: {1}", new Object[]{clusterLabel, secondaryLabel});
+				LOG.log(Level.FINEST, "{0} START SYNCHRONISING ACTIONS ON: {1}", new Object[]{clusterLabel, secondaryLabel});
 				synchronizeActions(secondary);
-				LOG.log(Level.INFO, "{0} SUCCESSFULLY SYNCHRONISED: {1}", new Object[]{clusterLabel, secondaryLabel});
+				LOG.log(Level.FINEST, "{0} SUCCESSFULLY SYNCHRONISED: {1}", new Object[]{clusterLabel, secondaryLabel});
 			}
 		} catch (Exception exc) {
 			LOG.log(Level.WARNING, "{0} FAILED TO SYNCHRONISE: {1}", new Object[]{clusterLabel, secondaryLabel});
@@ -926,7 +924,6 @@ public class ClusterDetails implements Serializable {
 				synchronizeActions(primary);
 			} else {
 				LOG.log(Level.WARNING, "{0} SYNCHRONISING - FAILED TO RELEASE TEMPLATE {1} {2}", new Object[]{clusterLabel, primary.getLabel(), primary.getJdbcURL()});
-				primary.stop();
 			}
 		}
 	}
