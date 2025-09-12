@@ -61,7 +61,7 @@ import nz.co.gregs.dbvolution.transactions.DBTransaction;
  *
  * @author gregorygraham
  */
-public interface DBDatabase extends Serializable {
+public interface DBDatabase extends Serializable, AutoCloseable {
 
 	public DBDefinition getDefinition() throws NoAvailableDatabaseException;
 
@@ -89,6 +89,9 @@ public interface DBDatabase extends Serializable {
 	 *
 	 */
 	DBDatabase clone() throws CloneNotSupportedException;
+
+  @Override
+  public void close();
 
 	/**
 	 * Used to add features in a just-in-time manner.
