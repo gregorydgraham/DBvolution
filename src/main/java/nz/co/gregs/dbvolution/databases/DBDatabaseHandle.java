@@ -718,4 +718,9 @@ public class DBDatabaseHandle implements DBDatabase {
 		return wrappedDatabase.getDBDatabaseMetaData(options);
 	}
 
+  @Override
+  public void close() {
+    wrappedDatabase.close();
+  }
+
 }
