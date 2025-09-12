@@ -56,7 +56,7 @@ public class ReconnectionProcess extends RegularProcess {
 		if (database instanceof DBDatabaseCluster) {
 			DBDatabaseCluster cluster = (DBDatabaseCluster) database;
 			if (cluster.getAutoReconnect()) {
-				String msg = database.getLabel()+ ": PREPARING TO RECONNECT DATABASES... \n";
+				String msg = cluster.getLabel()+ ": PREPARING TO RECONNECT DATABASES... \n";
 				LOGGER.info(msg);
 				str = msg;
 				try {
@@ -64,7 +64,7 @@ public class ReconnectionProcess extends RegularProcess {
 				} catch (UnableToRemoveLastDatabaseFromClusterException | SQLException ex) {
 					Logger.getLogger(ReconnectionProcess.class.getName()).log(Level.SEVERE, null, ex);
 				}
-				msg = database.getLabel() + ": FINISHED RECONNECTING DATABASES...";
+				msg = cluster.getLabel() + ": FINISHED RECONNECTING DATABASES...";
 				LOGGER.info(msg);
 				str += "\n" + msg;
 			}
