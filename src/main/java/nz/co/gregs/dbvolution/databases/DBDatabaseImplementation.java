@@ -67,7 +67,6 @@ import nz.co.gregs.dbvolution.utility.StringCheck;
 import nz.co.gregs.regexi.Regex;
 import static nz.co.gregs.dbvolution.databases.QueryIntention.*;
 import static nz.co.gregs.dbvolution.databases.DBDatabaseImplementation.ResponseToException.*;
-import nz.co.gregs.regexi.RegexReplacer;
 
 /**
  * DBDatabase is the repository of all knowledge about your database.
@@ -93,8 +92,8 @@ import nz.co.gregs.regexi.RegexReplacer;
  */
 public abstract class DBDatabaseImplementation implements DBDatabase, Serializable, Cloneable, AutoCloseable {
 
-	private static final long serialVersionUID = 1l;
-	static final private Log LOG = LogFactory.getLog(DBDatabaseImplementation.class);
+  private static final long serialVersionUID = 1l;
+  static final private Log LOG = LogFactory.getLog(DBDatabaseImplementation.class);
 
 	private String driverName = "";
 	private boolean printSQLBeforeExecuting = false;
@@ -112,10 +111,10 @@ public abstract class DBDatabaseImplementation implements DBDatabase, Serializab
 	private Boolean needToAddDatabaseSpecificFeatures = true;
 	protected final DatabaseConnectionSettings settings = new DatabaseConnectionSettings();
 	private boolean terminated = false;
-	private transient final List<RegularProcess> REGULAR_PROCESSORS = new ArrayList<>();
+	protected transient final List<RegularProcess> REGULAR_PROCESSORS = new ArrayList<>();
 	private static final ScheduledExecutorService REGULAR_THREAD_POOL = Executors.newSingleThreadScheduledExecutor();
 	private Throwable exception = null;
-	private transient ScheduledFuture<?> regularThreadPoolFuture;
+	private transient ScheduledFuture<?> REGULAR_THREAD_POOL_FUTURE;
 	private boolean hasCreatedRequiredTables = false;
 	private boolean quietExceptionsPreference = false;
 	private boolean preventAccidentalDeletingAllRowFromTable = true;
@@ -126,7 +125,11 @@ public abstract class DBDatabaseImplementation implements DBDatabase, Serializab
 
 	@Override
 	public void close() {
-		stop();
+    try{
+      stop();
+    } catch (Exception exc) {
+      LOG.warn("DBDatabase " + getLabel() + " threw exception during close()", exc);
+    }
 	}
 
 	@Override
@@ -223,20 +226,20 @@ public abstract class DBDatabaseImplementation implements DBDatabase, Serializab
 	 * {@link DBDefinition}
 	 *
 	 * <p>
-	 * Most programmers should not call this constructor directly. Check the
-	 * subclasses in {@code nz.co.gregs.dbvolution.databases} for your particular
-	 * database.
-	 *
-	 * <p>
-	 * DBDatabase encapsulates the knowledge of the database, in particular the
-	 * syntax of the database in the DBDefinition and the connection details using
-	 * a DataSource.
-	 *
-	 * @see DBDefinition
-	 * @see Oracle12DB
-	 * @see Oracle11XEDB
-	 * @see OracleAWS11DB
-	 * @see MySQLDB
+   * Most programmers should not call this constructor directly. Check the
+   * subclasses in {@code nz.co.gregs.dbvolution.databases} for your particular
+   * database.
+   *
+   * <p>
+   * DBDatabase encapsulates the knowledge of the database, in particular the
+   * syntax of the database in the DBDefinition and the connection details using
+   * a DataSource.
+   *
+   * @see DBDefinition
+   * @see Oracle12DB
+   * @see Oracle11XEDB
+   * @see OracleAWS11DB
+   * @see MySQLDB
 	 * @see MSSQLServerDB
 	 * @see H2DB
 	 * @see H2MemoryDB
@@ -245,28 +248,28 @@ public abstract class DBDatabaseImplementation implements DBDatabase, Serializab
 	 * @see MariaClusterDB
 	 * @see NuoDB
 	 */
-	protected DBDatabaseImplementation() {
-		startRegularProcessor();
-	}
+  protected DBDatabaseImplementation() {
+    startRegularProcessor();
+  }
 
-	/**
-	 * Define a new DBDatabase.
-	 *
-	 * <p>
-	 * Most programmers should not call this constructor directly. Check the
-	 * subclasses in {@code nz.co.gregs.dbvolution.databases} for your particular
-	 * database.
-	 *
-	 * <p>
-	 * DBDatabase encapsulates the knowledge of the database, in particular the
-	 * syntax of the database in the DBDefinition and the connection details using
-	 * a DataSource.
-	 *
-	 * @param settings - a SettingsBuilder for the required database.
-	 * @throws java.sql.SQLException database errors
-	 * @see DBDefinition
-	 * @see OracleDB
-	 * @see MSSQLServerDB
+  /**
+   * Define a new DBDatabase.
+   *
+   * <p>
+   * Most programmers should not call this constructor directly. Check the
+   * subclasses in {@code nz.co.gregs.dbvolution.databases} for your particular
+   * database.
+   *
+   * <p>
+   * DBDatabase encapsulates the knowledge of the database, in particular the
+   * syntax of the database in the DBDefinition and the connection details using
+   * a DataSource.
+   *
+   * @param settings - a SettingsBuilder for the required database.
+   * @throws java.sql.SQLException database errors
+   * @see DBDefinition
+   * @see OracleDB
+   * @see MSSQLServerDB
 	 * @see MySQLDB
 	 * @see PostgresDB
 	 * @see H2DB
@@ -352,20 +355,21 @@ public abstract class DBDatabaseImplementation implements DBDatabase, Serializab
 	}
 
 	protected synchronized DBStatement getLowLevelStatement() throws UnableToCreateDatabaseConnectionException, UnableToFindJDBCDriver, SQLException {
-    if (!terminated) {
-      DBConnection connection = getConnection();
-      try {
-				while (connection.isClosed()) {
-          discardConnection(connection);
-          connection = getConnection();
-        }
-        return new DBStatement(this, connection);
-      } catch (SQLException cantCreateStatement) {
-        discardConnection(connection);
-        throw new UnableToCreateDatabaseConnectionException(getJdbcURL(), getUsername(), cantCreateStatement);
-      }
+    if (terminated) {
+      throw new DatabaseShutdownInProgress();
     }
-    return null;
+    
+    DBConnection connection = getConnection();
+    try {
+      while (connection.isClosed()) {
+        discardConnection(connection);
+        connection = getConnection();
+      }
+      return new DBStatement(this, connection);
+    } catch (SQLException cantCreateStatement) {
+      discardConnection(connection);
+      throw new UnableToCreateDatabaseConnectionException(getJdbcURL(), getUsername(), cantCreateStatement);
+    }
   }
 
 	/**
@@ -387,7 +391,7 @@ public abstract class DBDatabaseImplementation implements DBDatabase, Serializab
 	@Override
 	public synchronized DBConnection getConnection() throws UnableToCreateDatabaseConnectionException, UnableToFindJDBCDriver, SQLException {
 		if (terminated) {
-			return null;
+			throw new DatabaseShutdownInProgress();
 		} else {
 			if (isInATransaction && !transactionConnection.isClosed()) {
 				return transactionConnection;
@@ -418,71 +422,75 @@ public abstract class DBDatabaseImplementation implements DBDatabase, Serializab
 			}
 			usedConnection(conn);
 			return conn;
-		}
-	}
+    }
+  }
 
-	@edu.umd.cs.findbugs.annotations.SuppressFBWarnings(
-			value = {"OBL_UNSATISFIED_OBLIGATION_EXCEPTION_EDGE", "ODR_OPEN_DATABASE_RESOURCE"},
-			justification = "Raw connections are pooled and closed  in discardConnection()")
-	private DBConnection getRawConnection() throws UnableToFindJDBCDriver, UnableToCreateDatabaseConnectionException, SQLException {
-		if (!terminated) {
-			DBConnection connection = null;
-			int retries = 0;
-			synchronized (getConnectionSynchronizeObject) {
-				if (getDataSource() == null) {
-					try {
-						if (getDriverName() != null && !getDriverName().isEmpty()) {
-							// load the driver
-							Class.forName(getDriverName());
-						}
-					} catch (ClassNotFoundException noDriver) {
-						throw new UnableToFindJDBCDriver(getDriverName(), noDriver);
-					}
-					startServerIfRequired();
-					while (connection == null && !terminated) {
-						try {
-							connection = getDatabaseSpecificDBConnection(getConnectionFromDriverManager());
-							DatabaseMetaData metaData = connection.getMetaData();
-							LOG.debug("DATABASE: " + metaData.getDatabaseProductName() + " - " + metaData.getDatabaseProductVersion());
-							LOG.debug("DATABASE: " + metaData.getDriverName() + " - " + metaData.getDriverVersion());
-							setDefinitionBasedOnConnectionMetaData(connection.getClientInfo(), metaData);
-						} catch (SQLException noConnection) {
-							if (retries < MAX_CONNECTION_RETRIES) {
-								retries++;
-								try {
-									getConnectionSynchronizeObject.wait(SLEEP_BETWEEN_CONNECTION_RETRIES_MILLIS+ThreadLocalRandom.current().nextInt(10));
-								} catch (InterruptedException ex) {
-									LOG.error("Caught interrupt while waiting for DBDatabaseImplementation.getRawConnection", ex);
-								}
-							} else {
-								throw noConnection;
-							}
-						}
-					}
-				} else {
-					try {
-						connection = getDatabaseSpecificDBConnection(getDataSource().getConnection());
-					} catch (SQLException noConnection) {
-						throw new UnableToCreateDatabaseConnectionException(getDataSource(), noConnection);
-					}
-				}
-			}
-			synchronized (this) {
-        if (needToAddDatabaseSpecificFeatures && connection != null) {
-          try (DBStatement createStatement = connection.createDBStatement()) {
-            try {
-              addDatabaseSpecificFeatures(createStatement.getInternalStatement());
-            } catch (ExceptionDuringDatabaseFeatureSetup exceptionDuringDBCreation) {
-              System.out.println("AN EXCEPTION OCCURRED DURING DATABASE SETUP: " + exceptionDuringDBCreation.getMessage());
+  @edu.umd.cs.findbugs.annotations.SuppressFBWarnings(
+          value = {"OBL_UNSATISFIED_OBLIGATION_EXCEPTION_EDGE", "ODR_OPEN_DATABASE_RESOURCE"},
+          justification = "Raw connections are pooled and closed  in discardConnection()")
+  private DBConnection getRawConnection() throws UnableToFindJDBCDriver, UnableToCreateDatabaseConnectionException, SQLException {
+    if (terminated) {
+      throw new DatabaseShutdownInProgress();
+    }
+
+    DBConnection connection = null;
+    int retries = 0;
+    synchronized (getConnectionSynchronizeObject) {
+      if (getDataSource() == null) {
+        try {
+          if (getDriverName() != null && !getDriverName().isEmpty()) {
+            // load the driver
+            Class.forName(getDriverName());
+          }
+        } catch (ClassNotFoundException noDriver) {
+          throw new UnableToFindJDBCDriver(getDriverName(), noDriver);
+        }
+        startServerIfRequired();
+        while (connection == null && !terminated) {
+          try {
+            connection = getDatabaseSpecificDBConnection(getConnectionFromDriverManager());
+            DatabaseMetaData metaData = connection.getMetaData();
+            LOG.debug("DATABASE: " + metaData.getDatabaseProductName() + " - " + metaData.getDatabaseProductVersion());
+            LOG.debug("DATABASE: " + metaData.getDriverName() + " - " + metaData.getDriverVersion());
+            setDefinitionBasedOnConnectionMetaData(connection.getClientInfo(), metaData);
+          } catch (SQLException noConnection) {
+            if (retries < MAX_CONNECTION_RETRIES) {
+              retries++;
+              try {
+                getConnectionSynchronizeObject.wait(SLEEP_BETWEEN_CONNECTION_RETRIES_MILLIS + ThreadLocalRandom.current().nextInt(10));
+              } catch (InterruptedException ex) {
+                LOG.error("Caught interrupt while waiting for DBDatabaseImplementation.getRawConnection", ex);
+              }
+            } else {
+              throw noConnection;
             }
-            needToAddDatabaseSpecificFeatures = false;
           }
         }
+        if (terminated) {
+          throw new DatabaseShutdownInProgress();
+        }
+      } else {
+        try {
+          connection = getDatabaseSpecificDBConnection(getDataSource().getConnection());
+        } catch (SQLException noConnection) {
+          throw new UnableToCreateDatabaseConnectionException(getDataSource(), noConnection);
+        }
       }
-			getFreeConnections().add(connection);
-			return connection;
-		}
-		return null;
+    }
+    synchronized (this) {
+      if (needToAddDatabaseSpecificFeatures && connection != null) {
+        try (DBStatement createStatement = connection.createDBStatement()) {
+          try {
+            addDatabaseSpecificFeatures(createStatement.getInternalStatement());
+          } catch (ExceptionDuringDatabaseFeatureSetup exceptionDuringDBCreation) {
+            System.out.println("AN EXCEPTION OCCURRED DURING DATABASE SETUP: " + exceptionDuringDBCreation.getMessage());
+          }
+          needToAddDatabaseSpecificFeatures = false;
+        }
+      }
+    }
+    getFreeConnections().add(connection);
+    return connection;
 	}
 
 	public DBConnection getDatabaseSpecificDBConnection(Connection connection) throws SQLException {
@@ -1062,8 +1070,7 @@ public abstract class DBDatabaseImplementation implements DBDatabase, Serializab
 
 	/**
 	 * Convenience method to implement a DBScript on this database
-	 *
-	 * equivalent to script.implement(this);
+   * equivalent to script.implement(this);
 	 *
 	 * @param script the script to execute and commit
 	 * @return a DBActionList provided by the script
@@ -1253,16 +1260,16 @@ public abstract class DBDatabaseImplementation implements DBDatabase, Serializab
 
 	/**
 	 * Creates tables on the database based on the DBRows.
-	 *
-	 * <p>
-	 * Implemented to facilitate testing, this method creates actual tables on the
-	 * database using the default data types supplied by the fields of the DBRows.
-	 *
-	 * @param includeForeignKeyClauses should explicit FK references be created in
-	 * the database?
-	 * @param newTable the table to create
-	 * @throws AutoCommitActionDuringTransactionException thrown if this action is
-	 * used during a DBTransaction or DBScript
+   *
+   * <p>
+   * Implemented to facilitate testing, this method creates actual tables on the
+   * database using the default data types supplied by the fields of the DBRows.
+   *
+   * @param includeForeignKeyClauses should explicit FK references be created in
+   * the database?
+   * @param newTable the table to create
+   * @throws AutoCommitActionDuringTransactionException thrown if this action is
+   * used during a DBTransaction or DBScript
 	 */
 	@Override
 	public DBActionList createTableNoExceptions(boolean includeForeignKeyClauses, DBRow newTable) throws AutoCommitActionDuringTransactionException {
@@ -1276,17 +1283,17 @@ public abstract class DBDatabaseImplementation implements DBDatabase, Serializab
 
 	/**
 	 * Creates tables on the database based on the DBRows.
-	 *
-	 * <p>
-	 * Foreign key constraints are NOT created.
-	 *
-	 * <p>
-	 * Implemented to facilitate testing, this method creates actual tables on the
-	 * database using the default data types supplied by the fields of the DBRows.
-	 *
-	 * @param newTable the table to create
-	 * @throws AutoCommitActionDuringTransactionException thrown if this action is
-	 * used during a DBTransaction or DBScript
+   *
+   * <p>
+   * Foreign key constraints are NOT created.
+   *
+   * <p>
+   * Implemented to facilitate testing, this method creates actual tables on the
+   * database using the default data types supplied by the fields of the DBRows.
+   *
+   * @param newTable the table to create
+   * @throws AutoCommitActionDuringTransactionException thrown if this action is
+   * used during a DBTransaction or DBScript
 	 */
 	@Override
 	public DBActionList createTableNoExceptions(DBRow newTable) throws AutoCommitActionDuringTransactionException {
@@ -1302,11 +1309,11 @@ public abstract class DBDatabaseImplementation implements DBDatabase, Serializab
 	 * Creates tables on the database based on the DBRows.
 	 *
 	 * <p>
-	 * Implemented to facilitate testing, this method creates actual tables on the
-	 * database using the default data types supplied by the fields of the DBRows.
+   * Implemented to facilitate testing, this method creates actual tables on the
+   * database using the default data types supplied by the fields of the DBRows.
 	 *
 	 * @param includeForeignKeyClauses should explicit FK references be created in
-	 * the database?
+   * the database?
 	 * @param newTables the tables to create
 	 * @throws AutoCommitActionDuringTransactionException thrown if this action is
 	 * used during a DBTransaction or DBScript
@@ -1324,10 +1331,10 @@ public abstract class DBDatabaseImplementation implements DBDatabase, Serializab
 	 *
 	 * <p>
 	 * Foreign key constraints are NOT created.
-	 * <p>
-	 * Implemented to facilitate testing, this method creates actual tables on the
-	 * database using the default data types supplied by the fields of the DBRows.
-	 *
+   * <p>
+   * Implemented to facilitate testing, this method creates actual tables on the
+   * database using the default data types supplied by the fields of the DBRows.
+   *
 	 * @param newTables the tables to create
 	 * @throws AutoCommitActionDuringTransactionException thrown if this action is
 	 * used during a DBTransaction or DBScript
@@ -1344,26 +1351,26 @@ public abstract class DBDatabaseImplementation implements DBDatabase, Serializab
 	/**
 	 * Creates tables on the database based on the DBRows, and creates the
 	 * required database foreign key constraints.
-	 *
-	 * <p>
-	 * Implemented to facilitate testing, this method creates actual tables on the
-	 * database using the default data types supplied by the fields of the DBRow.
-	 *
-	 * <p>
-	 * DBvolution does not require actual foreign keys constraints to exist in the
-	 * database but there are some advantages in terms of data integrity and
-	 * schema transparency.
-	 *
-	 * <p>
-	 * Unfortunately there are also problems caused by creating foreign key
-	 * constraints: insertion order sensitivity for instance.
-	 *
-	 * <p>
-	 * Personally I prefer the foreign keys to exist, however database constraints
-	 * have been described as the "ambulance at the bottom of the cliff" so you
-	 * might be better off without them.
-	 *
-	 * @param newTables table
+   *
+   * <p>
+   * Implemented to facilitate testing, this method creates actual tables on the
+   * database using the default data types supplied by the fields of the DBRow.
+   *
+   * <p>
+   * DBvolution does not require actual foreign keys constraints to exist in the
+   * database but there are some advantages in terms of data integrity and
+   * schema transparency.
+   *
+   * <p>
+   * Unfortunately there are also problems caused by creating foreign key
+   * constraints: insertion order sensitivity for instance.
+   *
+   * <p>
+   * Personally I prefer the foreign keys to exist, however database constraints
+   * have been described as the "ambulance at the bottom of the cliff" so you
+   * might be better off without them.
+   *
+   * @param newTables table
 	 *
 	 */
 	@Override
@@ -1379,31 +1386,31 @@ public abstract class DBDatabaseImplementation implements DBDatabase, Serializab
 
 	/**
 	 * Creates a table on the database based on the DBRow.
-	 *
-	 * <p>
-	 * Implemented to facilitate testing, this method creates an actual table on
-	 * the database using the default data types supplied by the fields of the
-	 * DBRow.
-	 *
-	 * @param newTableRow the table to create
-	 * @throws SQLException database exceptions
-	 * @throws AutoCommitActionDuringTransactionException thrown if this action is
-	 * used during a DBTransaction or DBScript
-	 */
-	@Override
-	public DBActionList createTable(DBRow newTableRow) throws SQLException, AutoCommitActionDuringTransactionException {
-		return createTable(newTableRow, false);
-	}
+   *
+   * <p>
+   * Implemented to facilitate testing, this method creates an actual table on
+   * the database using the default data types supplied by the fields of the
+   * DBRow.
+   *
+   * @param newTableRow the table to create
+   * @throws SQLException database exceptions
+   * @throws AutoCommitActionDuringTransactionException thrown if this action is
+   * used during a DBTransaction or DBScript
+   */
+  @Override
+  public DBActionList createTable(DBRow newTableRow) throws SQLException, AutoCommitActionDuringTransactionException {
+    return createTable(newTableRow, false);
+  }
 
-	/**
-	 * Creates or updates a table on the database based on the DBRow.
-	 *
-	 * <p>
-	 * Implemented to facilitate testing, this method creates an actual table on
-	 * the database using the default data types supplied by the fields of the
-	 * DBRow.
-	 *
-	 * @param newTableRow the table to create
+  /**
+   * Creates or updates a table on the database based on the DBRow.
+   *
+   * <p>
+   * Implemented to facilitate testing, this method creates an actual table on
+   * the database using the default data types supplied by the fields of the
+   * DBRow.
+   *
+   * @param newTableRow the table to create
 	 * @return a DBActionList provided by the script
 	 * @throws SQLException database exceptions
 	 * @throws AutoCommitActionDuringTransactionException thrown if this action is
@@ -1417,26 +1424,26 @@ public abstract class DBDatabaseImplementation implements DBDatabase, Serializab
 	/**
 	 * Creates a table on the database based on the DBRow, and creates the
 	 * required database foreign key constraints.
-	 *
-	 * <p>
-	 * Implemented to facilitate testing, this method creates an actual table on
-	 * the database using the default data types supplied by the fields of the
-	 * DBRow.
-	 *
-	 * <p>
-	 * DBvolution does not require actual foreign keys constraints to exist in the
-	 * database but there are some advantages in terms of data integrity and
-	 * schema transparency.
-	 *
-	 * <p>
-	 * Unfortunately there are also problems caused by creating foreign key
-	 * constraints: insertion order sensitivity for instance.
-	 *
-	 * <p>
-	 * Personally I prefer the foreign keys to exist, however database constraints
-	 * have been described as the "ambulance at the bottom of the cliff" so you
-	 * might be better off without them.
-	 *
+   *
+   * <p>
+   * Implemented to facilitate testing, this method creates an actual table on
+   * the database using the default data types supplied by the fields of the
+   * DBRow.
+   *
+   * <p>
+   * DBvolution does not require actual foreign keys constraints to exist in the
+   * database but there are some advantages in terms of data integrity and
+   * schema transparency.
+   *
+   * <p>
+   * Unfortunately there are also problems caused by creating foreign key
+   * constraints: insertion order sensitivity for instance.
+   *
+   * <p>
+   * Personally I prefer the foreign keys to exist, however database constraints
+   * have been described as the "ambulance at the bottom of the cliff" so you
+   * might be better off without them.
+   *
 	 * @param newTableRow table
 	 * @return a DBActionList provided by the script of the actions performed
 	 * @throws SQLException database exceptions
@@ -1455,20 +1462,20 @@ public abstract class DBDatabaseImplementation implements DBDatabase, Serializab
 	/**
 	 * Adds actual foreign key constraints to the database table represented by
 	 * the supplied DBRow.
-	 *
-	 * <p>
-	 * While database theory stipulates that foreign keys should be represented by
-	 * a constraint on the table, this is not part of the industry standard.
-	 * DBvolution allows for the creation of these constraints through this
-	 * method.
-	 *
-	 * <p>
-	 * All databases support FK constraints, and they provide useful checks.
-	 * However they are the last possible check, represent an inadequate
-	 * protection, and can cause considerable difficulties at surprising times. I
-	 * recommend against them.
-	 *
-	 * <p>
+   *
+   * <p>
+   * While database theory stipulates that foreign keys should be represented by
+   * a constraint on the table, this is not part of the industry standard.
+   * DBvolution allows for the creation of these constraints through this
+   * method.
+   *
+   * <p>
+   * All databases support FK constraints, and they provide useful checks.
+   * However they are the last possible check, represent an inadequate
+   * protection, and can cause considerable difficulties at surprising times. I
+   * recommend against them.
+   *
+   * <p>
 	 * Note: SQLite does not support adding Foreign Keys to existing tables.
 	 *
 	 * @param newTableRow the table that needs foreign key constraints
@@ -1482,21 +1489,21 @@ public abstract class DBDatabaseImplementation implements DBDatabase, Serializab
 
 	/**
 	 * Drops All Foreign Key Constraints From The Supplied Table, does not affect
-	 * &#64;DBForeignKey.
-	 *
-	 * <p>
-	 * Generates and executes the required SQL to remove all foreign key
-	 * constraints on this table defined within the database.
-	 *
-	 * <p>
-	 * This methods is supplied as an inverse to
-	 * {@link #createForeignKeyConstraints(nz.co.gregs.dbvolution.DBRow)}.
-	 *
-	 * <p>
-	 * If a pair of tables have foreign keys constraints to each other it may be
-	 * necessary to remove the constraints to successfully insert some rows.
-	 * DBvolution cannot to protect you using this situation, however this method
-	 * will remove some of the problem.
+   * &#64;DBForeignKey.
+   *
+   * <p>
+   * Generates and executes the required SQL to remove all foreign key
+   * constraints on this table defined within the database.
+   *
+   * <p>
+   * This methods is supplied as an inverse to
+   * {@link #createForeignKeyConstraints(nz.co.gregs.dbvolution.DBRow)}.
+   *
+   * <p>
+   * If a pair of tables have foreign keys constraints to each other it may be
+   * necessary to remove the constraints to successfully insert some rows.
+   * DBvolution cannot to protect you using this situation, however this method
+   * will remove some of the problem.
 	 *
 	 * @param newTableRow the data models version of the table that needs FKs
 	 * removed
@@ -1514,18 +1521,18 @@ public abstract class DBDatabaseImplementation implements DBDatabase, Serializab
 	 * <p>
 	 * Use this method to add indexes to all the columns of the table. This is
 	 * only necessary once and should really be performed by a DBA.
-	 *
-	 * <p>
-	 * Adding indexes can improve response time for queries, but has consequences
-	 * for storage and insertion time. However in a small database the query
-	 * improvement will far out weigh the down sides and this is a recommend route
-	 * to improvements.
-	 *
-	 * <p>
-	 * As usual, your mileage may vary and consult a DBA if trouble persists.
-	 *
-	 * @param newTableRow the data model's version of the table that needs indexes
-	 * @throws SQLException database exceptions
+   *
+   * <p>
+   * Adding indexes can improve response time for queries, but has consequences
+   * for storage and insertion time. However in a small database the query
+   * improvement will far out weigh the down sides and this is a recommend route
+   * to improvements.
+   *
+   * <p>
+   * As usual, your mileage may vary and consult a DBA if trouble persists.
+   *
+   * @param newTableRow the data model's version of the table that needs indexes
+   * @throws SQLException database exceptions
 	 */
 	/*TODONE: convert to use DBAction to improve cluster implementation */
 	@Override
@@ -1624,37 +1631,37 @@ public abstract class DBDatabaseImplementation implements DBDatabase, Serializab
 		}
 	}
 
-	/**
-	 * Returns the DBdefinition used by this DBDatabase
-	 *
-	 * <p>
-	 * Every DBDatabase has a DBDefinition that defines the syntax used in that
-	 * database.
-	 *
-	 * <p>
-	 * While DBDefinition is important, unless you are implementing support for a
-	 * new database you probably don't need this.
-	 *
-	 * @return the DBDefinition used by this DBDatabase instance
-	 */
-	@Override
-	public synchronized DBDefinition getDefinition() throws NoAvailableDatabaseException {
-		return definition;
-	}
+  /**
+   * Returns the DBdefinition used by this DBDatabase
+   *
+   * <p>
+   * Every DBDatabase has a DBDefinition that defines the syntax used in that
+   * database.
+   *
+   * <p>
+   * While DBDefinition is important, unless you are implementing support for a
+   * new database you probably don't need this.
+   *
+   * @return the DBDefinition used by this DBDatabase instance
+   */
+  @Override
+  public synchronized DBDefinition getDefinition() throws NoAvailableDatabaseException {
+    return definition;
+  }
 
-	/**
-	 * Sets the DBdefinition used by this DBDatabase
-	 *
-	 * <p>
-	 * Every DBDatabase has a DBDefinition that defines the syntax used in that
-	 * database.
-	 *
-	 * <p>
-	 * While DBDefinition is important, unless you are implementing support for a
-	 * new database you probably don't need this.
-	 *
-	 * @param defn the DBDefinition to be used by this DBDatabase instance.
-	 */
+  /**
+   * Sets the DBdefinition used by this DBDatabase
+   *
+   * <p>
+   * Every DBDatabase has a DBDefinition that defines the syntax used in that
+   * database.
+   *
+   * <p>
+   * While DBDefinition is important, unless you are implementing support for a
+   * new database you probably don't need this.
+   *
+   * @param defn the DBDefinition to be used by this DBDatabase instance.
+   */
 	protected synchronized final void setDefinition(DBDefinition defn) {
 		if (definition == null) {
 			definition = defn;
@@ -1700,20 +1707,20 @@ public abstract class DBDatabaseImplementation implements DBDatabase, Serializab
 	/**
 	 * The worst idea EVAH.
 	 *
-	 * <p>
-	 * Do NOT Use This.
-	 *
-	 * @param databaseName the database to be permanently and completely
-	 * destroyed.
-	 * @param doIt don't do it.
-	 * @throws AccidentalDroppingOfDatabaseException Terrible!
-	 * @throws nz.co.gregs.dbvolution.exceptions.ExceptionThrownDuringTransaction
-	 * If you're lucky...
-	 * @throws java.sql.SQLException database errors
-	 */
-	@Override
-	public synchronized void dropDatabase(String databaseName, boolean doIt) throws UnsupportedOperationException, AutoCommitActionDuringTransactionException, AccidentalDroppingOfDatabaseException, SQLException, ExceptionThrownDuringTransaction {
-		if (doIt) {
+   * <p>
+   * Do NOT Use This.
+   *
+   * @param databaseName the database to be permanently and completely
+   * destroyed.
+   * @param doIt don't do it.
+   * @throws AccidentalDroppingOfDatabaseException Terrible!
+   * @throws nz.co.gregs.dbvolution.exceptions.ExceptionThrownDuringTransaction
+   * If you're lucky...
+   * @throws java.sql.SQLException database errors
+   */
+  @Override
+  public synchronized void dropDatabase(String databaseName, boolean doIt) throws UnsupportedOperationException, AutoCommitActionDuringTransactionException, AccidentalDroppingOfDatabaseException, SQLException, ExceptionThrownDuringTransaction {
+    if (doIt) {
 			executeDBAction(new DBDropDatabase(databaseName));
 		}
 	}
@@ -1739,23 +1746,23 @@ public abstract class DBDatabaseImplementation implements DBDatabase, Serializab
 
 	/**
 	 * A label for the database for reference within an application.
-	 *
-	 * <p>
-	 * This label has no effect on the actual database connection.
-	 *
-	 * @param label a purely arbitrary value
-	 */
-	final public void setLabel(String label) {
-		getSettings().setLabel(label);
-	}
+   *
+   * <p>
+   * This label has no effect on the actual database connection.
+   *
+   * @param label a purely arbitrary value
+   */
+  final public void setLabel(String label) {
+    getSettings().setLabel(label);
+  }
 
-	/**
-	 * A label for the database for reference within an application.
-	 *
-	 * <p>
-	 * This label has no effect on the actual database connection.
-	 *
-	 * @return the internal label of this database
+  /**
+   * A label for the database for reference within an application.
+   *
+   * <p>
+   * This label has no effect on the actual database connection.
+   *
+   * @return the internal label of this database
 	 */
 	@Override
 	final public String getLabel() {
@@ -1870,20 +1877,20 @@ public abstract class DBDatabaseImplementation implements DBDatabase, Serializab
 	 * <p>
 	 * Calls the
 	 * {@link DBReport#getRows(nz.co.gregs.dbvolution.databases.DBDatabase, nz.co.gregs.dbvolution.DBReport, nz.co.gregs.dbvolution.DBRow...) DBReport getRows method}.
-	 *
-	 * Retrieves a list of report rows using the database using the constraints
-	 * supplied by the report and the examples supplied.
-	 *
-	 * @param <A> DBReport type
-	 * @param report report
-	 * @param examples examples
-	 * @return A List of instances of the supplied report using the database 1
-	 * Database exceptions may be thrown
-	 * @throws java.sql.SQLException java.sql.SQLException
-	 */
-	@Override
-	public <A extends DBReport> List<A> get(A report, DBRow... examples) throws SQLException, AccidentalCartesianJoinException, AccidentalBlankQueryException, NoAvailableDatabaseException {
-		return DBReport.getRows(this, report, examples);
+   *
+   * Retrieves a list of report rows using the database using the constraints
+   * supplied by the report and the examples supplied.
+   *
+   * @param <A> DBReport type
+   * @param report report
+   * @param examples examples
+   * @return A List of instances of the supplied report using the database 1
+   * Database exceptions may be thrown
+   * @throws java.sql.SQLException java.sql.SQLException
+   */
+  @Override
+  public <A extends DBReport> List<A> get(A report, DBRow... examples) throws SQLException, AccidentalCartesianJoinException, AccidentalBlankQueryException, NoAvailableDatabaseException {
+    return DBReport.getRows(this, report, examples);
 	}
 
 	/**
@@ -1894,15 +1901,15 @@ public abstract class DBDatabaseImplementation implements DBDatabase, Serializab
 	 *
 	 * <p>
 	 * Calls the
-	 * {@link DBReport#getAllRows(nz.co.gregs.dbvolution.databases.DBDatabase, nz.co.gregs.dbvolution.DBReport, nz.co.gregs.dbvolution.DBRow...) DBReport getRows method}.
-	 *
-	 * Retrieves a list of report rows using the database using the constraints
-	 * supplied by the report and the examples supplied.
-	 *
-	 * @param <A> the DBReport to be derived using the database data.
-	 * @param report the report to be produced
-	 * @param examples DBRow subclasses that provide extra criteria
-	 * @return A list of the DBreports generated
+   * {@link DBReport#getAllRows(nz.co.gregs.dbvolution.databases.DBDatabase, nz.co.gregs.dbvolution.DBReport, nz.co.gregs.dbvolution.DBRow...) DBReport getRows method}.
+   *
+   * Retrieves a list of report rows using the database using the constraints
+   * supplied by the report and the examples supplied.
+   *
+   * @param <A> the DBReport to be derived using the database data.
+   * @param report the report to be produced
+   * @param examples DBRow subclasses that provide extra criteria
+   * @return A list of the DBreports generated
 	 * @throws SQLException database exceptions
 	 */
 	@Override
@@ -1924,7 +1931,7 @@ public abstract class DBDatabaseImplementation implements DBDatabase, Serializab
 	@Override
 	public Connection getConnectionFromDriverManager() throws SQLException {
 		if (terminated) {
-			return null;
+			throw new DatabaseShutdownInProgress();
 		} else {
 			try {
 				LOG.debug("CREATING NEW CONNECTION: " + getJdbcURL());
@@ -2040,20 +2047,20 @@ public abstract class DBDatabaseImplementation implements DBDatabase, Serializab
 			connList = new ArrayList<>();
 			connectionMap.put(key, connList);
 		}
-		return connList;
-	}
+    return connList;
+  }
 
-	/**
-	 * Used to add features in a just-in-time manner.
-	 *
-	 * <p>
-	 * During a statement the database may throw an exception because a feature
-	 * has not yet been added. Use this method to parse the exception and install
-	 * the required feature.
-	 *
-	 * <p>
-	 * The statement will be automatically run after this method exits.
-	 *
+  /**
+   * Used to add features in a just-in-time manner.
+   *
+   * <p>
+   * During a statement the database may throw an exception because a feature
+   * has not yet been added. Use this method to parse the exception and install
+   * the required feature.
+   *
+   * <p>
+   * The statement will be automatically run after this method exits.
+   *
 	 * @param exp the exception throw by the database that may need fixing
 	 * @param intent the intention of the query or DDL when the exception was
 	 * thrown
@@ -2069,18 +2076,9 @@ public abstract class DBDatabaseImplementation implements DBDatabase, Serializab
     if ( intent.isOneOf(CHECK_TABLE_EXISTS, DELETE_ALL_ROWS) && DOESNT_EXIST.matchesWithinString(exp.getMessage())){
       return SKIPQUERY;
     }
-    if (details.getAttemptCount() == 0) {
-      LOG.info("DEFAULT ATTEMPT("+details.getAttemptCount()+") - INTENT: "+intent+" EXP: "+exp.getClass().getSimpleName()+" "+" MESSAGE: "+exp.getMessage()+" "+ "QUERY: "+NEWLINES_TO_SPACES.replaceAll(details.getSql()));
-      return REQUERY;
-    }
-    if ((exp instanceof SQLTimeoutException)&& details.getAttemptCount()<6){
-      LOG.info("TIMEOUT ATTEMPT("+details.getAttemptCount()+") WITH INTENT: "+intent+" "+ "QUERY: "+NEWLINES_TO_SPACES.replaceAll(details.getSql()));
-      return REQUERY;
-    }
     throw exp;
   }
   
-  private static final RegexReplacer NEWLINES_TO_SPACES = Regex.empty().space().optionalManyGreedy().newline().replaceWith().literal(" ").getReplacer();
   protected static final Regex DUPLICATE_COLUMN_NAME = Regex.empty().literalCaseInsensitive("duplicate column name").toRegex();
   protected static final Regex DOESNT_EXIST = Regex.startingAnywhere().beginCaseInsensitiveSection().anyOf("does not exist", "doesn't exist").endCaseInsensitiveSection().toRegex();
 
@@ -2304,28 +2302,28 @@ public abstract class DBDatabaseImplementation implements DBDatabase, Serializab
 	public String getSQLForDBQuery(DBQueryable query) throws NoAvailableDatabaseException {
 		query.setDatabaseQuietExceptionsPreference(getQuietExceptionsPreference());
 		return query.toSQLString(this);
-	}
+  }
 
-	/**
-	 * Checks for the existence of the table on the database.
-	 *
-	 * @param table the class of the table to check for
-	 * @return true if the table exists on the database, for clusters it is only
-	 * true if the table exists on all databases in the cluster
-	 * @throws SQLException database errors
-	 */
-	public boolean tableExists(Class<? extends DBRow> table) throws SQLException {
-		return tableExists(DBRow.getDBRow(table));
-	}
+  /**
+   * Checks for the existence of the table on the database.
+   *
+   * @param table the class of the table to check for
+   * @return true if the table exists on the database, for clusters it is only
+   * true if the table exists on all databases in the cluster
+   * @throws SQLException database errors
+   */
+  public boolean tableExists(Class<? extends DBRow> table) throws SQLException {
+    return tableExists(DBRow.getDBRow(table));
+  }
 
-	/**
-	 * Checks for the existence of the table on the database.
-	 *
-	 * @param table the table to check for
-	 * @return true if the table exists on the database, for clusters it is only
-	 * true if the table exists on all databases in the cluster
-	 * @throws SQLException database errors
-	 */
+  /**
+   * Checks for the existence of the table on the database.
+   *
+   * @param table the table to check for
+   * @return true if the table exists on the database, for clusters it is only
+   * true if the table exists on all databases in the cluster
+   * @throws SQLException database errors
+   */
 	@Override
 	@SuppressFBWarnings(
 			value = "REC_CATCH_EXCEPTION",
@@ -2397,16 +2395,16 @@ public abstract class DBDatabaseImplementation implements DBDatabase, Serializab
 			}
 			setHasCreatedRequiredTables(true);
 		}
-	}
+  }
 
-	/**
-	 * Uses the supplied DBRow to update the existing database table by creating
-	 * the table, if necessary, or adding any columns that are missing.
-	 *
-	 * @param table the database table representation that is correct
-	 * @return a DBActionList provided by the script
-	 * @throws java.sql.SQLException database errors
-	 */
+  /**
+   * Uses the supplied DBRow to update the existing database table by creating
+   * the table, if necessary, or adding any columns that are missing.
+   *
+   * @param table the database table representation that is correct
+   * @return a DBActionList provided by the script
+   * @throws java.sql.SQLException database errors
+   */
 	@Override
 	public DBActionList updateTableToMatchDBRow(DBRow table) throws SQLException {
 		if (!tableExists(table)) {
@@ -2422,14 +2420,14 @@ public abstract class DBDatabaseImplementation implements DBDatabase, Serializab
 
 	/**
 	 * Returns the port number usually assign to instances of this database.
-	 *
-	 * <p>
-	 * There is no guarantee that the particular database instance uses this port,
-	 * check with your DBA.</p>
-	 *
-	 * @return the usual database port number
-	 */
-	@Override
+   *
+   * <p>
+   * There is no guarantee that the particular database instance uses this port,
+   * check with your DBA.</p>
+   *
+   * @return the usual database port number
+   */
+  @Override
 	public abstract Integer getDefaultPort();
 
 	@Override
@@ -2489,14 +2487,14 @@ public abstract class DBDatabaseImplementation implements DBDatabase, Serializab
 
 	/**
 	 * Closes all threads, connections, and resources used by the database.
-	 *
-	 * <p>
-	 * While it is not usually necessary to close a DBDatabase, this method should
-	 * be used during shutdown to release all resources used by the database.
-	 *
-	 * <p>
-	 * In particular the regular processing thread is stopped and the connection
-	 * is shutdown and emptied.
+   *
+   * <p>
+   * While it is not usually necessary to close a DBDatabase, this method should
+   * be used during shutdown to release all resources used by the database.
+   *
+   * <p>
+   * In particular the regular processing thread is stopped and the connection
+   * is shutdown and emptied.
 	 *
 	 * <p>
 	 * Please note that this is very different using {@link DBDatabaseCluster#dismantle()
@@ -2505,60 +2503,63 @@ public abstract class DBDatabaseImplementation implements DBDatabase, Serializab
 	 */
 	@Override
 	public synchronized void stop() {
-		terminated = true;
-		String stopping = "STOPPING: " + getLabel();
-		LOG.debug(stopping);
-		LOG.debug(stopping+ " Regular Processors");
-		for (RegularProcess regularProcessor : getRegularProcessors()) {
-			LOG.debug(stopping+ " " + regularProcessor.getSimpleName());
-			regularProcessor.stop();
-		}
-		LOG.debug(stopping+ " Regular Processor");
-		if (regularThreadPoolFuture != null) {
-			regularThreadPoolFuture.cancel(true);
-			regularThreadPoolFuture = null;
-		}
+    terminated = true;
+    String stopping = "STOPPING: " + getLabel();
+    LOG.debug(stopping);
+    LOG.debug(stopping + " Regular Processors");
+    for (RegularProcess regularProcessor : getRegularProcessors()) {
+      LOG.debug(stopping + " " + regularProcessor.getSimpleName());
+      regularProcessor.stop();
+    }
+    LOG.debug(stopping + " Regular Processor");
+    if (REGULAR_THREAD_POOL_FUTURE != null) {
+      REGULAR_THREAD_POOL_FUTURE.cancel(true);
+      REGULAR_THREAD_POOL_FUTURE = null;
+    }
 
-		try {
-			if (transactionStatement != null) {
-				try {
-					transactionStatement.close();
-				} catch (SQLException ex) {
-				}
-			}
-			if (transactionConnection != null) {
-				try {
-					LOG.debug(stopping+ " transaction connection");
-					discardConnection(transactionConnection);
-				} catch (Exception ex) {
-				}
-			}
-			final List<DBConnection> freeConnections = getFreeConnections();
-			synchronized (freeConnections) {
-				final DBConnection[] free = freeConnections.toArray(new DBConnection[]{});
-				for (DBConnection connection : free) {
-					LOG.debug(stopping+ " free connection");
-					discardConnection(connection);
-				}
-			}
-			final List<DBConnection> busyConnections = getBusyConnections();
-			synchronized (busyConnections) {
-				final DBConnection[] busy = busyConnections.toArray(new DBConnection[]{});
-				for (DBConnection connection : busy) {
-					LOG.debug(stopping+ " busy connection");
-					discardConnection(connection);
-				}
-			}
-			try {
-				if (storedConnection != null) {
-					LOG.debug(stopping+ " stored connection");
-					storedConnection.close();
-				}
-			} catch (SQLException ex) {
-			}
-		} catch (Exception ex) {
-		}
-	}
+    try {
+      if (transactionStatement != null) {
+        try {
+          transactionStatement.close();
+        } catch (SQLException ex) {
+        }
+      }
+      if (transactionConnection != null) {
+        try {
+          LOG.debug(stopping + " transaction connection");
+          discardConnection(transactionConnection);
+        } catch (Exception ex) {
+        }
+      }
+      final List<DBConnection> freeConnections = getFreeConnections();
+      synchronized (freeConnections) {
+        final DBConnection[] free = freeConnections.toArray(new DBConnection[]{});
+        for (DBConnection connection : free) {
+          LOG.debug(stopping + " free connection");
+          discardConnection(connection);
+        }
+      }
+      final List<DBConnection> busyConnections = getBusyConnections();
+      synchronized (busyConnections) {
+        final DBConnection[] busy = busyConnections.toArray(new DBConnection[]{});
+        for (DBConnection connection : busy) {
+          LOG.debug(stopping + " busy connection");
+          discardConnection(connection);
+        }
+      }
+      try {
+        if (storedConnection != null) {
+          LOG.debug(stopping + " stored connection");
+          storedConnection.close();
+        }
+      } catch (SQLException ex) {
+        LOG.info("Cluster " + getLabel() + " caught SQLException while stopping: " + ex.getMessage(), ex);
+      }
+    } catch (Exception ex) {
+      LOG.info("Cluster " + getLabel() + " caught Exception while stopping: " + ex.getMessage(), ex);
+    }
+    LOG.debug(stopping + " STOPPED");
+  }
 
 	@Override
 	public synchronized boolean getPrintSQLBeforeExecuting() {
@@ -2575,26 +2576,28 @@ public abstract class DBDatabaseImplementation implements DBDatabase, Serializab
 	 *
 	 * @param backupDatabase the place to store all the data.
 	 * @throws SQLException database errors
-	 * @throws UnableToRemoveLastDatabaseFromClusterException Cluster may not
-	 * remove their last database
-	 */
-	public void backupToDBDatabase(DBDatabase backupDatabase) throws SQLException, UnableToRemoveLastDatabaseFromClusterException {
-		String randomName = new BigInteger(130, new SecureRandom()).toString(32);
-		DBDatabaseCluster cluster = new DBDatabaseCluster(randomName, DBDatabaseCluster.Configuration.autoStart());
-		cluster.addDatabase(this);
-		cluster.backupToDBDatabase(backupDatabase);
-		cluster.dismantle();
-	}
+   * @throws UnableToRemoveLastDatabaseFromClusterException Cluster may not
+   * remove their last database
+   */
+  public void backupToDBDatabase(DBDatabase backupDatabase) throws SQLException, UnableToRemoveLastDatabaseFromClusterException {
+    String randomName = new BigInteger(130, new SecureRandom()).toString(32);
+    DBDatabaseCluster cluster = new DBDatabaseCluster(randomName, DBDatabaseCluster.Configuration.autoStart());
+    cluster.addDatabase(this);
+    cluster.backupToDBDatabase(backupDatabase);
+    cluster.dismantle();
+  }
 
-	private synchronized void startRegularProcessor() {
-		if (regularThreadPoolFuture != null) {
-			regularThreadPoolFuture.cancel(true);
-		}
-		regularThreadPoolFuture = REGULAR_THREAD_POOL.scheduleWithFixedDelay(new RunRegularProcessors(), 10, 10, TimeUnit.SECONDS);
-	}
+  private synchronized void startRegularProcessor() {
+    if (REGULAR_THREAD_POOL_FUTURE != null) {
+      REGULAR_THREAD_POOL_FUTURE.cancel(true);
+      REGULAR_THREAD_POOL_FUTURE = null;
+    }
+    final RunRegularProcessors runRegularProcessors = new RunRegularProcessors(this);
+    REGULAR_THREAD_POOL_FUTURE = REGULAR_THREAD_POOL.scheduleWithFixedDelay(runRegularProcessors, 10, 10, TimeUnit.SECONDS);
+  }
 
-	public final void addRegularProcess(RegularProcess processor) {
-		processor.setDatabase(this);
+  public final void addRegularProcess(RegularProcess processor) {
+    processor.setDatabase(this);
 		REGULAR_PROCESSORS.add(processor);
 	}
 
@@ -2610,13 +2613,17 @@ public abstract class DBDatabaseImplementation implements DBDatabase, Serializab
 
 	protected class RunRegularProcessors implements Runnable {
 
-		public RunRegularProcessors() {
+    DBDatabase database; 
+    
+		public RunRegularProcessors(DBDatabase databaseToRunProcessesOn) {
 			super();
+      this.database = databaseToRunProcessesOn;
 		}
 
 		@Override
 		public void run() {
 			for (RegularProcess process : getRegularProcessors()) {
+        process.setDatabase(database);
 				if (process.canRun() && process.isDueToRun()) {
 					try {
 						if (process.preprocess()) {
