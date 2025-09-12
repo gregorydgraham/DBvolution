@@ -981,25 +981,25 @@ public class DBDatabaseCluster extends DBDatabaseImplementation {
 			DBDatabase firstDatabase = null;
 			SQLException firstException = null;
 			boolean succeeded = true;
-			if (action.requiresRunOnIndividualDatabaseBeforeCluster()) {
-				// Because of autoincrement PKs we need to execute on one database first
-				succeeded = false;
-				for (DBDatabase database : databases) {
-					firstDatabase = database;
-					try {
-						actionsPerformed = new ActionTask(this, database, action, false).call();
-						removeActionFromQueue(database, action);
+      if (action.requiresRunOnIndividualDatabaseBeforeCluster()) {
+        // Because of autoincrement PKs we need to execute on one database first
+        succeeded = false;
+        while (!succeeded) {
+          DBDatabase database = getReadyDatabase();
+          firstDatabase = database;
+          try {
+            actionsPerformed = new ActionTask(this, database, action, false).call();
+            removeActionFromQueue(database, action);
             expectedResult = action.getRowsAltered();
-            LOG.info("EXECUTED - cluster "+getLabel()+" used "+database.getLabel()+" for first execution of "+action.getIntent()+":expect="+action.getExpectedAlteredRows()+":"+action.getSQLStatements(database));
-						succeeded = true;
-						break;
-					} catch (SQLException ex) {
-						if (firstException == null) {
-							firstException = ex;
-						}
-					}
-				}
-			}
+            LOG.info("EXECUTED - cluster " + getLabel() + " used " + database.getLabel() + " for first execution of " + action.getIntent() + ":expect=" + action.getExpectedAlteredRows() + ":" + action.getSQLStatements(database));
+            succeeded = true;
+          } catch (SQLException ex) {
+            if (firstException == null) {
+              firstException = ex;
+            }
+          }
+        }
+      }
 			if (succeeded) {
 				// Now execute on all the other databases
 				for (DBDatabase next : databases) {
