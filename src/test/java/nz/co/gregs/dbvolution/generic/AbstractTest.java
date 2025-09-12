@@ -500,7 +500,7 @@ public abstract class AbstractTest {
   }
 
   @Before
-  public void beforeAllTheSubClasses() {
+  public synchronized void beforeAllTheSubClasses() {
     try {
       database.setPreventAccidentalDeletingAllRowsFromTable(false);
       database.deleteAllRowsFromTable(new LinkCarCompanyAndLogo());
