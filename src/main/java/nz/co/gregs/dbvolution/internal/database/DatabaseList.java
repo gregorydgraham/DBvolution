@@ -45,9 +45,9 @@ public class DatabaseList implements Serializable {
 	private static final long serialVersionUID = 1L;
 
 	/* TODO combine these into one list of a data object */
-	private final HashMap<String, DBDatabase> databaseMap = new HashMap<String, DBDatabase>();
-	private final HashMap<String, DBDatabaseCluster.Status> statusMap = new HashMap<String, DBDatabaseCluster.Status>(0);
-	private final HashMap<String, Integer> quarantineCountMap = new HashMap<String, Integer>(0);
+	private final HashMap<String, DBDatabase> databaseMap = new HashMap<>();
+	private final HashMap<String, DBDatabaseCluster.Status> statusMap = new HashMap<>(0);
+	private final HashMap<String, Integer> quarantineCountMap = new HashMap<>(0);
 
 //	private final Map<String, DBDatabase> databaseMap = Collections.synchronizedMap(new HashMap<String, DBDatabase>());
 //	private final Map<String, DBDatabaseCluster.Status> statusMap = Collections.synchronizedMap(new HashMap<String, DBDatabaseCluster.Status>(0));
@@ -238,16 +238,12 @@ public class DatabaseList implements Serializable {
 		quarantineCountMap.put(key, 0);
 	}
 
-	public synchronized boolean isDead(DBDatabase db) {
-		if (DEAD.equals(getStatusOf(db))) {
-			return true;
-		}
+	public synchronized int getQuarantineCount(DBDatabase db) {
 		String key = getKey(db);
-		Integer currentValue = quarantineCountMap.get(key);
-		if(currentValue >= 3){
-			setDead(db);
-			return true;
-		}
-		return false;
+		return quarantineCountMap.get(key);
+	}
+
+	public synchronized boolean isDead(DBDatabase db) {
+		return DEAD.equals(getStatusOf(db));
 	}
 }
