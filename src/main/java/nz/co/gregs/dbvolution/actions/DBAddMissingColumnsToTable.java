@@ -118,16 +118,17 @@ public class DBAddMissingColumnsToTable extends DBAction {
 	private HashMap<String, ColumnStructure> getColumnStructureViaMetaData(DBDatabase database, DBRow table) throws SQLException {
 
 		HashMap<String, ColumnStructure> structures = new HashMap<>(0);
-		ResultSet columns = getMetaDataForTable(database, table);
-		while (columns.next()) {
-			String columnName = columns.getString("COLUMN_NAME");
-			ColumnStructure column = new ColumnStructure(
-					Integer.getInteger(columns.getString("COLUMN_SIZE")),
-					columns.getString("DATA_TYPE"),
-					"YES".equals(columns.getString("IS_NULLABLE")),
-					"YES".equals(columns.getString("IS_AUTOINCREMENT")));
-			structures.put(columnName, column);
-		}
+		try (ResultSet columns = getMetaDataForTable(database, table)) {
+      while (columns.next()) {
+        String columnName = columns.getString("COLUMN_NAME");
+        ColumnStructure column = new ColumnStructure(
+                Integer.getInteger(columns.getString("COLUMN_SIZE")),
+                columns.getString("DATA_TYPE"),
+                "YES".equals(columns.getString("IS_NULLABLE")),
+                "YES".equals(columns.getString("IS_AUTOINCREMENT")));
+        structures.put(columnName, column);
+      }
+    }
 		return structures;
 	}
 
