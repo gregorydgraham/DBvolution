@@ -23,8 +23,6 @@ import nz.co.gregs.dbvolution.DBRow;
 import nz.co.gregs.dbvolution.databases.DBStatement;
 import nz.co.gregs.dbvolution.databases.QueryIntention;
 import nz.co.gregs.dbvolution.databases.definitions.DBDefinition;
-import nz.co.gregs.dbvolution.exceptions.AccidentalBlankQueryException;
-import nz.co.gregs.dbvolution.exceptions.AccidentalCartesianJoinException;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
@@ -43,7 +41,7 @@ public class DBDeleteByExample extends DBDelete {
 	private static final long serialVersionUID = 1l;
 	private static final Log LOG = LogFactory.getLog(DBDeleteByExample.class);
 
-	private final ArrayList<DBRow> savedRows = new ArrayList<DBRow>();
+	private final ArrayList<DBRow> savedRows = new ArrayList<>();
 
 	/**
 	 * Creates a DBDeleteByExample action for the supplied example DBRow on the
