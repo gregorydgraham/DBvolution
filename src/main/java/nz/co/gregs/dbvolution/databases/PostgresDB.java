@@ -325,11 +325,12 @@ public class PostgresDB extends DBDatabaseImplementation implements SupportsPoly
 			if (!postGISTopologyAlreadyTried) {
 				postGISTopologyAlreadyTried = true;
 				boolean execute = stmnt.execute("select * from pg_extension where extname = 'postgis_topology';");
-				final ResultSet resultSet = stmnt.getResultSet();
-				boolean postGISAlreadyCreated = resultSet.next();
-				if (!postGISAlreadyCreated) {
-					stmnt.execute("CREATE EXTENSION IF NOT EXISTS postgis_topology;");
-				}
+				try (ResultSet resultSet = stmnt.getResultSet()) {
+          boolean postGISAlreadyCreated = resultSet.next();
+          if (!postGISAlreadyCreated) {
+            stmnt.execute("CREATE EXTENSION IF NOT EXISTS postgis_topology;");
+          }
+        }
 			}
 		} catch (org.postgresql.util.PSQLException pexc) {
 			LOG.warn("POSTGIS TOPOLOGY Rejected: Spatial operations will NOT function.", pexc);
@@ -343,13 +344,14 @@ public class PostgresDB extends DBDatabaseImplementation implements SupportsPoly
 			if (!postGISAlreadyTried) {
 				postGISAlreadyTried = true;
 				boolean execute = stmnt.execute("select * from pg_extension where extname = 'postgis';");
-				final ResultSet resultSet = stmnt.getResultSet();
-				boolean postGISAlreadyCreated = resultSet.next();
-				if (!postGISAlreadyCreated) {
-					stmnt.execute("CREATE EXTENSION IF NOT EXISTS postgis;");
-				}
-				postGISInstalled = true;
-			}
+        try (ResultSet resultSet = stmnt.getResultSet()) {
+          boolean postGISAlreadyCreated = resultSet.next();
+          if (!postGISAlreadyCreated) {
+            stmnt.execute("CREATE EXTENSION IF NOT EXISTS postgis;");
+          }
+          postGISInstalled = true;
+        }
+      }
 		} catch (org.postgresql.util.PSQLException pexc) {
 			LOG.warn("POSTGIS Rejected: Spatial operations will NOT function.", pexc);
 			postGISInstalled = false;
