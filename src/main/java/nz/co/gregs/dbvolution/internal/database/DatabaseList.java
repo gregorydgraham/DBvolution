@@ -42,208 +42,232 @@ import static nz.co.gregs.dbvolution.databases.DBDatabaseCluster.Status.*;
  */
 public class DatabaseList implements Serializable {
 
-	private static final long serialVersionUID = 1L;
+  private static final long serialVersionUID = 1L;
 
-	/* TODO combine these into one list of a data object */
-	private final HashMap<String, DBDatabase> databaseMap = new HashMap<>();
-	private final HashMap<String, DBDatabaseCluster.Status> statusMap = new HashMap<>(0);
-	private final HashMap<String, Integer> quarantineCountMap = new HashMap<>(0);
+  /* TODO combine these into one list of a data object */
+  private final HashMap<String, DBDatabase> databaseMap = new HashMap<>();
+  private final HashMap<String, DBDatabaseCluster.Status> statusMap = new HashMap<>(0);
+  private final HashMap<String, Integer> quarantineCountMap = new HashMap<>(0);
 
-//	private final Map<String, DBDatabase> databaseMap = Collections.synchronizedMap(new HashMap<String, DBDatabase>());
-//	private final Map<String, DBDatabaseCluster.Status> statusMap = Collections.synchronizedMap(new HashMap<String, DBDatabaseCluster.Status>(0));
-//	private final Map<String, Integer> quarantineCountMap = Collections.synchronizedMap(new HashMap<String, Integer>(0));
+  public DatabaseList() {
+  }
 
-	public synchronized int size() {
-		return databaseMap.size();
-	}
+  public DatabaseList(DBDatabase firstDB, DBDatabase... databases) {
+    boolean add = true;
+    add(firstDB);
+    for (var db : databases) {
+      add(db);
+    }
+  }
 
-	public synchronized boolean isEmpty() {
-		return databaseMap.isEmpty();
-	}
+  public synchronized int size() {
+    return databaseMap.size();
+  }
 
-	public synchronized boolean contains(Object o) {
-		if (o instanceof DBDatabase) {
-			DBDatabase db = (DBDatabase) o;
-			return databaseMap.containsKey(getKey(db));
-		} else {
-			return false;
-		}
-	}
+  public synchronized boolean isEmpty() {
+    return databaseMap.isEmpty();
+  }
 
-	public synchronized Iterator<DBDatabase> iterator() {
-		return databaseMap.values().iterator();
-	}
+  public synchronized boolean contains(Object o) {
+    if (o instanceof DBDatabase) {
+      DBDatabase db = (DBDatabase) o;
+      return databaseMap.containsKey(getKey(db));
+    } else {
+      return false;
+    }
+  }
 
-	public synchronized DBDatabase[] toArray() {
-		return toArray(new DBDatabase[]{});
-	}
+  public synchronized Iterator<DBDatabase> iterator() {
+    return databaseMap.values().iterator();
+  }
 
-	public synchronized DBDatabase[] toArray(DBDatabase[] a) {
-		return databaseMap.values().toArray(a);
-	}
+  public synchronized DBDatabase[] toArray() {
+    return toArray(new DBDatabase[]{});
+  }
 
-	public synchronized final boolean add(DBDatabase e) {
-		databaseMap.put(getKey(e), e);
-		statusMap.put(getKey(e), UNSYNCHRONISED);
-		return true;
-	}
+  public synchronized DBDatabase[] toArray(DBDatabase[] a) {
+    return databaseMap.values().toArray(a);
+  }
 
-	public synchronized boolean remove(DBDatabase e) {
-		databaseMap.remove(getKey(e));
-		statusMap.remove(getKey(e));
-		return true;
-	}
+  /**
+   * Adds the database to the DatabaseList as an unsynchronised member.
+   *
+   * @param e the database to be added.
+   * @return TRUE if the database is new to the list, FALSE if the database has
+   * already been added (the database is still added)
+   */
+  public synchronized final boolean add(DBDatabase e) {
+    DBDatabase put = databaseMap.put(getKey(e), e);
+    statusMap.put(getKey(e), UNSYNCHRONISED);
+    return put == null;
+  }
 
-	public synchronized boolean containsAll(Collection<DBDatabase> c) {
-		boolean allAreInTheMap = c
-				.stream()
-				.allMatch(t -> databaseMap.containsKey(getKey(t))
-				);
-		return allAreInTheMap;
-	}
+  /**
+   * Removes the database from the DatabaseList.
+   *
+   * @param e the database to be removed.
+   * @return TRUE if the database was in the list, FALSE if the database was
+   * unknown.
+   */
+  public synchronized boolean remove(DBDatabase e) {
+    DBDatabase remove = databaseMap.remove(getKey(e));
+    statusMap.remove(getKey(e));
+    quarantineCountMap.remove(getKey(e));
+    return remove == null;
+  }
 
-	public synchronized boolean addAll(Collection<? extends DBDatabase> collectionOfDatabases) {
-		for (DBDatabase dBDatabase : collectionOfDatabases) {
-			this.add(dBDatabase);
-		}
-		return true;
-	}
+  public synchronized boolean containsAll(Collection<DBDatabase> c) {
+    boolean allAreInTheMap = c
+            .stream()
+            .allMatch(t -> databaseMap.containsKey(getKey(t))
+            );
+    return allAreInTheMap;
+  }
 
-	public synchronized boolean addAll(int index, Collection<? extends DBDatabase> c) {
-		return addAll(c);
-	}
+  /**
+   * Adds all the databases to the DatabaseList as unsynchronised members.
+   *
+   * @param collectionOfDatabases the databases to be added.
+   * @return TRUE if ALL the databases are new to the list, FALSE if ANY of the
+   * database has already been added (all databases are still added)
+   */
+  public synchronized boolean addAll(Collection<? extends DBDatabase> collectionOfDatabases) {
+    boolean add = true;
+    for (DBDatabase dBDatabase : collectionOfDatabases) {
+      add &= this.add(dBDatabase);
+    }
+    return add;
+  }
 
-	public synchronized boolean removeAll(Collection<DBDatabase> collectionOfDatabases) {
-		for (DBDatabase db : collectionOfDatabases) {
-			remove(db);
-		}
-		return true;
-	}
+  /**
+   * Removes all the databases to the DatabaseList.
+   *
+   * @param collectionOfDatabases the databases to be removed.
+   * @return TRUE if ALL the databases were known to the list, FALSE if ANY of
+   * the databases were unknown (all databases are still removed)
+   */
+  public synchronized boolean removeAll(Collection<DBDatabase> collectionOfDatabases) {
+    boolean removed = true;
+    for (DBDatabase db : collectionOfDatabases) {
+      removed &= remove(db);
+    }
+    return removed;
+  }
 
-	private synchronized String getKey(DBDatabase db) {
-		return db.getSettings().encode();
-	}
+  private synchronized String getKey(DBDatabase db) {
+    return db.getSettings().encode();
+  }
 
-	public DatabaseList() {
-	}
+  private synchronized void set(DBDatabase db, DBDatabaseCluster.Status status) {
+    if (statusMap.containsKey(getKey(db))) {
+      statusMap.put(getKey(db), status);
+      if (QUARANTINED.equals(status)) {
+        incrementQuarantineCount(db);
+      }
+      if (READY.equals(status)) {
+        clearQuarantineCount(db);
+      }
+    }
+  }
 
-	public DatabaseList(DBDatabase firstDB, DBDatabase... databases) {
-		add(firstDB);
-		for (var db : databases) {
-			add(db);
-		}
-	}
+  public synchronized void setReady(DBDatabase db) {
+    set(db, READY);
+  }
 
-	private synchronized void set(DBDatabase db, DBDatabaseCluster.Status status) {
-		if (statusMap.containsKey(getKey(db))) {
-			statusMap.put(getKey(db), status);
-			if (QUARANTINED.equals(status)) {
-				incrementQuarantineCount(db);
-			}
-			if (READY.equals(status)) {
-				clearQuarantineCount(db);
-			}
-		}
-	}
+  public synchronized void setUnsynchronised(DBDatabase db) {
+    set(db, UNSYNCHRONISED);
+  }
 
-	public synchronized void setReady(DBDatabase db) {
-		set(db, READY);
-	}
+  public synchronized void setPaused(DBDatabase db) {
+    set(db, PAUSED);
+  }
 
-	public synchronized void setUnsynchronised(DBDatabase db) {
-		set(db, UNSYNCHRONISED);
-	}
+  public synchronized void setDead(DBDatabase db) {
+    set(db, DEAD);
+  }
 
-	public synchronized void setPaused(DBDatabase db) {
-		set(db, PAUSED);
-	}
+  public synchronized void setQuarantined(DBDatabase db) {
+    set(db, QUARANTINED);
+  }
 
-	public synchronized void setDead(DBDatabase db) {
-		set(db, DEAD);
-	}
+  public synchronized void setUnknown(DBDatabase db) {
+    set(db, UNKNOWN);
+  }
 
-	public synchronized void setQuarantined(DBDatabase db) {
-		set(db, QUARANTINED);
-	}
+  public synchronized void setProcessing(DBDatabase db) {
+    set(db, PROCESSING);
+  }
 
-	public synchronized void setUnknown(DBDatabase db) {
-		set(db, UNKNOWN);
-	}
+  public synchronized void setSynchronising(DBDatabase db) {
+    set(db, SYNCHRONIZING);
+  }
 
-	public synchronized void setProcessing(DBDatabase db) {
-		set(db, PROCESSING);
-	}
+  public synchronized DBDatabase[] getDatabases() {
+    return databaseMap.values().toArray(new DBDatabase[0]);
+  }
 
-	public synchronized void setSynchronising(DBDatabase db) {
-		set(db, SYNCHRONIZING);
-	}
+  public synchronized DBDatabaseCluster.Status getStatusOf(DBDatabase statusOfThisDatabase) {
+    return statusMap.getOrDefault(getKey(statusOfThisDatabase), UNKNOWN);
+  }
 
-	public synchronized DBDatabase[] getDatabases() {
-		return databaseMap.values().toArray(new DBDatabase[0]);
-	}
+  public synchronized boolean isReady(DBDatabase database) {
+    return statusMap.getOrDefault(getKey(database), UNKNOWN).equals(READY);
+  }
 
-	public synchronized DBDatabaseCluster.Status getStatusOf(DBDatabase statusOfThisDatabase) {
-		return statusMap.getOrDefault(getKey(statusOfThisDatabase), UNKNOWN);
-	}
+  public synchronized DBDatabase[] getDatabases(DBDatabaseCluster.Status... statuses) {
+    List<DBDatabase> found = new ArrayList<>(0);
+    for (Map.Entry<String, DBDatabaseCluster.Status> entry : statusMap.entrySet()) {
+      String key = entry.getKey();
+      DBDatabaseCluster.Status val = entry.getValue();
+      for (DBDatabaseCluster.Status status : statuses) {
+        if (val.equals(status)) {
+          DBDatabase db = databaseMap.get(key);
+          found.add(db);
+        }
+      }
+    }
+    DBDatabase[] array = found.toArray(new DBDatabase[]{});
+    return array;
+  }
 
-	public synchronized boolean isReady(DBDatabase database) {
-		return statusMap.getOrDefault(getKey(database), UNKNOWN).equals(READY);
-	}
+  public synchronized long countReadyDatabases() {
+    return countDatabases(READY);
+  }
 
-	public synchronized DBDatabase[] getDatabases(DBDatabaseCluster.Status... statuses) {
-		List<DBDatabase> found = new ArrayList<>(0);
-		for (Map.Entry<String, DBDatabaseCluster.Status> entry : statusMap.entrySet()) {
-			String key = entry.getKey();
-			DBDatabaseCluster.Status val = entry.getValue();
-			for (DBDatabaseCluster.Status status : statuses) {
-				if (val.equals(status)) {
-					DBDatabase db = databaseMap.get(key);
-					found.add(db);
-				}
-			}
-		}
-		DBDatabase[] array = found.toArray(new DBDatabase[]{});
-		return array;
-	}
+  public synchronized long countPausedDatabases() {
+    return statusMap.values().stream().filter(t -> t.equals(PAUSED)).count();
+  }
 
-	public synchronized long countReadyDatabases() {
-		return countDatabases(READY);
-	}
+  public synchronized long countDatabases(DBDatabaseCluster.Status... statuses) {
+    return getDatabases(statuses).length;
+  }
 
-	public synchronized long countPausedDatabases() {
-		return statusMap.values().stream().filter(t -> t.equals(PAUSED)).count();
-	}
+  public synchronized void clear() {
+    statusMap.clear();
+    databaseMap.clear();
+  }
 
-	public synchronized long countDatabases(DBDatabaseCluster.Status... statuses) {
-		return getDatabases(statuses).length;
-	}
+  public synchronized boolean areAllReady() {
+    return countDatabases(DBDatabaseCluster.Status.READY) == databaseMap.size();
+  }
 
-	public synchronized void clear() {
-		statusMap.clear();
-		databaseMap.clear();
-	}
+  private synchronized void incrementQuarantineCount(DBDatabase db) {
+    String key = getKey(db);
+    Integer currentValue = quarantineCountMap.get(key);
+    quarantineCountMap.put(key, currentValue + 1);
+  }
 
-	public synchronized boolean areAllReady() {
-		return countDatabases(DBDatabaseCluster.Status.READY) == databaseMap.size();
-	}
+  private synchronized void clearQuarantineCount(DBDatabase db) {
+    String key = getKey(db);
+    quarantineCountMap.put(key, 0);
+  }
 
-	private synchronized void incrementQuarantineCount(DBDatabase db) {
-		String key = getKey(db);
-		Integer currentValue = quarantineCountMap.get(key);
-		quarantineCountMap.put(key, currentValue + 1);
-	}
+  public synchronized int getQuarantineCount(DBDatabase db) {
+    String key = getKey(db);
+    return quarantineCountMap.get(key);
+  }
 
-	private synchronized void clearQuarantineCount(DBDatabase db) {
-		String key = getKey(db);
-		quarantineCountMap.put(key, 0);
-	}
-
-	public synchronized int getQuarantineCount(DBDatabase db) {
-		String key = getKey(db);
-		return quarantineCountMap.get(key);
-	}
-
-	public synchronized boolean isDead(DBDatabase db) {
-		return DEAD.equals(getStatusOf(db));
-	}
+  public synchronized boolean isDead(DBDatabase db) {
+    return DEAD.equals(getStatusOf(db));
+  }
 }
