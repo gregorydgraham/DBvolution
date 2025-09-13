@@ -63,9 +63,9 @@ import nz.co.gregs.dbvolution.example.Marque;
 import nz.co.gregs.dbvolution.exceptions.*;
 import nz.co.gregs.dbvolution.generic.AbstractTest;
 import nz.co.gregs.looper.Looper;
+import static org.hamcrest.MatcherAssert.assertThat;
 import org.hamcrest.Matchers;
 import static org.hamcrest.Matchers.*;
-import static org.hamcrest.MatcherAssert.assertThat;
 import org.junit.After;
 import org.junit.Assert;
 
@@ -93,7 +93,8 @@ public class DBDatabaseClusterTest extends AbstractTest {
 	public synchronized void testAutomaticDataCreation() throws SQLException, InterruptedException {
 		final DBDatabaseClusterTestTable testTable = new DBDatabaseClusterTestTable();
 
-		try (DBDatabaseCluster cluster = DBDatabaseCluster.randomManualCluster(database)) {
+    DBDatabaseCluster.Configuration withAutoReconnect = DBDatabaseCluster.Configuration.fullyManual().withAutoReconnect().withAutoStart();
+    try (DBDatabaseCluster cluster = new DBDatabaseCluster("testAutomaticDataCreation", withAutoReconnect, database)) {
 			cluster.addTrackedTable(testTable);
 			Assert.assertTrue(cluster.tableExists(testTable));
 			final DBTable<DBDatabaseClusterTestTable> query = cluster
@@ -111,12 +112,15 @@ public class DBDatabaseClusterTest extends AbstractTest {
 
 			assertThat(cluster.getDBTable(testTable).count(), is(22l));
 
-			try (H2MemoryDB soloDB = H2MemoryDB.createANewRandomDatabase()) {
+			try (H2MemoryDB soloDB = H2MemoryDB.createANewRandomDatabase("testAutomaticDataCreation","H2MemoryDB")) {
 
+        // checks that the @DBRequiredTable annotation created the table automatically
 				Assert.assertTrue(soloDB.tableExists(testTable));
+        // checks that no data was included in the creation, that is it wasn't to do with the cluster.
 				assertThat(soloDB.getDBTable(testTable).count(), is(0l));
 
 				cluster.addDatabase(soloDB);
+        cluster.waitUntilSynchronised();
 
 				assertThat(cluster.getDBTable(testTable).count(), is(22l));
 				assertThat(soloDB.getDBTable(testTable).count(), is(22l));
@@ -172,6 +176,8 @@ public class DBDatabaseClusterTest extends AbstractTest {
 					assertThat(looper.attempts(), is(Matchers.greaterThan(1)));
 					assertThat(cluster.getDatabaseStatus(slowSynchingDB), is(DBDatabaseCluster.Status.READY));
 					assertThat(slowSynchingDB.getDBTable(testTable).count(), is(22l));
+					assertThat(soloDB.getDBTable(testTable).count(), is(22l));
+          cluster.waitUntilSynchronised();
 
 					cluster.delete(cluster.getDBTable(testTable)
 							.setBlankQueryAllowed(true)
@@ -179,6 +185,7 @@ public class DBDatabaseClusterTest extends AbstractTest {
 					);
 
 					assertThat(cluster.getDBTable(testTable).count(), is(0l));
+          cluster.waitUntilSynchronised();
 
 					assertThat(soloDB.getDBTable(testTable).count(), is(0l));
 					assertThat(slowSynchingDB.getDBTable(testTable).count(), is(0l));
@@ -1176,7 +1183,7 @@ public class DBDatabaseClusterTest extends AbstractTest {
 			cluster.dismantle();
 		}
 	}
-
+  
 	private List<DBDatabaseClusterTestTable> createData(Date firstDate, Date secondDate) {
 		List<DBDatabaseClusterTestTable> data = new ArrayList<>();
 		data.add(new DBDatabaseClusterTestTable(4893059, "True", 1246974, null, 3, "UV", "PEUGEOT", null, "Y", null, 4, true));
