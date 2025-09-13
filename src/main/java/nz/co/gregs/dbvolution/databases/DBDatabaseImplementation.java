@@ -2358,13 +2358,9 @@ public abstract class DBDatabaseImplementation implements DBDatabase, Serializab
 		String testQuery = getDefinition().getTableExistsSQL(table);
 		try (DBStatement dbStatement = getDBStatement()) {
 			var dets = new StatementDetails("CHECK FOR TABLE " + table.getTableName(), QueryIntention.CHECK_TABLE_EXISTS, testQuery, dbStatement);
-			ResultSet results = dbStatement.executeQuery(dets);
-			if (results != null) {
-				results.close();
-				tableExists = true;
-			} else {
-				tableExists = false;
-			}
+			try (ResultSet results = dbStatement.executeQuery(dets)) {
+        tableExists = (results != null);
+      }
 		} catch (Exception ex) {
 			// An exception means we couldn't find the table for whatever reason
 			// so we can safely ignore the exception
@@ -2377,8 +2373,10 @@ public abstract class DBDatabaseImplementation implements DBDatabase, Serializab
 	}
 
 	private boolean checkTableExistsViaMetaData(DBRow table) throws SQLException {
-		ResultSet rset = getMetaDataForTable(table);
-		return checkMetaDataForTable(table, rset);
+		try (ResultSet rset = getMetaDataForTable(table)) {
+      final boolean checkMetaDataForTable = checkMetaDataForTable(table, rset);
+      return checkMetaDataForTable;
+    }
 	}
 
 	protected boolean checkMetaDataForTable(DBRow table, ResultSet rset) throws SQLException {
@@ -2643,10 +2641,11 @@ public abstract class DBDatabaseImplementation implements DBDatabase, Serializab
 						if (process.preprocess()) {
 							process.setLastResult(process.process());
 						}
+						process.postprocess();
 					} catch (Exception ex) {
 						process.handleExceptionDuringProcessing(ex);
 					} finally {
-						process.postprocess();
+            process.cleanUp();
 						process.offsetTime();
 					}
 				}
@@ -2690,23 +2689,4 @@ public abstract class DBDatabaseImplementation implements DBDatabase, Serializab
 	public DBDatabaseMetaData getDBDatabaseMetaData(Options options) throws SQLException {
 		return new DBDatabaseMetaData(options);
 	}
-
-  private static class DeleteAllRowsInTableDatabase extends DBDatabaseHandle {
-
-    public DeleteAllRowsInTableDatabase(DBDatabase db) {
-      super(db);
-    }
-    private int useOnceOnly = 0;
-
-    @Override
-    public void preventAccidentalDeletingAllRowsFromTable(DBAction action) throws AccidentalDroppingOfTableException {
-      try {
-        if (useOnceOnly > 0) {
-          throw new AccidentalDroppingOfTableException();
-        }
-      } finally {
-        useOnceOnly++;
-      }
-    }
-  }
 }
