@@ -38,6 +38,8 @@ import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 import java.io.File;
 import java.io.IOException;
 import java.sql.SQLException;
+import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.*;
 import java.util.function.Function;
 import java.util.logging.Level;
@@ -1184,7 +1186,455 @@ public class DBDatabaseClusterTest extends AbstractTest {
 		}
 	}
   
-	private List<DBDatabaseClusterTestTable> createData(Date firstDate, Date secondDate) {
+  private static final long OFFSET = 20000000l; // 60s is 60,000 so 20,000,000 is well over what we need
+
+  @Test
+  public synchronized void testCanSynchroniseSingleDatabaseBecauseOfInsertError() throws IOException {
+    // preparation for using temporary SQLite databases
+    final String newSQLite1Filename = "target/testCanSynchroniseSingleDatabaseBecauseOfInsertError1.sqlite";
+    final String newSQLite2Filename = "target/testCanSynchroniseSingleDatabaseBecauseOfInsertError2.sqlite";
+    File newSQLite1File = new File(newSQLite1Filename);
+    File newSQLite2File = new File(newSQLite2Filename);
+    // and make sure we cleanup
+    newSQLite1File.deleteOnExit();
+    newSQLite2File.deleteOnExit();
+
+    database.getSettings().setLabel("ProfileProvidedDatabase");
+    // make a cluster
+    DBDatabaseCluster.Configuration withAutoReconnect = DBDatabaseCluster.Configuration.fullyManual().withAutoReconnect().withAutoStart();
+    try (DBDatabaseCluster cluster = new DBDatabaseCluster("SynchroniseBecauseOfInsertError", withAutoReconnect, database)) {
+      // we want to work on the supplied DB and eject the local DB
+      cluster.getDetails().setPreferredDatabase(database);
+      cluster.getDetails().setPreferredDatabaseRequired(true);
+
+      // test that the database can synchronise when added
+      assertThat(database.tableExists(new Marque()), is(true));
+      assertThat(database.getCount(new Marque()), is(22l));
+      assertThat(cluster.tableExists(new Marque()), is(true));
+      assertThat(cluster.getCount(new Marque()), is(22l));
+      cluster.addTrackedTable(new Marque());
+
+      Instant start;
+      long stop;
+      long tooFar;
+
+      // test we can add an SQLite DB the normal way
+      try (DBDatabase newSqlite1 = new SQLiteDB(newSQLite1File, "dbv", "testing")) {
+        start = Instant.now();
+        tooFar = start.plus(OFFSET, ChronoUnit.MILLIS).toEpochMilli();
+        cluster.addDatabaseAndWait(newSqlite1);
+        cluster.waitUntilSynchronised();
+        stop = Instant.now().toEpochMilli();
+        
+        assertThat(stop, is(lessThan(tooFar)));
+        assertThat(newSqlite1.tableExists(new Marque()), is(true));
+        assertThat(newSqlite1.getCount(new Marque()), is(22l));
+        cluster.removeDatabase(newSqlite1);
+      }
+
+        // test we can add an SQLite DB
+      try (DBDatabase newSqlite2 = new SQLiteDB(newSQLite2File, "dbv", "testing")) {
+        assertThat(newSqlite2.tableExists(new Marque()), is(false));
+        start = Instant.now();
+        tooFar = start.plus(OFFSET, ChronoUnit.MILLIS).toEpochMilli();
+        cluster.addDatabase(newSqlite2);
+        try {
+          cluster.waitUntilDatabaseIsSynchronised(newSqlite2, OFFSET);
+        } catch (UnableToSynchronizeDatabase ex) {
+          ex.printStackTrace();
+          Assert.fail("Failed to synchronise the database");
+        }
+        stop = Instant.now().toEpochMilli();
+        
+        assertThat(stop, is(lessThan(tooFar)));
+        assertThat(newSqlite2.tableExists(new Marque()), is(true));
+        assertThat(newSqlite2.getCount(new Marque()), is(22l));
+        cluster.removeDatabase(newSqlite2);
+      } catch (Exception ex) {
+        LOG.log(Level.SEVERE, "Exception during test", ex);
+        Assert.fail(ex.getClass().getSimpleName() + " should not have happened: " + ex.getMessage());
+      }
+
+      // test we can add an H2 Memory DB
+      try (DBDatabase newH2DB = H2MemoryDB.createANewRandomDatabase("INSERT_ERROR_H2_", "_DB")) {
+        assertThat(newH2DB.tableExists(new Marque()), is(false));
+        cluster.addDatabase(newH2DB);
+        start = Instant.now();
+        tooFar = start.plus(OFFSET, ChronoUnit.MILLIS).toEpochMilli();
+        try {
+          cluster.waitUntilDatabaseIsSynchronised(newH2DB, OFFSET);
+        } catch (UnableToSynchronizeDatabase ex) {
+          ex.printStackTrace();
+          Assert.fail("Failed to synchronise the database");
+        }
+        stop = Instant.now().toEpochMilli();
+        
+        assertThat(stop, is(lessThan(tooFar)));
+        assertThat(newH2DB.tableExists(new Marque()), is(true));
+        assertThat(newH2DB.getCount(new Marque()), is(22l));
+
+        // test that the H2 database can synchronise after unsynchronised
+        Marque toyota = new Marque();
+        toyota.name.permittedPattern("TOYOTA");
+        Marque BYD = cluster.get(toyota).get(0);
+        BYD.name.setValue("BYD");
+        BYD.uidMarque.setValue(1138);
+        assertThat(BYD.name.hasChanged(), is(true));
+        // now insert into newH2DB to make it out of step with the cluster
+        newH2DB.insert(BYD);
+        // set the timing 
+        start = Instant.now();
+        tooFar = start.plus(OFFSET, ChronoUnit.MILLIS).toEpochMilli();
+        // Will notice that newH2DB can't insert the new "BYD", quarantine it, and then synchronise it 
+        System.out.println(cluster.getDatabaseStatuses());
+        cluster.insert(BYD);
+        System.out.println(cluster.getDatabaseStatuses());
+        assertThat(cluster.getCount(new Marque()), is(23l));
+        
+        try {
+          cluster.waitUntilDatabaseIsSynchronised(newH2DB, OFFSET);
+        } catch (UnableToSynchronizeDatabase ex) {
+          ex.printStackTrace();
+          Assert.fail("Failed to synchronise the database: " + ex.getMessage());
+        }
+        stop = Instant.now().toEpochMilli();
+        System.out.println(cluster.getDatabaseStatuses());
+        final long duration = stop - start.toEpochMilli();
+        if (duration > OFFSET) {
+          System.out.println("DURATION EXCEEDS OFFSET: " + duration + " > " + OFFSET);
+        }
+        assertThat(cluster.getDatabaseStatus(newH2DB).toString(), is(DBDatabaseCluster.Status.READY.toString()));
+        assertThat(stop, is(lessThan(tooFar)));
+        assertThat(newH2DB.tableExists(new Marque()), is(true));
+        assertThat(newH2DB.getCount(new Marque()), is(23l));
+
+        // test that the H2 database can synchronise after unsynchronised
+        toyota = new Marque();
+        toyota.name.permittedPattern("TOYOTA");
+        BYD = cluster.get(toyota).get(0);
+        BYD.name.setValue("GREAT WALL");
+        BYD.uidMarque.setValue(1139);
+        assertThat(BYD.name.hasChanged(), is(true));
+        // now insert into newH2DB to make it out of step with the cluster
+        newH2DB.insert(BYD);
+        // set the timing 
+        start = Instant.now();
+        tooFar = start.plus(OFFSET, ChronoUnit.MILLIS).toEpochMilli();
+        // Will notice that newH2DB can't insert the new "BYD", quarantine it, and then synchronise it 
+        cluster.insert(BYD);
+        assertThat(cluster.getDatabaseStatus(newH2DB).toString(), is(not(DBDatabaseCluster.Status.READY.toString())));
+        try {
+          cluster.waitUntilDatabaseIsSynchronised(newH2DB);
+        } catch (UnableToSynchronizeDatabase ex) {
+          ex.printStackTrace();
+          Assert.fail("Failed to synchronise the database: " + ex.getMessage());
+        }
+        stop = Instant.now().toEpochMilli();
+        
+        assertThat(stop, is(lessThan(tooFar)));
+        assertThat(newH2DB.tableExists(new Marque()), is(true));
+        assertThat(newH2DB.getCount(new Marque()), is(24l));
+        assertThat(cluster.getCount(new Marque()), is(24l));
+        System.out.println(cluster.getDatabaseStatuses());
+        cluster.removeDatabase(newH2DB);
+      }
+    } catch (SQLException ex) {
+      LOG.log(Level.SEVERE, "SQLException during test", ex);
+      Assert.fail("SQLException should not have happened");
+    } finally {
+      System.out.println("FINISHED testCanSynchroniseSingleDatabaseBecauseOfInsertError()");
+    }
+  }
+
+  @Test
+  public synchronized void testCanSynchroniseSingleDatabaseBecauseOfDeleteError() {
+
+    // preparation for using temporary SQLite databases
+    final String newSQLite1Filename = "target/testCanSynchroniseSingleDatabaseBecauseOfDeleteError1.sqlite";
+    final String newSQLite2Filename = "target/testCanSynchroniseSingleDatabaseBecauseOfDeleteError2.sqlite";
+    File newSQLite1File = new File(newSQLite1Filename);
+    File newSQLite2File = new File(newSQLite2Filename);
+    // and make sure we cleanup
+    newSQLite1File.deleteOnExit();
+    newSQLite2File.deleteOnExit();
+
+    Instant start;
+    long stop;
+    long tooFar;
+
+    // make a cluster
+    DBDatabaseCluster.Configuration autoReconnectAndStart = DBDatabaseCluster.Configuration.fullyManual().withAutoReconnect().withAutoStart();
+    try (DBDatabaseCluster cluster = new DBDatabaseCluster("SynchroniseBecauseOfDeleteError", autoReconnectAndStart, database)) {
+      // we want to work on the supplied DB and eject the local DB
+      cluster.getDetails().setPreferredDatabase(database);
+      cluster.getDetails().setPreferredDatabaseRequired(true);
+
+      // test that the database can synchronise when added
+      assertThat(database.tableExists(new Marque()), is(true));
+      assertThat(database.getCount(new Marque()), is(22l));
+      assertThat(cluster.tableExists(new Marque()), is(true));
+      assertThat(cluster.getCount(new Marque()), is(22l));
+      cluster.addTrackedTable(new Marque());
+
+      // test we can add an SQLite DB the normal way
+      try (SQLiteDB newSqlite1 = new SQLiteDB(newSQLite1File, "dbv", "testing")) {
+        start = Instant.now();
+        tooFar = start.plus(OFFSET, ChronoUnit.MILLIS).toEpochMilli();
+        cluster.addDatabaseAndWait(newSqlite1);
+        cluster.waitUntilSynchronised();
+        stop = Instant.now().toEpochMilli();
+
+        assertThat(stop, is(lessThan(tooFar)));
+        assertThat(newSqlite1.tableExists(new Marque()), is(true));
+        assertThat(newSqlite1.getCount(new Marque()), is(22l));
+        cluster.removeDatabase(newSqlite1);
+      }
+
+      // test we can add an SQLite DB
+      try (SQLiteDB newSqlite2 = new SQLiteDB(newSQLite2File, "dbv", "testing")) {
+        assertThat(newSqlite2.tableExists(new Marque()), is(false));
+        start = Instant.now();
+        tooFar = start.plus(OFFSET, ChronoUnit.MILLIS).toEpochMilli();
+        cluster.addDatabase(newSqlite2);
+        try {
+          cluster.waitUntilDatabaseIsSynchronised(newSqlite2, OFFSET);
+        } catch (UnableToSynchronizeDatabase ex) {
+          ex.printStackTrace();
+          Assert.fail("Failed to synchronise the database");
+        }
+
+        stop = Instant.now().toEpochMilli();
+        assertThat(stop, is(lessThan(tooFar)));
+        assertThat(newSqlite2.tableExists(new Marque()), is(true));
+        assertThat(newSqlite2.getCount(new Marque()), is(22l));
+        cluster.removeDatabase(newSqlite2);
+      }
+
+      // test we can add an H2 Memory DB
+      try (H2MemoryDB newH2DB = H2MemoryDB.createANewRandomDatabase()) {
+        assertThat(newH2DB.tableExists(new Marque()), is(false));
+        cluster.addDatabase(newH2DB);
+        start = Instant.now();
+        tooFar = start.plus(OFFSET, ChronoUnit.MILLIS).toEpochMilli();
+        try {
+          cluster.waitUntilDatabaseIsSynchronised(newH2DB, OFFSET);
+        } catch (UnableToSynchronizeDatabase ex) {
+          ex.printStackTrace();
+          Assert.fail("Failed to synchronise the database");
+        }
+
+        stop = Instant.now().toEpochMilli();
+        assertThat(stop, is(lessThan(tooFar)));
+        assertThat(newH2DB.tableExists(new Marque()), is(true));
+        assertThat(newH2DB.getCount(new Marque()), is(22l));
+        
+        System.out.println("PROFILE-DB: "+database.getCount(new Marque()));
+        System.out.println("TESTING-DB: "+newH2DB.getCount(new Marque()));
+
+        // test that the H2 database can synchronise after unsynchronised
+        //
+        // first wipe out all the marques to make the H2 DB out of step with the
+        // cluster
+        newH2DB.setPreventAccidentalDeletingAllRowsFromTable(false);
+        newH2DB.deleteAllRowsFromTable(new Marque());
+        
+        
+        System.out.println("PROFILE-DB: "+database.getCount(new Marque()));
+        System.out.println("TESTING-DB: "+newH2DB.getCount(new Marque()));
+        
+        
+        // make a template for the deletion
+        Marque toyota = new Marque();
+        toyota.name.permittedPatternIgnoreCase("TOYOTA");
+        // set the timing 
+        start = Instant.now();
+        tooFar = start.plus(OFFSET, ChronoUnit.MILLIS).toEpochMilli();
+        // Make the cluster notice that newH2DB no longer has any Marques, 
+        // quarantine it, and then synchronise it 
+        // we set the preferred earlier so the cluster will use the supplied
+        // database's results and not the temporary one
+        cluster.delete(toyota);
+        
+        assertThat(cluster.getCount(new Marque()), is(21l));
+        try {
+          cluster.waitUntilDatabaseIsSynchronised(newH2DB);
+        } catch (UnableToSynchronizeDatabase ex) {
+          ex.printStackTrace();
+          Assert.fail("Failed to synchronise the database: " + ex.getMessage());
+        }
+        stop = Instant.now().toEpochMilli();
+        assertThat(stop, is(lessThan(tooFar)));
+        assertThat(cluster.getDatabaseStatus(newH2DB).toString(), is("READY"));
+        System.out.println("PROFILE-DB: "+database.getCount(new Marque()));
+        System.out.println("TESTING-DB: "+newH2DB.getCount(new Marque()));
+        assertThat(newH2DB.tableExists(new Marque()), is(true));
+        assertThat(newH2DB.getCount(new Marque()), is(21l));
+
+        cluster.removeDatabase(newH2DB);
+      }
+    } catch (Exception ex) {
+      LOG.log(Level.SEVERE, "Exception during test", ex);
+      Assert.fail(ex.getClass().getSimpleName() + " should not have happened: " + ex.getMessage());
+    } finally {
+    }
+  }
+
+  @Test
+  public synchronized void testCanSynchroniseSingleDatabaseBecauseOfUpdateError() {
+    // preparation for using temporary SQLite databases
+    final String newSQLite1Filename = "target/testCanSynchroniseSingleDatabaseBecauseOfUpdateError1.sqlite";
+    final String newSQLite2Filename = "target/testCanSynchroniseSingleDatabaseBecauseOfUpdateError2.sqlite";
+    File newSQLite1File = new File(newSQLite1Filename);
+    File newSQLite2File = new File(newSQLite2Filename);
+    // make sure the files don't exist
+    newSQLite1File.delete();
+    newSQLite2File.delete();
+    // and make sure we cleanup
+    newSQLite1File.deleteOnExit();
+    newSQLite2File.deleteOnExit();
+
+    // our timing variables
+    Instant start;
+    long tooFar;
+    long stop;
+
+    database.getSettings().setLabel("ProfileProvidedDatabase");
+    // make a cluster
+    DBDatabaseCluster.Configuration withAutoReconnect = DBDatabaseCluster.Configuration.fullyManual().withAutoReconnect().withAutoStart();
+    try (DBDatabaseCluster cluster = new DBDatabaseCluster("SynchroniseBecauseOfUpdateError", withAutoReconnect, database)) {
+      // we want to work on the supplied DB and eject the local DB
+      cluster.getDetails().setPreferredDatabase(database);
+      cluster.getDetails().setPreferredDatabaseRequired(true);
+
+      // test that the database can synchronise when added
+      assertThat(database.tableExists(new Marque()), is(true));
+      assertThat(database.getCount(new Marque()), is(22l));
+      assertThat(cluster.tableExists(new Marque()), is(true));
+      assertThat(cluster.getCount(new Marque()), is(22l));
+      cluster.addTrackedTable(new Marque());
+
+      // test we can add an SQLite DB the normal way
+      try (DBDatabase newSqlite1 = new SQLiteDB(newSQLite1File, "dbv", "testing")) {
+        start = Instant.now();
+        tooFar = start.plus(OFFSET, ChronoUnit.MILLIS).toEpochMilli();
+        cluster.addDatabaseAndWait(newSqlite1);
+        cluster.waitUntilSynchronised();
+        stop = Instant.now().toEpochMilli();
+        assertThat(stop, is(lessThan(tooFar)));
+        assertThat(newSqlite1.tableExists(new Marque()), is(true));
+        assertThat(newSqlite1.getCount(new Marque()), is(22l));
+        cluster.removeDatabase(newSqlite1);
+      }
+    } catch (Exception ex) {
+      LOG.log(Level.SEVERE, "Exception during test", ex);
+      Assert.fail(ex.getClass().getSimpleName() + " should not have happened: " + ex.getMessage());
+    } finally {
+    }
+
+    database.getSettings().setLabel("ProfileProvidedDatabase");
+    try (DBDatabaseCluster cluster = new DBDatabaseCluster("SynchroniseBecauseOfUpdateError", withAutoReconnect, database)) {
+      // we want to work on the supplied DB and eject the local DB
+      cluster.getDetails().setPreferredDatabase(database);
+      cluster.getDetails().setPreferredDatabaseRequired(true);
+
+      // make sure the cluster is tracking changesin the Marque table
+      cluster.addTrackedTable(new Marque());
+
+      // test we can add an SQLite DB
+      try (DBDatabase newSqlite2 = new SQLiteDB(newSQLite2File, "dbv", "testing")) {
+        assertThat(newSqlite2.tableExists(new Marque()), is(false));
+        start = Instant.now();
+        tooFar = start.plus(OFFSET, ChronoUnit.MILLIS).toEpochMilli();
+        cluster.addDatabase(newSqlite2);
+        try {
+          cluster.waitUntilDatabaseIsSynchronised(newSqlite2, OFFSET);
+        } catch (UnableToSynchronizeDatabase ex) {
+          ex.printStackTrace();
+          Assert.fail("Failed to synchronise the database");
+        }
+        stop = Instant.now().toEpochMilli();
+        assertThat(stop, is(lessThan(tooFar)));
+        assertThat(newSqlite2.tableExists(new Marque()), is(true));
+        assertThat(newSqlite2.getCount(new Marque()), is(22l));
+        cluster.removeDatabase(newSqlite2);
+      }
+    } catch (Exception ex) {
+      LOG.log(Level.SEVERE, "Exception during test", ex);
+      Assert.fail(ex.getClass().getSimpleName() + " should not have happened: " + ex.getMessage());
+    } finally {
+    }
+
+    database.getSettings().setLabel("ProfileProvidedDatabase");
+    try (DBDatabaseCluster cluster = new DBDatabaseCluster("SynchroniseBecauseOfUpdateError", withAutoReconnect, database)) {
+      // we want to work on the supplied DB and eject the local DB
+      cluster.getDetails().setPreferredDatabase(database);
+      cluster.getDetails().setPreferredDatabaseRequired(true);
+
+      // make sure the cluster is tracking changesin the Marque table
+      cluster.addTrackedTable(new Marque());
+
+      // test we can add an H2 Memory DB
+      try (H2MemoryDB newH2DB = H2MemoryDB.createANewRandomDatabase("UPDATE_ERROR_H2_DB", "")) {
+        assertThat(newH2DB.tableExists(new Marque()), is(false));
+        cluster.addDatabase(newH2DB);
+        start = Instant.now();
+        tooFar = start.plus(OFFSET, ChronoUnit.MILLIS).toEpochMilli();
+        try {
+          cluster.waitUntilDatabaseIsSynchronised(newH2DB, OFFSET);
+        } catch (UnableToSynchronizeDatabase ex) {
+          ex.printStackTrace();
+          Assert.fail("Failed to synchronise the database");
+        }
+        stop = Instant.now().toEpochMilli();
+        assertThat(stop, is(lessThan(tooFar)));
+        assertThat(cluster.getDatabaseStatus(newH2DB).toString(), is(DBDatabaseCluster.Status.READY.toString()));
+        assertThat(newH2DB.tableExists(new Marque()), is(true));
+        assertThat(newH2DB.getCount(new Marque()), is(22l));
+
+        // test that the H2 database can synchronise after unsynchronised
+        Marque honda = new Marque();
+        honda.name.permittedPattern("HONDA");
+        Marque BYD = cluster.get(honda).get(0);
+        BYD.name.setValue(BYD.getName().getValue().toLowerCase());
+        assertThat(BYD.name.hasChanged(), is(true));
+        // now make the H2 DB out of step with the cluster
+        newH2DB.setPreventAccidentalDeletingAllRowsFromTable(false);
+        newH2DB.deleteAllRowsFromTable(new Marque());
+        assertThat(newH2DB.tableExists(new Marque()), is(true));
+        assertThat(newH2DB.getCount(new Marque()), is(0l));
+        // set the timing 
+        start = Instant.now();
+        tooFar = start.plus(OFFSET, ChronoUnit.MILLIS).toEpochMilli();
+        // this will make the cluster notice that newH2DB no longer has any Marques,
+        // quarantine it, and then synchronise it 
+        cluster.update(BYD);
+        // check that the cluster is still working properly
+        assertThat(cluster.getCount(new Marque()), is(22l));
+        try {
+          // get the test db back into the fold
+          cluster.waitUntilDatabaseIsSynchronised(newH2DB);
+        } catch (UnableToSynchronizeDatabase ex) {
+          ex.printStackTrace();
+          Assert.fail("Failed to synchronise the database: " + ex.getMessage());
+        }
+
+        stop = Instant.now().toEpochMilli();
+        assertThat(stop, is(lessThan(tooFar)));
+        // check that the test db has in fact been synchronised
+        assertThat(cluster.getDatabaseStatus(newH2DB).toString(), is(DBDatabaseCluster.Status.READY.toString()));
+        assertThat(newH2DB.tableExists(new Marque()), is(true));
+        // and check that it has been synchronised correctly
+        assertThat(newH2DB.getCount(new Marque()), is(22l));
+        cluster.removeDatabase(newH2DB);
+      }
+    } catch (SQLException ex) {
+      LOG.log(Level.SEVERE, "SQLException during test", ex);
+      Assert.fail("SQLException should not have happened");
+    } finally {
+    }
+  }
+  
+  private List<DBDatabaseClusterTestTable> createData(Date firstDate, Date secondDate) {
 		List<DBDatabaseClusterTestTable> data = new ArrayList<>();
 		data.add(new DBDatabaseClusterTestTable(4893059, "True", 1246974, null, 3, "UV", "PEUGEOT", null, "Y", null, 4, true));
 		data.add(new DBDatabaseClusterTestTable(4893090, "False", 1246974, "", 1, "UV", "FORD", "", "Y", firstDate, 2, false));
