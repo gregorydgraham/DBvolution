@@ -54,6 +54,7 @@ import nz.co.gregs.dbvolution.databases.settingsbuilders.SettingsBuilder;
 import nz.co.gregs.dbvolution.exceptions.*;
 import nz.co.gregs.dbvolution.transactions.DBTransaction;
 import nz.co.gregs.dbvolution.internal.database.ClusterCleanupActions;
+import nz.co.gregs.dbvolution.internal.database.DatabaseList;
 import nz.co.gregs.dbvolution.internal.query.StatementDetails;
 import nz.co.gregs.dbvolution.utility.RegularProcess;
 import nz.co.gregs.separatedstring.Encoder;
@@ -983,19 +984,32 @@ public class DBDatabaseCluster extends DBDatabaseImplementation {
 			boolean succeeded = true;
       if (action.requiresRunOnIndividualDatabaseBeforeCluster()) {
         // Because of autoincrement PKs we need to execute on one database first
+        // we need a marker to indicat that the action has successfully completed
         succeeded = false;
-        while (!succeeded) {
+        // and we need to 
+        DatabaseList failedOn = new DatabaseList();
+        while (!succeeded && failedOn.size()<size()) {
+          // this returns the preferred database or a random one depending, so 
+          // it'll be a bit inefficient at getting to the last database. TODO
           DBDatabase database = getReadyDatabase();
+          // be positive
           firstDatabase = database;
-          try {
-            actionsPerformed = new ActionTask(this, database, action, false).call();
-            removeActionFromQueue(database, action);
-            expectedResult = action.getRowsAltered();
-            LOG.info("EXECUTED - cluster " + getLabel() + " used " + database.getLabel() + " for first execution of " + action.getIntent() + ":expect=" + action.getExpectedAlteredRows() + ":" + action.getSQLStatements(database));
-            succeeded = true;
-          } catch (SQLException ex) {
-            if (firstException == null) {
-              firstException = ex;
+          // be pessimistic
+          boolean untriedDB = failedOn.add(database);
+          if (untriedDB) {
+            // do the action
+            try {
+              actionsPerformed = new ActionTask(this, database, action, false).call();
+              removeActionFromQueue(database, action);
+              expectedResult = action.getRowsAltered();
+              LOG.info("EXECUTED - cluster " + getLabel() + " used " + database.getLabel() + " for first execution of " + action.getIntent() + ":expect=" + action.getExpectedAlteredRows() + ":" + action.getSQLStatements(database));
+              failedOn.remove(database);
+              succeeded = true;
+            } catch (SQLException ex) {
+              firstDatabase = null;
+              if (firstException == null) {
+                firstException = ex;
+              }
             }
           }
         }
