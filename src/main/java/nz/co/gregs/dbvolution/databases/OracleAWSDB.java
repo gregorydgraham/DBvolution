@@ -35,9 +35,6 @@ import nz.co.gregs.dbvolution.exceptions.ExceptionDuringDatabaseFeatureSetup;
  * <p>
  * You should probably use {@link OracleAWS11DB} or {@link Oracle12DB} instead.
  *
- * <p style="color: #F90;">Support DBvolution at
- * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
- *
  * @author Gregory Graham
  * @see OracleAWS11DB
  * @see Oracle12DB
@@ -121,11 +118,6 @@ public abstract class OracleAWSDB extends OracleDB implements SupportsPolygonDat
 		super(
 				new OracleAWS11SettingsBuilder().setDataSource(dataSource)
 		);
-	}
-
-	@Override
-	public DBDatabase clone() throws CloneNotSupportedException {
-		return super.clone();
 	}
 
 	@Override

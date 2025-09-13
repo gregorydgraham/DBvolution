@@ -47,8 +47,8 @@ public class DBActionListCreationTest extends AbstractTest {
   
   @After
   public void cleanup() throws SQLException{
-    database.setPreventAccidentalDeletingAllRowsFromTable(false);
-    database.deleteAllRowsFromTable(new Marque());
+    database.setPreventAccidentalDeletingAllRowsFromTable(false)
+            .deleteAllRowsFromTable(new Marque());
   }
 
 	@Test

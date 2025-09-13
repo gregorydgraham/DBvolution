@@ -502,26 +502,26 @@ public abstract class AbstractTest {
   @Before
   public synchronized void beforeAllTheSubClasses() {
     try {
-      database.setPreventAccidentalDeletingAllRowsFromTable(false);
-      database.deleteAllRowsFromTable(new LinkCarCompanyAndLogo());
-      database.setPreventAccidentalDeletingAllRowsFromTable(false);
-      database.deleteAllRowsFromTable(new CompanyText());
-      database.setPreventAccidentalDeletingAllRowsFromTable(false);
-      database.deleteAllRowsFromTable(new CompanyLogo());
+      database.setPreventAccidentalDeletingAllRowsFromTable(false)
+              .deleteAllRowsFromTable(new LinkCarCompanyAndLogo());
+      database.setPreventAccidentalDeletingAllRowsFromTable(false)
+              .deleteAllRowsFromTable(new CompanyText());
+      database.setPreventAccidentalDeletingAllRowsFromTable(false)
+              .deleteAllRowsFromTable(new CompanyLogo());
       final CarCompany carCompany = new CarCompany();
       final Marque marque = new Marque();
       if (database.getCount(carCompany) != 4) {
-        database.setPreventAccidentalDeletingAllRowsFromTable(false);
-        database.deleteAllRowsFromTable(marque);
-        database.setPreventAccidentalDeletingAllRowsFromTable(false);
-        database.deleteAllRowsFromTable(carCompany);
+        database.setPreventAccidentalDeletingAllRowsFromTable(false)
+                .deleteAllRowsFromTable(marque);
+        database.setPreventAccidentalDeletingAllRowsFromTable(false)
+                .deleteAllRowsFromTable(carCompany);
         insertCarCompanies(database);
         insertMarques(database, march23rd2013, april2nd2011);
       } else if (marqueRows == null
               || marqueRows.size() == 0
               || database.getCount(marque) != marqueRows.size()) {
-        database.setPreventAccidentalDeletingAllRowsFromTable(false);
-        database.deleteAllRowsFromTable(marque);
+        database.setPreventAccidentalDeletingAllRowsFromTable(false)
+                .deleteAllRowsFromTable(marque);
         insertMarques(database, march23rd2013, april2nd2011);
       }
     } catch (SQLException ex) {

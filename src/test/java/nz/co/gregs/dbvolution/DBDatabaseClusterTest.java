@@ -87,8 +87,8 @@ public class DBDatabaseClusterTest extends AbstractTest {
   
   @After
   public void cleanup() throws SQLException{
-    database.setPreventAccidentalDeletingAllRowsFromTable(false);
-    database.deleteAllRowsFromTable(new Marque());
+    database.setPreventAccidentalDeletingAllRowsFromTable(false)
+            .deleteAllRowsFromTable(new Marque());
   }
 
 	@Test
@@ -1435,8 +1435,8 @@ public class DBDatabaseClusterTest extends AbstractTest {
         //
         // first wipe out all the marques to make the H2 DB out of step with the
         // cluster
-        newH2DB.setPreventAccidentalDeletingAllRowsFromTable(false);
-        newH2DB.deleteAllRowsFromTable(new Marque());
+        newH2DB.setPreventAccidentalDeletingAllRowsFromTable(false)
+                .deleteAllRowsFromTable(new Marque());
         
         
         System.out.println("PROFILE-DB: "+database.getCount(new Marque()));
@@ -1598,8 +1598,8 @@ public class DBDatabaseClusterTest extends AbstractTest {
         BYD.name.setValue(BYD.getName().getValue().toLowerCase());
         assertThat(BYD.name.hasChanged(), is(true));
         // now make the H2 DB out of step with the cluster
-        newH2DB.setPreventAccidentalDeletingAllRowsFromTable(false);
-        newH2DB.deleteAllRowsFromTable(new Marque());
+        newH2DB.setPreventAccidentalDeletingAllRowsFromTable(false)
+                .deleteAllRowsFromTable(new Marque());
         assertThat(newH2DB.tableExists(new Marque()), is(true));
         assertThat(newH2DB.getCount(new Marque()), is(0l));
         // set the timing 

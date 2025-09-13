@@ -99,11 +99,6 @@ public class Informix11DB extends InformixDB {
 	}
 
 	@Override
-	public DBDatabase clone() throws CloneNotSupportedException {
-		return super.clone();
-	}
-
-	@Override
 	public Informix11SettingsBuilder getURLInterpreter() {
 		return new Informix11SettingsBuilder();
 	}

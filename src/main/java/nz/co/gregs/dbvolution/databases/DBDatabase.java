@@ -1213,8 +1213,10 @@ public interface DBDatabase extends Serializable, AutoCloseable {
 		return dbTable.count();
 	}
 
-	void setPreventAccidentalDeletingAllRowsFromTable(boolean b);
+	DBDatabase setPreventAccidentalDeletingAllRowsFromTable(boolean b);
 
 	public DBDatabaseMetaData getDBDatabaseMetaData(Options options) throws SQLException;
+
+  void preventAccidentalDeletingAllRowsFromTable(DBAction action) throws AccidentalDroppingOfTableException;
 
 }

@@ -83,11 +83,11 @@ public class DBDatabaseHandle implements DBDatabase {
 
 	private static final long serialVersionUID = 1L;
 
-	private DBDatabase wrappedDatabase;
+	protected DBDatabase wrappedDatabase;
 
 	@Override
-	public void setPreventAccidentalDeletingAllRowsFromTable(boolean b) {
-		wrappedDatabase.setPreventAccidentalDeletingAllRowsFromTable(b);
+	public DBDatabase setPreventAccidentalDeletingAllRowsFromTable(boolean b) {
+		return wrappedDatabase.setPreventAccidentalDeletingAllRowsFromTable(b);
 	}
 
 	@Override
@@ -721,6 +721,11 @@ public class DBDatabaseHandle implements DBDatabase {
   @Override
   public void close() {
     wrappedDatabase.close();
+  }
+
+  @Override
+  public void preventAccidentalDeletingAllRowsFromTable(DBAction action) throws AccidentalDroppingOfTableException {
+    wrappedDatabase.preventAccidentalDeletingAllRowsFromTable(action);
   }
 
 }

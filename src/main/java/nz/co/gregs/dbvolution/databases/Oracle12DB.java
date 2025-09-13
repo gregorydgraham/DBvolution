@@ -66,32 +66,6 @@ public class Oracle12DB extends OracleDB {
 	}
 
 	/**
-	 * Creates an Oracle connection for the DatabaseConnectionSettings.
-	 *
-	 * @param dcs	settings required to connect to the database server
-	 * @param defn the oracle database definition
-	 * @throws java.sql.SQLException database errors
-	 */
-	@Deprecated
-	public Oracle12DB(Oracle12DBDefinition defn, DatabaseConnectionSettings dcs) throws SQLException {
-		this(new Oracle12SettingsBuilder().fromSettings(dcs).setDefinition(defn));
-	}
-
-	/**
-	 * Creates a DBDatabase instance tweaked for Oracle 12 and above.
-	 *
-	 * @param driverName driverName
-	 * @param jdbcURL jdbcURL
-	 * @param password password
-	 * @param username username
-	 * @throws java.sql.SQLException database errors
-	 */
-	@Deprecated
-	public Oracle12DB(String driverName, String jdbcURL, String username, String password) throws SQLException {
-		this(new Oracle12SettingsBuilder().fromJDBCURL(jdbcURL, username, password).setDriverName(driverName));
-	}
-
-	/**
 	 * Creates a DBDatabase instance tweaked for Oracle 12 and above.
 	 *
 	 * @param jdbcURL jdbcURL
@@ -101,26 +75,6 @@ public class Oracle12DB extends OracleDB {
 	 */
 	public Oracle12DB(String jdbcURL, String username, String password) throws SQLException {
 		this(new Oracle12SettingsBuilder().fromJDBCURL(jdbcURL, username, password));
-	}
-
-	/**
-	 * Creates a DBDatabase instance tweaked for Oracle 12 and above.
-	 *
-	 * @param host host
-	 * @param port port
-	 * @param serviceName serviceName
-	 * @param username username
-	 * @param password password
-	 * @throws java.sql.SQLException database errors
-	 */
-	@Deprecated
-	public Oracle12DB(String host, int port, String serviceName, String username, String password) throws SQLException {
-		super(new Oracle12DBDefinition(), ORACLE_JDBC_DRIVER, "jdbc:oracle:thin:@//" + host + ":" + port + "/" + serviceName, username, password);
-	}
-
-	@Override
-	public DBDatabase clone() throws CloneNotSupportedException {
-		return super.clone();
 	}
 
 	@Override

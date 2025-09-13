@@ -214,11 +214,6 @@ public class PostgresDB extends DBDatabaseImplementation implements SupportsPoly
 		this("localhost", POSTGRES_DEFAULT_PORT, databaseName, username, password, urlExtras);
 	}
 
-	@Override
-	public DBDatabase clone() throws CloneNotSupportedException {
-		return super.clone(); //To change body of generated methods, choose Tools | Templates.
-	}
-
 	/**
 	 * Assumes that the database and application are on the the same machine.
 	 *

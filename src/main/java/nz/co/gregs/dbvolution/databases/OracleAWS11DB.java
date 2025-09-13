@@ -68,47 +68,6 @@ public class OracleAWS11DB extends OracleAWSDB {
 	}
 
 	/**
-	 * Creates an Oracle connection for the DatabaseConnectionSettings.
-	 *
-	 * @param dcs	stored settings for connecting to the database server
-	 * @param defn the oracle database definition
-	 * @throws java.sql.SQLException database errors
-	 */
-	@Deprecated
-	public OracleAWS11DB(OracleAWS11DBDefinition defn, DatabaseConnectionSettings dcs) throws SQLException {
-		super(defn, dcs);
-	}
-
-	/**
-	 * Creates a DBDatabase instance tweaked for Oracle 11.
-	 *
-	 * @param definition definition
-	 * @param jdbcURL jdbcURL
-	 * @param driverName driverName
-	 * @param password password
-	 * @param username username
-	 * @throws java.sql.SQLException database errors
-	 */
-	@Deprecated
-	public OracleAWS11DB(OracleAWSDBDefinition definition, String driverName, String jdbcURL, String username, String password) throws SQLException {
-		super(definition, driverName, jdbcURL, username, password);
-	}
-
-	/**
-	 * Creates a DBDatabase instance tweaked for Oracle 11.
-	 *
-	 * @param driverName driverName
-	 * @param jdbcURL jdbcURL
-	 * @param username username
-	 * @param password password
-	 * @throws java.sql.SQLException database errors
-	 */
-	@Deprecated
-	public OracleAWS11DB(String driverName, String jdbcURL, String username, String password) throws SQLException {
-		super(new OracleAWS11DBDefinition(), driverName, jdbcURL, username, password);
-	}
-
-	/**
 	 * Creates a DBDatabase instance tweaked for Oracle 11.
 	 *
 	 * @param jdbcURL jdbcURL
@@ -118,26 +77,6 @@ public class OracleAWS11DB extends OracleAWSDB {
 	 */
 	public OracleAWS11DB(String jdbcURL, String username, String password) throws SQLException {
 		this(new OracleAWS11SettingsBuilder().fromJDBCURL(jdbcURL, username, password));
-	}
-
-	/**
-	 * Creates a DBDatabase instance tweaked for Oracle 11.
-	 *
-	 * @param host host
-	 * @param port port
-	 * @param serviceName serviceName
-	 * @param password password
-	 * @param username username
-	 * @throws java.sql.SQLException database errors
-	 */
-	@Deprecated
-	public OracleAWS11DB(String host, int port, String serviceName, String username, String password) throws SQLException {
-		super(new OracleAWS11DBDefinition(), "oracle.jdbc.driver.OracleDriver", "jdbc:oracle:thin:@//" + host + ":" + port + "/" + serviceName, username, password);
-	}
-
-	@Override
-	public DBDatabase clone() throws CloneNotSupportedException {
-		return super.clone();
 	}
 
 	@Override

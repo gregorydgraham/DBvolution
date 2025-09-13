@@ -91,11 +91,6 @@ public class MySQLMXJDB extends MySQLDB {
 	}
 
 	@Override
-	public DBDatabase clone() throws CloneNotSupportedException {
-		return super.clone(); //To change body of generated methods, choose Tools | Templates.
-	}
-
-	@Override
 	public MySQLMXJDBSettingsBuilder getURLInterpreter() {
 		return new MySQLMXJDBSettingsBuilder();
 	}

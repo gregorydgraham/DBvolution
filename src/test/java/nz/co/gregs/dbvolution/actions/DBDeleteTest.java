@@ -95,8 +95,8 @@ public class DBDeleteTest extends AbstractTest {
 		assertThat(gotRow2.pk_uid.getValue(), is(2L));
 
 		assertThat(database.getCount(new TestDeleteAll()), is(2l));
-		database.setPreventAccidentalDeletingAllRowsFromTable(false);
-		database.deleteAllRowsFromTable(new TestDeleteAll());
+		database.setPreventAccidentalDeletingAllRowsFromTable(false)
+            .deleteAllRowsFromTable(new TestDeleteAll());
 		assertThat(database.getCount(new TestDeleteAll()), is(0l));
 
 		database.preventDroppingOfTables(false);

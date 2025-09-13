@@ -1850,8 +1850,8 @@ public class LocalDateTimeExpressionTest extends AbstractTest {
       @Override
       public DBActionList script(DBDatabase db) throws Exception {
 
-        db.setPreventAccidentalDeletingAllRowsFromTable(false);
-        DBActionList actions = db.deleteAllRowsFromTable(new MarqueWithLocalDateTime());
+        DBActionList actions = db.setPreventAccidentalDeletingAllRowsFromTable(false)
+                .deleteAllRowsFromTable(new MarqueWithLocalDateTime());
         List<MarqueWithLocalDateTime> toInsert = new ArrayList<>();
         toInsert.add(new MarqueWithLocalDateTime(4893059, "True", 1246974, null, 3, "UV", "PEUGEOT", null, "Y", null, 4, true));
         toInsert.add(new MarqueWithLocalDateTime(4893090, "False", 1246974, "", 1, "UV", "FORD", "", "Y", march23rd2013LocalDateTime, 2, false));

@@ -32,11 +32,6 @@ public class NuoDB extends DBDatabaseImplementation {
 	public static final String NUODB_DRIVER = "com.nuodb.jdbc.Driver";
 	public static final long serialVersionUID = 1l;
 
-	@Override
-	public DBDatabase clone() throws CloneNotSupportedException {
-		return super.clone(); 
-	}
-
 	/**
 	 * Creates a {@link DBDatabase } instance for the data source.
 	 *

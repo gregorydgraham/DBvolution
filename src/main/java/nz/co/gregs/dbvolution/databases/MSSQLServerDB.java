@@ -287,11 +287,6 @@ public class MSSQLServerDB extends DBDatabaseImplementation implements SupportsP
   }
 
   @Override
-  public DBDatabase clone() throws CloneNotSupportedException {
-    return super.clone();
-  }
-
-  @Override
   public void addDatabaseSpecificFeatures(Statement statement) throws ExceptionDuringDatabaseFeatureSetup {
     for (MigrationFunctions fn : MigrationFunctions.values()) {
       fn.add(statement);

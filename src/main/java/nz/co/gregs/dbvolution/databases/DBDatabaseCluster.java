@@ -952,21 +952,21 @@ public class DBDatabaseCluster extends DBDatabaseImplementation {
 	}
 
 	@Override
-	public DBDatabase clone() throws CloneNotSupportedException {
-		return super.clone();
+	public DBDatabaseCluster clone() throws CloneNotSupportedException {
+		return (DBDatabaseCluster)super.clone();
 	}
 
 	@Override
 	public synchronized DBActionList executeDBAction(DBAction action) throws SQLException, NoAvailableDatabaseException {
-		if (!details.isShuttingDown()) {
-			failOnQuarantine();
-			preventAccidentalDDLDuringTransaction(action);
-			preventAccidentalDroppingOfDatabases(action);
-			preventAccidentalDroppingOfTables(action);
-			return executeDBActionOnClusterMembers(action);
-		}
-		return new DBActionList();
-	}
+    if (getDetails().isShuttingDown()) {
+      throw new DatabaseShutdownInProgress();
+    }
+    failOnQuarantine();
+    preventAccidentalDDLDuringTransaction(action);
+    preventAccidentalDroppingOfDatabases(action);
+    preventAccidentalDroppingOfTables(action);
+    return executeDBActionOnClusterMembers(action);
+  }
 
 	private synchronized DBActionList executeDBActionOnClusterMembers(DBAction action) throws NoAvailableDatabaseException, SQLException {
 		LOG.debug("EXECUTING ACTION: " + action.getSQLStatements(this));

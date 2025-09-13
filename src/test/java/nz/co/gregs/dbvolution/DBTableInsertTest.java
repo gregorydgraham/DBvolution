@@ -43,8 +43,8 @@ public class DBTableInsertTest extends AbstractTest {
   @After
   public void clearoutTheAlteredMarques() {
     try {
-      database.setPreventAccidentalDeletingAllRowsFromTable(false);
-      database.deleteAllRowsFromTable(new Marque());
+      database.setPreventAccidentalDeletingAllRowsFromTable(false)
+              .deleteAllRowsFromTable(new Marque());
     } catch (SQLException ex) {
       System.getLogger(DBTableInsertTest.class.getName()).log(System.Logger.Level.ERROR, (String) null, ex);
     }

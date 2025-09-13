@@ -150,11 +150,6 @@ public class PostgresDBOverSSL extends PostgresDB {
 	}
 
 	@Override
-	public DBDatabase clone() throws CloneNotSupportedException {
-		return super.clone(); //To change body of generated methods, choose Tools | Templates.
-	}
-
-	@Override
 	public PostgresOverSSLSettingsBuilder getURLInterpreter() {
 		return new PostgresOverSSLSettingsBuilder();
 	}

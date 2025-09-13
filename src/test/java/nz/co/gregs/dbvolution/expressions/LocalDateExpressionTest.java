@@ -1378,8 +1378,8 @@ public class LocalDateExpressionTest extends AbstractTest {
     var script = new DBScript() {
       @Override
       public DBActionList script(DBDatabase db) throws Exception {
-        db.setPreventAccidentalDeletingAllRowsFromTable(false);
-        DBActionList actions = db.deleteAllRowsFromTable(new MarqueWithLocalDate());
+        DBActionList actions = db.setPreventAccidentalDeletingAllRowsFromTable(false)
+                .deleteAllRowsFromTable(new MarqueWithLocalDate());
         
         List<MarqueWithLocalDate> toInsert = new ArrayList<>();
         toInsert.add(new MarqueWithLocalDate(4893059, "True", 1246974, null, 3, "UV", "PEUGEOT", null, "Y", null, 4, true));

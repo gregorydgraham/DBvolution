@@ -117,7 +117,7 @@ public abstract class DBDatabaseImplementation implements DBDatabase, Serializab
 	private transient ScheduledFuture<?> REGULAR_THREAD_POOL_FUTURE;
 	private boolean hasCreatedRequiredTables = false;
 	private boolean quietExceptionsPreference = false;
-	private boolean preventAccidentalDeletingAllRowFromTable = true;
+	protected boolean preventAccidentalDeletingAllRowFromTable = true;
 
 	{
 		Runtime.getRuntime().addShutdownHook(new StopDatabase(this));
@@ -153,9 +153,9 @@ public abstract class DBDatabaseImplementation implements DBDatabase, Serializab
 	 * @throws CloneNotSupportedException not likely
 	 */
 	@Override
-	public synchronized DBDatabase clone() throws CloneNotSupportedException {
+	public synchronized DBDatabaseImplementation clone() throws CloneNotSupportedException {
 		Object clone = super.clone();
-		DBDatabase newInstance = (DBDatabase) clone;
+		DBDatabaseImplementation newInstance = (DBDatabaseImplementation) clone;
 		return newInstance;
 	}
 
@@ -2228,7 +2228,7 @@ public abstract class DBDatabaseImplementation implements DBDatabase, Serializab
 		}
 	}
 
-	protected synchronized void preventAccidentalDeletingAllRowsFromTable(DBAction action) throws AccidentalDroppingOfTableException {
+	public synchronized void preventAccidentalDeletingAllRowsFromTable(DBAction action) throws AccidentalDroppingOfTableException {
 		if (preventAccidentalDeletingAllRowFromTable && action.getIntent().isDeleteAllRows()) {
 			throw new AccidentalDeletingAllRowsFromTableException();
 		} else {
@@ -2236,10 +2236,24 @@ public abstract class DBDatabaseImplementation implements DBDatabase, Serializab
 		}
 	}
 
-	@Override
-	public void setPreventAccidentalDeletingAllRowsFromTable(boolean b) {
-		preventAccidentalDeletingAllRowFromTable = b;
-	}
+  @Override
+  public DBDatabase setPreventAccidentalDeletingAllRowsFromTable(boolean b) {
+    if (b) {
+      return this;
+    }
+    synchronized (PREVENT_ACCIDENTALLY_DELETING_SYCHRO) {
+      try {
+        DBDatabaseImplementation dangerous = this.clone();
+        dangerous.preventAccidentalDeletingAllRowFromTable = false;
+        return dangerous;
+      } catch (CloneNotSupportedException ex) {
+        LOG.error("DBDatabase implementation " + this.getClass().getSimpleName() + " does not support the clone() method.", ex);
+        return null;
+      }
+    }
+  }
+  
+  private final transient Object PREVENT_ACCIDENTALLY_DELETING_SYCHRO = new Object();
 
   @Override
   public DBActionList deleteAllRowsFromTable(DBRow table) throws SQLException {
@@ -2676,4 +2690,23 @@ public abstract class DBDatabaseImplementation implements DBDatabase, Serializab
 	public DBDatabaseMetaData getDBDatabaseMetaData(Options options) throws SQLException {
 		return new DBDatabaseMetaData(options);
 	}
+
+  private static class DeleteAllRowsInTableDatabase extends DBDatabaseHandle {
+
+    public DeleteAllRowsInTableDatabase(DBDatabase db) {
+      super(db);
+    }
+    private int useOnceOnly = 0;
+
+    @Override
+    public void preventAccidentalDeletingAllRowsFromTable(DBAction action) throws AccidentalDroppingOfTableException {
+      try {
+        if (useOnceOnly > 0) {
+          throw new AccidentalDroppingOfTableException();
+        }
+      } finally {
+        useOnceOnly++;
+      }
+    }
+  }
 }

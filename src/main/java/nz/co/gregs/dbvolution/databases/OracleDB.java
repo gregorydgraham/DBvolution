@@ -123,11 +123,6 @@ public abstract class OracleDB extends DBDatabaseImplementation implements Suppo
   }
 
   @Override
-  public DBDatabase clone() throws CloneNotSupportedException {
-    return super.clone();
-  }
-
-  @Override
   public void addDatabaseSpecificFeatures(Statement statement) throws ExceptionDuringDatabaseFeatureSetup {
     for (StringFunctions fn : StringFunctions.values()) {
       try {

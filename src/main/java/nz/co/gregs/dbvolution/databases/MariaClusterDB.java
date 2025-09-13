@@ -134,11 +134,6 @@ public class MariaClusterDB extends DBDatabaseImplementation {
 	}
 
 	@Override
-	public DBDatabase clone() throws CloneNotSupportedException {
-		return super.clone();
-	}
-
-	@Override
 	public void addDatabaseSpecificFeatures(Statement statement) throws ExceptionDuringDatabaseFeatureSetup {
 		;
 	}

@@ -21,7 +21,6 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import nz.co.gregs.regexi.Regex;
 import javax.sql.DataSource;
-import nz.co.gregs.dbvolution.DBRow;
 import nz.co.gregs.dbvolution.databases.settingsbuilders.MySQLSettingsBuilder;
 import nz.co.gregs.dbvolution.databases.definitions.MySQLDBDefinition;
 import nz.co.gregs.dbvolution.databases.definitions.MySQLDBDefinition_5_7;
@@ -129,11 +128,6 @@ public class MySQLDB extends DBDatabaseImplementation implements SupportsPolygon
 	@Override
 	public AbstractMySQLSettingsBuilder<?, ?> getURLInterpreter() {
 		return new MySQLSettingsBuilder();
-	}
-
-	@Override
-	public DBDatabase clone() throws CloneNotSupportedException {
-		return super.clone();
 	}
 
 	@Override

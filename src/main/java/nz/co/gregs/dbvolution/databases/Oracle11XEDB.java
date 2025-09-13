@@ -40,31 +40,6 @@ public class Oracle11XEDB extends OracleDB {
 	public static final long serialVersionUID = 1l;
 
 	/**
-	 *
-	 * Provides a convenient constructor for DBDatabases that have configuration
-	 * details hardwired or are able to automatically retrieve the details.
-	 *
-	 * <p>
-	 * This constructor creates an empty DBDatabase with only the default
-	 * settings, in particular with no driver, URL, username, password, or
-	 * {@link DBDefinition}
-	 *
-	 * <p>
-	 * Most programmers should not call this constructor directly. Instead you
-	 * should define a no-parameter constructor that supplies the details for
-	 * creating an instance using a more complete constructor.
-	 *
-	 * <p>
-	 * DBDatabase encapsulates the knowledge of the database, in particular the
-	 * syntax of the database in the DBDefinition and the connection details from
-	 * a DataSource.
-	 *
-	 * @see DBDefinition
-	 */
-//	public Oracle11XEDB() {
-//		super();
-//	}
-	/**
 	 * Creates a DBDatabase instance tweaked for Oracle 11 and above.
 	 *
 	 * @param dataSource a datasource to an Oracle database
@@ -74,7 +49,6 @@ public class Oracle11XEDB extends OracleDB {
 		super(
 				new Oracle11XESettingsBuilder().setDataSource(dataSource)
 		);
-//		super(new Oracle11XEDBDefinition(), dataSource);
 	}
 
 	/**
@@ -111,35 +85,6 @@ public class Oracle11XEDB extends OracleDB {
 	/**
 	 * Creates a DBDatabase instance tweaked for Oracle 11.
 	 *
-	 * @param definition definition
-	 * @param jdbcURL jdbcURL
-	 * @param driverName driverName
-	 * @param password password
-	 * @param username the database account's username
-	 * @throws java.sql.SQLException database errors
-	 */
-	@Deprecated
-	public Oracle11XEDB(OracleDBDefinition definition, String driverName, String jdbcURL, String username, String password) throws SQLException {
-		super(definition, driverName, jdbcURL, username, password);
-	}
-
-	/**
-	 * Creates a DBDatabase instance tweaked for Oracle 11.
-	 *
-	 * @param driverName driverName
-	 * @param jdbcURL jdbcURL
-	 * @param username username
-	 * @param password password
-	 * @throws java.sql.SQLException database errors
-	 */
-	@Deprecated
-	public Oracle11XEDB(String driverName, String jdbcURL, String username, String password) throws SQLException {
-		super(new Oracle11XEDBDefinition(), driverName, jdbcURL, username, password);
-	}
-
-	/**
-	 * Creates a DBDatabase instance tweaked for Oracle 11.
-	 *
 	 * @param jdbcURL jdbcURL
 	 * @param username username
 	 * @param password password
@@ -147,26 +92,6 @@ public class Oracle11XEDB extends OracleDB {
 	 */
 	public Oracle11XEDB(String jdbcURL, String username, String password) throws SQLException {
 		this(new Oracle11XESettingsBuilder().fromJDBCURL(jdbcURL, username, password));
-	}
-
-	/**
-	 * Creates a DBDatabase instance tweaked for Oracle 11.
-	 *
-	 * @param host host
-	 * @param port port
-	 * @param serviceName serviceName
-	 * @param password password
-	 * @param username username
-	 * @throws java.sql.SQLException database errors
-	 */
-	@Deprecated
-	public Oracle11XEDB(String host, int port, String serviceName, String username, String password) throws SQLException {
-		super(new Oracle11XEDBDefinition(), "oracle.jdbc.driver.OracleDriver", "jdbc:oracle:thin:@//" + host + ":" + port + "/" + serviceName, username, password);
-	}
-
-	@Override
-	public DBDatabase clone() throws CloneNotSupportedException {
-		return super.clone(); //To change body of generated methods, choose Tools | Templates.
 	}
 
 	@Override
