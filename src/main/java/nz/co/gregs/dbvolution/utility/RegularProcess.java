@@ -34,8 +34,6 @@ import java.io.Serializable;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import nz.co.gregs.dbvolution.databases.DBDatabase;
 import nz.co.gregs.dbvolution.databases.DBDatabaseImplementation;
 import org.apache.commons.logging.Log;
@@ -157,6 +155,18 @@ public abstract class RegularProcess implements Serializable {
 	public void handleExceptionDuringProcessing(Exception ex) {
 		LOG.warn("Exception during regular processor "+this.getSimpleName(), ex);
 	}
+
+  /**
+   * Called after all other methods, including 
+   * {@link #handleExceptionDuringProcessing(java.lang.Exception) }, to allow
+   * for clean up operations.
+   *
+   * <p>
+   * Use this method to close any resource you might have opened.</p>
+   */
+  public void cleanUp() {
+
+  }
 
 	/**
 	 * Used to generate the next run time for this process
