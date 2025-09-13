@@ -658,7 +658,9 @@ public class DBStatement implements AutoCloseable {
 	 * <code>null</code> if the result is an update count or there are no more
 	 * results 1 Database exceptions may be thrown
 	 * @throws java.sql.SQLException java.sql.SQLException
+   * @deprecated unused and it should remain that way.
 	 */
+  @Deprecated
 	public ResultSet getResultSet() throws SQLException {
 		return getInternalStatement().getResultSet();
 	}
