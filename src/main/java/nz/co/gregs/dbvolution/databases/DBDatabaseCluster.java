@@ -1164,6 +1164,32 @@ public class DBDatabaseCluster extends DBDatabaseImplementation {
 		}
 	}
 
+  @Override
+  public DBDatabase setPreventAccidentalDeletingAllRowsFromTable(boolean b) {
+    try {
+      DBDatabaseCluster dangerous = new DBDatabaseCluster(this.getSettings());
+      allowClusterToDeleteAllRows(dangerous);
+      return dangerous;
+    } catch (ClassNotFoundException |NoSuchMethodException | SecurityException | InstantiationException | IllegalAccessException | IllegalArgumentException | InvocationTargetException | SQLException ex) {
+      LOG.error("", ex);
+    } 
+    return null;
+  }
+  
+  private void allowClusterToDeleteAllRows(DBDatabaseCluster cluster) {
+    cluster.preventAccidentalDeletingAllRowFromTable = false;
+    DBDatabase[] allDatabases = cluster.getDetails().getAllDatabases();
+    for (DBDatabase db : allDatabases) {
+      if (db != null) {
+        if (db instanceof DBDatabaseCluster) {
+          allowClusterToDeleteAllRows((DBDatabaseCluster) db);
+        } else {
+          ((DBDatabaseImplementation) db).preventAccidentalDeletingAllRowFromTable = false;
+        }
+      }
+    }
+  }
+
 	@Override
 	public boolean supportsMicrosecondPrecision() {
 		boolean result = true;
