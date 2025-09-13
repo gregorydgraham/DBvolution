@@ -831,7 +831,7 @@ public class ClusterDetails implements Serializable {
 			// we need to unpause the template no matter what happens so use a finally clause
 			try {
 				template = getTemplateDatabase();
-				if (proceedWithSynchronization && template != null) {
+				if (template != null) {
 					// Check that we're not synchronising the reference database
 					if (!template.getSettings().equals(secondary.getSettings())) {
 						LOG.log(Level.FINEST, "{0} cluster can synchronise {1} database", new Object[]{clusterLabel, secondaryLabel});
@@ -895,12 +895,6 @@ public class ClusterDetails implements Serializable {
 				}
 			} catch (NoAvailableDatabaseException except) {
 				// must be the first database
-			} catch (Exception exc) {
-				proceedWithSynchronization = false;
-				LOG.log(Level.SEVERE, "Exception during synchronising: {0}", exc.getLocalizedMessage());
-			} catch (Throwable throwable) {
-				proceedWithSynchronization = false;
-				LOG.log(Level.SEVERE, "Throwable during synchronising: {0}", throwable.getLocalizedMessage());
 			}
 			if (proceedWithSynchronization) {
 				LOG.log(Level.FINEST, "{0} START SYNCHRONISING ACTIONS ON: {1}", new Object[]{clusterLabel, secondaryLabel});
