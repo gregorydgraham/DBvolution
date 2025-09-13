@@ -984,10 +984,15 @@ public class DBDatabaseCluster extends DBDatabaseImplementation {
 			boolean succeeded = true;
       if (action.requiresRunOnIndividualDatabaseBeforeCluster()) {
         // Because of autoincrement PKs we need to execute on one database first
-        // we need a marker to indicat that the action has successfully completed
+        // We need a marker to indicate that the action has been successfully 
+        // completed
         succeeded = false;
-        // and we need to 
+        // and we need to know the databases that have failed to act on the 
+        // request, so we don't endless try another database if (for instance)
+        // the database table doesn't exist.
         DatabaseList failedOn = new DatabaseList();
+        // using a while loop because our target conditions are constantly 
+        // changing
         while (!succeeded && failedOn.size()<size()) {
           // this returns the preferred database or a random one depending, so 
           // it'll be a bit inefficient at getting to the last database. TODO
@@ -996,14 +1001,22 @@ public class DBDatabaseCluster extends DBDatabaseImplementation {
           firstDatabase = database;
           // be pessimistic
           boolean untriedDB = failedOn.add(database);
+          // if this database is new to the failed list then we can try the 
+          // action
           if (untriedDB) {
-            // do the action
+            // prepare for errors
             try {
+              // Finally we can do the action
               actionsPerformed = new ActionTask(this, database, action, false).call();
+              // it didn't throw an exception so we can remove it from the queue
               removeActionFromQueue(database, action);
+              // store the result count for later
               expectedResult = action.getRowsAltered();
+              // celebrate
               LOG.info("EXECUTED - cluster " + getLabel() + " used " + database.getLabel() + " for first execution of " + action.getIntent() + ":expect=" + action.getExpectedAlteredRows() + ":" + action.getSQLStatements(database));
+              // pretend we weren't pessimistic
               failedOn.remove(database);
+              // mark the work as done
               succeeded = true;
             } catch (SQLException ex) {
               firstDatabase = null;
@@ -1448,7 +1461,7 @@ public class DBDatabaseCluster extends DBDatabaseImplementation {
         DBActionList actions = database.executeDBAction(action);
         setActionList(actions);
         if (expectedResult > 0) {
-          long result = action.getRowsAltered();
+          long result = actions.stream().mapToLong(a->a.getRowsAltered()).reduce(Long::sum).orElse(0);
           if (result != expectedResult) {
             cluster.quarantineDatabase(database, new UnexpectedNumberOfRowsException(expectedResult, result, "Unexpected Number Of Rows Found during "+action.getIntent().toString()+": expected " + expectedResult + " but found " + result));
           }
