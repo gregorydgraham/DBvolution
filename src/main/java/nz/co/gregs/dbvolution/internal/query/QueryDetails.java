@@ -378,7 +378,7 @@ public class QueryDetails implements DBQueryable, Serializable {
 		return queryCount;
 	}
 
-	private synchronized void getResultSetCount(QueryOptions options) throws SQLException {
+	private void getResultSetCount(QueryOptions options) throws SQLException {
 		long result = 0L;
 		try (DBStatement dbStatement = options.getQueryDatabase().getDBStatement()) {
 			final List<String> sqlForCount = getSQLForCountInternal(this, options);
@@ -406,7 +406,9 @@ public class QueryDetails implements DBQueryable, Serializable {
 				}
 			}
 		}
-		queryCount = result;
+    synchronized (this) {
+  		queryCount = result;
+    }
 	}
 
 	private synchronized List<String> getSQLForCountInternal(QueryDetails details, QueryOptions options) {
