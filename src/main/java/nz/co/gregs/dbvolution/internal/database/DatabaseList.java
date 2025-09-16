@@ -32,6 +32,7 @@ package nz.co.gregs.dbvolution.internal.database;
 
 import java.io.Serializable;
 import java.util.*;
+import java.util.stream.Collectors;
 import nz.co.gregs.dbvolution.databases.DBDatabase;
 import nz.co.gregs.dbvolution.databases.DBDatabaseCluster;
 import static nz.co.gregs.dbvolution.databases.DBDatabaseCluster.Status.*;
@@ -44,16 +45,12 @@ public class DatabaseList implements Serializable {
 
   private static final long serialVersionUID = 1L;
 
-  /* TODO combine these into one list of a data object */
-  private final HashMap<String, DBDatabase> databaseMap = new HashMap<>();
-  private final HashMap<String, DBDatabaseCluster.Status> statusMap = new HashMap<>(0);
-  private final HashMap<String, Integer> quarantineCountMap = new HashMap<>(0);
+  private final HashMap<String, EntryValues> map = new HashMap<>(0);
 
   public DatabaseList() {
   }
 
   public DatabaseList(DBDatabase firstDB, DBDatabase... databases) {
-    boolean add = true;
     add(firstDB);
     for (var db : databases) {
       add(db);
@@ -61,44 +58,36 @@ public class DatabaseList implements Serializable {
   }
 
   public synchronized int size() {
-    return databaseMap.size();
+    return map.size();
   }
 
   public synchronized boolean isEmpty() {
-    return databaseMap.isEmpty();
+    return map.isEmpty();
   }
 
   public synchronized boolean contains(Object o) {
     if (o instanceof DBDatabase) {
       DBDatabase db = (DBDatabase) o;
-      return databaseMap.containsKey(getKey(db));
+      return map.containsKey(EntryValues.getKey(db));
     } else {
       return false;
     }
   }
 
   public synchronized Iterator<DBDatabase> iterator() {
-    return databaseMap.values().iterator();
-  }
-
-  public synchronized DBDatabase[] toArray() {
-    return toArray(new DBDatabase[]{});
-  }
-
-  public synchronized DBDatabase[] toArray(DBDatabase[] a) {
-    return databaseMap.values().toArray(a);
+    return map.values().stream().map((v)->v.database).iterator();
   }
 
   /**
    * Adds the database to the DatabaseList as an unsynchronised member.
    *
-   * @param e the database to be added.
+   * @param database the database to be added.
    * @return TRUE if the database is new to the list, FALSE if the database has
    * already been added (the database is still added)
    */
-  public synchronized final boolean add(DBDatabase e) {
-    DBDatabase put = databaseMap.put(getKey(e), e);
-    statusMap.put(getKey(e), UNSYNCHRONISED);
+  public synchronized final boolean add(DBDatabase database) {
+    final EntryValues entry = new EntryValues(database);
+    EntryValues put = map.put(entry.key, entry);
     return put == null;
   }
 
@@ -110,16 +99,14 @@ public class DatabaseList implements Serializable {
    * unknown.
    */
   public synchronized boolean remove(DBDatabase e) {
-    DBDatabase remove = databaseMap.remove(getKey(e));
-    statusMap.remove(getKey(e));
-    quarantineCountMap.remove(getKey(e));
+    EntryValues remove = map.remove(EntryValues.getKey(e));
     return remove == null;
   }
 
   public synchronized boolean containsAll(Collection<DBDatabase> c) {
     boolean allAreInTheMap = c
             .stream()
-            .allMatch(t -> databaseMap.containsKey(getKey(t))
+            .allMatch(t -> map.containsKey(EntryValues.getKey(t))
             );
     return allAreInTheMap;
   }
@@ -154,18 +141,32 @@ public class DatabaseList implements Serializable {
     return removed;
   }
 
-  private synchronized String getKey(DBDatabase db) {
-    return db.getSettings().encode();
-  }
-
   private synchronized void set(DBDatabase db, DBDatabaseCluster.Status status) {
-    if (statusMap.containsKey(getKey(db))) {
-      statusMap.put(getKey(db), status);
+    final String key = EntryValues.getKey(db);
+    EntryValues val = map.get(key);
+    boolean fresh = false;
+    boolean changed = false;
+    if (val==null){
+      val = new EntryValues(db);
+      fresh = true;
+    }
+    if (val.status!=status){
+      changed = true;
+    }
+    val.status = status;
+    map.put(key, val);
+    if(!fresh){
+      if (UNSYNCHRONISED.equals(status)) {
+        val.count=changed?0:val.count+1;
+        }
       if (QUARANTINED.equals(status)) {
-        incrementQuarantineCount(db);
+        val.count=(changed?0:val.count+1);
       }
       if (READY.equals(status)) {
-        clearQuarantineCount(db);
+        val.count=0;
+      }
+      if(val.count>6 && val.status.equals(QUARANTINED)) {
+        setDead(db);
       }
     }
   }
@@ -203,26 +204,33 @@ public class DatabaseList implements Serializable {
   }
 
   public synchronized DBDatabase[] getDatabases() {
-    return databaseMap.values().toArray(new DBDatabase[0]);
+    final List<DBDatabase> list = toList();
+    return list.toArray(new DBDatabase[]{});
+  }
+
+  public List<DBDatabase> toList() {
+    return map.values().stream().map((v)->v.database).collect(Collectors.toList());
+  }
+
+  public List<DBDatabase> toList(DBDatabaseCluster.Status... statuses) {
+    return map.values().stream().filter((v)->v.status.anyOf(statuses)).map((v)->v.database).collect(Collectors.toList());
   }
 
   public synchronized DBDatabaseCluster.Status getStatusOf(DBDatabase statusOfThisDatabase) {
-    return statusMap.getOrDefault(getKey(statusOfThisDatabase), UNKNOWN);
+    return map.getOrDefault(EntryValues.getKey(statusOfThisDatabase), EntryValues.UNKNOWN).status;
   }
 
   public synchronized boolean isReady(DBDatabase database) {
-    return statusMap.getOrDefault(getKey(database), UNKNOWN).equals(READY);
+    EntryValues val = map.get(EntryValues.getKey(database));
+    return val != null && READY.equals(val.status);
   }
 
   public synchronized DBDatabase[] getDatabases(DBDatabaseCluster.Status... statuses) {
     List<DBDatabase> found = new ArrayList<>(0);
-    for (Map.Entry<String, DBDatabaseCluster.Status> entry : statusMap.entrySet()) {
-      String key = entry.getKey();
-      DBDatabaseCluster.Status val = entry.getValue();
+    for (EntryValues entry : map.values()) {
       for (DBDatabaseCluster.Status status : statuses) {
-        if (val.equals(status)) {
-          DBDatabase db = databaseMap.get(key);
-          found.add(db);
+        if (entry.status.equals(status)) {
+          found.add(entry.database);
         }
       }
     }
@@ -235,7 +243,7 @@ public class DatabaseList implements Serializable {
   }
 
   public synchronized long countPausedDatabases() {
-    return statusMap.values().stream().filter(t -> t.equals(PAUSED)).count();
+    return toList(PAUSED).size();
   }
 
   public synchronized long countDatabases(DBDatabaseCluster.Status... statuses) {
@@ -243,31 +251,43 @@ public class DatabaseList implements Serializable {
   }
 
   public synchronized void clear() {
-    statusMap.clear();
-    databaseMap.clear();
+    map.clear();
   }
 
   public synchronized boolean areAllReady() {
-    return countDatabases(DBDatabaseCluster.Status.READY) == databaseMap.size();
-  }
-
-  private synchronized void incrementQuarantineCount(DBDatabase db) {
-    String key = getKey(db);
-    Integer currentValue = quarantineCountMap.get(key);
-    quarantineCountMap.put(key, currentValue + 1);
-  }
-
-  private synchronized void clearQuarantineCount(DBDatabase db) {
-    String key = getKey(db);
-    quarantineCountMap.put(key, 0);
-  }
-
-  public synchronized int getQuarantineCount(DBDatabase db) {
-    String key = getKey(db);
-    return quarantineCountMap.get(key);
+    return countDatabases(DBDatabaseCluster.Status.READY) == map.size();
   }
 
   public synchronized boolean isDead(DBDatabase db) {
     return DEAD.equals(getStatusOf(db));
+  }
+
+  public static class EntryValues extends Object {
+    
+    public static final EntryValues UNKNOWN = new EntryValues(null);
+    private static final String UNKNOWN_KEY = "~~UNKNOWN_KEY~~";
+    
+    final String key;
+    final DBDatabase database;
+    DBDatabaseCluster.Status status;
+    long count = 0;
+
+    private static String getKey(DBDatabase db) {
+      return db==null?UNKNOWN_KEY:db.getSettings().encode();
+    }
+
+    public EntryValues(DBDatabase database1) {
+      if(database1 == null) {
+        this.database = null;
+        this.key = UNKNOWN_KEY;
+        this.status = DBDatabaseCluster.Status.UNKNOWN;
+        this.count = Long.MIN_VALUE;
+      } else {
+        this.database = database1;
+        this.key = getKey(database1);
+        this.status = UNSYNCHRONISED;
+        this.count = 0;
+      }
+    }
   }
 }
