@@ -57,14 +57,19 @@ public class StringCheck {
 	 * Returns the empty string if no value is non-null and non-empty.<p>
 	 *
 	 * @param initialValue the expected value
+   * @param defaultValue the first value to use if the expected value is null or 
+   * empty
 	 * @param defaultValues the values to use if the expected value is null or
 	 * empty
 	 * @return the empty string or the first non-null non-empty value
 	 */
-	public static String check(String initialValue, String... defaultValues) {
+	public static String check(String initialValue, String defaultValue, String... defaultValues) {
 		try {
 			if (isNotEmptyNorNull(initialValue)) {
 				return initialValue;
+			}
+      if (isNotEmptyNorNull(defaultValue)) {
+				return defaultValue;
 			}
 			if (defaultValues != null) {
 				for (String value : defaultValues) {
@@ -99,12 +104,16 @@ public class StringCheck {
 	 * Returns the empty string if no value is non-null.<p>
 	 *
 	 * @param initialValue the source text
-	 * @param defaultValues the values to use if the source text is null
+	 * @param nullValue the value to use if the expected value is null
+	 * @param defaultValues other values to use if the nullValue is null
 	 * @return the empty string or the first non-null non-empty value
 	 */
-	public static String checkNotNull(String initialValue, String... defaultValues) {
+	public static String checkNotNull(String initialValue, String nullValue, String... defaultValues) {
 		if (isNotNull(initialValue)) {
 			return initialValue;
+		}
+		if (isNotNull(nullValue)) {
+			return nullValue;
 		}
 		for (String value : defaultValues) {
 			if (isNotNull(value)) {
