@@ -151,19 +151,20 @@ public class DatabaseConnectionSettings implements Serializable {
 	public String toString() {
 		Encoder toStringer = getToStringer();
 		toStringer.addAll(
-				StringCheck.check(getDbdatabaseClass()),
-				StringCheck.check(getHost()),
-				StringCheck.check(getPort()),
-				StringCheck.check(getInstance()),
-				StringCheck.check(getDatabaseName()),
-				StringCheck.check(getSchema()),
-				StringCheck.check(getUrl()),
-				StringCheck.check(getUsername()),
-				StringCheck.check(getPassword()),
-				StringCheck.check(getLabel()),
-				StringCheck.check(getFilename()),
-				StringCheck.check(encodeClusterHosts(getClusterHosts())),
-				StringCheck.check(encodeExtras(getExtras())));
+				StringCheck.check(getDbdatabaseClass(),""),
+				StringCheck.check(getHost(),""),
+				StringCheck.check(getPort(),""),
+				StringCheck.check(getInstance(),""),
+				StringCheck.check(getDatabaseName(),""),
+				StringCheck.check(getSchema(),""),
+				StringCheck.check(getUrl(),""),
+				StringCheck.check(getUsername(),""),
+				StringCheck.check(getPassword(),""),
+				StringCheck.check(getLabel(),""),
+				StringCheck.check(getFilename(),""),
+				StringCheck.check(encodeClusterHosts(getClusterHosts()),""),
+				StringCheck.check(encodeExtras(getExtras()),"")
+    );
 		return toStringer.encode();
 	}
 
@@ -186,19 +187,19 @@ public class DatabaseConnectionSettings implements Serializable {
 			String encodedExtras = encodeExtras(gotExtras);
 
 			Encoder encoder = getEncoder();
-			encoder.add(StringCheck.check(getDbdatabaseClass()));
-			encoder.add(StringCheck.check(getHost()));
-			encoder.add(StringCheck.check(getPort()));
-			encoder.add(StringCheck.check(getInstance()));
-			encoder.add(StringCheck.check(getDatabaseName()));
-			encoder.add(StringCheck.check(getSchema()));
-			encoder.add(StringCheck.check(getUrl()));
-			encoder.add(StringCheck.check(getUsername()));
-			encoder.add(StringCheck.check(getPassword()));
-			encoder.add(StringCheck.check(getLabel()));
-			encoder.add(StringCheck.check(getFilename()));
-			encoder.add(StringCheck.check(encodedHosts));
-			encoder.add(StringCheck.check(encodedExtras));
+			encoder.add(StringCheck.check(getDbdatabaseClass(),""));
+			encoder.add(StringCheck.check(getHost(),""));
+			encoder.add(StringCheck.check(getPort(),""));
+			encoder.add(StringCheck.check(getInstance(),""));
+			encoder.add(StringCheck.check(getDatabaseName(),""));
+			encoder.add(StringCheck.check(getSchema(),""));
+			encoder.add(StringCheck.check(getUrl(),""));
+			encoder.add(StringCheck.check(getUsername(),""));
+			encoder.add(StringCheck.check(getPassword(),""));
+			encoder.add(StringCheck.check(getLabel(),""));
+			encoder.add(StringCheck.check(getFilename(),""));
+			encoder.add(StringCheck.check(encodedHosts,""));
+			encoder.add(StringCheck.check(encodedExtras,""));
 
 			encoded = encoder.encode();
 		}
@@ -690,16 +691,19 @@ public class DatabaseConnectionSettings implements Serializable {
 		Constructor<?> constructor = dbDatabaseClass.getConstructor(DatabaseConnectionSettings.class);
 		if (constructor == null) {
 			return null;
-		} else {
-			constructor.setAccessible(true);
-			Object newInstance = constructor.newInstance(this);
-			if (newInstance != null && DBDatabase.class.isInstance(newInstance)) {
-				return (DBDatabase) newInstance;
-			} else {
-				return null;
-			}
-		}
-	}
+    } else {
+      constructor.setAccessible(true);
+      Object newInstance;
+      synchronized (this) {
+        newInstance = constructor.newInstance(this);
+      }
+      if (newInstance != null && DBDatabase.class.isInstance(newInstance)) {
+        return (DBDatabase) newInstance;
+      } else {
+        throw new InstantiationException("Unable to create new "+dbDatabaseClass.getSimpleName());
+      }
+    }
+  }
 
 	/**
 	 * @return the url
