@@ -141,32 +141,36 @@ public class DatabaseList implements Serializable {
     return removed;
   }
 
-  private synchronized void set(DBDatabase db, DBDatabaseCluster.Status status) {
-    final String key = EntryValues.getKey(db);
-    EntryValues val = map.get(key);
-    boolean fresh = false;
-    boolean changed = false;
-    if (val==null){
-      val = new EntryValues(db);
-      fresh = true;
-    }
-    if (val.status!=status){
-      changed = true;
-    }
-    val.status = status;
-    map.put(key, val);
-    if(!fresh){
-      if (UNSYNCHRONISED.equals(status)) {
-        val.count=changed?0:val.count+1;
+  private synchronized void set(DBDatabase db, DBDatabaseCluster.Status newStatus) {
+    if(db!=null && newStatus != null) {
+      final String key = EntryValues.getKey(db);
+      EntryValues val = map.get(key);
+      boolean fresh = false;
+      boolean changed = false;
+      if (val == null) {
+        val = new EntryValues(db);
+        fresh = true;
+      }
+      if (val.status != newStatus) {
+        changed = true;
+      }
+      val.status = newStatus;
+      map.put(key, val);
+      if (!fresh) {
+        if (newStatus.anyOf(UNSYNCHRONISED, QUARANTINED, DEAD)) {
+          val.escalationCounter++;
         }
-      if (QUARANTINED.equals(status)) {
-        val.count=(changed?0:val.count+1);
-      }
-      if (READY.equals(status)) {
-        val.count=0;
-      }
-      if(val.count>6 && val.status.equals(QUARANTINED)) {
-        setDead(db);
+        if (exceedsUnsynchronisedLimit(val)) {
+          val.escalationCounter = 0;
+          setQuarantined(db);
+        }
+        if (exceedsQuarantineLimit(val)) {
+          val.escalationCounter = 0;
+          setDead(db);
+        }
+        if (READY.equals(newStatus)) {
+          val.escalationCounter = 0;
+        }
       }
     }
   }
@@ -262,6 +266,20 @@ public class DatabaseList implements Serializable {
     return DEAD.equals(getStatusOf(db));
   }
 
+  private long getEscalationLimit(DBDatabaseCluster.Status status) {
+    return 6;
+  }
+
+  private boolean exceedsQuarantineLimit(EntryValues val) {
+    return val.status.equals(QUARANTINED)
+                && val.escalationCounter > getEscalationLimit(QUARANTINED);
+  }
+
+  private boolean exceedsUnsynchronisedLimit(EntryValues val) {
+    return val.status.equals(UNSYNCHRONISED)
+                && val.escalationCounter > getEscalationLimit(UNSYNCHRONISED);
+  }
+
   public static class EntryValues extends Object {
     
     public static final EntryValues UNKNOWN = new EntryValues(null);
@@ -270,7 +288,7 @@ public class DatabaseList implements Serializable {
     final String key;
     final DBDatabase database;
     DBDatabaseCluster.Status status;
-    long count = 0;
+    long escalationCounter = 0;
 
     private static String getKey(DBDatabase db) {
       return db==null?UNKNOWN_KEY:db.getSettings().encode();
@@ -281,12 +299,12 @@ public class DatabaseList implements Serializable {
         this.database = null;
         this.key = UNKNOWN_KEY;
         this.status = DBDatabaseCluster.Status.UNKNOWN;
-        this.count = Long.MIN_VALUE;
+        this.escalationCounter = Long.MIN_VALUE;
       } else {
         this.database = database1;
         this.key = getKey(database1);
         this.status = UNSYNCHRONISED;
-        this.count = 0;
+        this.escalationCounter = 0;
       }
     }
   }
