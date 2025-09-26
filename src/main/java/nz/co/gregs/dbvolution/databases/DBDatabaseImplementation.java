@@ -15,6 +15,7 @@
  */
 package nz.co.gregs.dbvolution.databases;
 
+import nz.co.gregs.dbvolution.process.RunRegularProcessors;
 import nz.co.gregs.dbvolution.exceptions.ExceptionDuringDatabaseFeatureSetup;
 import nz.co.gregs.dbvolution.actions.DBBulkInsert;
 import nz.co.gregs.dbvolution.exceptions.UnableToDropDatabaseException;
@@ -54,7 +55,7 @@ import nz.co.gregs.dbvolution.databases.settingsbuilders.NamedDatabaseCapableSet
 import nz.co.gregs.dbvolution.exceptions.*;
 import nz.co.gregs.dbvolution.transactions.*;
 import nz.co.gregs.dbvolution.reflection.DataModel;
-import nz.co.gregs.dbvolution.utility.RegularProcess;
+import nz.co.gregs.dbvolution.process.RegularProcess;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import nz.co.gregs.dbvolution.databases.settingsbuilders.VendorSettingsBuilder;
@@ -354,7 +355,7 @@ public abstract class DBDatabaseImplementation implements DBDatabase, Serializab
 		return statement;
 	}
 
-	protected synchronized DBStatement getLowLevelStatement() throws UnableToCreateDatabaseConnectionException, UnableToFindJDBCDriver, SQLException {
+	protected DBStatement getLowLevelStatement() throws UnableToCreateDatabaseConnectionException, UnableToFindJDBCDriver, SQLException {
     if (terminated) {
       throw new DatabaseShutdownInProgress();
     }
@@ -389,7 +390,7 @@ public abstract class DBDatabaseImplementation implements DBDatabase, Serializab
 	 * to work with those databases.
 	 */
 	@Override
-	public synchronized DBConnection getConnection() throws UnableToCreateDatabaseConnectionException, UnableToFindJDBCDriver, SQLException {
+	public     DBConnection getConnection() throws UnableToCreateDatabaseConnectionException, UnableToFindJDBCDriver, SQLException {
 		if (terminated) {
 			throw new DatabaseShutdownInProgress();
 		} else {
@@ -408,7 +409,7 @@ public abstract class DBDatabaseImplementation implements DBDatabase, Serializab
 					conn = getRawConnection();
 				}
 				try {
-					if (conn.isClosed()) {
+					if (conn!=null && conn.isClosed()) {
 						discardConnection(conn);
 						conn = null;
 					}
@@ -1560,7 +1561,7 @@ public abstract class DBDatabaseImplementation implements DBDatabase, Serializab
 	 * @throws java.sql.SQLException java.sql.SQLException
 	 */
 	@Override
-	public synchronized DBActionList dropTable(DBRow tableRow) throws SQLException, AutoCommitActionDuringTransactionException, AccidentalDroppingOfTableException {
+	public DBActionList dropTable(DBRow tableRow) throws SQLException, AutoCommitActionDuringTransactionException, AccidentalDroppingOfTableException {
 		DBActionList changes = new DBActionList();
 		DBDropTable drop = new DBDropTable(tableRow);
 		changes.add(drop);
@@ -1645,7 +1646,7 @@ public abstract class DBDatabaseImplementation implements DBDatabase, Serializab
    * @return the DBDefinition used by this DBDatabase instance
    */
   @Override
-  public synchronized DBDefinition getDefinition() throws NoAvailableDatabaseException {
+  public DBDefinition getDefinition() throws NoAvailableDatabaseException {
     return definition;
   }
 
@@ -2040,7 +2041,7 @@ public abstract class DBDatabaseImplementation implements DBDatabase, Serializab
 		}
 	}
 
-	private synchronized List<DBConnection> getConnectionList(Map<String, List<DBConnection>> connectionMap) {
+	private List<DBConnection> getConnectionList(Map<String, List<DBConnection>> connectionMap) {
 		final String key = getSettings().encode();
 		List<DBConnection> connList = connectionMap.get(key);
 		if (connList == null) {
@@ -2604,13 +2605,15 @@ public abstract class DBDatabaseImplementation implements DBDatabase, Serializab
       REGULAR_THREAD_POOL_FUTURE.cancel(true);
       REGULAR_THREAD_POOL_FUTURE = null;
     }
-    final RunRegularProcessors runRegularProcessors = new RunRegularProcessors(this);
+    final RunRegularProcessors runRegularProcessors = new RunRegularProcessors(this, this);
     REGULAR_THREAD_POOL_FUTURE = REGULAR_THREAD_POOL.scheduleWithFixedDelay(runRegularProcessors, 10, 10, TimeUnit.SECONDS);
   }
 
   public final void addRegularProcess(RegularProcess processor) {
     processor.setDatabase(this);
-		REGULAR_PROCESSORS.add(processor);
+    if (!REGULAR_PROCESSORS.contains(processor)) {
+      REGULAR_PROCESSORS.add(processor);
+    }
 	}
 
 	public final void removeRegularProcess(RegularProcess processor) {
@@ -2623,35 +2626,6 @@ public abstract class DBDatabaseImplementation implements DBDatabase, Serializab
 
 	}
 
-	protected class RunRegularProcessors implements Runnable {
-
-    DBDatabase database; 
-    
-		public RunRegularProcessors(DBDatabase databaseToRunProcessesOn) {
-			super();
-      this.database = databaseToRunProcessesOn;
-		}
-
-		@Override
-		public void run() {
-			for (RegularProcess process : getRegularProcessors()) {
-        process.setDatabase(database);
-				if (process.canRun() && process.isDueToRun()) {
-					try {
-						if (process.preprocess()) {
-							process.setLastResult(process.process());
-						}
-						process.postprocess();
-					} catch (Exception ex) {
-						process.handleExceptionDuringProcessing(ex);
-					} finally {
-            process.cleanUp();
-						process.offsetTime();
-					}
-				}
-			}
-		}
-	}
 
 	private static class StopDatabase extends Thread {
 

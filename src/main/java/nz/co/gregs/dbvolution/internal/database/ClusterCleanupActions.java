@@ -76,6 +76,7 @@ public class ClusterCleanupActions implements Runnable {
 		log.debug("CLEANING UP CLUSTER...");
 		actionThreadPool.shutdown();
 		try {
+      details.shutdown();
 			details.removeAllDatabases();
 		} catch (SQLException ex) {
 			Logger.getLogger(DBDatabaseCluster.class.getName()).log(Level.SEVERE, null, ex);

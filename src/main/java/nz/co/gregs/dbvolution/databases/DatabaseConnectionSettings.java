@@ -151,19 +151,19 @@ public class DatabaseConnectionSettings implements Serializable {
 	public String toString() {
 		Encoder toStringer = getToStringer();
 		toStringer.addAll(
-				StringCheck.check(getDbdatabaseClass(),""),
-				StringCheck.check(getHost(),""),
-				StringCheck.check(getPort(),""),
-				StringCheck.check(getInstance(),""),
-				StringCheck.check(getDatabaseName(),""),
-				StringCheck.check(getSchema(),""),
-				StringCheck.check(getUrl(),""),
-				StringCheck.check(getUsername(),""),
-				StringCheck.check(getPassword(),""),
-				StringCheck.check(getLabel(),""),
-				StringCheck.check(getFilename(),""),
-				StringCheck.check(encodeClusterHosts(getClusterHosts()),""),
-				StringCheck.check(encodeExtras(getExtras()),"")
+				getLabel(),
+				getDbdatabaseClass(),
+				getHost(),
+				getPort(),
+				getInstance(),
+				getDatabaseName(),
+				getSchema(),
+				getUrl(),
+				getUsername(),
+				getPassword(),
+				getFilename(),
+				encodeClusterHosts(getClusterHosts()),
+				encodeExtras(getExtras())
     );
 		return toStringer.encode();
 	}
@@ -177,7 +177,43 @@ public class DatabaseConnectionSettings implements Serializable {
 	 *
 	 * @return encoded settings suitable for decoding.
 	 */
-	public synchronized String encode() {
+	public String encode() {
+    List<DatabaseConnectionSettings> hosts = getClusterHosts();
+    String encodedHosts = encodeClusterHosts(hosts);
+
+    Map<String, String> gotExtras = getExtras();
+    String encodedExtras = encodeExtras(gotExtras);
+
+    Encoder encoder = getEncoder();
+    encoder.add(StringCheck.check(getDbdatabaseClass(), ""));
+    encoder.add(StringCheck.check(getHost(), ""));
+    encoder.add(StringCheck.check(getPort(), ""));
+    encoder.add(StringCheck.check(getInstance(), ""));
+    encoder.add(StringCheck.check(getDatabaseName(), ""));
+    encoder.add(StringCheck.check(getSchema(), ""));
+    encoder.add(StringCheck.check(getUrl(), ""));
+    encoder.add(StringCheck.check(getUsername(), ""));
+    encoder.add(StringCheck.check(getPassword(), ""));
+    encoder.add(StringCheck.check(getLabel(), ""));
+    encoder.add(StringCheck.check(getFilename(), ""));
+    encoder.add(StringCheck.check(encodedHosts, ""));
+    encoder.add(StringCheck.check(encodedExtras, ""));
+
+    String result = encoder.encode();
+    
+    return result;
+  }
+
+	/**
+	 * Change the settings into and encoded string for use with {@link #decode(java.lang.String)
+	 * }.
+	 *
+	 * <p>
+	 * Includes username and password.</p>
+	 *
+	 * @return encoded settings suitable for decoding.
+	 */
+	public String encodeWithoutLabel() {
 		if (StringCheck.isEmptyOrNull(encoded)) {
 
 			List<DatabaseConnectionSettings> hosts = getClusterHosts();
@@ -186,20 +222,22 @@ public class DatabaseConnectionSettings implements Serializable {
 			Map<String, String> gotExtras = getExtras();
 			String encodedExtras = encodeExtras(gotExtras);
 
-			Encoder encoder = getEncoder();
-			encoder.add(StringCheck.check(getDbdatabaseClass(),""));
-			encoder.add(StringCheck.check(getHost(),""));
-			encoder.add(StringCheck.check(getPort(),""));
-			encoder.add(StringCheck.check(getInstance(),""));
-			encoder.add(StringCheck.check(getDatabaseName(),""));
-			encoder.add(StringCheck.check(getSchema(),""));
-			encoder.add(StringCheck.check(getUrl(),""));
-			encoder.add(StringCheck.check(getUsername(),""));
-			encoder.add(StringCheck.check(getPassword(),""));
-			encoder.add(StringCheck.check(getLabel(),""));
-			encoder.add(StringCheck.check(getFilename(),""));
-			encoder.add(StringCheck.check(encodedHosts,""));
-			encoder.add(StringCheck.check(encodedExtras,""));
+			Encoder encoder = getEncoder().builder()
+              .withEmptyStringAs("[EMPTY]")
+              .withNullsAs("[NULL]")
+              .encoder();
+			encoder.add(getDbdatabaseClass());
+			encoder.add(getHost());
+			encoder.add(getPort());
+			encoder.add(getInstance());
+			encoder.add(getDatabaseName());
+			encoder.add(getSchema());
+			encoder.add(getUrl());
+			encoder.add(getUsername());
+			encoder.add(getPassword());
+			encoder.add(getFilename());
+			encoder.add(encodedHosts);
+			encoder.add(encodedExtras);
 
 			encoded = encoder.encode();
 		}
@@ -207,14 +245,22 @@ public class DatabaseConnectionSettings implements Serializable {
 	}
 
 	private static Encoder getEncoder() {
-		return Builder
-				.forSeparator(FIELD_SEPARATOR)
-				.withEscapeChar("\\")
-				.withPrefix("DATABASECONNECTIONSETTINGS: ").encoder();
-	}
+    return Builder
+            .forSeparator(FIELD_SEPARATOR)
+            .withEscapeChar("\\")
+            .withPrefix("DATABASECONNECTIONSETTINGS: ")
+            .withEmptyStringAs("[EMPTY]")
+            .withNullsAs("[NULL]")
+            .encoder();
+  }
 
 	private static Encoder getToStringer() {
-		return Builder.forSeparator(TOSTRING_SEPARATOR).withEscapeChar("\\").withPrefix("DATABASECONNECTIONSETTINGS: ").encoder();
+		return Builder.forSeparator(TOSTRING_SEPARATOR)
+            .withEscapeChar("\\")
+            .withPrefix("DATABASECONNECTIONSETTINGS: ")
+            .withNullsAs("[NULL]")
+            .withEmptyStringAs("[EMPTY]")
+            .encoder();
 	}
 
 	public static DatabaseConnectionSettings decode(String encodedSettings) {

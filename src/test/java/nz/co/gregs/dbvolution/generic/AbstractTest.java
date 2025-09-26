@@ -138,7 +138,7 @@ public abstract class AbstractTest {
       final DBDatabaseCluster cluster
               = new DBDatabaseCluster(
                       "testSmallCluster",
-                      DBDatabaseCluster.Configuration.autoStart(),
+                      DBDatabaseCluster.Configuration.autoStart().withAutoReconnect(),
                       getSQLiteDBFromSystem(), 
                       H2MemoryDB.createANewRandomDatabase("CLUSTER-SMALL-H2Mem-", "")
               );
@@ -148,7 +148,7 @@ public abstract class AbstractTest {
       databases.add(new Object[]{cluster.getLabel(), cluster});
     }
     if (System.getProperty("testBundledCluster") != null) {
-      final DBDatabaseCluster cluster = new DBDatabaseCluster("testBundledCluster", DBDatabaseCluster.Configuration.autoStart(),
+      final DBDatabaseCluster cluster = new DBDatabaseCluster("testBundledCluster", DBDatabaseCluster.Configuration.autoStart().withAutoReconnect(),
               getSQLiteDBFromSystem("bundle"), 
               H2MemoryDB.createANewRandomDatabase("CLUSTER-BUNDLED-H2Mem-", "")
       );
@@ -161,7 +161,7 @@ public abstract class AbstractTest {
       final DBDatabaseCluster cluster
               = new DBDatabaseCluster(
                       "testOpenSourceCluster",
-                      DBDatabaseCluster.Configuration.autoStart(), 
+                      DBDatabaseCluster.Configuration.autoStart().withAutoReconnect(), 
                       H2MemoryDB.createANewRandomDatabase("CLUSTER-OPENSOURCE-H2Mem-", ""),
                       getSQLiteDBFromSystem("open"),
                       postgresDB,
@@ -180,7 +180,7 @@ public abstract class AbstractTest {
       final Oracle11XEDB oracle = new Oracle11XESettingsBuilder().fromSystemUsingPrefix("oraclexefullcluster").getDBDatabase();
       final DBDatabaseCluster cluster = 
               new DBDatabaseCluster(
-                      "testFullCluster", DBDatabaseCluster.Configuration.autoStart(), 
+                      "testFullCluster", DBDatabaseCluster.Configuration.autoStart().withAutoReconnect(), 
                       h2Mem, sqlite,postgres, mysql, sqlserver,oracle
               );
       cluster.setLabel("FullClusteredDB-H2+SQLite+Postgres+MySQL+SQLServer+Oracle");
@@ -191,7 +191,7 @@ public abstract class AbstractTest {
       databases.add(
               new Object[]{"ClusteredDB-H2+SQLite+Postgres+MySQL",
                 new DBDatabaseCluster("MySQL+Cluster",
-                        DBDatabaseCluster.Configuration.autoStart(),
+                        DBDatabaseCluster.Configuration.autoStart().withAutoReconnect(),
                         H2MemoryTestDB.getFromSettings("h2memory"),
                         getSQLiteDBFromSystem(),
                         new PostgresSettingsBuilder().fromSystemUsingPrefix("postgresfullcluster").getDBDatabase(),
@@ -441,12 +441,24 @@ public abstract class AbstractTest {
         database.preventDroppingOfTables(false);
         database.dropTableNoExceptions(new LinkCarCompanyAndLogo());
         database.createOrUpdateTable(new LinkCarCompanyAndLogo());
-        
-        
+
         insertCarCompanies(database);
 
         insertMarques(database, firstDate, secondDate);
 
+        if (database != null) {
+          if (database instanceof DBDatabaseCluster) {
+            try {
+              DBDatabaseCluster cluster = (DBDatabaseCluster) database;
+              String reconnectResults = cluster.reconnectQuarantinedDatabases();
+              System.out.println(reconnectResults);
+              cluster.waitUntilSynchronised();
+            } catch (Exception ex) {
+              ex.printStackTrace();
+              throw ex;
+            }
+          }
+        }
       }
     } catch (Exception ex) {
       ex.printStackTrace();

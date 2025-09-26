@@ -417,8 +417,7 @@ public class DBInsertTest extends AbstractTest {
 				for (DBDatabase db : databases) {
           final TestDefaultInsertWithLocalDateTimeValue newRow = new TestDefaultInsertWithLocalDateTimeValue();
           assertThat("The table should exist", database.tableExists(newRow));
-					TestDefaultInsertWithLocalDateTimeValue rowFromMember 
-                  = db.getDBTable(newRow)
+					var rowFromMember = db.getDBTable(newRow)
                           .setQueryLabel("CHECK MEMBERS")
                           .getRowsByPrimaryKey(row.pk_TestDefaultInsertWithLocalDateTimeValue.getValue())
                           .get(0);

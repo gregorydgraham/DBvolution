@@ -165,7 +165,9 @@ public class H2MemoryDB extends H2DB {
 	 * @throws SQLException may throw database errors during initialization.
 	 */
 	public static H2MemoryDB createDatabase(String label) throws SQLException {
-		return new H2MemoryDB(new H2MemorySettingsBuilder().setLabel(label));
+    H2MemoryDB newRandomDatabase = createANewRandomDatabase();
+    newRandomDatabase.setLabel(label);
+    return newRandomDatabase;
 	}
 
 	/**

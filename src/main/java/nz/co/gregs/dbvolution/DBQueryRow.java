@@ -324,7 +324,7 @@ public class DBQueryRow extends HashMap<Class<? extends DBRow>, DBRow> {
             .withKeyValueSeparator("=")
             .withPrefix("{")
             .withSuffix("}")
-            .useWhenEmpty("{}")
+            .withEmptyStringAs("{}")
             .encoder();
 
 		var entrySet = entrySet();

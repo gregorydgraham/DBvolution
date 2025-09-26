@@ -28,9 +28,10 @@
  */
 package nz.co.gregs.dbvolution.databases;
 
+import nz.co.gregs.dbvolution.process.SynchroniserProcess;
 import java.io.Serializable;
 import java.lang.ref.Cleaner;
-import nz.co.gregs.dbvolution.utility.ReconnectionProcess;
+import nz.co.gregs.dbvolution.process.ReconnectionProcess;
 import java.lang.reflect.InvocationTargetException;
 import nz.co.gregs.dbvolution.internal.database.ClusterDetails;
 import nz.co.gregs.dbvolution.exceptions.UnableToRemoveLastDatabaseFromClusterException;
@@ -56,7 +57,7 @@ import nz.co.gregs.dbvolution.transactions.DBTransaction;
 import nz.co.gregs.dbvolution.internal.database.ClusterCleanupActions;
 import nz.co.gregs.dbvolution.internal.database.DatabaseList;
 import nz.co.gregs.dbvolution.internal.query.StatementDetails;
-import nz.co.gregs.dbvolution.utility.RegularProcess;
+import nz.co.gregs.dbvolution.process.ClusterProcess;
 import nz.co.gregs.separatedstring.Encoder;
 import nz.co.gregs.separatedstring.SeparatedString;
 import org.apache.commons.logging.Log;
@@ -313,8 +314,9 @@ public class DBDatabaseCluster extends DBDatabaseImplementation {
 		}
 	}
 
-  protected void addClusterProcessor(RegularProcess process, ChronoUnit timeUnit, int timeDuration) {
+  protected void addClusterProcessor(ClusterProcess process, ChronoUnit timeUnit, int timeDuration) {
     process.setTimeOffset(timeUnit, timeDuration);
+    process.setCluster(this);
     if (!REGULAR_PROCESSORS.contains(process)) {
       REGULAR_PROCESSORS.add(process);
     }
@@ -1012,8 +1014,9 @@ public class DBDatabaseCluster extends DBDatabaseImplementation {
               removeActionFromQueue(database, action);
               // store the result count for later
               expectedResult = action.getRowsAltered();
+              action.setExpectedAlteredRows(expectedResult);
               // celebrate
-              LOG.info("EXECUTED - cluster " + getLabel() + " used " + database.getLabel() + " for first execution of " + action.getIntent() + ":expect=" + action.getExpectedAlteredRows() + ":" + action.getSQLStatements(database));
+              LOG.debug("EXECUTED - cluster " + getLabel() + " used " + database.getLabel() + " for first execution of " + action.getIntent() + ":expect=" + action.getExpectedAlteredRows() + ":" + action.getSQLStatements(database));
               // pretend we weren't pessimistic
               failedOn.remove(database);
               // mark the work as done
@@ -1167,7 +1170,8 @@ public class DBDatabaseCluster extends DBDatabaseImplementation {
   @Override
   public DBDatabase setPreventAccidentalDeletingAllRowsFromTable(boolean b) {
     try {
-      DBDatabaseCluster dangerous = new DBDatabaseCluster(this.getSettings());
+      final DatabaseConnectionSettings settings1 = this.getSettings();
+      DBDatabaseCluster dangerous = new DBDatabaseCluster(settings1);
       allowClusterToDeleteAllRows(dangerous);
       return dangerous;
     } catch (ClassNotFoundException |NoSuchMethodException | SecurityException | InstantiationException | IllegalAccessException | IllegalArgumentException | InvocationTargetException | SQLException ex) {
@@ -1550,34 +1554,35 @@ public class DBDatabaseCluster extends DBDatabaseImplementation {
 	}
 
 	public String reconnectQuarantinedDatabases() throws UnableToRemoveLastDatabaseFromClusterException, SQLException {
-		StringBuilder str = new StringBuilder();
+		Encoder str = SeparatedString.builder().encoder();
 		DBDatabase[] reconnectables = details.getDatabasesForReconnecting();
 		if (reconnectables.length == 0) {
 			LOG.trace(this.getLabel() + " HAS NO QUARANTINED/DEAD DATABASES");
 		} else {
 			for (DBDatabase reconnectee : reconnectables) {
-				reconnectQuarantinedDatabase(str, reconnectee);
+				str.addLine(reconnectQuarantinedDatabase(reconnectee));
 			}
 		}
 
 		return str.toString();
 	}
 
-	private void reconnectQuarantinedDatabase(StringBuilder str, DBDatabase quarantee) throws UnableToRemoveLastDatabaseFromClusterException {
+	private String reconnectQuarantinedDatabase(DBDatabase quarantee) throws UnableToRemoveLastDatabaseFromClusterException {
+    StringBuilder str = new StringBuilder();
 		str.append(quarantee.getSettings());
 		try {
 			LOG.info(this.getLabel() + " RECONNECTING DATABASE: " + quarantee.getLabel());
 			addDatabase(quarantee);
-			LOG.info(this.getLabel() + " RECONNECTED DATABASE: " + quarantee.getLabel());
+			LOG.info(this.getLabel() + " RECONNECTING DATABASE: " + quarantee.getLabel()+" SUCCESSFUL");
 			str.append("").append(quarantee.getLabel()).append(" added");
 		} catch (SQLException ex) {
-			LOG.info(this.getLabel() + " RECONNECTION FAILED FOR DATABASE: " + quarantee.getLabel());
-			LOG.info(this.getLabel() + " DEAD DATABASE: " + quarantee.getLabel());
+			LOG.warn(this.getLabel() + " RECONNECTING DATABASE: " + quarantee.getLabel()+" FAILED");
+			LOG.warn(this.getLabel() + " RECONNECTING DATABASE: " + quarantee.getLabel()+" MARKED AS DEAD");
 			deadDatabase(quarantee, ex);
 			str.append("").append(quarantee.getLabel()).append(" DEAD: ").append(ex.getLocalizedMessage());
 		} finally {
-			str.append("\n");
 		}
+    return str.toString();
 	}
 
 	public DBRow[] getTrackedTables() {
@@ -1851,7 +1856,12 @@ public class DBDatabaseCluster extends DBDatabaseImplementation {
 		 * version of the cluster.
 		 */
 		public Configuration withAutoRebuild() {
-			return new Configuration(true, this.useAutoReconnect, this.useAutoStart, this.useAutoConnect);
+			return new Configuration(
+              true, 
+              this.useAutoReconnect, 
+              this.useAutoStart, 
+              this.useAutoConnect
+      );
 		}
 
 		/**
@@ -1865,7 +1875,12 @@ public class DBDatabaseCluster extends DBDatabaseImplementation {
 		 * synchronize database while running.
 		 */
 		public Configuration withAutoReconnect() {
-			return new Configuration(this.useAutoRebuild, true, this.useAutoStart, this.useAutoConnect);
+			return new Configuration(
+              this.useAutoRebuild, 
+              true, 
+              this.useAutoStart, 
+              this.useAutoConnect
+      );
 		}
 
 		/**
@@ -1879,59 +1894,33 @@ public class DBDatabaseCluster extends DBDatabaseImplementation {
 		 * @return the useAutoStart
 		 */
 		public Configuration withAutoStart() {
-			return new Configuration(this.useAutoRebuild, this.useAutoReconnect, true, this.useAutoConnect);
+			return new Configuration(
+              this.useAutoRebuild, 
+              this.useAutoReconnect, 
+              true, 
+              this.useAutoConnect
+      );
 		}
 
 		/**
 		 * Auto-connect loads the list of cluster members from the previous
-		 * instance.
-		 *
-		 * This provides continuity of membership and removes the need fully specify
-		 * the members in code or configurations files.
-		 *
-		 * @return the useAutoConnect
-		 */
-		public Configuration withAutoConnect() {
-			return new Configuration(this.useAutoRebuild, this.useAutoReconnect, this.useAutoStart, true);
-		}
-	}
-
-	private static class SynchroniserProcess extends RegularProcess {
-
-    static final private Log LOG = LogFactory.getLog(DBDatabaseCluster.SynchroniserProcess.class);
-  
-		private static final long serialVersionUID = 1L;
-
-		public SynchroniserProcess() {
-		}
-
-		@Override
-    public String process() throws Exception {
-
-      final DBDatabase db = getDatabase();
-      if (db != null) {
-        if (db instanceof DBDatabaseCluster) {
-          DBDatabaseCluster cluster = (DBDatabaseCluster) db;
-          try {
-            // DO THE ACTUAL WORK
-            long results = cluster.getDetails().synchronizeSecondaryDatabases();
-            final String message = "Finished Synchronising cluster: " + cluster.getLabel()+" resynched "+results+" databases";
-            LOG.debug(message);
-            return message;
-            // Good job everyone, hi-5!
-          } catch (Exception e) {
-            LOG.error("FAILED TO SYNCHRONISE CLUSTER: " + cluster.getLabel(), e);
-            e.printStackTrace();
-            throw e; // let normal processing continue
-          }
-        } else {
-          LOG.warn("Trying to synchronise database " + db.getLabel() + " which is not a cluster. This is defintely incorrect."); // typo intentional
-          return "Unable to synchronise non-cluster database";
-        }
-      } else {
-        LOG.warn("Trying to synchronise null database. Th1s is definitely incorrect."); //typo intentional
-        return "Unable to synchronise non-cluster database";
-      }
+     * instance.
+     *
+     * <p>
+     * This provides continuity of membership and removes the need fully specify
+     * the members in code or configurations files.</p>
+     *
+     * @return an new configuration that inherits other settings and sets
+     * AutoCorrect to true
+     */
+    public Configuration withAutoConnect() {
+      return new Configuration(
+              this.useAutoRebuild, 
+              this.useAutoReconnect, 
+              this.useAutoStart, 
+              true
+      );
     }
 	}
+
 }

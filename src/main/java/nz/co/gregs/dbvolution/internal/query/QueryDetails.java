@@ -931,7 +931,7 @@ public class QueryDetails implements DBQueryable, Serializable {
               .byCommas()
               .withPrefix(defn.beginOrderByClause())
               .withSuffix(defn.endOrderByClause())
-              .useWhenEmpty("")
+              .withEmptyStringAs("")
               .encoder();
 			for (SortProvider sorter : sortOrderColumns) {
 				if (!sorter.isWindowingFunction() || defn.supportsWindowingFunctionsInTheOrderByClause()) {

@@ -340,7 +340,7 @@ public class DBDatabaseClusterTest extends AbstractTest {
 				DBDatabaseCluster cluster
 						= new DBDatabaseCluster(
 								nameOfCluster,
-								DBDatabaseCluster.Configuration.autoRebuild(),
+								DBDatabaseCluster.Configuration.autoRebuild().withAutoReconnect(),
 								database);
 				boolean dismantleCluster = true;
 				H2MemoryDB soloDB2 = H2MemoryDB.createANewRandomDatabase();
@@ -858,8 +858,7 @@ public class DBDatabaseClusterTest extends AbstractTest {
 		source.setPassword("admin");
 
 		DatabaseConnectionSettings source2 = new DatabaseConnectionSettings();
-		source2.setDbdatabaseClass(SQLiteDB.class
-				.getCanonicalName());
+		source2.setDbdatabaseClass(SQLiteDB.class.getCanonicalName());
 		source2.setUrl("jdbc:sqlite:target/DBDatabaseClusterWithConfigFile.sqlite");
 		source2.setUsername("admin");
 		source2.setPassword("admin");
@@ -898,8 +897,8 @@ public class DBDatabaseClusterTest extends AbstractTest {
 			try {
 				db = new DBDatabaseClusterWithConfigFile("testYAMLFileProcessing3",
 						DBDatabaseCluster.Configuration.autoStart(), yamlConfigFilename);
-				assertThat(db.getDatabases()[1].getJdbcURL(), containsString("jdbc:h2:mem:DBDatabaseClusterWithConfigFile.h2"));
-				assertThat(db.getDatabases()[0].getJdbcURL(), containsString("jdbc:sqlite:target/DBDatabaseClusterWithConfigFile.sqlite"));
+				assertThat(db.getDatabases()[0].getJdbcURL(), containsString("jdbc:h2:mem:DBDatabaseClusterWithConfigFile.h2"));
+				assertThat(db.getDatabases()[1].getJdbcURL(), containsString("jdbc:sqlite:target/DBDatabaseClusterWithConfigFile.sqlite"));
 			} catch (DBDatabaseClusterWithConfigFile.NoDatabaseConfigurationFound | DBDatabaseClusterWithConfigFile.UnableToCreateDatabaseCluster ex) {
 				Logger.getLogger(DBDatabaseClusterTest.class
 						.getName()).log(Level.SEVERE, null, ex);
@@ -950,8 +949,7 @@ public class DBDatabaseClusterTest extends AbstractTest {
 			source.setPassword("admin");
 
 			DatabaseConnectionSettings source2 = new DatabaseConnectionSettings();
-			source2.setDbdatabaseClass(SQLiteDB.class
-					.getCanonicalName());
+			source2.setDbdatabaseClass(SQLiteDB.class.getCanonicalName());
 			source2.setUrl("jdbc:sqlite:DBDatabaseClusterWithConfigFile.sqlite");
 			source2.setUsername("admin");
 			source2.setPassword("admin");
@@ -1073,13 +1071,17 @@ public class DBDatabaseClusterTest extends AbstractTest {
 	@Test
 	public synchronized void testAutoConnectClusterLoadsAndConnectsToDatabases() throws SQLException {
 		final String nameOfCluster = "testAutoConnectClusterLoadsAndConnectsToDatabases";
-		String soloDB2Settings;
-		final Function<DBDatabase, String> turnDatabasesToSettings = d -> d.getSettings().toString();
+		H2MemoryDB soloDB2 = H2MemoryDB.createDatabase("soloDB2");
+    String soloDB2Settings = soloDB2.getSettings().encode();
+		final Function<DBDatabase, String> turnDatabasesToEncodedSettings = d -> d.getSettings().encode();
 		{
 			DBDatabaseCluster cluster
 					= new DBDatabaseCluster(
 							nameOfCluster,
-							DBDatabaseCluster.Configuration.fullyManual().withAutoConnect().withAutoStart(),
+							DBDatabaseCluster.Configuration
+                      .fullyManual()
+                      .withAutoConnect()
+                      .withAutoStart(),
 							database);
 			cluster.dismantle();
 		}
@@ -1087,18 +1089,23 @@ public class DBDatabaseClusterTest extends AbstractTest {
 			DBDatabaseCluster cluster
 					= new DBDatabaseCluster(
 							nameOfCluster,
-							DBDatabaseCluster.Configuration.fullyManual().withAutoConnect().withAutoStart(),
+							DBDatabaseCluster.Configuration
+                      .fullyManual()
+                      .withAutoConnect()
+                      .withAutoStart(),
 							database);
 			cluster.waitUntilSynchronised();
-			H2MemoryDB soloDB2 = H2MemoryDB.createDatabase("soloDB2");
-			soloDB2Settings = soloDB2.getSettings().toString();
 			cluster.addDatabase(soloDB2);
 			assertThat(cluster.size(), is(2));
 			cluster.stop();
 		}
 		{
 			DBDatabaseCluster cluster = new DBDatabaseCluster(
-					nameOfCluster, DBDatabaseCluster.Configuration.fullyManual().withAutoConnect().withAutoStart()
+					nameOfCluster, 
+              DBDatabaseCluster.Configuration
+                      .fullyManual()
+                      .withAutoConnect()
+                      .withAutoStart()
 			);
 			System.out.println("" + cluster.getClusterStatus());
 			cluster.waitUntilSynchronised();
@@ -1107,40 +1114,54 @@ public class DBDatabaseClusterTest extends AbstractTest {
 			List<String> databases = new ArrayList<>();
 			for (DBDatabase db : dbsInCluster) {
 				final DatabaseConnectionSettings settings = db.getSettings();
-				final String str = settings.toString();
+				final String str = settings.encode();
+        System.out.println("SETTINGS: "+str);
 				databases.add(str);
 			}
+      System.out.println(  "SOLODB2 : "+soloDB2Settings);
 			assertThat(databases, hasItem(soloDB2Settings));
-			assertThat(databases, hasItem(is(database.getSettings().toString())));
+			assertThat(databases, hasItem(is(database.getSettings().encode())));
 
 			cluster.addDatabase(H2MemoryDB.createDatabase("Check Added Database Is Recreated At Startup"));
 			cluster.stop();
 		}
 		{
 			DBDatabaseCluster cluster = new DBDatabaseCluster(
-					nameOfCluster, DBDatabaseCluster.Configuration.fullyManual().withAutoConnect().withAutoStart()
+					nameOfCluster, DBDatabaseCluster.Configuration
+                  .fullyManual()
+                  .withAutoConnect()
+                  .withAutoStart()
 			);
 			cluster.waitUntilSynchronised();
 
 			assertThat(cluster.size(), is(3));
-			var databases = Arrays.asList(cluster.getDatabases()).stream().map(turnDatabasesToSettings).collect(Collectors.toList());
+			var databases = Arrays.asList(cluster.getDatabases()).stream()
+              .map(turnDatabasesToEncodedSettings)
+              .peek(p -> System.out.println("DATABASE: "+p))
+              .collect(Collectors.toList());
 			assertThat(databases, hasItem(soloDB2Settings));
-			assertThat(databases, hasItem(database.getSettings().toString()));
+			assertThat(databases, hasItem(database.getSettings().encode()));
 
 			cluster.removeDatabase(database);
 			assertThat(cluster.size(), is(2));
 		}
 		{
 			DBDatabaseCluster cluster = new DBDatabaseCluster(
-					nameOfCluster, DBDatabaseCluster.Configuration.fullyManual().withAutoConnect().withAutoStart()
+					nameOfCluster, DBDatabaseCluster.Configuration
+                  .fullyManual()
+                  .withAutoConnect()
+                  .withAutoStart()
 			);
 			cluster.waitUntilSynchronised();
 
-			try {
-				assertThat(cluster.size(), is(2));
-				var databases = Arrays.asList(cluster.getDatabases()).stream().map(turnDatabasesToSettings).collect(Collectors.toList());
-				assertThat(databases, hasItem(soloDB2Settings));
-				assertThat(databases, not(hasItem(database.getSettings().toString())));
+      try {
+        assertThat(cluster.size(), is(2));
+        var databases = Arrays.asList(cluster.getDatabases()).stream()
+                .map(turnDatabasesToEncodedSettings)
+                .peek(p -> System.out.println("DATABASE: " + p))
+                .collect(Collectors.toList());
+        assertThat(databases, hasItem(soloDB2Settings));
+        assertThat(databases, not(hasItem(database.getSettings().encode())));
 			} finally {
 				cluster.dismantle();
 			}
@@ -1190,14 +1211,6 @@ public class DBDatabaseClusterTest extends AbstractTest {
 
   @Test
   public synchronized void testCanSynchroniseSingleDatabaseBecauseOfInsertError() throws IOException {
-    // preparation for using temporary SQLite databases
-    final String newSQLite1Filename = "target/testCanSynchroniseSingleDatabaseBecauseOfInsertError1.sqlite";
-    final String newSQLite2Filename = "target/testCanSynchroniseSingleDatabaseBecauseOfInsertError2.sqlite";
-    File newSQLite1File = new File(newSQLite1Filename);
-    File newSQLite2File = new File(newSQLite2Filename);
-    // and make sure we cleanup
-    newSQLite1File.deleteOnExit();
-    newSQLite2File.deleteOnExit();
 
     database.getSettings().setLabel("ProfileProvidedDatabase");
     // make a cluster
@@ -1219,7 +1232,7 @@ public class DBDatabaseClusterTest extends AbstractTest {
       long tooFar;
 
       // test we can add an SQLite DB the normal way
-      try (DBDatabase newSqlite1 = new SQLiteDB(newSQLite1File, "dbv", "testing")) {
+      try (DBDatabase newSqlite1 = H2MemoryDB.createANewRandomDatabase()) {
         start = Instant.now();
         tooFar = start.plus(OFFSET, ChronoUnit.MILLIS).toEpochMilli();
         cluster.addDatabaseAndWait(newSqlite1);
@@ -1233,7 +1246,7 @@ public class DBDatabaseClusterTest extends AbstractTest {
       }
 
         // test we can add an SQLite DB
-      try (DBDatabase newSqlite2 = new SQLiteDB(newSQLite2File, "dbv", "testing")) {
+      try (DBDatabase newSqlite2 = H2MemoryDB.createANewRandomDatabase()) {
         assertThat(newSqlite2.tableExists(new Marque()), is(false));
         start = Instant.now();
         tooFar = start.plus(OFFSET, ChronoUnit.MILLIS).toEpochMilli();
@@ -1348,16 +1361,7 @@ public class DBDatabaseClusterTest extends AbstractTest {
 
   @Test
   public synchronized void testCanSynchroniseSingleDatabaseBecauseOfDeleteError() {
-
-    // preparation for using temporary SQLite databases
-    final String newSQLite1Filename = "target/testCanSynchroniseSingleDatabaseBecauseOfDeleteError1.sqlite";
-    final String newSQLite2Filename = "target/testCanSynchroniseSingleDatabaseBecauseOfDeleteError2.sqlite";
-    File newSQLite1File = new File(newSQLite1Filename);
-    File newSQLite2File = new File(newSQLite2Filename);
-    // and make sure we cleanup
-    newSQLite1File.deleteOnExit();
-    newSQLite2File.deleteOnExit();
-
+    // Timing variables
     Instant start;
     long stop;
     long tooFar;
@@ -1376,28 +1380,26 @@ public class DBDatabaseClusterTest extends AbstractTest {
       assertThat(cluster.getCount(new Marque()), is(22l));
       cluster.addTrackedTable(new Marque());
 
-      // test we can add an SQLite DB the normal way
-      try (SQLiteDB newSqlite1 = new SQLiteDB(newSQLite1File, "dbv", "testing")) {
+      try (H2MemoryDB newDB = H2MemoryDB.createANewRandomDatabase()) {
         start = Instant.now();
         tooFar = start.plus(OFFSET, ChronoUnit.MILLIS).toEpochMilli();
-        cluster.addDatabaseAndWait(newSqlite1);
+        cluster.addDatabaseAndWait(newDB);
         cluster.waitUntilSynchronised();
         stop = Instant.now().toEpochMilli();
 
         assertThat(stop, is(lessThan(tooFar)));
-        assertThat(newSqlite1.tableExists(new Marque()), is(true));
-        assertThat(newSqlite1.getCount(new Marque()), is(22l));
-        cluster.removeDatabase(newSqlite1);
+        assertThat(newDB.tableExists(new Marque()), is(true));
+        assertThat(newDB.getCount(new Marque()), is(22l));
+        cluster.removeDatabase(newDB);
       }
 
-      // test we can add an SQLite DB
-      try (SQLiteDB newSqlite2 = new SQLiteDB(newSQLite2File, "dbv", "testing")) {
-        assertThat(newSqlite2.tableExists(new Marque()), is(false));
+      try (H2MemoryDB newDB = H2MemoryDB.createANewRandomDatabase()) {
+        assertThat(newDB.tableExists(new Marque()), is(false));
         start = Instant.now();
         tooFar = start.plus(OFFSET, ChronoUnit.MILLIS).toEpochMilli();
-        cluster.addDatabase(newSqlite2);
+        cluster.addDatabase(newDB);
         try {
-          cluster.waitUntilDatabaseIsSynchronised(newSqlite2, OFFSET);
+          cluster.waitUntilDatabaseIsSynchronised(newDB, OFFSET);
         } catch (UnableToSynchronizeDatabase ex) {
           ex.printStackTrace();
           Assert.fail("Failed to synchronise the database");
@@ -1405,9 +1407,9 @@ public class DBDatabaseClusterTest extends AbstractTest {
 
         stop = Instant.now().toEpochMilli();
         assertThat(stop, is(lessThan(tooFar)));
-        assertThat(newSqlite2.tableExists(new Marque()), is(true));
-        assertThat(newSqlite2.getCount(new Marque()), is(22l));
-        cluster.removeDatabase(newSqlite2);
+        assertThat(newDB.tableExists(new Marque()), is(true));
+        assertThat(newDB.getCount(new Marque()), is(22l));
+        cluster.removeDatabase(newDB);
       }
 
       // test we can add an H2 Memory DB
@@ -1481,17 +1483,6 @@ public class DBDatabaseClusterTest extends AbstractTest {
 
   @Test
   public synchronized void testCanSynchroniseSingleDatabaseBecauseOfUpdateError() {
-    // preparation for using temporary SQLite databases
-    final String newSQLite1Filename = "target/testCanSynchroniseSingleDatabaseBecauseOfUpdateError1.sqlite";
-    final String newSQLite2Filename = "target/testCanSynchroniseSingleDatabaseBecauseOfUpdateError2.sqlite";
-    File newSQLite1File = new File(newSQLite1Filename);
-    File newSQLite2File = new File(newSQLite2Filename);
-    // make sure the files don't exist
-    newSQLite1File.delete();
-    newSQLite2File.delete();
-    // and make sure we cleanup
-    newSQLite1File.deleteOnExit();
-    newSQLite2File.deleteOnExit();
 
     // our timing variables
     Instant start;
@@ -1513,17 +1504,16 @@ public class DBDatabaseClusterTest extends AbstractTest {
       assertThat(cluster.getCount(new Marque()), is(22l));
       cluster.addTrackedTable(new Marque());
 
-      // test we can add an SQLite DB the normal way
-      try (DBDatabase newSqlite1 = new SQLiteDB(newSQLite1File, "dbv", "testing")) {
+      try (DBDatabase newDB = H2MemoryDB.createANewRandomDatabase()) {
         start = Instant.now();
         tooFar = start.plus(OFFSET, ChronoUnit.MILLIS).toEpochMilli();
-        cluster.addDatabaseAndWait(newSqlite1);
+        cluster.addDatabaseAndWait(newDB);
         cluster.waitUntilSynchronised();
         stop = Instant.now().toEpochMilli();
         assertThat(stop, is(lessThan(tooFar)));
-        assertThat(newSqlite1.tableExists(new Marque()), is(true));
-        assertThat(newSqlite1.getCount(new Marque()), is(22l));
-        cluster.removeDatabase(newSqlite1);
+        assertThat(newDB.tableExists(new Marque()), is(true));
+        assertThat(newDB.getCount(new Marque()), is(22l));
+        cluster.removeDatabase(newDB);
       }
     } catch (Exception ex) {
       LOG.log(Level.SEVERE, "Exception during test", ex);
@@ -1540,23 +1530,22 @@ public class DBDatabaseClusterTest extends AbstractTest {
       // make sure the cluster is tracking changesin the Marque table
       cluster.addTrackedTable(new Marque());
 
-      // test we can add an SQLite DB
-      try (DBDatabase newSqlite2 = new SQLiteDB(newSQLite2File, "dbv", "testing")) {
-        assertThat(newSqlite2.tableExists(new Marque()), is(false));
+      try (DBDatabase newDB = H2MemoryDB.createANewRandomDatabase()) {
+        assertThat(newDB.tableExists(new Marque()), is(false));
         start = Instant.now();
         tooFar = start.plus(OFFSET, ChronoUnit.MILLIS).toEpochMilli();
-        cluster.addDatabase(newSqlite2);
+        cluster.addDatabase(newDB);
         try {
-          cluster.waitUntilDatabaseIsSynchronised(newSqlite2, OFFSET);
+          cluster.waitUntilDatabaseIsSynchronised(newDB, OFFSET);
         } catch (UnableToSynchronizeDatabase ex) {
           ex.printStackTrace();
           Assert.fail("Failed to synchronise the database");
         }
         stop = Instant.now().toEpochMilli();
         assertThat(stop, is(lessThan(tooFar)));
-        assertThat(newSqlite2.tableExists(new Marque()), is(true));
-        assertThat(newSqlite2.getCount(new Marque()), is(22l));
-        cluster.removeDatabase(newSqlite2);
+        assertThat(newDB.tableExists(new Marque()), is(true));
+        assertThat(newDB.getCount(new Marque()), is(22l));
+        cluster.removeDatabase(newDB);
       }
     } catch (Exception ex) {
       LOG.log(Level.SEVERE, "Exception during test", ex);

@@ -276,12 +276,14 @@ public class DBQueryTest extends AbstractTest {
 		DBQuery query = database.getDBQuery(marqueQuery, new CarCompany());
 		try {
 			marqueQuery.ignoreAllForeignKeysExcept(wrongMarque.carCompany);
+      assertThat(false, is(true)); // shouldn't get here
 			throw new RuntimeException("IncorrectDBRowInstanceSuppliedException should have been thrown");
 		} catch (IncorrectRowProviderInstanceSuppliedException wrongDBRowEx) {
 		}
 		marqueQuery.ignoreAllForeignKeysExcept(marqueQuery.carCompany);
 		query.setCartesianJoinsAllowed(true);
 		List<DBQueryRow> rows = query.getAllRows();
+    System.out.println("FOUND ROWS: "+rows.size());
 	}
 
 	@Test
@@ -291,13 +293,14 @@ public class DBQueryTest extends AbstractTest {
 
 		assertThat(relatedTables.size(), is(6));
 		final DBRow[] rowArray = relatedTables.toArray(new DBRow[]{});
-		Assert.assertEquals(CompanyLogo.class, rowArray[0].getClass());
-		Assert.assertEquals(CompanyText.class, rowArray[1].getClass());
-		Assert.assertEquals(LinkCarCompanyAndLogo.class, rowArray[2].getClass());
-		Assert.assertEquals(LinkCarCompanyAndLogoWithPreviousLink.class, rowArray[3].getClass());
-		Assert.assertEquals(Marque.class, rowArray[4].getClass());
-		Assert.assertEquals(MarqueSelectQuery.class, rowArray[5].getClass());
-	}
+
+  	assertThat(rowArray[0], instanceOf(CompanyLogo.class));
+		assertThat(rowArray[1], instanceOf(CompanyText.class));
+		assertThat(rowArray[2], instanceOf(LinkCarCompanyAndLogo.class));
+		assertThat(rowArray[3], instanceOf(LinkCarCompanyAndLogoWithPreviousLink.class));
+		assertThat(rowArray[4], instanceOf(Marque.class));
+		assertThat(rowArray[5], instanceOf(MarqueSelectQuery.class));
+  }
 
 	@Test
 	public void getReferencedTablesTest() {
@@ -311,7 +314,8 @@ public class DBQueryTest extends AbstractTest {
 		assertThat(relatedTables.size(), is(2));
 
 		final DBRow[] rowArray = relatedTables.toArray(new DBRow[]{});
-		Assert.assertEquals(CarCompany.class, rowArray[0].getClass());
-		Assert.assertEquals(CompanyLogo.class, rowArray[1].getClass());
-	}
+
+ 		assertThat(rowArray[0], instanceOf(CarCompany.class));
+		assertThat(rowArray[1], instanceOf(CompanyLogo.class));
+}
 }
