@@ -1734,8 +1734,8 @@ public class InstantExpressionTest extends AbstractTest {
 	@Before
 	public void setupMarqueWithInstant() throws Exception {
 		DBDatabase db = database;
-		db.preventDroppingOfTables(false);
-		db.dropTableIfExists(new MarqueWithInstant());
+		db.setPreventDroppingOfTables(false)
+            .dropTableIfExists(new MarqueWithInstant());
 		db.createTable(new MarqueWithInstant());
 
 		List<MarqueWithInstant> toInsert = new ArrayList<>();

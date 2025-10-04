@@ -45,6 +45,7 @@ import java.util.function.Function;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
+import nz.co.gregs.dbvolution.actions.DBActionList;
 import nz.co.gregs.dbvolution.annotations.DBAutoIncrement;
 import nz.co.gregs.dbvolution.annotations.DBColumn;
 import nz.co.gregs.dbvolution.annotations.DBPrimaryKey;
@@ -352,6 +353,8 @@ public class DBDatabaseClusterTest extends AbstractTest {
 					cluster.delete(cluster.getDBTable(new DBDatabaseClusterTestTable()).setBlankQueryAllowed(true).getAllRows());
 					cluster.insert(createData(new Date(), new Date()));
           cluster.waitUntilDatabaseIsSynchronised(database);
+          cluster.waitUntilDatabaseIsSynchronised(soloDB2);
+          cluster.waitUntilSynchronised(1000000); // theoretically it should be 
 					DBQuery query = cluster.getDBQuery(new DBDatabaseClusterTestTable()).setBlankQueryAllowed(true);
 					assertThat(query.getAllRows().size(), is(22));
           assertThat(cluster.getDBTable(new DBDatabaseClusterTestTable()).setBlankQueryAllowed(true).getAllRows().size(), is(22));
@@ -680,10 +683,10 @@ public class DBDatabaseClusterTest extends AbstractTest {
 
 	@Test(expected = SQLException.class)
 	public synchronized void testSQLExceptionAfterErrorInInsert() throws SQLException {
-		if (database instanceof DBDatabaseCluster){
-			DBDatabaseCluster cluster = (DBDatabaseCluster)database;
-			cluster.waitUntilSynchronised();
-		}
+//		if (database instanceof DBDatabaseCluster){
+//			DBDatabaseCluster cluster = (DBDatabaseCluster)database;
+//			cluster.waitUntilSynchronised();
+//		}
 		try (DBDatabaseCluster cluster
 				= DBDatabaseCluster.randomManualCluster(database)) {
 			cluster.setLabel("testDatabaseRemovedAfterErrorInInsert");
@@ -693,11 +696,9 @@ public class DBDatabaseClusterTest extends AbstractTest {
 				final TableThatDoesntExistOnTheCluster tab = new TableThatDoesntExistOnTheCluster();
 				tab.pkid.setValue(1);
 				try {
-					// avoid printing lots of exceptions
-					cluster.setQuietExceptionsPreference(true);
-					cluster.insert(tab);
+          cluster.insert(tab);
+          assertThat("should have thrown an exception before this", is("not good"));
 				} finally {
-					cluster.setQuietExceptionsPreference(false);
 				}
 			}
 		}
@@ -779,12 +780,12 @@ public class DBDatabaseClusterTest extends AbstractTest {
 				cluster.setQuietExceptionsPreference(false);
 				try {
 					assertThat(cluster.size(), is(1));
-				} finally {
-					// drop the table so we don't interfere with other tests
-					cluster.preventDroppingOfTables(false);
-					cluster.dropTable(new TableThatDoesExistOnTheCluster());
-				}
-			}
+        } finally {
+          // drop the table so we don't interfere with other tests
+          cluster.setPreventDroppingOfTables(false)
+                  .dropTable(new TableThatDoesExistOnTheCluster());
+        }
+      }
 		}
 	}
 
@@ -831,7 +832,7 @@ public class DBDatabaseClusterTest extends AbstractTest {
 	}
 
 	@Test
-	public void testYAMLFileProcessing() throws SQLException {
+	public synchronized void testYAMLFileProcessing() throws SQLException {
 		final String yamlConfigFilename = "DBDatabaseCluster.yml";
 
 		File file = new File(yamlConfigFilename);
@@ -915,7 +916,7 @@ public class DBDatabaseClusterTest extends AbstractTest {
 	}
 
 	@Test
-	public void testYAMLFileProcessingWithFile() throws SQLException {
+	public synchronized void testYAMLFileProcessingWithFile() throws SQLException {
 
 		new DBDatabaseCluster("testYAMLFileProcessingWithFile",
 				DBDatabaseCluster.Configuration.autoStart()).dismantle();
@@ -1475,6 +1476,7 @@ public class DBDatabaseClusterTest extends AbstractTest {
         cluster.removeDatabase(newH2DB);
       }
     } catch (Exception ex) {
+      ex.printStackTrace();
       LOG.log(Level.SEVERE, "Exception during test", ex);
       Assert.fail(ex.getClass().getSimpleName() + " should not have happened: " + ex.getMessage());
     } finally {

@@ -1,6 +1,8 @@
 /*
- * Copyright 2018 gregorygraham.
+ * Copyright 2025 Gregory Graham.
  *
+ * Commercial licenses are available, please contact info@gregs.co.nz for details.
+ * 
  * This work is licensed under the Creative Commons Attribution-NonCommercial-ShareAlike 4.0 International License. 
  * To view a copy of this license, visit http://creativecommons.org/licenses/by-nc-sa/4.0/ 
  * or send a letter to Creative Commons, PO Box 1866, Mountain View, CA 94042, USA.
@@ -26,19 +28,27 @@
  * 
  * Check the Creative Commons website for any details, legalese, and updates.
  */
-package nz.co.gregs.dbvolution.exceptions;
-
-import nz.co.gregs.dbvolution.databases.DBDatabaseCluster;
+package nz.co.gregs.dbvolution.utility;
 
 /**
  *
  * @author gregorygraham
  */
-public class NoAvailableDatabaseException extends DBRuntimeException {
+public class ReconnectionResults {
+  
+  private final String message;
 
-	private static final long serialVersionUID = 1l;
+  public ReconnectionResults(String string) {
+    this.message = string;
+  }
 
-	public NoAvailableDatabaseException(DBDatabaseCluster db) {
-    super("CRITICAL ERROR: Cluster "+db.getLabel()+" has No Available Database");
-	}
+  public String getMessage() {
+    return message;
+  }
+
+  @Override
+  public String toString() {
+    return getMessage();
+  }
+  
 }

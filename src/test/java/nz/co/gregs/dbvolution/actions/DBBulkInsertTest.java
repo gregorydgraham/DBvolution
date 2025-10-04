@@ -52,8 +52,8 @@ public class DBBulkInsertTest extends AbstractTest {
 	
 	@Test
 	public void testSaveWithAutoIncrement() throws Exception {
-		database.preventDroppingOfTables(false);
-		database.dropTableNoExceptions(new BulkInsertTestTable());
+		database.setPreventDroppingOfTables(false)
+            .dropTableNoExceptions(new BulkInsertTestTable());
 		database.createTableNoExceptions(new BulkInsertTestTable());
 		final BulkInsertTestTable row = new BulkInsertTestTable("Lada");
 		final BulkInsertTestTable row2 = new BulkInsertTestTable("Saab");

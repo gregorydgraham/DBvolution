@@ -47,8 +47,8 @@ public class DBLocalDateTest extends AbstractTest {
 		DBLocalDateTable dateOnlyTest = new DBLocalDateTable();
 		LocalDate then = LocalDate.now();
 		dateOnlyTest.dateOnly.setValue(then);
-		database.preventDroppingOfTables(false);
-		database.dropTableNoExceptions(dateOnlyTest);
+		database.setPreventDroppingOfTables(false)
+            .dropTableNoExceptions(dateOnlyTest);
 		database.createTable(dateOnlyTest);
 		database.insert(dateOnlyTest);
 		List<DBLocalDateTable> allRows = database.getDBTable(new DBLocalDateTable()).setBlankQueryAllowed(true).getAllRows();
@@ -56,8 +56,8 @@ public class DBLocalDateTest extends AbstractTest {
 		assertThat(allRows.get(0).dateOnly.getValue(), is(then));
 		assertThat(allRows.get(0).dateOnly.localDateValue(), is(then));
 		assertThat(allRows.get(0).dateOnly.getValue().compareTo(LocalDate.now()), isOneOf(-1, 0));
-		database.preventDroppingOfTables(false);
-		database.dropTableNoExceptions(dateOnlyTest);
+		database.setPreventDroppingOfTables(false)
+            .dropTableNoExceptions(dateOnlyTest);
 	}
 
 	public static class DBLocalDateTable extends DBRow {

@@ -58,7 +58,6 @@ public class DBInsert extends DBAction {
 	private final DBRow originalRow;
 	private boolean primaryKeyWasGenerated = false;
 	private Long primaryKeyGenerated = null;
-  private long rowsInserted;
 
 	/**
 	 * Creates a DBInsert action for the row.
@@ -147,7 +146,6 @@ public class DBInsert extends DBAction {
 		DBRow table = originalRow;
 		final DBInsert newInsert = new DBInsert(table);
 		DBActionList actions = new DBActionList(newInsert);
-//		int successfulInsertAt;
 
 		try (DBStatement statement = db.getDBStatement()) {
 			for (String sql : getSQLStatements(db)) {
@@ -157,8 +155,7 @@ public class DBInsert extends DBAction {
 						final List<QueryableDatatype<?>> primaryKeys = table.getPrimaryKeys();
 						if (primaryKeys == null || primaryKeys.isEmpty()) {
 							// There are no primary keys so execute and move on.
-							executeStatementAndHandleIntegrityConstraintViolation(statement, statementDetails, db, table);
-//							successfulInsertAt = 1;
+							newInsert.executeStatementAndHandleIntegrityConstraintViolation(statement, statementDetails, db, table);
 						} else {
 							boolean allPKsHaveBeenSet = true;
 							for (QueryableDatatype<?> primaryKey : primaryKeys) {
@@ -166,8 +163,7 @@ public class DBInsert extends DBAction {
 							}
 							if (allPKsHaveBeenSet) {
 								// The primary key has already been sorted for us so execute and move on.
-								executeStatementAndHandleIntegrityConstraintViolation(statement, statementDetails, db, table);
-//								successfulInsertAt = 2;
+								newInsert.executeStatementAndHandleIntegrityConstraintViolation(statement, statementDetails, db, table);
 							} else {
 								if (primaryKeys.size() == 1) {
 									QueryableDatatype<?> primaryKey = primaryKeys.get(0);
@@ -175,23 +171,20 @@ public class DBInsert extends DBAction {
 									Integer pkIndex = table.getPrimaryKeyIndexes().get(0);
 									if (pkIndex == null || primaryKeyColumnName == null) {
 										// We can't find the PK so just execute and move on.
-										executeStatementAndHandleIntegrityConstraintViolation(statement, statementDetails, db, table);
-//										successfulInsertAt = 3;
+										newInsert.executeStatementAndHandleIntegrityConstraintViolation(statement, statementDetails, db, table);
 
 									} else {
 										// There is a PK, it's not set, and we can find it, so we need to get it's value...
 										if (primaryKeyColumnName.isEmpty()) {
 											// Not sure of the column name, so ask for the keys and cross fingers.
 											statementDetails = statementDetails.withGeneratedKeys();
-											executeStatementAndHandleIntegrityConstraintViolation(statement, statementDetails, db, table);
-//											successfulInsertAt = 4;
+											newInsert.executeStatementAndHandleIntegrityConstraintViolation(statement, statementDetails, db, table);
 
 										} else {
 											// execute and ask for the column specifically, also cross fingers.
 											statementDetails = statementDetails
 													.withNamedPKColumn(db.getDefinition().formatPrimaryKeyForRetrievingGeneratedKeys(primaryKeyColumnName));
-											executeStatementAndHandleIntegrityConstraintViolation(statement, statementDetails, db, table);
-//											successfulInsertAt = 5;
+											newInsert.executeStatementAndHandleIntegrityConstraintViolation(statement, statementDetails, db, table);
 											pkIndex = 1;
 										}
 										if (primaryKey.hasBeenSet() == false) {
@@ -205,7 +198,7 @@ public class DBInsert extends DBAction {
 													}
 												}
 											} catch (SQLException ex) {
-												throw new RuntimeException(ex);
+												throw ex;
 											}
 										}
 									}
@@ -217,16 +210,14 @@ public class DBInsert extends DBAction {
 						updateSequenceIfNecessary(defn, db, sql, table, statement);
 					} catch (SQLException sqlex) {
 						try {
-							executeStatementAndHandleIntegrityConstraintViolation(statement, statementDetails, db, table);
-//							successfulInsertAt = 6;
+							newInsert.executeStatementAndHandleIntegrityConstraintViolation(statement, statementDetails, db, table);
 						} catch (SQLException ex) {
-							throw ex;
+							throw sqlex;
 						}
 					}
 				} else {
 					try {
-						executeStatementAndHandleIntegrityConstraintViolation(statement, statementDetails, db, table);
-//						successfulInsertAt = 7;
+						newInsert.executeStatementAndHandleIntegrityConstraintViolation(statement, statementDetails, db, table);
 						updatePrimaryKeyByRetreivingLastInsert(statement, defn, table);
 						updateSequenceIfNecessary(defn, db, sql, table, statement);
 					} catch (SQLException ex) {
@@ -490,7 +481,7 @@ public class DBInsert extends DBAction {
 
 	@Override
 	public boolean runOnDatabaseDuringCluster(DBDatabase initialDatabase, DBDatabase next) {
-		return initialDatabase != next;
+		return !initialDatabase.equals(next);
 	}
 
 	@Override

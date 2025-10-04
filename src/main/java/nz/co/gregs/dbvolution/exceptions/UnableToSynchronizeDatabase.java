@@ -41,12 +41,27 @@ public class UnableToSynchronizeDatabase extends Exception {
 
   private static final long serialVersionUID = 1L;
 
+  private static final String UNKNOWN_REASON = "unknown reason";
+  private static final Exception NO_EXCEPTION = null;
+  
   public UnableToSynchronizeDatabase(String clusterLabel, DBDatabase db) {
-    this(clusterLabel, db, null);
+    this(clusterLabel, db, NO_EXCEPTION, UNKNOWN_REASON);
+  }
+  public UnableToSynchronizeDatabase(String clusterLabel, DBDatabase db, String message) {
+    this(clusterLabel, db, NO_EXCEPTION, message);
   }
 
   public UnableToSynchronizeDatabase(String clusterLabel, DBDatabase db, Exception cause) {
-    super("Unable to synchronize database " + StringCheck.isNotEmptyNorNull(db.getLabel(), db.getJdbcURL()) + " with cluster " + StringCheck.check(clusterLabel, "UNLABELED CLUSTER"), cause);
+    this(clusterLabel, db, cause, UNKNOWN_REASON);
+
+  }
+  public UnableToSynchronizeDatabase(String clusterLabel, DBDatabase db, Exception cause, String message) {
+    super("Unable to synchronize database " 
+            + StringCheck.isNotEmptyNorNull(db.getLabel(), db.getJdbcURL()) 
+            + " with cluster " + StringCheck.check(clusterLabel, "UNLABELED CLUSTER")
+            +": "+message, 
+            cause
+    );
 
   }
 }

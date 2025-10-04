@@ -62,8 +62,8 @@ public class DBUUIDTest extends AbstractTest {
 		insertRow.uuidValue.setValue(correctUUID);
 		assertThat(insertRow.uuidValue.getValue().toString(), is(correctString));
 
-		database.preventDroppingOfTables(false);
-		database.dropTableNoExceptions(insertRow);
+		database.setPreventDroppingOfTables(false)
+            .dropTableNoExceptions(insertRow);
 		database.createTableNoExceptions(insertRow);
 		database.insert(insertRow);
 		DBTable<UUIDTestTable> table = database.getDBTable(new UUIDTestTable());
@@ -86,8 +86,8 @@ public class DBUUIDTest extends AbstractTest {
 		final UUID correctUUID = insertRow.uuidValue.getValue();
 		final String correctString = correctUUID.toString();
 
-		database.preventDroppingOfTables(false);
-		database.dropTableNoExceptions(insertRow);
+		database.setPreventDroppingOfTables(false)
+            .dropTableNoExceptions(insertRow);
 		database.createTableNoExceptions(insertRow);
 		database.insert(insertRow);
 		DBTable<UUIDTestTable> table = database.getDBTable(new UUIDTestTable());
@@ -111,8 +111,8 @@ public class DBUUIDTest extends AbstractTest {
 		final UUID correctUUID = insertRow.uuidValue.getValue();
 		final String correctString = correctUUID.toString();
 
-		database.preventDroppingOfTables(false);
-		database.dropTableNoExceptions(insertRow);
+		database.setPreventDroppingOfTables(false)
+            .dropTableNoExceptions(insertRow);
 		database.createTableNoExceptions(insertRow);
 		database.insert(insertRow);
 		DBTable<UUIDTestTable> table = database.getDBTable(new UUIDTestTable());
@@ -139,8 +139,8 @@ public class DBUUIDTest extends AbstractTest {
 		insertRow.uuidValue.setValue(correctUUID);
 		assertThat(insertRow.uuidValue.getValue().toString(), is(correctString));
 
-		database.preventDroppingOfTables(false);
-		database.dropTableNoExceptions(insertRow);
+		database.setPreventDroppingOfTables(false)
+            .dropTableNoExceptions(insertRow);
 		database.createTableNoExceptions(insertRow);
 		database.insert(insertRow);
 		DBTable<UUIDTestTable> table = database.getDBTable(new UUIDTestTable());
@@ -167,8 +167,8 @@ public class DBUUIDTest extends AbstractTest {
 		insertRow.uuidValue.setValueToNamedUUIDFromBytes(bytes);
 		assertThat(insertRow.uuidValue.getValue().toString(), is(correctString));
 
-		database.preventDroppingOfTables(false);
-		database.dropTableNoExceptions(insertRow);
+		database.setPreventDroppingOfTables(false)
+            .dropTableNoExceptions(insertRow);
 		database.createTableNoExceptions(insertRow);
 		database.insert(insertRow);
 		DBTable<UUIDTestTable> table = database.getDBTable(new UUIDTestTable());
@@ -186,8 +186,8 @@ public class DBUUIDTest extends AbstractTest {
 	public void testDefaultToRandomUUID() throws SQLException {
 		
 		UUIDTestTable insertRow = new UUIDTestTable();
-		database.preventDroppingOfTables(false);
-		database.dropTableNoExceptions(insertRow);
+		database.setPreventDroppingOfTables(false)
+            .dropTableNoExceptions(insertRow);
 		database.createTableNoExceptions(insertRow);
 		
 		database.insert(new UUIDTestTable(), new UUIDTestTable());

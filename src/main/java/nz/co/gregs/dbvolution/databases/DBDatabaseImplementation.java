@@ -68,6 +68,7 @@ import nz.co.gregs.dbvolution.utility.StringCheck;
 import nz.co.gregs.regexi.Regex;
 import static nz.co.gregs.dbvolution.databases.QueryIntention.*;
 import static nz.co.gregs.dbvolution.databases.DBDatabaseImplementation.ResponseToException.*;
+import nz.co.gregs.dbvolution.utility.Preventer;
 
 /**
  * DBDatabase is the repository of all knowledge about your database.
@@ -101,9 +102,7 @@ public abstract class DBDatabaseImplementation implements DBDatabase, Serializab
 	boolean isInATransaction = false;
 	transient DBTransactionStatement transactionStatement;
 	protected DBDefinition definition = null;
-	private boolean batchIfPossible = true;
-	private boolean preventAccidentalDroppingOfTables = true;
-	private boolean preventAccidentalDroppingDatabase = true;
+	protected boolean batchIfPossible = true;
 	private transient final Object getStatementSynchronizeObject = new Object();
 	private transient final Object getConnectionSynchronizeObject = new Object();
 	transient DBConnection transactionConnection;
@@ -118,7 +117,9 @@ public abstract class DBDatabaseImplementation implements DBDatabase, Serializab
 	private transient ScheduledFuture<?> REGULAR_THREAD_POOL_FUTURE;
 	private boolean hasCreatedRequiredTables = false;
 	private boolean quietExceptionsPreference = false;
-	protected boolean preventAccidentalDeletingAllRowFromTable = true;
+	protected transient Preventer droppingOfTables = new Preventer();
+	protected transient Preventer droppingDatabase = new Preventer();
+	protected transient Preventer deletingAllRowsFromTable = new Preventer();
 
 	{
 		Runtime.getRuntime().addShutdownHook(new StopDatabase(this));
@@ -1827,18 +1828,36 @@ public abstract class DBDatabaseImplementation implements DBDatabase, Serializab
 	
 	If you must use it, maybe you're the DBA or something, this only works for one call of dropTable().
 	
-	It is automatically reset to TRUE after every use to avoid accidental use.
+	It is automatically resetFrom to TRUE after every use to avoid accidental use.
 	
 	Also note that there is a race condition between the setting of this and your call to dropTable().  If other code
 	calls dropTable() somewhere else, it may get there before you do, so just never use this, OK?
 	 */
-	@Override
-	public synchronized void preventDroppingOfTables(boolean droppingTablesIsAMistake) {
-		preventAccidentalDroppingOfTables = droppingTablesIsAMistake;
-	}
+//	@Override
+//	public synchronized void setPreventDroppingOfTables(boolean droppingTablesIsAMistake) {
+//		droppingOfTables = droppingTablesIsAMistake;
+//	}
+  @Override
+  public DBDatabase setPreventDroppingOfTables(boolean droppingTablesIsAMistake) {
+    if (droppingTablesIsAMistake) {
+      return this;
+    }
+    synchronized (PREVENT_ACCIDENTALLY_DROPPING_TABLES_SYCHRO) {
+      try {
+        DBDatabaseImplementation dangerous = this.clone();
+        dangerous.droppingOfTables.allow();
+        return dangerous;
+      } catch (CloneNotSupportedException ex) {
+        LOG.error("DBDatabase implementation " + this.getClass().getSimpleName() + " does not support the clone() method.", ex);
+        return null;
+      }
+    }
+  }
+  
+  private final transient Object PREVENT_ACCIDENTALLY_DROPPING_TABLES_SYCHRO = new Object();
 
-	protected synchronized boolean getPreventAccidentalDroppingOfTables() {
-		return preventAccidentalDroppingOfTables;
+	protected synchronized Preventer getPreventAccidentalDroppingOfTables() {
+		return droppingOfTables;
 	}
 
 	/**
@@ -1850,25 +1869,29 @@ public abstract class DBDatabaseImplementation implements DBDatabase, Serializab
 	
 	If you must use it, maybe you're the DBA or something, this only works for one call of dropDatabase().
 	
-	It is automatically reset to TRUE after every use to avoid accidental use.
+	It is automatically resetFrom to TRUE after every use to avoid accidental use.
 	
 	Also note that there is a race condition between the setting of this and your call to dropDatabase().  If other code
 	calls dropDatabase() somewhere else, it may get there before you do, so just never use this, OK?
 	 */
 	@Override
 	public synchronized void preventDroppingOfDatabases(boolean justLeaveThisAtTrue) {
-		preventAccidentalDroppingDatabase = justLeaveThisAtTrue;
-	}
+    if (justLeaveThisAtTrue) {
+      droppingDatabase.prevent();
+    } else {
+      droppingDatabase.allow();
+    }
+  }
 
 	public synchronized boolean getPreventAccidentalDroppingOfDatabases() {
-		return preventAccidentalDroppingDatabase;
+		return droppingDatabase.isPrevented();
 	}
 
 	public synchronized void preventAccidentalDroppingOfDatabases(DBAction action) throws AccidentalDroppingOfDatabaseException {
-		if (preventAccidentalDroppingDatabase && action.getIntent().isDropDatabase()) {
+		if (droppingDatabase.isPrevented() && action.getIntent().isDropDatabase()) {
 			throw new AccidentalDroppingOfDatabaseException();
 		} else {
-			preventAccidentalDroppingDatabase = true;
+			droppingDatabase.using();
 		}
 	}
 
@@ -2222,18 +2245,19 @@ public abstract class DBDatabaseImplementation implements DBDatabase, Serializab
 	}
 
 	protected synchronized void preventAccidentalDroppingOfTables(DBAction action) throws AccidentalDroppingOfTableException {
-		if (preventAccidentalDroppingOfTables && action.getIntent().isDropTable()) {
+		if (droppingOfTables.isPrevented() && action.getIntent().isDropTable()) {
 			throw new AccidentalDroppingOfTableException();
 		} else {
-			preventAccidentalDroppingOfTables = true;
+			droppingOfTables.using();
 		}
 	}
 
+  @Override
 	public synchronized void preventAccidentalDeletingAllRowsFromTable(DBAction action) throws AccidentalDroppingOfTableException {
-		if (preventAccidentalDeletingAllRowFromTable && action.getIntent().isDeleteAllRows()) {
+		if (deletingAllRowsFromTable.isPrevented() && action.getIntent().isDeleteAllRows()) {
 			throw new AccidentalDeletingAllRowsFromTableException();
 		} else {
-			preventAccidentalDeletingAllRowFromTable = true;
+			deletingAllRowsFromTable.using();
 		}
 	}
 
@@ -2245,7 +2269,7 @@ public abstract class DBDatabaseImplementation implements DBDatabase, Serializab
     synchronized (PREVENT_ACCIDENTALLY_DELETING_SYCHRO) {
       try {
         DBDatabaseImplementation dangerous = this.clone();
-        dangerous.preventAccidentalDeletingAllRowFromTable = false;
+        dangerous.deletingAllRowsFromTable.allow();
         return dangerous;
       } catch (CloneNotSupportedException ex) {
         LOG.error("DBDatabase implementation " + this.getClass().getSimpleName() + " does not support the clone() method.", ex);
@@ -2266,6 +2290,12 @@ public abstract class DBDatabaseImplementation implements DBDatabase, Serializab
 		return false;
 	}
 
+  protected void resetPreventionStates() {
+    deletingAllRowsFromTable.reset();
+    droppingDatabase.reset();
+    droppingOfTables.reset();
+  }
+
 	public static enum ResponseToException {
 		REPLACECONNECTION(),
 		REQUERY(),
@@ -2284,18 +2314,25 @@ public abstract class DBDatabaseImplementation implements DBDatabase, Serializab
 
 	@Override
 	public DBActionList executeDBAction(DBAction action) throws SQLException, NoAvailableDatabaseException {
-		preventAccidentalDDLDuringTransaction(action);
+		if (terminated) {
+      throw new DatabaseShutdownInProgress();
+    }
+    preventAccidentalDDLDuringTransaction(action);
 		preventAccidentalDroppingOfDatabases(action);
 		preventAccidentalDroppingOfTables(action);
 		preventAccidentalDeletingAllRowsFromTable(action);
-		if (quietExceptionsPreference) {
-			try {
-				return action.execute(this);
-			} catch (SQLException acceptableException) {
-			}
-		}
-		return action.execute(this);
-	}
+    try {
+      return action.execute(this);
+    } catch (SQLException acceptableException) {
+      if (quietExceptionsPreference) {
+      }else{
+        throw acceptableException;
+      }
+    } finally {
+      resetPreventionStates();
+    }
+    return new DBActionList();
+  }
 
 	@Override
 	public void setQuietExceptionsPreference(boolean b) {

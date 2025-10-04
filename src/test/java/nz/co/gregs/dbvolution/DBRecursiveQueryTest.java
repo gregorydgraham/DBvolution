@@ -56,8 +56,8 @@ public class DBRecursiveQueryTest extends AbstractTest {
 
 	@Before
 	public synchronized void setup() throws Exception {
-		database.preventDroppingOfTables(false);
-		database.dropTableNoExceptions(new Parts());
+		database.setPreventDroppingOfTables(false)
+            .dropTableNoExceptions(new Parts());
 		database.createTable(new Parts());
 		database.insert(wing);
 		aileron = new Parts(wing.partID.intValue(), "aileron");
@@ -67,8 +67,8 @@ public class DBRecursiveQueryTest extends AbstractTest {
 		database.insert(lever);
 		database.insert(screw);
 
-		database.preventDroppingOfTables(false);
-		database.dropTableNoExceptions(new PartsWithoutTableName());
+		database.setPreventDroppingOfTables(false)
+            .dropTableNoExceptions(new PartsWithoutTableName());
 		database.createTable(new PartsWithoutTableName());
 		database.insert(wingWithout);
 		aileronWithout = new PartsWithoutTableName(wing.partID.intValue(), "aileron");
@@ -76,14 +76,14 @@ public class DBRecursiveQueryTest extends AbstractTest {
 		database.insert(new PartsWithoutTableName(aileron.partID.intValue(), "lever"));
 		database.insert(new PartsWithoutTableName(aileron.partID.intValue(), "screw"));
 
-		database.preventDroppingOfTables(false);
-		database.dropTableNoExceptions(new CompletePart());
+		database.setPreventDroppingOfTables(false)
+            .dropTableNoExceptions(new CompletePart());
 		database.createTable(new CompletePart());
 		database.insert(new CompletePart(aileron.partID.intValue(), "Aileron"));
 		database.insert(new CompletePart(wing.partID.intValue(), "Wing"));
 
-		database.preventDroppingOfTables(false);
-		database.dropTableNoExceptions(new PartsStringKey());
+		database.setPreventDroppingOfTables(false)
+            .dropTableNoExceptions(new PartsStringKey());
 		database.createTable(new PartsStringKey());
 		database.insert(wingString);
 		aileronString = new PartsStringKey("aileronid", wingString.partID.stringValue(), "aileron");

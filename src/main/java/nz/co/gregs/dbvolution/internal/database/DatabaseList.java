@@ -32,10 +32,12 @@ package nz.co.gregs.dbvolution.internal.database;
 
 import java.io.Serializable;
 import java.util.*;
+import java.util.concurrent.ThreadLocalRandom;
 import java.util.stream.Collectors;
 import nz.co.gregs.dbvolution.databases.DBDatabase;
 import nz.co.gregs.dbvolution.databases.DBDatabaseCluster;
 import static nz.co.gregs.dbvolution.databases.DBDatabaseCluster.Status.*;
+import nz.co.gregs.dbvolution.exceptions.NoAvailableDatabaseException;
 
 /**
  *
@@ -45,13 +47,14 @@ public class DatabaseList implements Serializable {
 
   private static final long serialVersionUID = 1L;
 
-  private final HashMap<String, EntryValues> map = new HashMap<>(0);
+	private final static Random RANDOM = ThreadLocalRandom.current();
+  
+  private final HashMap<String, EntryValue> map = new HashMap<>(0);
 
   public DatabaseList() {
   }
 
-  public DatabaseList(DBDatabase firstDB, DBDatabase... databases) {
-    add(firstDB);
+  public DatabaseList(DBDatabase... databases) {
     for (var db : databases) {
       add(db);
     }
@@ -68,7 +71,7 @@ public class DatabaseList implements Serializable {
   public synchronized boolean contains(Object o) {
     if (o instanceof DBDatabase) {
       DBDatabase db = (DBDatabase) o;
-      return map.containsKey(EntryValues.getKey(db));
+      return map.containsKey(EntryValue.getKey(db));
     } else {
       return false;
     }
@@ -86,8 +89,8 @@ public class DatabaseList implements Serializable {
    * already been added (the database is still added)
    */
   public synchronized final boolean add(DBDatabase database) {
-    final EntryValues entry = new EntryValues(database);
-    EntryValues put = map.put(entry.key, entry);
+    final EntryValue entry = new EntryValue(database);
+    EntryValue put = map.put(entry.key, entry);
     return put == null;
   }
 
@@ -99,14 +102,14 @@ public class DatabaseList implements Serializable {
    * unknown.
    */
   public synchronized boolean remove(DBDatabase e) {
-    EntryValues remove = map.remove(EntryValues.getKey(e));
+    EntryValue remove = map.remove(EntryValue.getKey(e));
     return remove == null;
   }
 
   public synchronized boolean containsAll(Collection<DBDatabase> c) {
     boolean allAreInTheMap = c
             .stream()
-            .allMatch(t -> map.containsKey(EntryValues.getKey(t))
+            .allMatch(t -> map.containsKey(EntryValue.getKey(t))
             );
     return allAreInTheMap;
   }
@@ -143,12 +146,12 @@ public class DatabaseList implements Serializable {
 
   private synchronized void set(DBDatabase db, DBDatabaseCluster.Status newStatus) {
     if(db!=null && newStatus != null) {
-      final String key = EntryValues.getKey(db);
-      EntryValues val = map.get(key);
+      final String key = EntryValue.getKey(db);
+      EntryValue val = map.get(key);
       boolean fresh = false;
       boolean changed = false;
       if (val == null) {
-        val = new EntryValues(db);
+        val = new EntryValue(db);
         fresh = true;
       }
       if (val.status != newStatus) {
@@ -221,17 +224,17 @@ public class DatabaseList implements Serializable {
   }
 
   public synchronized DBDatabaseCluster.Status getStatusOf(DBDatabase statusOfThisDatabase) {
-    return map.getOrDefault(EntryValues.getKey(statusOfThisDatabase), EntryValues.UNKNOWN).status;
+    return map.getOrDefault(EntryValue.getKey(statusOfThisDatabase), EntryValue.UNKNOWN).status;
   }
 
   public synchronized boolean isReady(DBDatabase database) {
-    EntryValues val = map.get(EntryValues.getKey(database));
+    EntryValue val = map.get(EntryValue.getKey(database));
     return val != null && READY.equals(val.status);
   }
 
   public synchronized DBDatabase[] getDatabases(DBDatabaseCluster.Status... statuses) {
     List<DBDatabase> found = new ArrayList<>(0);
-    for (EntryValues entry : map.values()) {
+    for (EntryValue entry : map.values()) {
       for (DBDatabaseCluster.Status status : statuses) {
         if (entry.status.equals(status)) {
           found.add(entry.database);
@@ -270,19 +273,48 @@ public class DatabaseList implements Serializable {
     return 6;
   }
 
-  private boolean exceedsQuarantineLimit(EntryValues val) {
+  private boolean exceedsQuarantineLimit(EntryValue val) {
     return val.status.equals(QUARANTINED)
                 && val.escalationCounter > getEscalationLimit(QUARANTINED);
   }
 
-  private boolean exceedsUnsynchronisedLimit(EntryValues val) {
+  private boolean exceedsUnsynchronisedLimit(EntryValue val) {
     return val.status.equals(UNSYNCHRONISED)
                 && val.escalationCounter > getEscalationLimit(UNSYNCHRONISED);
   }
 
-  public static class EntryValues extends Object {
+  public synchronized void replace(DBDatabase databaseToAdd) {
+    if (!contains(databaseToAdd)){
+      add(databaseToAdd);
+    }else{
+      final EntryValue oldVal = map.get(EntryValue.getKey(databaseToAdd));
+      final EntryValue newVal = new EntryValue(databaseToAdd);
+      newVal.copy(oldVal);
+      map.replace(newVal.key, newVal);
+    }
+  }
+
+  public DBDatabase getRandomDatabase() {
+    if (size() < 1) {
+      return null;
+    }
+    if (size() == 1){
+      return getEntryValueByIndex(0).database;
+    }
+    final int randNumber = RANDOM.nextInt(map.size());
+    DBDatabase randomElement = getEntryValueByIndex(randNumber).database;
+    return randomElement;
+  }
+
+  private EntryValue getEntryValueByIndex(int index) {
+    return map.values().toArray(EntryValue.EMPTY_ARRAY)[index];
+  }
+  
+
+  public static class EntryValue extends Object {
     
-    public static final EntryValues UNKNOWN = new EntryValues(null);
+    public static final EntryValue UNKNOWN = new EntryValue(null);
+    public static final EntryValue[] EMPTY_ARRAY = new EntryValue[0];
     private static final String UNKNOWN_KEY = "~~UNKNOWN_KEY~~";
     
     final String key;
@@ -294,7 +326,7 @@ public class DatabaseList implements Serializable {
       return db==null?UNKNOWN_KEY:db.getSettings().encode();
     }
 
-    public EntryValues(DBDatabase database1) {
+    public EntryValue(DBDatabase database1) {
       if(database1 == null) {
         this.database = null;
         this.key = UNKNOWN_KEY;
@@ -306,6 +338,11 @@ public class DatabaseList implements Serializable {
         this.status = UNSYNCHRONISED;
         this.escalationCounter = 0;
       }
+    }
+    
+    public void copy(EntryValue copyValues){
+      escalationCounter = copyValues.escalationCounter;
+      status = copyValues.status;
     }
   }
 }

@@ -1842,8 +1842,8 @@ public class LocalDateTimeExpressionTest extends AbstractTest {
 	@Before
 	public void setupMarqueWithLocalDateTime() throws Exception {
 		DBDatabase db = database;
-		db.preventDroppingOfTables(false);
-		db.dropTableIfExists(new MarqueWithLocalDateTime());
+		db.setPreventDroppingOfTables(false)
+            .dropTableIfExists(new MarqueWithLocalDateTime());
 		db.createTable(new MarqueWithLocalDateTime());
     
     DBScript script = new DBScript() {

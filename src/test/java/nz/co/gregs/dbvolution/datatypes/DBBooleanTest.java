@@ -47,8 +47,8 @@ public class DBBooleanTest extends AbstractTest {
 	@Test
 	public void testGetValue() throws SQLException {
 		BooleanTest boolTest = new BooleanTest();
-		database.preventDroppingOfTables(false);
-		database.dropTableNoExceptions(boolTest);
+		database.setPreventDroppingOfTables(false)
+            .dropTableNoExceptions(boolTest);
 		database.createTable(boolTest);
 
 		boolTest.boolColumn.setValue(true);
@@ -63,15 +63,15 @@ public class DBBooleanTest extends AbstractTest {
 		allRows = database.getDBTable(new BooleanTest()).setBlankQueryAllowed(true).getAllRows();
 		assertThat(allRows.size(), is(2));
 
-		database.preventDroppingOfTables(false);
-		database.dropTableNoExceptions(boolTest);
+		database.setPreventDroppingOfTables(false)
+            .dropTableNoExceptions(boolTest);
 	}
 
 	@Test
 	public void testPermittedAndExcludedValues() throws SQLException {
 		BooleanTest boolTest = new BooleanTest();
-		database.preventDroppingOfTables(false);
-		database.dropTableNoExceptions(boolTest);
+		database.setPreventDroppingOfTables(false)
+            .dropTableNoExceptions(boolTest);
 		database.createTable(boolTest);
 
 		boolTest.boolColumn.setValue(true);
@@ -92,8 +92,8 @@ public class DBBooleanTest extends AbstractTest {
 		assertThat(allRows.size(), is(1));
 		assertThat(allRows.get(0).boolColumn.booleanValue(), is(true));
 
-		database.preventDroppingOfTables(false);
-		database.dropTableNoExceptions(boolTest);
+		database.setPreventDroppingOfTables(false)
+            .dropTableNoExceptions(boolTest);
 	}
 
 	public static class BooleanTest extends DBRow {

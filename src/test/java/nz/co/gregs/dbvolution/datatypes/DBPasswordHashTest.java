@@ -62,8 +62,8 @@ public class DBPasswordHashTest extends AbstractTest {
 		insertRow.wrongpassword.setValue(wrongPassword);
 		assertThat(insertRow.password.getValue(), not(insertRow.passwordHash.getValue()));
 
-		database.preventDroppingOfTables(false);
-		database.dropTableNoExceptions(insertRow);
+		database.setPreventDroppingOfTables(false)
+            .dropTableNoExceptions(insertRow);
 		database.createTableNoExceptions(insertRow);
 		database.insert(insertRow);
 		DBTable<PasswordTestTable> table = database.getDBTable(new PasswordTestTable());

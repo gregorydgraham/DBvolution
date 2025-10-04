@@ -61,8 +61,8 @@ public class DBPolygon2DTest extends AbstractTest {
 	public void basicSpatialTest() throws SQLException {
 		if (database instanceof SupportsPolygonDatatype) {
 			BasicSpatialTable spatial = new BasicSpatialTable();
-			database.preventDroppingOfTables(false);
-			database.dropTableNoExceptions(spatial);
+			database.setPreventDroppingOfTables(false)
+              .dropTableNoExceptions(spatial);
 			database.createTable(spatial);
 
 			GeometryFactory geoFactory = new GeometryFactory();
@@ -92,8 +92,8 @@ public class DBPolygon2DTest extends AbstractTest {
 	public void testValueFromPointArrayWithIntersects() throws SQLException {
 		if (database instanceof SupportsPolygonDatatype) {
 			BasicSpatialTable spatial = new BasicSpatialTable();
-			database.preventDroppingOfTables(false);
-			database.dropTableNoExceptions(spatial);
+			database.setPreventDroppingOfTables(false)
+              .dropTableNoExceptions(spatial);
 			database.createTable(spatial);
 
 			GeometryFactory fac = new GeometryFactory();
@@ -128,8 +128,8 @@ public class DBPolygon2DTest extends AbstractTest {
 	public void testValueFromPointExpressionArrayWithIntersects() throws SQLException {
 		if (database instanceof SupportsPolygonDatatype) {
 			BasicSpatialTable spatial = new BasicSpatialTable();
-			database.preventDroppingOfTables(false);
-			database.dropTableNoExceptions(spatial);
+			database.setPreventDroppingOfTables(false)
+              .dropTableNoExceptions(spatial);
 			database.createTable(spatial);
 
 			GeometryFactory fac = new GeometryFactory();
@@ -164,8 +164,8 @@ public class DBPolygon2DTest extends AbstractTest {
 	public void testValueFromPolygonResultWithIntersects() throws SQLException {
 		if (database instanceof SupportsPolygonDatatype) {
 			BasicSpatialTable spatial = new BasicSpatialTable();
-			database.preventDroppingOfTables(false);
-			database.dropTableNoExceptions(spatial);
+			database.setPreventDroppingOfTables(false)
+              .dropTableNoExceptions(spatial);
 			database.createTable(spatial);
 
 			GeometryFactory fac = new GeometryFactory();
@@ -201,8 +201,8 @@ public class DBPolygon2DTest extends AbstractTest {
 	public void testValueFromNumberArrayWithIntersects() throws SQLException {
 		if (database instanceof SupportsPolygonDatatype) {
 			BasicSpatialTable spatial = new BasicSpatialTable();
-			database.preventDroppingOfTables(false);
-			database.dropTableNoExceptions(spatial);
+			database.setPreventDroppingOfTables(false)
+              .dropTableNoExceptions(spatial);
 			database.createTable(spatial);
 
 			GeometryFactory fac = new GeometryFactory();
@@ -231,8 +231,8 @@ public class DBPolygon2DTest extends AbstractTest {
 	public void testIntersects() throws SQLException {
 		if (database instanceof SupportsPolygonDatatype) {
 			BasicSpatialTable spatial = new BasicSpatialTable();
-			database.preventDroppingOfTables(false);
-			database.dropTableNoExceptions(spatial);
+			database.setPreventDroppingOfTables(false)
+              .dropTableNoExceptions(spatial);
 			database.createTable(spatial);
 
 			GeometryFactory fac = new GeometryFactory();
@@ -269,8 +269,8 @@ public class DBPolygon2DTest extends AbstractTest {
 	public void testIfThenElse() throws SQLException {
 		if (database instanceof SupportsPolygonDatatype) {
 			BasicSpatialTable spatial = new BasicSpatialTable();
-			database.preventDroppingOfTables(false);
-			database.dropTableNoExceptions(spatial);
+			database.setPreventDroppingOfTables(false)
+              .dropTableNoExceptions(spatial);
 			database.createTable(spatial);
 
 			GeometryFactory fac = new GeometryFactory();
@@ -302,8 +302,8 @@ public class DBPolygon2DTest extends AbstractTest {
 	public void testContains() throws SQLException {
 		if (database instanceof SupportsPolygonDatatype) {
 			BasicSpatialTable spatial = new BasicSpatialTable();
-			database.preventDroppingOfTables(false);
-			database.dropTableNoExceptions(spatial);
+			database.setPreventDroppingOfTables(false)
+              .dropTableNoExceptions(spatial);
 			database.createTable(spatial);
 
 			GeometryFactory fac = new GeometryFactory();
@@ -341,8 +341,8 @@ public class DBPolygon2DTest extends AbstractTest {
 	public void testDoesNotIntersect() throws SQLException {
 		if (database instanceof SupportsPolygonDatatype) {
 			BasicSpatialTable spatial = new BasicSpatialTable();
-			database.preventDroppingOfTables(false);
-			database.dropTableNoExceptions(spatial);
+			database.setPreventDroppingOfTables(false)
+              .dropTableNoExceptions(spatial);
 			database.createTable(spatial);
 
 			GeometryFactory fac = new GeometryFactory();
@@ -384,8 +384,8 @@ public class DBPolygon2DTest extends AbstractTest {
 	public void testIs() throws SQLException {
 		if (database instanceof SupportsPolygonDatatype) {
 			BasicSpatialTable spatial = new BasicSpatialTable();
-			database.preventDroppingOfTables(false);
-			database.dropTableNoExceptions(spatial);
+			database.setPreventDroppingOfTables(false)
+              .dropTableNoExceptions(spatial);
 			database.createTable(spatial);
 
 			GeometryFactory fac = new GeometryFactory();
@@ -427,8 +427,8 @@ public class DBPolygon2DTest extends AbstractTest {
 	public void testIsNot() throws SQLException {
 		if (database instanceof SupportsPolygonDatatype) {
 			BasicSpatialTable spatial = new BasicSpatialTable();
-			database.preventDroppingOfTables(false);
-			database.dropTableNoExceptions(spatial);
+			database.setPreventDroppingOfTables(false)
+              .dropTableNoExceptions(spatial);
 			database.createTable(spatial);
 
 			GeometryFactory fac = new GeometryFactory();
@@ -695,8 +695,8 @@ public class DBPolygon2DTest extends AbstractTest {
 
 	private GeometryFactory addStandardDataSet() throws AutoCommitActionDuringTransactionException, SQLException, AccidentalDroppingOfTableException {
 		BasicSpatialTable spatial = new BasicSpatialTable();
-		database.preventDroppingOfTables(false);
-		database.dropTableNoExceptions(spatial);
+		database.setPreventDroppingOfTables(false)
+            .dropTableNoExceptions(spatial);
 		database.createTable(spatial);
 		GeometryFactory fac = new GeometryFactory();
 		Point createPoint = fac.createPoint(new Coordinate(5, 10));

@@ -194,7 +194,7 @@ public abstract class DBAction implements Serializable {
 	public abstract DBActionList execute(DBDatabase db) throws SQLException;
 
 	public boolean requiresRunOnIndividualDatabaseBeforeCluster() {
-		// this was FALSE to allow for effeciency
+		// this was FALSE to allow for efficiency
 		// but maintaining the cluster is more important
 		// so every type of DBAction must run successfully 
 		// at least once

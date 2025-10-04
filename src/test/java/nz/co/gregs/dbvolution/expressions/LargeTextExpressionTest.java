@@ -53,14 +53,14 @@ public class LargeTextExpressionTest extends AbstractTest {
 	
 	@After
 	public void dropTable() throws AutoCommitActionDuringTransactionException, SQLException{
-		database.preventDroppingOfTables(false);
-		database.dropTableNoExceptions(new ExampleTableForLargeText());
+		database.setPreventDroppingOfTables(false)
+            .dropTableNoExceptions(new ExampleTableForLargeText());
 	}
 	
 	@Before
 	public void createTable() throws AutoCommitActionDuringTransactionException, SQLException{
-		database.preventDroppingOfTables(false);
-		database.dropTableNoExceptions(new ExampleTableForLargeText());
+		database.setPreventDroppingOfTables(false)
+            .dropTableNoExceptions(new ExampleTableForLargeText());
 		database.createTable(new ExampleTableForLargeText());
 	}
 

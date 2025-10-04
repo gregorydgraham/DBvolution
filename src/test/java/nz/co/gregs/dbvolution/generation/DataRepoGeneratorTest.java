@@ -250,8 +250,8 @@ public class DataRepoGeneratorTest {
 		}
 		assertThat(classesTested, is(5));
 
-		database.preventDroppingOfTables(false);
-		database.dropTable(new TestAutoIncrementDetection());
+		database.setPreventDroppingOfTables(false)
+            .dropTable(new TestAutoIncrementDetection());
 	}
 
 	@Test
@@ -311,8 +311,8 @@ public class DataRepoGeneratorTest {
 		}
 		assertThat(classesTested, is(1));
 
-		database.preventDroppingOfTables(false);
-		database.dropTable(new CreateTableForeignKey());
+		database.setPreventDroppingOfTables(false)
+            .dropTable(new CreateTableForeignKey());
 	}
 
 	@Test
@@ -373,8 +373,8 @@ public class DataRepoGeneratorTest {
 		}
 		assertThat(classesTested, is(1));
 
-		database.preventDroppingOfTables(false);
-		database.dropTable(new CreateTableForeignKeyy());
+		database.setPreventDroppingOfTables(false)
+            .dropTable(new CreateTableForeignKeyy());
 	}
 
 	@Test

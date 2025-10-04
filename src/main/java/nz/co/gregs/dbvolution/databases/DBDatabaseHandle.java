@@ -90,6 +90,11 @@ public class DBDatabaseHandle implements DBDatabase {
 		return wrappedDatabase.setPreventAccidentalDeletingAllRowsFromTable(b);
 	}
 
+  @Override
+  public void setLabel(String newLabel) {
+    wrappedDatabase.setLabel(newLabel);
+  }
+
 	@Override
 	public DBActionList createOrUpdateTable(DBRow newTableRow) throws SQLException, AutoCommitActionDuringTransactionException {
 		return wrappedDatabase.createOrUpdateTable(newTableRow);
@@ -361,8 +366,8 @@ public class DBDatabaseHandle implements DBDatabase {
 	}
 
 	@Override
-	public void preventDroppingOfTables(boolean droppingTablesIsAMistake) {
-		wrappedDatabase.preventDroppingOfTables(droppingTablesIsAMistake);
+	public DBDatabase setPreventDroppingOfTables(boolean droppingTablesIsAMistake) {
+    return wrappedDatabase.setPreventDroppingOfTables(droppingTablesIsAMistake);
 	}
 
 	@Override

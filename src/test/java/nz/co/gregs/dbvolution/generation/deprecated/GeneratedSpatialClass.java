@@ -29,8 +29,8 @@ public class GeneratedSpatialClass extends AbstractTest {
 	@Test
 	public void testGetSchema() throws SQLException {
 		if (database.getClass().getSimpleName().equalsIgnoreCase("PostgresDB")) {
-			database.preventDroppingOfTables(false);
-			database.dropTableNoExceptions(new Spatialgen());
+			database.setPreventDroppingOfTables(false)
+              .dropTableNoExceptions(new Spatialgen());
 			database.createTable(new Spatialgen());
 			int classesTested = 0;
 
@@ -86,8 +86,8 @@ public class GeneratedSpatialClass extends AbstractTest {
 			}
 			assertThat(classesTested, is(1));
 
-			database.preventDroppingOfTables(false);
-			database.dropTable(new Spatialgen());
+			database.setPreventDroppingOfTables(false)
+              .dropTable(new Spatialgen());
 		}
 	}
 }

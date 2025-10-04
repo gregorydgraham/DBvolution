@@ -48,8 +48,8 @@ public class LineSegment2DExpressionTest extends AbstractTest {
 		super(testIterationName, db);
 		LineSegmentTestTable lineTestTable = new LineSegmentTestTable();
 
-		db.preventDroppingOfTables(false);
-		db.dropTableNoExceptions(lineTestTable);
+		db.setPreventDroppingOfTables(false)
+            .dropTableNoExceptions(lineTestTable);
 		db.createTable(lineTestTable);
 
 		Coordinate coordinate1 = new Coordinate(2, 3);

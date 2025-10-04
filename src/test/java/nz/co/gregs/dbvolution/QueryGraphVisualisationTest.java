@@ -63,35 +63,38 @@ public class QueryGraphVisualisationTest {
 	}
 
 	private static void setup(DBDatabase database) throws Exception {
-		database.preventDroppingOfTables(false);
-		database.dropTableNoExceptions(new Marque());
+		database.setPreventDroppingOfTables(false)
+            .dropTableNoExceptions(new Marque());
 		database.createTable(new Marque());
 
-		database.dropTableNoExceptions(new CarCompany());
+		database.setPreventDroppingOfTables(false)
+            .dropTableNoExceptions(new CarCompany());
 		database.createTable(new CarCompany());
 
-		database.dropTableNoExceptions(new CompanyLogo());
+		database.setPreventDroppingOfTables(false)
+            .dropTableNoExceptions(new CompanyLogo());
 		database.createTable(new CompanyLogo());
 
-		database.dropTableNoExceptions(new LinkCarCompanyAndLogo());
+		database.setPreventDroppingOfTables(false)
+            .dropTableNoExceptions(new LinkCarCompanyAndLogo());
 		database.createTable(new LinkCarCompanyAndLogo());
 
-		database.dropTableNoExceptions(new LinkCarCompanyAndLogoWithPreviousLink());
+		database.setPreventDroppingOfTables(false)
+            .dropTableNoExceptions(new LinkCarCompanyAndLogoWithPreviousLink());
 		database.createTable(new LinkCarCompanyAndLogoWithPreviousLink());
 	}
 
 	private static void tearDown(DBDatabase database) {
-		database.preventDroppingOfTables(false);
-		database.dropTableNoExceptions(new LinkCarCompanyAndLogoWithPreviousLink());
-		database.preventDroppingOfTables(false);
-		database.dropTableNoExceptions(new LinkCarCompanyAndLogo());
-		database.preventDroppingOfTables(false);
-		database.dropTableNoExceptions(new CompanyLogo());
-		database.preventDroppingOfTables(false);
-		database.dropTableNoExceptions(new CarCompany());
-		database.preventDroppingOfTables(false);
-		database.dropTableNoExceptions(new Marque());
-		database.preventDroppingOfTables(true);
+		database.setPreventDroppingOfTables(false)
+            .dropTableNoExceptions(new LinkCarCompanyAndLogoWithPreviousLink());
+		database.setPreventDroppingOfTables(false)
+            .dropTableNoExceptions(new LinkCarCompanyAndLogo());
+		database.setPreventDroppingOfTables(false)
+            .dropTableNoExceptions(new CompanyLogo());
+		database.setPreventDroppingOfTables(false)
+            .dropTableNoExceptions(new CarCompany());
+		database.setPreventDroppingOfTables(false)
+            .dropTableNoExceptions(new Marque());
 	}
 
 }

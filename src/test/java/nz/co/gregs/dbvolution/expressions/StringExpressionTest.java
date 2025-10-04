@@ -850,8 +850,8 @@ public class StringExpressionTest extends AbstractTest {
 	@Test
 	public void testFindFirstNumber() throws SQLException {
 		FindFirstNumberTable tab = new FindFirstNumberTable();
-		database.preventDroppingOfTables(false);
-		database.dropTableNoExceptions(tab);
+		database.setPreventDroppingOfTables(false)
+            .dropTableNoExceptions(tab);
 		database.createTable(tab);
 		database.insert(new FindFirstNumberTable[]{
 			new FindFirstNumberTable("aaa -09.90 yabber", "-09.90", -9.9),
@@ -890,8 +890,8 @@ public class StringExpressionTest extends AbstractTest {
 	@Test
 	public void testFindFirstInteger() throws SQLException {
 		FindFirstIntegerTable tab = new FindFirstIntegerTable();
-		database.preventDroppingOfTables(false);
-		database.dropTableNoExceptions(tab);
+		database.setPreventDroppingOfTables(false)
+            .dropTableNoExceptions(tab);
 		database.createTable(tab);
 		database.insert(new FindFirstIntegerTable[]{
 			new FindFirstIntegerTable("aaa -09.90 yabber", "-09", -9),

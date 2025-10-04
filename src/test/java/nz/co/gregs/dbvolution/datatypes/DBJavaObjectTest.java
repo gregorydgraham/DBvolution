@@ -53,8 +53,8 @@ public class DBJavaObjectTest extends AbstractTest {
 	public void testTableCreation() throws SQLException {
 		final DBJavaObjectTable row = new DBJavaObjectTable();
 
-		database.preventDroppingOfTables(false);
-		database.dropTableNoExceptions(row);
+		database.setPreventDroppingOfTables(false)
+            .dropTableNoExceptions(row);
 
 		database.createTable(row);
 
@@ -75,8 +75,8 @@ public class DBJavaObjectTest extends AbstractTest {
 		assertThat(foundRow.someRandomClass.getValue().str, is("Thisland"));
 		assertThat(foundRow.someRandomClass.getValue().integer, is(3));
 
-		database.preventDroppingOfTables(false);
-		database.dropTableNoExceptions(foundRow);
+		database.setPreventDroppingOfTables(false)
+            .dropTableNoExceptions(foundRow);
 	}
 
 	public static class DBJavaObjectTable extends DBRow {

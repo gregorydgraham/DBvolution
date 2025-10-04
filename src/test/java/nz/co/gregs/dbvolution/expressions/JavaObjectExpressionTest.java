@@ -51,11 +51,11 @@ public class JavaObjectExpressionTest extends AbstractTest {
 
 	@Before
 	public void before() throws AutoCommitActionDuringTransactionException, SQLException {
-		database.preventDroppingOfTables(false);
-		database.dropTableNoExceptions(new JavaObjectExpressionTable());
+		database.setPreventDroppingOfTables(false)
+            .dropTableNoExceptions(new JavaObjectExpressionTable());
     
-		database.preventDroppingOfTables(false);
-		database.dropTableNoExceptions(new JavaObjectExpressionTable());
+		database.setPreventDroppingOfTables(false)
+            .dropTableNoExceptions(new JavaObjectExpressionTable());
 		database.createTable(new JavaObjectExpressionTable());
   
     var row = new JavaObjectExpressionTable(1,"toyota_logo.jpg",new SomeClass(4, "Testing is not null"));

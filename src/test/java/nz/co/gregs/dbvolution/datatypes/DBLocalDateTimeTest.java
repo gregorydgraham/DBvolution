@@ -58,8 +58,8 @@ public class DBLocalDateTimeTest extends AbstractTest {
 		LocalDateTime then = LocalDateTime.now();
 		dateOnlyTest.dateOnly.setValue(then);
 
-		database.preventDroppingOfTables(false);
-		database.dropTableNoExceptions(dateOnlyTest);
+		database.setPreventDroppingOfTables(false)
+            .dropTableNoExceptions(dateOnlyTest);
 		database.createTable(dateOnlyTest);
 		database.insert(dateOnlyTest);
 		List<DBLocalDateTimeTable> allRows = database.getDBTable(new DBLocalDateTimeTable()).setBlankQueryAllowed(true).getAllRows();

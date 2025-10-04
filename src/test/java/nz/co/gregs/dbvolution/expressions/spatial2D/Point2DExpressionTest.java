@@ -49,8 +49,8 @@ public class Point2DExpressionTest extends AbstractTest {
 		super(testIterationName, db);
 		PointTestTable pointTestTable = new PointTestTable();
 		
-		db.preventDroppingOfTables(false);
-		db.dropTableNoExceptions(pointTestTable);
+		db.setPreventDroppingOfTables(false)
+            .dropTableNoExceptions(pointTestTable);
 		db.createTable(pointTestTable);
 		
 		pointTestTable.point.setValue(geometryFactory.createPoint(new Coordinate(2, 3)));

@@ -72,8 +72,8 @@ public class DBInsertTest extends AbstractTest {
 			TestDefaultValueRetrieval row = new TestDefaultValueRetrieval();
 			TestDefaultValueRetrieval row2 = new TestDefaultValueRetrieval();
 
-			database.preventDroppingOfTables(false);
-			database.dropTableNoExceptions(row);
+			database.setPreventDroppingOfTables(false)
+              .dropTableNoExceptions(row);
 
 			database.createTable(row);
 
@@ -87,8 +87,8 @@ public class DBInsertTest extends AbstractTest {
 			TestDefaultValueRetrieval gotRow2 = database.getDBTable(row2).getRowsByPrimaryKey(pkValue).get(0);
 			assertThat(gotRow2.pk_TestDefaultValueRetrieval.getValue(), is(2L));
 
-			database.preventDroppingOfTables(false);
-			database.dropTableNoExceptions(row);
+			database.setPreventDroppingOfTables(false)
+              .dropTableNoExceptions(row);
 		}
 	}
 
@@ -98,8 +98,8 @@ public class DBInsertTest extends AbstractTest {
 			TestDefaultValueRetrieval row = new TestDefaultValueRetrieval();
 			TestDefaultValueRetrieval row2 = new TestDefaultValueRetrieval();
 
-			database.preventDroppingOfTables(false);
-			database.dropTableNoExceptions(row);
+			database.setPreventDroppingOfTables(false)
+              .dropTableNoExceptions(row);
 
 			database.createTable(row);
 
@@ -111,8 +111,8 @@ public class DBInsertTest extends AbstractTest {
 			TestDefaultValueRetrieval gotRow2 = database.getDBTable(row2).getRowsByPrimaryKey(pkValue).get(0);
 			assertThat(gotRow2.pk_TestDefaultValueRetrieval.getValue(), is(2L));
 
-			database.preventDroppingOfTables(false);
-			database.dropTableNoExceptions(row);
+			database.setPreventDroppingOfTables(false)
+              .dropTableNoExceptions(row);
 		}
 	}
 
@@ -122,8 +122,8 @@ public class DBInsertTest extends AbstractTest {
 			TestInsertDoesNotUpdateExpressionColumns row = new TestInsertDoesNotUpdateExpressionColumns();
 			TestInsertDoesNotUpdateExpressionColumns row2 = new TestInsertDoesNotUpdateExpressionColumns();
 
-			database.preventDroppingOfTables(false);
-			database.dropTableNoExceptions(row);
+			database.setPreventDroppingOfTables(false)
+              .dropTableNoExceptions(row);
 
 			database.createTable(row);
 
@@ -135,8 +135,8 @@ public class DBInsertTest extends AbstractTest {
 			TestInsertDoesNotUpdateExpressionColumns gotRow2 = database.getDBTable(row2).getRowsByPrimaryKey(pkValue).get(0);
 			assertThat(gotRow2.pk_TestInsertDoesNotUpdateExpressionColumns.getValue(), is(2L));
 
-			database.preventDroppingOfTables(false);
-			database.dropTableNoExceptions(row);
+			database.setPreventDroppingOfTables(false)
+              .dropTableNoExceptions(row);
 		}
 	}
 
@@ -144,8 +144,8 @@ public class DBInsertTest extends AbstractTest {
 	public void testSaveWithDefaultValuesAndIncorrectDatatype() throws Exception {
 		TestDefaultValueIncorrectDatatype row = new TestDefaultValueIncorrectDatatype();
 
-		database.preventDroppingOfTables(false);
-		database.dropTableNoExceptions(row);
+		database.setPreventDroppingOfTables(false)
+            .dropTableNoExceptions(row);
 		try {
 			// avoid printing an exception as we're expecting one
 			database.setQuietExceptionsPreference(true);
@@ -158,8 +158,8 @@ public class DBInsertTest extends AbstractTest {
 			row.name.setValue("First Row");
 			database.insert(row);
 		} finally {
-			database.preventDroppingOfTables(false);
-			database.dropTableNoExceptions(row);
+			database.setPreventDroppingOfTables(false)
+              .dropTableNoExceptions(row);
 		}
 	}
 
@@ -171,8 +171,8 @@ public class DBInsertTest extends AbstractTest {
 
 		TestDefaultInsertValue row = new TestDefaultInsertValue();
 		try {
-			database.preventDroppingOfTables(false);
-			database.dropTableNoExceptions(row);
+			database.setPreventDroppingOfTables(false)
+              .dropTableNoExceptions(row);
 			database.createTable(row);
 
 			/* Check that row can be inserted successfully*/
@@ -252,8 +252,8 @@ public class DBInsertTest extends AbstractTest {
 			assertThat(gotRow.creationOrUpdateDate.getValue().toInstant().plusSeconds(1), greaterThanOrEqualTo(formerUpdateDate.toInstant()));
 			assertThat(gotRow.creationOrUpdateDate.getValue().toInstant().minusSeconds(1), lessThanOrEqualTo(gotRow.currentDate.getValue().toInstant()));
 		} finally {
-			database.preventDroppingOfTables(false);
-			database.dropTableNoExceptions(row);
+			database.setPreventDroppingOfTables(false)
+              .dropTableNoExceptions(row);
 		}
 	}
 
@@ -265,8 +265,8 @@ public class DBInsertTest extends AbstractTest {
 
     TestDefaultInsertValue row = new TestDefaultInsertValue();
     try {
-      database.preventDroppingOfTables(false);
-      database.dropTableNoExceptions(row);
+      database.setPreventDroppingOfTables(false)
+              .dropTableNoExceptions(row);
       database.createTable(row);
 
       for (int i = 0; i < 10000; i++) {
@@ -299,8 +299,8 @@ public class DBInsertTest extends AbstractTest {
         row = new TestDefaultInsertValue();
       }
     } finally {
-      database.preventDroppingOfTables(false);
-      database.dropTableNoExceptions(row);
+      database.setPreventDroppingOfTables(false)
+              .dropTableNoExceptions(row);
     }
   }
 
@@ -376,8 +376,8 @@ public class DBInsertTest extends AbstractTest {
 			cal.add(GregorianCalendar.MINUTE, -1);
 			LocalDateTime startTime = cal.toZonedDateTime().toLocalDateTime();
 
-			database.preventDroppingOfTables(false);
-			database.dropTableNoExceptions(row);
+			database.setPreventDroppingOfTables(false)
+              .dropTableNoExceptions(row);
 			database.createTable(row);
 
 			/* Check that row can be inserted successfully*/
@@ -486,8 +486,8 @@ public class DBInsertTest extends AbstractTest {
 			assertThat(gotRow.creationOrUpdateDate.getValue(), lessThanOrEqualTo(soon));
 
 		} finally {
-			database.preventDroppingOfTables(false);
-			database.dropTableNoExceptions(row);
+			database.setPreventDroppingOfTables(false)
+              .dropTableNoExceptions(row);
 		}
 	}
 
@@ -550,8 +550,8 @@ public class DBInsertTest extends AbstractTest {
 		Instant startTime = cal.toInstant();
 
 		TestDefaultInsertWithInstantValue row = new TestDefaultInsertWithInstantValue();
-		database.preventDroppingOfTables(false);
-		database.dropTableNoExceptions(row);
+		database.setPreventDroppingOfTables(false)
+            .dropTableNoExceptions(row);
 		database.createTable(row);
 
 		/* Check that row can be inserted successfully*/
@@ -617,8 +617,8 @@ public class DBInsertTest extends AbstractTest {
 		assertThat(gotRow.creationOrUpdateDate.getValue(), greaterThanOrEqualTo(formerUpdateDate));
 		assertThat(gotRow.creationOrUpdateDate.getValue(), lessThanOrEqualTo(gotRow.currentDate.getValue()));
 
-		database.preventDroppingOfTables(false);
-		database.dropTableNoExceptions(row);
+		database.setPreventDroppingOfTables(false)
+            .dropTableNoExceptions(row);
 	}
 
 	@Test
@@ -646,8 +646,8 @@ public class DBInsertTest extends AbstractTest {
 				brake.apply();
 
 				testDefaultValuesAreConsistentInCluster row = new testDefaultValuesAreConsistentInCluster();
-				cluster.preventDroppingOfTables(false);
-				cluster.dropTableNoExceptions(row);
+				cluster.setPreventDroppingOfTables(false)
+                .dropTableNoExceptions(row);
 				cluster.createTable(row);
 
 				/* Check that row can be inserted successfully*/

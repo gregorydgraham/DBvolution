@@ -1,6 +1,8 @@
 /*
- * Copyright 2018 gregorygraham.
+ * Copyright 2025 Gregory Graham.
  *
+ * Commercial licenses are available, please contact info@gregs.co.nz for details.
+ * 
  * This work is licensed under the Creative Commons Attribution-NonCommercial-ShareAlike 4.0 International License. 
  * To view a copy of this license, visit http://creativecommons.org/licenses/by-nc-sa/4.0/ 
  * or send a letter to Creative Commons, PO Box 1866, Mountain View, CA 94042, USA.
@@ -26,19 +28,56 @@
  * 
  * Check the Creative Commons website for any details, legalese, and updates.
  */
-package nz.co.gregs.dbvolution.exceptions;
-
-import nz.co.gregs.dbvolution.databases.DBDatabaseCluster;
+package nz.co.gregs.dbvolution.utility;
 
 /**
  *
  * @author gregorygraham
  */
-public class NoAvailableDatabaseException extends DBRuntimeException {
+public class Preventer {
+  
+  State state = State.PREVENT;
+  
+  public void reset(){
+    state = State.resetFrom(state);
+  }
+  
+  public boolean isAllowed(){
+    return !isPrevented();
+  }
 
-	private static final long serialVersionUID = 1l;
+  public boolean isPrevented() {
+    return state.isPrevented();
+  }
 
-	public NoAvailableDatabaseException(DBDatabaseCluster db) {
-    super("CRITICAL ERROR: Cluster "+db.getLabel()+" has No Available Database");
-	}
+  public void prevent() {
+    state = State.PREVENT;
+  }
+
+  public void allow() {
+    state = State.ALLOW;
+  }
+
+  public void using() {
+    state = State.USING;
+  }
+
+  private static enum State {
+
+    PREVENT,
+    ALLOW,
+    USING;
+
+    private static State resetFrom(State present) {
+      if (USING.equals(present)) {
+        return PREVENT;
+      } else {
+        return present;
+      }
+    }
+
+    private boolean isPrevented() {
+      return PREVENT.equals(this);
+    }
+  }
 }

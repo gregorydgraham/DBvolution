@@ -283,7 +283,6 @@ public class DBQueryTest extends AbstractTest {
 		marqueQuery.ignoreAllForeignKeysExcept(marqueQuery.carCompany);
 		query.setCartesianJoinsAllowed(true);
 		List<DBQueryRow> rows = query.getAllRows();
-    System.out.println("FOUND ROWS: "+rows.size());
 	}
 
 	@Test

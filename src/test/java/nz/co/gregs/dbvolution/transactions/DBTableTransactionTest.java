@@ -88,7 +88,7 @@ public class DBTableTransactionTest extends AbstractTest {
           marques.getAllRows();
           return marques;
         }catch (SQLException | AccidentalBlankQueryException | AccidentalCartesianJoinException ex) {
-          ex.printStackTrace();
+//          ex.printStackTrace();
           assertThat(ex, is(instanceOf(AccidentalBlankQueryException.class)));
           throw new ExceptionThrownDuringTransaction(ex);
         }

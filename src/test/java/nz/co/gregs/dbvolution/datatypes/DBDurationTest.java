@@ -45,8 +45,8 @@ public class DBDurationTest extends AbstractTest {
 	@Test
 	public void basicTest() throws SQLException {
 		final DurationTable durationTable = new DurationTable();
-		database.preventDroppingOfTables(false);
-		database.dropTableNoExceptions(durationTable);
+		database.setPreventDroppingOfTables(false)
+            .dropTableNoExceptions(durationTable);
 		database.createTable(durationTable);
 		final Duration testPeriod = Duration.ofSeconds(2).plusMinutes(3).plusHours(4).plusDays(5);
 		durationTable.durationCol.setValue(testPeriod);
@@ -62,8 +62,8 @@ public class DBDurationTest extends AbstractTest {
 	@Test
 	public void testNegativeSeconds() throws SQLException {
 		final DurationTable durationTable = new DurationTable();
-		database.preventDroppingOfTables(false);
-		database.dropTableNoExceptions(durationTable);
+		database.setPreventDroppingOfTables(false)
+            .dropTableNoExceptions(durationTable);
 		database.createTable(durationTable);
 		final Duration testPeriod = Duration.ofSeconds(-2);
 		durationTable.durationCol.setValue(testPeriod);
@@ -79,8 +79,8 @@ public class DBDurationTest extends AbstractTest {
 	@Test
 	public void testNegativeDays() throws SQLException {
 		final DurationTable durationTable = new DurationTable();
-		database.preventDroppingOfTables(false);
-		database.dropTableNoExceptions(durationTable);
+		database.setPreventDroppingOfTables(false)
+            .dropTableNoExceptions(durationTable);
 		database.createTable(durationTable);
 		final Duration testPeriod = Duration.ofDays(-2);
 		durationTable.durationCol.setValue(testPeriod);
@@ -96,8 +96,8 @@ public class DBDurationTest extends AbstractTest {
 	@Test
 	public void testNegativeHours() throws SQLException {
 		final DurationTable durationTable = new DurationTable();
-		database.preventDroppingOfTables(false);
-		database.dropTableNoExceptions(durationTable);
+		database.setPreventDroppingOfTables(false)
+            .dropTableNoExceptions(durationTable);
 		database.createTable(durationTable);
 		final Duration testPeriod = Duration.ofHours(-2);
 		durationTable.durationCol.setValue(testPeriod);
@@ -113,8 +113,8 @@ public class DBDurationTest extends AbstractTest {
 	@Test
 	public void testNegativeMinutes() throws SQLException {
 		final DurationTable durationTable = new DurationTable();
-		database.preventDroppingOfTables(false);
-		database.dropTableNoExceptions(durationTable);
+		database.setPreventDroppingOfTables(false)
+            .dropTableNoExceptions(durationTable);
 		database.createTable(durationTable);
 		final Duration testPeriod = Duration.ofMinutes(-2);
 		durationTable.durationCol.setValue(testPeriod);
@@ -130,8 +130,8 @@ public class DBDurationTest extends AbstractTest {
 	@Test
 	public void testNegativeNanos() throws SQLException {
 		final DurationTable durationTable = new DurationTable();
-		database.preventDroppingOfTables(false);
-		database.dropTableNoExceptions(durationTable);
+		database.setPreventDroppingOfTables(false)
+            .dropTableNoExceptions(durationTable);
 		database.createTable(durationTable);
 		// Postgres only supports microsecond precision so make sure it's thousands of nanos
 		final Duration testPeriod = Duration.ofNanos(-2*1000);

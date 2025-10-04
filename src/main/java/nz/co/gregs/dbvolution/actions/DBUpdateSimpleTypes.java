@@ -49,10 +49,11 @@ public class DBUpdateSimpleTypes extends DBUpdate {
 	@Override
 	public DBActionList execute(DBDatabase db) throws SQLException {
 		DBRow table = originalRow;
-		DBActionList actions = new DBActionList(new DBUpdateSimpleTypes(table));
+    final DBUpdateSimpleTypes newUpdate = new DBUpdateSimpleTypes(table);
+		DBActionList actions = new DBActionList(newUpdate);
 		try (DBStatement statement = db.getDBStatement()) {
 			for (String sql : getSQLStatements(db)) {
-				    addAlteredRows(statement.execute("Update row", QueryIntention.UPDATE_ROW, sql));
+				    newUpdate.addAlteredRows(statement.execute("Update row", QueryIntention.UPDATE_ROW, sql));
 			}
 		}
 		refetchIfClusterRequires(db, originalRow);

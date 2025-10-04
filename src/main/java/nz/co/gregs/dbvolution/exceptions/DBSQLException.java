@@ -38,15 +38,29 @@ import nz.co.gregs.dbvolution.databases.DBDatabase;
  * @author gregorygraham
  */
 public class DBSQLException extends SQLException {
-	private static final long serialVersionUID = 2l;
 
-	public DBSQLException(DBDatabase db, String sql, Exception sqlex) {
-		super(
-				"Error During DBInsert [" + db.getClass().getCanonicalName() + "]: " 
-						+ sql 
-						+ System.getProperty("line.separator") 
-						+ sqlex.getLocalizedMessage(), 
-				sqlex);
-	}
+  private static final long serialVersionUID = 3l;
+
+  public DBSQLException() {
+    super();
+  }
+
+  public DBSQLException(String reason) {
+    super(reason);
+  }
+
+  public DBSQLException(String reason, Exception exception) {
+    super(reason, exception);
+  }
+
+  public DBSQLException(DBDatabase db, String sql, Exception sqlex) {
+    super(
+            "Error During SQL on " + db.getLabel() + "[" + db.getClass().getSimpleName() + "]: "
+            + System.getProperty("line.separator")
+            + sql
+            + System.getProperty("line.separator")
+            + sqlex.getLocalizedMessage(),
+            sqlex);
+  }
 
 }

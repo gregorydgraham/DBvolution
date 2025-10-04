@@ -40,8 +40,8 @@ public class DoubleJoinTest extends AbstractTest {
 
 	@Test
 	public void doubleJoinTest() throws SQLException {
-		database.preventDroppingOfTables(false);
-		database.dropTableNoExceptions(new DoubleJoinTest.DoubleLinkedWithSubclasses());
+		database.setPreventDroppingOfTables(false)
+            .dropTableNoExceptions(new DoubleJoinTest.DoubleLinkedWithSubclasses());
 		database.createTable(new DoubleJoinTest.DoubleLinkedWithSubclasses());
 		final DoubleLinkedWithSubclasses doubleLinked = new DoubleJoinTest.DoubleLinkedWithSubclasses();
 		doubleLinked.uidDoubleLink.setValue(1);
@@ -63,14 +63,14 @@ public class DoubleJoinTest extends AbstractTest {
 				is(doubleLinked.manufacturer.getValue().intValue())
 		);
 
-		database.preventDroppingOfTables(false);
-		database.dropTableNoExceptions(new DoubleJoinTest.DoubleLinkedWithSubclasses());
+		database.setPreventDroppingOfTables(false)
+            .dropTableNoExceptions(new DoubleJoinTest.DoubleLinkedWithSubclasses());
 	}
 
 	@Test
 	public void doubleJoinWithSameClassTest() throws SQLException {
-		database.preventDroppingOfTables(false);
-		database.dropTableNoExceptions(new DoubleJoinTest.DoubleLinkedWithClass());
+		database.setPreventDroppingOfTables(false)
+            .dropTableNoExceptions(new DoubleJoinTest.DoubleLinkedWithClass());
 		database.createTable(new DoubleJoinTest.DoubleLinkedWithClass());
 		final DoubleLinkedWithClass doubleLinked = new DoubleJoinTest.DoubleLinkedWithClass();
 		doubleLinked.uidDoubleLink.setValue(1);
@@ -88,14 +88,14 @@ public class DoubleJoinTest extends AbstractTest {
 				allRows.size(),
 				is(0));
 
-		database.preventDroppingOfTables(false);
-		database.dropTableNoExceptions(new DoubleJoinTest.DoubleLinkedWithClass());
+		database.setPreventDroppingOfTables(false)
+            .dropTableNoExceptions(new DoubleJoinTest.DoubleLinkedWithClass());
 	}
 
 	@Test
 	public void doubleJoinWithSameClassAndIDTest() throws SQLException {
-		database.preventDroppingOfTables(false);
-		database.dropTableNoExceptions(new DoubleJoinTest.DoubleLinkedWithClass());
+		database.setPreventDroppingOfTables(false)
+            .dropTableNoExceptions(new DoubleJoinTest.DoubleLinkedWithClass());
 		database.createTable(new DoubleJoinTest.DoubleLinkedWithClass());
 		final DoubleLinkedWithClass doubleLinked = new DoubleJoinTest.DoubleLinkedWithClass();
 		doubleLinked.uidDoubleLink.setValue(1);
@@ -113,8 +113,8 @@ public class DoubleJoinTest extends AbstractTest {
 				allRows.size(),
 				is(1));
 
-		database.preventDroppingOfTables(false);
-		database.dropTableNoExceptions(new DoubleJoinTest.DoubleLinkedWithClass());
+		database.setPreventDroppingOfTables(false)
+            .dropTableNoExceptions(new DoubleJoinTest.DoubleLinkedWithClass());
 	}
 
 	@DBTableName("double_linked_with_subclasses")

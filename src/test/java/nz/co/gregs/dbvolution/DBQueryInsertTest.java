@@ -32,10 +32,10 @@ public class DBQueryInsertTest extends AbstractTest {
 
 	@Before
 	public void setup() throws SQLException {
-		database.preventDroppingOfTables(false);
-		database.dropTableNoExceptions(new Villain());
-		database.preventDroppingOfTables(false);
-		database.dropTableNoExceptions(new Hero());
+		database.setPreventDroppingOfTables(false)
+            .dropTableNoExceptions(new Villain());
+		database.setPreventDroppingOfTables(false)
+            .dropTableNoExceptions(new Hero());
 
 		database.createTable(new Villain());
 		database.createTable(new Hero());
@@ -111,9 +111,9 @@ public class DBQueryInsertTest extends AbstractTest {
 			assertThat(prof.surname.stringValue(), isOneOf("Nonono", "Karma", "Dark"));
 		}
 
-		database.preventDroppingOfTables(false);
 		final Professional professional = new Professional();
-		database.dropTableNoExceptions(professional);
+		database.setPreventDroppingOfTables(false)
+            .dropTableNoExceptions(professional);
 		database.createTable(professional);
 
 		queryInsert.insertAllRows();
@@ -170,9 +170,9 @@ public class DBQueryInsertTest extends AbstractTest {
 			assertThat(fight.hero.stringValue(), isOneOf("James Security", "Straw Richards", "Lightwing"));
 		}
 
-		database.preventDroppingOfTables(false);
 		final Fight fight = new Fight();
-		database.dropTableNoExceptions(fight);
+		database.setPreventDroppingOfTables(false)
+            .dropTableNoExceptions(fight);
 		database.createTable(fight);
 
 		queryInsert.insertAllRows();

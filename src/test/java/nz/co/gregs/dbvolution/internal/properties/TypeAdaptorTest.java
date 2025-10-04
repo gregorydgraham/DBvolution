@@ -38,8 +38,8 @@ public class TypeAdaptorTest {
 		this.db = H2MemoryDB.createANewRandomDatabase();
 //		this.db = new H2MemoryDB("dbvolutionTest", "", "", false);
 
-		db.preventDroppingOfTables(false);
-		db.dropTableNoExceptions(new CustomerWithDBInteger());
+		db.setPreventDroppingOfTables(false)
+            .dropTableNoExceptions(new CustomerWithDBInteger());
 		// create tables and add standard records
 		db.createTable(new CustomerWithDBInteger());
 
@@ -56,12 +56,12 @@ public class TypeAdaptorTest {
 
 	@After
 	public void tearDown() throws Exception {
-		db.preventDroppingOfTables(false);
-		db.dropTable(new CustomerWithDBInteger());
+		db.setPreventDroppingOfTables(false)
+            .dropTable(new CustomerWithDBInteger());
 		try {
-			db.preventDroppingOfTables(false);
-			db.preventDroppingOfDatabases(false);
-			db.dropDatabase(true);
+			var dangerous = db.setPreventDroppingOfTables(false);
+			dangerous.preventDroppingOfDatabases(false);
+			dangerous.dropDatabase(true);
 		} catch (UnsupportedOperationException ex) {
 			;
 		}

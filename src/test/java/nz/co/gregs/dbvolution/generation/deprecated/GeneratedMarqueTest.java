@@ -68,7 +68,7 @@ public class GeneratedMarqueTest extends AbstractTest {
 			int classesTested = 0;
 			DataRepo generateSchema;
 			List<String> testClassNames = Arrays.asList(new String[]{"CarCompany", "Companylogo", "LtCarcoLogo", "Marque", "TestAutoIncrementDetection"});
-			List<String> testClasses = new ArrayList<String>();
+			List<String> testClasses = new ArrayList<>();
 			testClasses.add("package nz.co.gregs.dbvolution.generation;\n\nimport nz.co.gregs.dbvolution.*;\nimport nz.co.gregs.dbvolution.datatypes.*;\nimport nz.co.gregs.dbvolution.datatypes.spatial2D.*;\nimport nz.co.gregs.dbvolution.annotations.*;\n\n@DBTableName(\"CAR_COMPANY\") \npublic class CarCompany extends DBRow {\n\n    public static final long serialVersionUID = 1L;\n\n    @DBColumn(\"NAME\")\n    public DBString name = new DBString();\n\n    @DBColumn(\"UID_CARCOMPANY\")\n    @DBPrimaryKey\n    public DBInteger uidCarcompany = new DBInteger();\n\n}\n\n");
 			testClasses.add("package nz.co.gregs.dbvolution.generation;\n\nimport nz.co.gregs.dbvolution.*;\nimport nz.co.gregs.dbvolution.datatypes.*;\nimport nz.co.gregs.dbvolution.datatypes.spatial2D.*;\nimport nz.co.gregs.dbvolution.annotations.*;\n\n@DBTableName(\"COMPANYLOGO\") \npublic class Companylogo extends DBRow {\n\n    public static final long serialVersionUID = 1L;\n\n    @DBColumn(\"LOGO_ID\")\n    @DBPrimaryKey\n    public DBInteger logoId = new DBInteger();\n\n    @DBColumn(\"CAR_COMPANY_FK\")\n    public DBInteger carCompanyFk = new DBInteger();\n\n    @DBColumn(\"IMAGE_FILE\")\n    public DBLargeBinary imageFile = new DBLargeBinary();\n\n    @DBColumn(\"IMAGE_NAME\")\n    public DBString imageName = new DBString();\n\n}\n\n");
 			testClasses.add("package nz.co.gregs.dbvolution.generation;\n\nimport nz.co.gregs.dbvolution.*;\nimport nz.co.gregs.dbvolution.datatypes.*;\nimport nz.co.gregs.dbvolution.datatypes.spatial2D.*;\nimport nz.co.gregs.dbvolution.annotations.*;\n\n@DBTableName(\"LT_CARCO_LOGO\") \npublic class LtCarcoLogo extends DBRow {\n\n    public static final long serialVersionUID = 1L;\n\n    @DBColumn(\"FK_CAR_COMPANY\")\n    public DBInteger fkCarCompany = new DBInteger();\n\n    @DBColumn(\"FK_COMPANY_LOGO\")\n    public DBInteger fkCompanyLogo = new DBInteger();\n\n}\n\n");
@@ -91,21 +91,21 @@ public class GeneratedMarqueTest extends AbstractTest {
 			}
 			assertThat(classesTested, is(5));
 
-			database.preventDroppingOfTables(false);
-			database.dropTable(new TestAutoIncrementDetection());
+			database.setPreventDroppingOfTables(false)
+              .dropTable(new TestAutoIncrementDetection());
 		}
 	}
 
 	@Test
 	public void testGetSchemaOfGeneratedForeignKeys() throws SQLException {
 		if (database instanceof H2MemoryDB) {
-			database.preventDroppingOfTables(false);
-			database.dropTableNoExceptions(new CreateTableForeignKey());
+			database.setPreventDroppingOfTables(false)
+              .dropTableNoExceptions(new CreateTableForeignKey());
 			database.createTableWithForeignKeys(new CreateTableForeignKey());
 			
 			int classesTested = 0;
 			List<String> testClassNames = Arrays.asList(new String[]{"CreateTableForeignKey"});
-			List<String> testClasses = new ArrayList<String>();
+			List<String> testClasses = new ArrayList<>();
 			testClasses.add("package nz.co.gregs.dbvolution.generation;\n\nimport nz.co.gregs.dbvolution.*;\nimport nz.co.gregs.dbvolution.datatypes.*;\nimport nz.co.gregs.dbvolution.datatypes.spatial2D.*;\nimport nz.co.gregs.dbvolution.annotations.*;\n\n@DBTableName(\"CREATE_TABLE_FOREIGN_KEY\") \npublic class CreateTableForeignKey extends DBRow {\n\n    public static final long serialVersionUID = 1L;\n\n    @DBColumn(\"NAME\")\n    public DBString name = new DBString();\n\n    @DBColumn(\"MARQUEFOREIGNKEY\")\n    @DBForeignKey(Marque.class)\n    public DBInteger marqueforeignkey = new DBInteger();\n\n    @DBColumn(\"CARCOFOREIGNKEY\")\n    @DBForeignKey(CarCompany.class)\n    public DBInteger carcoforeignkey = new DBInteger();\n\n}\n\n");
 
 			var generateSchema = DBTableClassGenerator.generateClassesOfTables(database, "nz.co.gregs.dbvolution.generation", new DBTableClassGenerator.Options());
@@ -126,20 +126,20 @@ public class GeneratedMarqueTest extends AbstractTest {
 			}
 			assertThat(classesTested, is(1));
 
-			database.preventDroppingOfTables(false);
-			database.dropTable(new CreateTableForeignKey());
+			database.setPreventDroppingOfTables(false)
+              .dropTable(new CreateTableForeignKey());
 		}
 	}
 
 	@Test
 	public void testGetSchemaOfGeneratedForeignKeysWithIncludedColumnNames() throws SQLException {
 		if (database instanceof H2MemoryDB) {
-			database.preventDroppingOfTables(false);
-			database.dropTableNoExceptions(new CreateTableForeignKeyy());
+			database.setPreventDroppingOfTables(false)
+              .dropTableNoExceptions(new CreateTableForeignKeyy());
 			database.createTableWithForeignKeys(new CreateTableForeignKeyy());
 			int classesTested = 0;
 			List<String> testClassNames = Arrays.asList(new String[]{"CreateTableForeignKeyy"});
-			List<String> testClasses = new ArrayList<String>();
+			List<String> testClasses = new ArrayList<>();
 			testClasses.add("package nz.co.gregs.dbvolution.generation;\n\nimport nz.co.gregs.dbvolution.*;\nimport nz.co.gregs.dbvolution.datatypes.*;\nimport nz.co.gregs.dbvolution.datatypes.spatial2D.*;\nimport nz.co.gregs.dbvolution.annotations.*;\n\n@DBTableName(\"CREATE_TABLE_FOREIGN_KEYY\") \npublic class CreateTableForeignKeyy extends DBRow {\n\n    public static final long serialVersionUID = 1L;\n\n    @DBColumn(\"NAME\")\n    public DBString name = new DBString();\n\n    @DBColumn(\"MARQUEFOREIGNKEY\")\n    @DBForeignKey(value = Marque.class, column = \"UID_MARQUE\")\n    public DBInteger marqueforeignkey = new DBInteger();\n\n    @DBColumn(\"CARCOFOREIGNKEY\")\n    @DBForeignKey(value = CarCompany.class, column = \"UID_CARCOMPANY\")\n    public DBInteger carcoforeignkey = new DBInteger();\n\n}\n\n");
 			final Options options = new DBTableClassGenerator.Options();
 			options.includeForeignKeyColumnName = true;
@@ -161,8 +161,8 @@ public class GeneratedMarqueTest extends AbstractTest {
 			}
 			assertThat(classesTested, is(1));
 
-			database.preventDroppingOfTables(false);
-			database.dropTable(new CreateTableForeignKeyy());
+			database.setPreventDroppingOfTables(false)
+              .dropTable(new CreateTableForeignKeyy());
 		}
 	}
 
@@ -172,7 +172,7 @@ public class GeneratedMarqueTest extends AbstractTest {
 			int classesTested = 0;
 			
 			List<String> testClassNames = Arrays.asList(new String[]{"CarCompany", "Companylogo", "LtCarcoLogo", "Marque"});
-			List<String> testGetSchemaWithRecognisorTestClasses = new ArrayList<String>();
+			List<String> testGetSchemaWithRecognisorTestClasses = new ArrayList<>();
 			testGetSchemaWithRecognisorTestClasses.add("package nz.co.gregs.dbvolution.generation;\n\nimport nz.co.gregs.dbvolution.*;\nimport nz.co.gregs.dbvolution.datatypes.*;\nimport nz.co.gregs.dbvolution.datatypes.spatial2D.*;\nimport nz.co.gregs.dbvolution.annotations.*;\n\n@DBTableName(\"CAR_COMPANY\") \npublic class CarCompany extends DBRow {\n\n    public static final long serialVersionUID = 1L;\n\n    @DBColumn(\"NAME\")\n    public DBString name = new DBString();\n\n    @DBColumn(\"UID_CARCOMPANY\")\n    @DBPrimaryKey\n    public DBInteger uidCarcompany = new DBInteger();\n\n}\n\n");
 			testGetSchemaWithRecognisorTestClasses.add("package nz.co.gregs.dbvolution.generation;\n\nimport nz.co.gregs.dbvolution.*;\nimport nz.co.gregs.dbvolution.datatypes.*;\nimport nz.co.gregs.dbvolution.datatypes.spatial2D.*;\nimport nz.co.gregs.dbvolution.annotations.*;\n\n@DBTableName(\"COMPANYLOGO\") \npublic class Companylogo extends DBRow {\n\n    public static final long serialVersionUID = 1L;\n\n    @DBColumn(\"LOGO_ID\")\n    @DBPrimaryKey\n    public DBInteger logoId = new DBInteger();\n\n    @DBColumn(\"CAR_COMPANY_FK\")\n    public DBInteger carCompanyFk = new DBInteger();\n\n    @DBColumn(\"IMAGE_FILE\")\n    public DBLargeBinary imageFile = new DBLargeBinary();\n\n    @DBColumn(\"IMAGE_NAME\")\n    public DBString imageName = new DBString();\n\n}\n\n");
 			testGetSchemaWithRecognisorTestClasses.add("package nz.co.gregs.dbvolution.generation;\n\nimport nz.co.gregs.dbvolution.*;\nimport nz.co.gregs.dbvolution.datatypes.*;\nimport nz.co.gregs.dbvolution.datatypes.spatial2D.*;\nimport nz.co.gregs.dbvolution.annotations.*;\n\n@DBTableName(\"LT_CARCO_LOGO\") \npublic class LtCarcoLogo extends DBRow {\n\n    public static final long serialVersionUID = 1L;\n\n    @DBColumn(\"FK_CAR_COMPANY\")\n    @DBForeignKey(CarCompany.class)\n    public DBInteger fkCarCompany = new DBInteger();\n\n    @DBColumn(\"FK_COMPANY_LOGO\")\n    @DBForeignKey(Companylogo.class)\n    public DBInteger fkCompanyLogo = new DBInteger();\n\n}\n\n");
@@ -246,7 +246,7 @@ public class GeneratedMarqueTest extends AbstractTest {
 
 	@Test
 	public void testCompiling() throws SQLException, IOException, Exception {
-		List<JavaSourceFromString> compilationUnits = new ArrayList<JavaSourceFromString>(); // input for first compilation task
+		List<JavaSourceFromString> compilationUnits = new ArrayList<>(); // input for first compilation task
 		if (database instanceof H2SharedDB) {
 			// not supported in shared inastances of H2
 		} else {
@@ -255,7 +255,7 @@ public class GeneratedMarqueTest extends AbstractTest {
 				compilationUnits.add(new JavaSourceFromString(dbcl.getFullyQualifiedName(), dbcl.getJavaSource()));
 			}
 			JavaCompiler compiler = ToolProvider.getSystemJavaCompiler();
-			DiagnosticCollector<JavaFileObject> diagnostics = new DiagnosticCollector<JavaFileObject>();
+			DiagnosticCollector<JavaFileObject> diagnostics = new DiagnosticCollector<>();
 			Boolean succeeded;
 			// Try to add the classes to the TARGET directory
 			try (StandardJavaFileManager fileManager = compiler.getStandardFileManager(diagnostics, null, null)) {

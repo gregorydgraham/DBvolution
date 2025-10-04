@@ -56,8 +56,8 @@ public class DBInstantTest extends AbstractTest {
 		var then = Instant.now();
 		dateOnlyTest.instantField.setValue(then);
 
-		database.preventDroppingOfTables(false);
-		database.dropTableNoExceptions(dateOnlyTest);
+		database.setPreventDroppingOfTables(false)
+            .dropTableNoExceptions(dateOnlyTest);
 		database.createTable(dateOnlyTest);
 		database.insert(dateOnlyTest);
 

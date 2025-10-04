@@ -136,8 +136,8 @@ public class DBScriptTest extends AbstractTest {
 	public void testTestTransactionsAreIsolated() throws Exception {
 		final ScriptTestTable scriptTestTable = new ScriptTestTable();
 		final DBTable<ScriptTestTable> table = database.getDBTable(scriptTestTable);
-		database.preventDroppingOfTables(false);
-		database.dropTableNoExceptions(scriptTestTable);
+		database.setPreventDroppingOfTables(false)
+            .dropTableNoExceptions(scriptTestTable);
 		database.createTable(scriptTestTable);
 		List<ScriptTestTable> origRows = table.setBlankQueryAllowed(true).getAllRows();
 
@@ -154,16 +154,16 @@ public class DBScriptTest extends AbstractTest {
 
 		List<ScriptTestTable> allRows = table.setBlankQueryAllowed(true).getAllRows();
 		assertThat(allRows.size(), is(origRows.size()));
-		database.preventDroppingOfTables(false);
-		database.dropTableNoExceptions(scriptTestTable);
+		database.setPreventDroppingOfTables(false)
+            .dropTableNoExceptions(scriptTestTable);
 	}
 
 	@Test
 	public void testImplementTransactionsAreIsolated() throws Exception {
 		final ScriptTestTable scriptTestTable = new ScriptTestTable();
 		final DBTable<ScriptTestTable> table = database.getDBTable(scriptTestTable);
-		database.preventDroppingOfTables(false);
-		database.dropTableNoExceptions(scriptTestTable);
+		database.setPreventDroppingOfTables(false)
+            .dropTableNoExceptions(scriptTestTable);
 		database.createTable(scriptTestTable);
 		List<ScriptTestTable> origRows = table.setBlankQueryAllowed(true).getAllRows();
 
@@ -180,8 +180,8 @@ public class DBScriptTest extends AbstractTest {
 
 		List<ScriptTestTable> allRows = table.setBlankQueryAllowed(true).getAllRows();
 		assertThat(allRows.size(), is(origRows.size()));
-		database.preventDroppingOfTables(false);
-		database.dropTableNoExceptions(scriptTestTable);
+		database.setPreventDroppingOfTables(false)
+            .dropTableNoExceptions(scriptTestTable);
 	}
 
 	public class ScriptThatThrowsAnException extends DBScript {

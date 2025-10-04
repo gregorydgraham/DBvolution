@@ -148,7 +148,7 @@ public interface DBDatabase extends Serializable, AutoCloseable {
 
 	public DBQueryable executeDBQuery(DBQueryable query) throws SQLException, AccidentalCartesianJoinException, AccidentalBlankQueryException, NoAvailableDatabaseException;
 
-	public DBActionList executeDBAction(DBAction action) throws SQLException, NoAvailableDatabaseException;
+	public DBActionList executeDBAction(DBAction action) throws SQLException;
 
 	public void handleErrorDuringExecutingSQL(DBDatabase suspectDatabase, Throwable sqlException, String sqlString);
 
@@ -174,6 +174,16 @@ public interface DBDatabase extends Serializable, AutoCloseable {
 	 * @return the internal label of this database
 	 */
 	String getLabel();
+
+	/**
+	 * A label for the database for reference within an application.
+	 *
+	 * <p>
+	 * This label has no effect on the actual database connection.
+	 *
+   * @param newLabel the new label for the database
+	 */
+	void setLabel(String newLabel);
 
 	/**
 	 * Returns the password specified.
@@ -235,6 +245,7 @@ public interface DBDatabase extends Serializable, AutoCloseable {
 	/**
 	 *
 	 * @param droppingTablesIsAMistake just leave it at TRUE.
+   * @return DBDatabase
 	 */
 	/*
 	 * The lack of documentation is by design: you probably shouldn't be using this method.
@@ -243,7 +254,7 @@ public interface DBDatabase extends Serializable, AutoCloseable {
 	Also note that there is a race condition between the setting of this and your call to dropTable().  If other code
 	calls dropTable() somewhere else, it may get there before you do, so just never use this, OK?
 	 */
-	void preventDroppingOfTables(boolean droppingTablesIsAMistake);
+	DBDatabase setPreventDroppingOfTables(boolean droppingTablesIsAMistake);
 
 	/**
 	 * Sets whether this DBDatabase will attempt to batch multiple SQL commands.
@@ -410,6 +421,7 @@ public interface DBDatabase extends Serializable, AutoCloseable {
 	 * @throws SQLException database exceptions
 	 * @throws nz.co.gregs.dbvolution.exceptions.ExceptionThrownDuringTransaction
 	 * an encapsulated exception using the transaction
+   * @throws nz.co.gregs.dbvolution.exceptions.NoAvailableDatabaseException
 	 * @see DBTransaction
 	 */
 	<V> V doReadOnlyTransaction(DBTransaction<V> dbTransaction) throws SQLException, ExceptionThrownDuringTransaction, NoAvailableDatabaseException;

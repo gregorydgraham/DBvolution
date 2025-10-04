@@ -1371,8 +1371,8 @@ public class LocalDateExpressionTest extends AbstractTest {
 	@Before
 	public void setupMarqueWithLocalDateTime() throws Exception {
 		DBDatabase db = database;
-		db.preventDroppingOfTables(false);
-		db.dropTableIfExists(new MarqueWithLocalDate());
+		db.setPreventDroppingOfTables(false)
+            .dropTableIfExists(new MarqueWithLocalDate());
 		db.createTableNoExceptions(new MarqueWithLocalDate());
 
     var script = new DBScript() {

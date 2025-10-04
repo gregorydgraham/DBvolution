@@ -97,8 +97,8 @@ public class BooleanArrayExpressionTest extends AbstractTest {
 	@Test
 	public void testIsExpression() throws SQLException {
 		final BooleanArrayExpressionTable tab = new BooleanArrayExpressionTable();
-		database.preventDroppingOfTables(false);
-		database.dropTableNoExceptions(tab);
+		database.setPreventDroppingOfTables(false)
+            .dropTableNoExceptions(tab);
 		database.createTable(tab);
 		tab.boolArrayColumn.setValue(new Boolean[]{true, false, true, true});
 		database.insert(tab);
@@ -118,8 +118,8 @@ public class BooleanArrayExpressionTest extends AbstractTest {
 	@Test
 	public void testIsNotExpression() throws SQLException {
 		final BooleanArrayExpressionTable tab = new BooleanArrayExpressionTable();
-		database.preventDroppingOfTables(false);
-		database.dropTableNoExceptions(tab);
+		database.setPreventDroppingOfTables(false)
+            .dropTableNoExceptions(tab);
 		database.createTable(tab);
 		tab.boolArrayColumn.setValue(new Boolean[]{true, false, true, true});
 		database.insert(tab);
@@ -139,8 +139,8 @@ public class BooleanArrayExpressionTest extends AbstractTest {
 	@Test
 	public void testIsExpressionWithNull() throws SQLException {
 		BooleanArrayExpressionTable tab = new BooleanArrayExpressionTable();
-		database.preventDroppingOfTables(false);
-		database.dropTableNoExceptions(tab);
+		database.setPreventDroppingOfTables(false)
+            .dropTableNoExceptions(tab);
 		database.createTable(tab);
 		tab.boolArrayColumn.setValue(new Boolean[]{true, false, true, true});
 		database.insert(tab);
@@ -165,8 +165,8 @@ public class BooleanArrayExpressionTest extends AbstractTest {
 	@Test
 	public void testIsExpressionWithBooleanArrayResult() throws SQLException {
 		final BooleanArrayExpressionTable tab = new BooleanArrayExpressionTable();
-		database.preventDroppingOfTables(false);
-		database.dropTableNoExceptions(tab);
+		database.setPreventDroppingOfTables(false)
+            .dropTableNoExceptions(tab);
 		database.createTable(tab);
 		tab.boolArrayColumn.setValue(new Boolean[]{true, false, true, true});
 		database.insert(tab);

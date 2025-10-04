@@ -106,8 +106,8 @@ public class DBEnumTest extends AbstractTest {
 	@Test
 	public void processIntegerRecord() throws SQLException {
 		final IntegerEnumTable integerTableExemplar = new IntegerEnumTable();
-		database.preventDroppingOfTables(false);
-		database.dropTableNoExceptions(integerTableExemplar);
+		database.setPreventDroppingOfTables(false)
+            .dropTableNoExceptions(integerTableExemplar);
 		database.createTable(integerTableExemplar);
 		try {
 			database.insert(
@@ -130,16 +130,16 @@ public class DBEnumTest extends AbstractTest {
 				}
 			}
 		} finally {
-			database.preventDroppingOfTables(false);
-			database.dropTableNoExceptions(integerTableExemplar);
+			database.setPreventDroppingOfTables(false)
+              .dropTableNoExceptions(integerTableExemplar);
 		}
 	}
 
 	@Test
 	public void processIntegerRecordWithValue() throws SQLException {
 		final IntegerEnumWithDefinedValuesTable integerTableExemplar = new IntegerEnumWithDefinedValuesTable();
-		database.preventDroppingOfTables(false);
-		database.dropTableNoExceptions(integerTableExemplar);
+		database.setPreventDroppingOfTables(false)
+            .dropTableNoExceptions(integerTableExemplar);
 		database.createTable(integerTableExemplar);
 		try {
 			database.insert(
@@ -157,16 +157,16 @@ public class DBEnumTest extends AbstractTest {
 				assertThat(row.cancel.enumValue(), is(IntEnum.MOVEMENT_CANCELLATION_REQUEST));
 			}
 		} finally {
-			database.preventDroppingOfTables(false);
-			database.dropTableNoExceptions(integerTableExemplar);
+			database.setPreventDroppingOfTables(false)
+              .dropTableNoExceptions(integerTableExemplar);
 		}
 	}
 
 	@Test
 	public void integerEnumPermittedRange() throws SQLException {
 		final IntegerEnumTable integerTableExemplar = new IntegerEnumTable();
-		database.preventDroppingOfTables(false);
-		database.dropTableNoExceptions(integerTableExemplar);
+		database.setPreventDroppingOfTables(false)
+            .dropTableNoExceptions(integerTableExemplar);
 		database.createTable(integerTableExemplar);
 		try {
 			database.insert(
@@ -264,16 +264,16 @@ public class DBEnumTest extends AbstractTest {
 			}
 
 		} finally {
-			database.preventDroppingOfTables(false);
-			database.dropTableNoExceptions(integerTableExemplar);
+			database.setPreventDroppingOfTables(false)
+              .dropTableNoExceptions(integerTableExemplar);
 		}
 	}
 
 	@Test
 	public void stringEnumPermittedRange() throws SQLException {
 		final StringEnumTable stringTableExemplar = new StringEnumTable();
-		database.preventDroppingOfTables(false);
-		database.dropTableNoExceptions(stringTableExemplar);
+		database.setPreventDroppingOfTables(false)
+            .dropTableNoExceptions(stringTableExemplar);
 		database.createTable(stringTableExemplar);
 		try {
 			database.insert(
@@ -389,16 +389,16 @@ public class DBEnumTest extends AbstractTest {
 			}
 
 		} finally {
-			database.preventDroppingOfTables(false);
-			database.dropTableNoExceptions(stringTableExemplar);
+			database.setPreventDroppingOfTables(false)
+              .dropTableNoExceptions(stringTableExemplar);
 		}
 	}
 
 	@Test
 	public void integerPermittedRange() throws SQLException {
 		final IntegerEnumTable integerTableExemplar = new IntegerEnumTable();
-		database.preventDroppingOfTables(false);
-		database.dropTableNoExceptions(integerTableExemplar);
+		database.setPreventDroppingOfTables(false)
+            .dropTableNoExceptions(integerTableExemplar);
 		database.createTable(integerTableExemplar);
 		try {
 			database.insert(
@@ -496,16 +496,16 @@ public class DBEnumTest extends AbstractTest {
 			}
 
 		} finally {
-			database.preventDroppingOfTables(false);
-			database.dropTableNoExceptions(integerTableExemplar);
+			database.setPreventDroppingOfTables(false)
+              .dropTableNoExceptions(integerTableExemplar);
 		}
 	}
 
 	@Test
 	public void longPermittedRange() throws SQLException {
 		final IntegerEnumTable integerTableExemplar = new IntegerEnumTable();
-		database.preventDroppingOfTables(false);
-		database.dropTableNoExceptions(integerTableExemplar);
+		database.setPreventDroppingOfTables(false)
+            .dropTableNoExceptions(integerTableExemplar);
 		database.createTable(integerTableExemplar);
 		try {
 			database.insert(
@@ -612,16 +612,16 @@ public class DBEnumTest extends AbstractTest {
 			}
 
 		} finally {
-			database.preventDroppingOfTables(false);
-			database.dropTableNoExceptions(integerTableExemplar);
+			database.setPreventDroppingOfTables(false)
+              .dropTableNoExceptions(integerTableExemplar);
 		}
 	}
 
 	@Test
 	public void processStringRecord() throws SQLException {
 		final StringEnumTable stringTableExemplar = new StringEnumTable();
-		database.preventDroppingOfTables(false);
-		database.dropTableNoExceptions(stringTableExemplar);
+		database.setPreventDroppingOfTables(false)
+            .dropTableNoExceptions(stringTableExemplar);
 		database.createTable(stringTableExemplar);
 		try {
 			database.insert(
@@ -649,8 +649,8 @@ public class DBEnumTest extends AbstractTest {
 				}
 			}
 		} finally {
-			database.preventDroppingOfTables(false);
-			database.dropTableNoExceptions(stringTableExemplar);
+			database.setPreventDroppingOfTables(false)
+              .dropTableNoExceptions(stringTableExemplar);
 
 		}
 	}
@@ -670,8 +670,8 @@ public class DBEnumTest extends AbstractTest {
 	@Test
 	public void operatorsWorkWithStringRecord() throws SQLException {
 		final StringEnumTable stringTableExemplar = new StringEnumTable();
-		database.preventDroppingOfTables(false);
-		database.dropTableNoExceptions(stringTableExemplar);
+		database.setPreventDroppingOfTables(false)
+            .dropTableNoExceptions(stringTableExemplar);
 		database.createTable(stringTableExemplar);
 		database.insert(
 				new StringEnumTable(1, StringEnumType.MOVEMENT_REQUEST_RECORD),
@@ -1002,8 +1002,8 @@ public class DBEnumTest extends AbstractTest {
 	@Test
 	public void processGenericRecord() throws SQLException {
 		final GenericEnumTable genericTableExemplar = new GenericEnumTable();
-		database.preventDroppingOfTables(false);
-		database.dropTableNoExceptions(genericTableExemplar);
+		database.setPreventDroppingOfTables(false)
+            .dropTableNoExceptions(genericTableExemplar);
 		database.createTable(genericTableExemplar);
 		try {
 			database.insert(
@@ -1031,8 +1031,8 @@ public class DBEnumTest extends AbstractTest {
 				}
 			}
 		} finally {
-			database.preventDroppingOfTables(false);
-			database.dropTableNoExceptions(genericTableExemplar);
+			database.setPreventDroppingOfTables(false)
+              .dropTableNoExceptions(genericTableExemplar);
 
 		}
 	}

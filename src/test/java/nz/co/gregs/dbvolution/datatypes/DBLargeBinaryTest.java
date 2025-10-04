@@ -118,8 +118,8 @@ public class DBLargeBinaryTest extends AbstractTest {
 
 		CompanyLogoForRetreivingBinaryObject blobTable = new CompanyLogoForRetreivingBinaryObject();
 
-		database.preventDroppingOfTables(false);
-		database.dropTableNoExceptions(blobTable);
+		database.setPreventDroppingOfTables(false)
+            .dropTableNoExceptions(blobTable);
 		database.createTable(blobTable);
 
 		int primaryKey = 3;
@@ -152,8 +152,8 @@ public class DBLargeBinaryTest extends AbstractTest {
 
 		CompanyLogoForRetreivingBinaryObject blobTable = new CompanyLogoForRetreivingBinaryObject();
 
-		database.preventDroppingOfTables(false);
-		database.dropTableNoExceptions(blobTable);
+		database.setPreventDroppingOfTables(false)
+            .dropTableNoExceptions(blobTable);
 		database.createTable(blobTable);
 
 		int primaryKey = 3;
@@ -186,8 +186,8 @@ public class DBLargeBinaryTest extends AbstractTest {
 
 		CompanyLogoForRetreivingBinaryObject blobTable = new CompanyLogoForRetreivingBinaryObject();
 
-		database.preventDroppingOfTables(false);
-		database.dropTableNoExceptions(blobTable);
+		database.setPreventDroppingOfTables(false)
+            .dropTableNoExceptions(blobTable);
 		database.createTable(blobTable);
 
 		int primaryKey = 3;
@@ -239,8 +239,8 @@ public class DBLargeBinaryTest extends AbstractTest {
 
 		CompanyLogoForRetreivingBinaryObject blobTable = new CompanyLogoForRetreivingBinaryObject();
 
-		database.preventDroppingOfTables(false);
-		database.dropTableNoExceptions(blobTable);
+		database.setPreventDroppingOfTables(false)
+            .dropTableNoExceptions(blobTable);
 		database.createTable(blobTable);
 
 		int primaryKey = 3;
@@ -279,8 +279,8 @@ public class DBLargeBinaryTest extends AbstractTest {
 
 		CompanyLogoForRetreivingBinaryObject blobTable = new CompanyLogoForRetreivingBinaryObject();
 
-		database.preventDroppingOfTables(false);
-		database.dropTableNoExceptions(blobTable);
+		database.setPreventDroppingOfTables(false)
+            .dropTableNoExceptions(blobTable);
 		database.createTable(blobTable);
 
 		int primaryKey = 31;
@@ -327,8 +327,8 @@ public class DBLargeBinaryTest extends AbstractTest {
 
 		CompanyLogoForRetreivingString clobTable = new CompanyLogoForRetreivingString();
 
-		database.preventDroppingOfTables(false);
-		database.dropTableNoExceptions(clobTable);
+		database.setPreventDroppingOfTables(false)
+            .dropTableNoExceptions(clobTable);
 		database.createTable(clobTable);
 
 		int primaryKey = 4;
@@ -347,8 +347,8 @@ public class DBLargeBinaryTest extends AbstractTest {
 	public void retrieveStringWithBinaryObjectAndAutoIncrement() throws FileNotFoundException, IOException, SQLException, UnexpectedNumberOfRowsException, ClassNotFoundException, InstantiationException {
 
 		BinaryObjectWithAutoIncrement testRow = new BinaryObjectWithAutoIncrement();
-		database.preventDroppingOfTables(false);
-		database.dropTableNoExceptions(testRow);
+		database.setPreventDroppingOfTables(false)
+            .dropTableNoExceptions(testRow);
 		database.createTable(testRow);
 
 		testRow.carCompany.setValue(1);

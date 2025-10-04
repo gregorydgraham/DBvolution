@@ -139,6 +139,18 @@ public class ClusterDetails implements Serializable {
 		}
 		return false;
 	}
+  
+  
+
+	public final void replace(DBDatabase databaseToAdd) {
+    if (!members.contains(databaseToAdd)){
+      // it's not actually in the cluster yet so put it thru the add process
+      // instead.
+      add(databaseToAdd);
+    }else{
+      members.replace(databaseToAdd);
+    }
+  }
 
 	private boolean addDatabaseAsUnsynchronized(DBDatabase database) {
 		members.add(database);
@@ -241,7 +253,7 @@ public class ClusterDetails implements Serializable {
 		synchronized (queuedActions) {
 			Queue<DBAction> queue = queuedActions.get(db);
 			if (queue == null) {
-				queue = new LinkedBlockingQueue<DBAction>();
+				queue = new LinkedBlockingQueue<>();
 				queuedActions.put(db, queue);
 			}
 			return queue;
@@ -332,13 +344,45 @@ public class ClusterDetails implements Serializable {
 		return members.getDatabases(DBDatabaseCluster.Status.READY);
 	}
 
-	public DBDatabase getPausedDatabase() throws NoAvailableDatabaseException {
+  /**
+   * Returns an array of all the ready databases that are available in random
+   * order.
+   *
+   * <p>
+   * If there is a preferred database it is placed at the beginning of the
+   * array. If the preferred database is required then the method blocks until
+   * it is ready or the cluster signals that it has failed.</p>
+   *
+   * @return an array of DBDatabase that are ready for this cluster
+   */
+	public DBDatabase[] getRandomReadyDatabaseArray() {
+    DBDatabase preferredDB = getPreferredDatabase();
+    final DatabaseList databaseList = new DatabaseList(members.getDatabases(DBDatabaseCluster.Status.READY));
+    int index = 0;
+    DBDatabase[] dbArray = new DBDatabase[databaseList.size()];
+    if (preferredDB!=null){
+      databaseList.remove(preferredDB);
+      dbArray[0] = preferredDB;
+      index++;
+    }
+    while(databaseList.size()>0){
+      final DBDatabase randomDatabase = databaseList.getRandomDatabase();
+      if(randomDatabase!=null){
+        databaseList.remove(randomDatabase);
+        dbArray[index] = randomDatabase;
+        index++;
+      }
+    }
+		return dbArray;
+	}
+
+	public DBDatabase getPausedDatabase() {
 		DBDatabase template = getRandomReadyDatabase();
 		members.setPaused(template);
 		return template;
 	}
 
-	public DBDatabase getReadyDatabase() throws NoAvailableDatabaseException {
+	public DBDatabase getPreferredDatabase() {
     if (hasPreferredDatabase() && preferredDatabaseIsReady()) {
       return preferredDatabase;
     } else if (hasPreferredDatabase() && preferredDatabaseRequired) {
@@ -348,14 +392,22 @@ public class ClusterDetails implements Serializable {
       } catch (UnableToSynchronizeDatabase ex) {
         LOG.severe(() -> "Preferred Database was required but preferred database could not be synchronised: " + preferredDatabase.getLabel());
         LOG.severe(() -> ex.getMessage());
-        throw new NoAvailableDatabaseException();
+        return null;
       }
     } else {
-      return getRandomReadyDatabase();
+      return null;
     }
   }
+  
+  public DBDatabase getReadyDatabase() {
+    DBDatabase result = getPreferredDatabase();
+    if (result == null) {
+      result = getRandomReadyDatabase();
+    }
+    return result;
+  }
 
-	private DBDatabase getRandomReadyDatabase() throws NoAvailableDatabaseException {
+	private DBDatabase getRandomReadyDatabase() {
 		DBDatabase[] dbs = getReadyDatabases();
 		int tries = 0;
 		while (dbs.length < 1 && members.countPausedDatabases() > 0 && tries <= 10) {
@@ -368,7 +420,7 @@ public class ClusterDetails implements Serializable {
 			DBDatabase randomElement = dbs[randNumber];
 			return randomElement;
 		}
-		throw new NoAvailableDatabaseException();
+		return null;
 	}
 
 	private void awaitReadyDatabase() {
@@ -394,28 +446,28 @@ public class ClusterDetails implements Serializable {
 		}
 	}
 
-	public synchronized DBDatabase getTemplateDatabase() throws NoAvailableDatabaseException {
+	public synchronized DBDatabase getTemplateDatabase() {
 		if (members.size() == 1 && configuration.isUseAutoRebuild()) {
 			return getAuthoritativeDatabase();
 		} else {
 			if (members.countReadyDatabases() == 0 && members.countPausedDatabases() == 0) {
-				throw new NoAvailableDatabaseException();
+				return null;
 			}
 			return getPausedDatabase();
 		}
 	}
 
-	private DBDatabase getAuthoritativeDatabase() throws NoAvailableDatabaseException {
+	private DBDatabase getAuthoritativeDatabase() {
 		final DatabaseConnectionSettings authoritativeDCS = getAuthoritativeDatabaseConnectionSettings();
 		if (authoritativeDCS != null) {
 			try {
 				return authoritativeDCS.createDBDatabase();
 			} catch (ClassNotFoundException | NoSuchMethodException | SecurityException | InstantiationException | IllegalAccessException | IllegalArgumentException | InvocationTargetException ex) {
 				LOG.log(Level.SEVERE, null, ex);
-				throw new NoAvailableDatabaseException();
+				return null;
 			}
 		} else {
-			throw new NoAvailableDatabaseException();
+			return null;
 		}
 	}
 
@@ -754,11 +806,11 @@ public class ClusterDetails implements Serializable {
     }
     // if the database isn't in the cluster just throw and go
     if (!this.clusterContains(db)) {
-      throw new UnableToSynchronizeDatabase(getClusterLabel(), db);
+      throw new UnableToSynchronizeDatabase(getClusterLabel(), db, "database not found within cluster");
     }
     // if the database is dead or weird just throw and go
     if (getStatusOf(db).anyOf(Status.DEAD, Status.UNKNOWN)) {
-      throw new UnableToSynchronizeDatabase(clusterLabel, db);
+      throw new UnableToSynchronizeDatabase(clusterLabel, db, "database dead or in otherwise unknown state");
     }
 
     // ok, now we can wait...
@@ -781,13 +833,13 @@ public class ClusterDetails implements Serializable {
         if (!stillRunning) {
           throw new DatabaseShutdownInProgress();
         }
-        if (!Status.READY.equals(getStatusOf(database))) {
-          throw new UnableToSynchronizeDatabase(clusterLabel, database);
-        }
+//        if (!Status.READY.equals(getStatusOf(database))) {
+//          throw new UnableToSynchronizeDatabase(clusterLabel, database);
+//        }
       }
     } catch (InterruptedException ex) {
       LOG.log(Level.SEVERE, "Interrupted while trying to synchronize cluster " + clusterLabel, ex);
-      throw new UnableToSynchronizeDatabase(clusterLabel, database, ex);
+//      throw new UnableToSynchronizeDatabase(clusterLabel, database, ex);
     } finally {
       synchronisingLock.unlock();
     }
@@ -841,7 +893,7 @@ public class ClusterDetails implements Serializable {
 									// Make sure it exists in the new database
 									if (secondary.tableExists(table) == true) {
 										LOG.log(Level.FINEST, "{0} cluster removing data from table {2} on {1} database", new Object[]{clusterLabel, secondaryLabel, tableName});
-										secondary.preventDroppingOfTables(false);
+										secondary.setPreventDroppingOfTables(false);
 										secondary.dropTable(table);
 										LOG.log(Level.FINEST, "{0} cluster removed data from table {2} on {1} database", new Object[]{clusterLabel, secondaryLabel, tableName});
 									}
@@ -910,12 +962,14 @@ public class ClusterDetails implements Serializable {
     return proceedWithSynchronization;
   }
 
-	private void releaseTemplateDatabase(DBDatabase primary) throws NoAvailableDatabaseException {
+	private void releaseTemplateDatabase(DBDatabase primary) {
     final boolean nullPrimary = primary != null;
 		if (nullPrimary) {
 			if (clusterContains(primary)) {
 				synchronizeActions(primary);
 			} else {
+        // this might be ok, as an autorebuild cluster can use a database that 
+        // isn't in the cluster to recreate the structure and data.
 				LOG.log(Level.WARNING, "{0} SYNCHRONISING - FAILED TO RELEASE TEMPLATE {1} BECAUSE IT IS NOT A MEMBER - {2}", new Object[]{clusterLabel, primary.getLabel(), primary.getJdbcURL()});
 			}
     }
@@ -928,7 +982,7 @@ public class ClusterDetails implements Serializable {
 		secondaryQ.addAll(templateQ);
 	}
 
-	private void synchronizeActions(DBDatabase db) throws NoAvailableDatabaseException {
+	private void synchronizeActions(DBDatabase db) {
 		if (db != null) {
 			try {
 				Queue<DBAction> queue = getActionQueue(db);
@@ -936,19 +990,15 @@ public class ClusterDetails implements Serializable {
 					DBAction action = queue.remove();
 					db.executeDBAction(action);
 				}
-				try {
-					if (hasReadyDatabases()) {
-						DBDatabase readyDatabase = getRandomReadyDatabase();
-						if (readyDatabase != null) {
-							db.setPrintSQLBeforeExecuting(readyDatabase.getPrintSQLBeforeExecuting());
-							db.setBatchSQLStatementsWhenPossible(readyDatabase.getBatchSQLStatementsWhenPossible());
-						}
-					}
-				} catch (NoAvailableDatabaseException ex) {
-
-				}
-				readyDatabase(db);
-			} catch (SQLException e) {
+        if (hasReadyDatabases()) {
+          DBDatabase readyDatabase = getRandomReadyDatabase();
+          if (readyDatabase != null) {
+            db.setPrintSQLBeforeExecuting(readyDatabase.getPrintSQLBeforeExecuting());
+            db.setBatchSQLStatementsWhenPossible(readyDatabase.getBatchSQLStatementsWhenPossible());
+          }
+        }
+        readyDatabase(db);
+      } catch (SQLException e) {
 				quarantineDatabase(db, e);
 			}
 		}
@@ -1029,6 +1079,38 @@ public class ClusterDetails implements Serializable {
     if (syncking.length==0 && paused.length>0){
       for (DBDatabase db : paused) {
         releaseTemplateDatabase(db);
+      }
+    }
+  }
+
+  public synchronized void addActionToQueues(DBAction action) {
+    final DBDatabase[] allDatabases = getAllDatabases();
+		for (DBDatabase db : allDatabases) {
+      addActionToQueue(db, action);
+		}
+  }
+
+  public synchronized void removeActionFromQueues(DBAction action) {
+    final DBDatabase[] allDatabases = getAllDatabases();
+		for (DBDatabase db : allDatabases) {
+      removeActionFromQueue(db, action);
+		}
+  }
+
+  public void addActionToQueue(DBDatabase database, DBAction action) {
+    Queue<DBAction> queue = getActionQueue(database);
+    if (queue != null) {
+      synchronized (queue) {
+        queue.add(action);
+      }
+    }
+  }
+
+  public void removeActionFromQueue(DBDatabase database, DBAction action) {
+    final Queue<DBAction> queue = getActionQueue(database);
+    if (queue != null) {
+      synchronized (queue) {
+        queue.remove(action);
       }
     }
   }

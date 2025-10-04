@@ -47,8 +47,8 @@ public class DBNumberTest extends AbstractTest {
 	@Test
 	public void testGetSQLDatatype() throws SQLException {
 		NumberTest numberTest = new NumberTest();
-		database.preventDroppingOfTables(false);
-		database.dropTableNoExceptions(numberTest);
+		database.setPreventDroppingOfTables(false)
+            .dropTableNoExceptions(numberTest);
 		database.createTable(numberTest);
 
 		numberTest.numberColumn.setValue(2.2);
@@ -113,8 +113,8 @@ public class DBNumberTest extends AbstractTest {
 		assertThat(allRows.size(), is(1));
 		assertThat(allRows.get(0).numberColumn.doubleValue(), is(2.0));
 
-		database.preventDroppingOfTables(false);
-		database.dropTableNoExceptions(numberTest);
+		database.setPreventDroppingOfTables(false)
+            .dropTableNoExceptions(numberTest);
 	}
 
 	public static class NumberTest extends DBRow {

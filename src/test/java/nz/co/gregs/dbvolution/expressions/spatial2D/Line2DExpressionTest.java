@@ -47,8 +47,8 @@ public class Line2DExpressionTest extends AbstractTest {
 		super(testIterationName, db);
 		LineTestTable lineTestTable = new LineTestTable();
 
-		db.preventDroppingOfTables(false);
-		db.dropTableNoExceptions(lineTestTable);
+		db.setPreventDroppingOfTables(false)
+            .dropTableNoExceptions(lineTestTable);
 		db.createTable(lineTestTable);
 
 		Coordinate coordinate1 = new Coordinate(2, 3);

@@ -32,10 +32,10 @@ public class DBValidationTest extends AbstractTest {
 
 	@Before
 	public void setup() throws SQLException {
-		database.preventDroppingOfTables(false);
-		database.dropTableNoExceptions(new Villain());
-		database.preventDroppingOfTables(false);
-		database.dropTableNoExceptions(new Hero());
+		database.setPreventDroppingOfTables(false)
+            .dropTableNoExceptions(new Villain());
+		database.setPreventDroppingOfTables(false)
+            .dropTableNoExceptions(new Hero());
 
 		database.createTable(new Villain());
 		database.createTable(new Hero());
@@ -46,9 +46,9 @@ public class DBValidationTest extends AbstractTest {
 
 	@After
 	public void teardown() throws SQLException {
-//		database.preventDroppingOfTables(false);
+//		database.setPreventDroppingOfTables(false);
 //		database.dropTableNoExceptions(new Villain());
-//		database.preventDroppingOfTables(false);
+//		database.setPreventDroppingOfTables(false);
 //		database.dropTableNoExceptions(new Hero());
 	}
 

@@ -36,6 +36,8 @@ import java.util.List;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
 import nz.co.gregs.dbvolution.DBRow;
 import nz.co.gregs.dbvolution.DBTable;
 import nz.co.gregs.dbvolution.annotations.DBAutoIncrement;
@@ -68,8 +70,8 @@ public class DBEncryptedTextTest extends AbstractTest {
 		assertThat(insertRow.encryptedString.getEncryptedValue().toString(), startsWith("BASE64_AES/GCM/NoPadding|"));
 		assertThat(insertRow.encryptedString.decryptWith(passphrase), is(correctSecret));
 
-		database.preventDroppingOfTables(false);
-		database.dropTableNoExceptions(insertRow);
+		database.setPreventDroppingOfTables(false)
+            .dropTableNoExceptions(insertRow);
 		database.createTableNoExceptions(insertRow);
 		database.insert(insertRow);
 		DBTable<EncryptedTextTestTable> table = database.getDBTable(new EncryptedTextTestTable());
@@ -178,6 +180,7 @@ public class DBEncryptedTextTest extends AbstractTest {
 	@Test
 	public void testDBEncryptedStringWithLotsOfBackgroundThreads() throws SQLException, IncorrectPasswordException, CannotEncryptInputException, UnableToDecryptInput {
 
+    var succeeded = false;
 		var insertRow = new EncryptedTextTestTableWithThreads();
 		String passphrase = "very secret phraseAAA!!!{}|!@#$%^&*()_+-=';:/?.,<>\"";
 		String correctSecret = "correct secretAAA!!!{}|!@#$%^&*()_+-=';:/?.,<>\"";
@@ -187,8 +190,8 @@ public class DBEncryptedTextTest extends AbstractTest {
 		assertThat(insertRow.encryptedString.getEncryptedValue().toString(), startsWith("BASE64_AES/GCM/NoPadding|"));
 		assertThat(insertRow.encryptedString.decryptWith(passphrase), is(correctSecret));
 
-		database.preventDroppingOfTables(false);
-		database.dropTableNoExceptions(insertRow);
+		database.setPreventDroppingOfTables(false)
+            .dropTableNoExceptions(insertRow);
 		database.createTableNoExceptions(insertRow);
     
     // Make a threadpool for all our background threads
@@ -209,9 +212,6 @@ public class DBEncryptedTextTest extends AbstractTest {
 
         var allRows = table.getAllRows();
         for (var row : allRows) {
-          System.out.println("ENCRYPTEDSTRING ID: " + row.pkid.stringValue());
-          database.print(allRows);
-          System.out.println("DECRYPTED STRING: " + row.encryptedString.decryptWith(passphrase));
           assertThat(row.encryptedString.getEncryptedValue(), is(encryptedValue));
           assertThat(row.encryptedString.getEncryptedValue(), not(correctSecret));
           assertThat(row.encryptedString.decryptWith(passphrase), is(correctSecret));
@@ -227,11 +227,14 @@ public class DBEncryptedTextTest extends AbstractTest {
     
     // Set the whole thing off and hope that it works
     try {
-      threadpool.invokeAll(taskGroup);
+      List<Future<String>> allFutures = threadpool.invokeAll(taskGroup);
+      threadpool.awaitTermination(10, TimeUnit.MINUTES);
+      assertThat(allFutures.get(50).isDone(), is(true));
+      succeeded = true;
     } catch (InterruptedException ex) {
       System.getLogger(DBEncryptedTextTest.class.getName()).log(System.Logger.Level.ERROR, (String) null, ex);
     }
-    
+    assertThat(succeeded, is(true));
     threadpool.shutdownNow();
 	}
 
@@ -242,7 +245,6 @@ public class DBEncryptedTextTest extends AbstractTest {
       final String cipherText = ""+finalIndex+" - nz.co.gregs.dbvolution.datatypes.DBEncryptedTextTest.testDBEncryptedStringWithLotsOfBackgroundTasks(): ";
       var encrypt = Encrypted.encrypt(passphrase, cipherText);
       String result = encrypt.decrypt(passphrase);
-//      System.out.println(result);
       return result;
     });
   }

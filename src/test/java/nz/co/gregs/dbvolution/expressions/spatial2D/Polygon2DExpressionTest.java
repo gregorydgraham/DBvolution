@@ -59,8 +59,8 @@ public class Polygon2DExpressionTest extends AbstractTest {
 
 		PolygonTestTable polygonTestTable = new PolygonTestTable();
 
-		db.preventDroppingOfTables(false);
-		db.dropTableNoExceptions(polygonTestTable);
+		db.setPreventDroppingOfTables(false)
+            .dropTableNoExceptions(polygonTestTable);
 		db.createTable(polygonTestTable);
 
 		Coordinate coordinate00 = new Coordinate(0, 0);

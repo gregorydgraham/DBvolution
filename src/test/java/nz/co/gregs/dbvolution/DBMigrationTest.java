@@ -33,10 +33,10 @@ public class DBMigrationTest extends AbstractTest {
 
 	@Before
 	public void setup() throws SQLException {
-		database.preventDroppingOfTables(false);
-		database.dropTableNoExceptions(new Villain());
-		database.preventDroppingOfTables(false);
-		database.dropTableNoExceptions(new Hero());
+		database.setPreventDroppingOfTables(false)
+            .dropTableNoExceptions(new Villain());
+		database.setPreventDroppingOfTables(false)
+            .dropTableNoExceptions(new Hero());
 
 		database.createTable(new Villain());
 		database.createTable(new Hero());
@@ -113,9 +113,9 @@ public class DBMigrationTest extends AbstractTest {
 			assertThat(prof.surname.stringValue(), isOneOf("Nonono", "Karma", "Dark"));
 		}
 
-		database.preventDroppingOfTables(false);
 		final Professional professional = new Professional();
-		database.dropTableNoExceptions(professional);
+		database.setPreventDroppingOfTables(false)
+            .dropTableNoExceptions(professional);
 		database.createTable(professional);
 
 		migration.createAllRows();
@@ -173,9 +173,9 @@ public class DBMigrationTest extends AbstractTest {
 			assertThat(fight.hero.stringValue(), isOneOf("James Security", "Straw Richards", "Lightwing"));
 		}
 
-		database.preventDroppingOfTables(false);
 		final Fight fight = new Fight();
-		database.dropTableNoExceptions(fight);
+		database.setPreventDroppingOfTables(false)
+            .dropTableNoExceptions(fight);
 		database.createTable(fight);
 
 		migration.createAllRows();
@@ -212,9 +212,9 @@ public class DBMigrationTest extends AbstractTest {
 			assertThat(fight.hero.stringValue(), isOneOf("James Security", "Straw Richards", "Lightwing"));
 		}
 
-		database.preventDroppingOfTables(false);
 		final Fight fight = new Fight();
-		database.dropTableNoExceptions(fight);
+		database.setPreventDroppingOfTables(false)
+            .dropTableNoExceptions(fight);
 		database.createTable(fight);
 
 		DBMigrationValidation.Results validation = migration.validateAllRows();
@@ -276,9 +276,9 @@ public class DBMigrationTest extends AbstractTest {
 			assertThat(fight.hero.stringValue(), isOneOf("James Security", "Straw Richards", "Lightwing"));
 		}
 
-		database.preventDroppingOfTables(false);
 		final Fight fight = new Fight();
-		database.dropTableNoExceptions(fight);
+		database.setPreventDroppingOfTables(false)
+            .dropTableNoExceptions(fight);
 		database.createTable(fight);
 
 		DBMigrationValidation.Results validation = migration.validateAllRows();

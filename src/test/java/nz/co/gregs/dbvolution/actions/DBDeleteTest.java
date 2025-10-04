@@ -40,8 +40,8 @@ public class DBDeleteTest extends AbstractTest {
 		TestDeleteThrowsExceptionOnBlankRow row = new TestDeleteThrowsExceptionOnBlankRow();
 		TestDeleteThrowsExceptionOnBlankRow row2 = new TestDeleteThrowsExceptionOnBlankRow();
 
-		database.preventDroppingOfTables(false);
-		database.dropTableNoExceptions(row);
+		database.setPreventDroppingOfTables(false)
+            .dropTableNoExceptions(row);
 
 		database.createTable(row);
 
@@ -68,8 +68,8 @@ public class DBDeleteTest extends AbstractTest {
 		} catch (Exception exp) {
 			Assert.fail("Should have thrown an AccidentalBlankQueryException");
 		} finally {
-			database.preventDroppingOfTables(false);
-			database.dropTableNoExceptions(row);
+			database.setPreventDroppingOfTables(false)
+              .dropTableNoExceptions(row);
 		}
 
 	}
@@ -79,8 +79,8 @@ public class DBDeleteTest extends AbstractTest {
 		TestDeleteAll row = new TestDeleteAll();
 		TestDeleteAll row2 = new TestDeleteAll();
 
-		database.preventDroppingOfTables(false);
-		database.dropTableNoExceptions(row);
+		database.setPreventDroppingOfTables(false)
+            .dropTableNoExceptions(row);
 
 		database.createTable(row);
 
@@ -99,8 +99,8 @@ public class DBDeleteTest extends AbstractTest {
             .deleteAllRowsFromTable(new TestDeleteAll());
 		assertThat(database.getCount(new TestDeleteAll()), is(0l));
 
-		database.preventDroppingOfTables(false);
-		database.dropTableNoExceptions(row);
+		database.setPreventDroppingOfTables(false)
+            .dropTableNoExceptions(row);
 	}
 
 	public static class TestDeleteThrowsExceptionOnBlankRow extends DBRow {

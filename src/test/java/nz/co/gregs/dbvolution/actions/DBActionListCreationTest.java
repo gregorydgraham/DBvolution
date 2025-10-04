@@ -145,8 +145,8 @@ public class DBActionListCreationTest extends AbstractTest {
 		CarCompanyWithAutoIncrement tvr = new CarCompanyWithAutoIncrement();
 		tvr.name.setValue("TVR");
 
-		database.preventDroppingOfTables(false);
-		database.dropTableNoExceptions(tvr);
+		database.setPreventDroppingOfTables(false)
+            .dropTableNoExceptions(tvr);
 		database.createTable(tvr);
 		
 		DBActionList insertTVRActions = database.insert(tvr);

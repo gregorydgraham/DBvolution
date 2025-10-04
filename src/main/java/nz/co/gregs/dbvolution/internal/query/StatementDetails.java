@@ -52,7 +52,7 @@ public class StatementDetails {
 	private String namedPKColumn;
 	private DBStatement activeStatement;
 	private Long timeout;
-  private int attemptCount = 0;
+//  private int attemptCount = 0;
   private long rowCount;
 
 	public StatementDetails(String label, QueryIntention intent, String sql, DBStatement statement) {
@@ -120,7 +120,7 @@ public class StatementDetails {
 	 * @throws SQLException database errors are propagated
 	 */
 	public void execute(Statement stmt) throws SQLException {
-    attemptCount++;
+//    attemptCount++;
 		if (StringCheck.isNotEmptyNorNull(namedPKColumn)) {
 			stmt.execute(sql, new String[]{namedPKColumn});
 		} else if (requiresGeneratedKeys()) {
@@ -139,8 +139,8 @@ public class StatementDetails {
 	 * @throws SQLException database errors are propagated
 	 */
 	public long executeUpdate(Statement stmt) throws SQLException {
-    attemptCount++;
-    long result = 0l;
+//    attemptCount++;
+    long result;
 		if (StringCheck.isNotEmptyNorNull(namedPKColumn)) {
 			 result = stmt.executeLargeUpdate(sql, new String[]{namedPKColumn});
 		} else if (requiresGeneratedKeys()) {
@@ -183,9 +183,9 @@ public class StatementDetails {
 		return timeout;
 	}
 
-  public int getAttemptCount() {
-    return attemptCount;
-  }
+//  public int getAttemptCount() {
+//    return attemptCount;
+//  }
 
   public long getRowCount() {
     return rowCount;

@@ -51,8 +51,8 @@ public class DBDateRepeatTest extends AbstractTest {
 	@Test
 	public void basicTest() throws SQLException {
 		final DateRepeatTable dateRepeatTable = new DateRepeatTable();
-		database.preventDroppingOfTables(false);
-		database.dropTableNoExceptions(dateRepeatTable);
+		database.setPreventDroppingOfTables(false)
+            .dropTableNoExceptions(dateRepeatTable);
 		database.createTable(dateRepeatTable);
 		final Period testPeriod = new Period().withSeconds(2).withMinutes(3).withHours(4).withDays(5).withWeeks(6).withMonths(7).withYears(8);
 		dateRepeatTable.dateRepeatCol.setValue(testPeriod);

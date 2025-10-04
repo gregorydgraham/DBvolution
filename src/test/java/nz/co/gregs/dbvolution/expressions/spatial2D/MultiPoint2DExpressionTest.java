@@ -48,8 +48,8 @@ public class MultiPoint2DExpressionTest extends AbstractTest {
   public synchronized void setup() throws Exception {
 		MultiPoint2DTestTable lineTestTable = new MultiPoint2DTestTable();
 
-		database.preventDroppingOfTables(false);
-		database.dropTableNoExceptions(lineTestTable);
+		database.setPreventDroppingOfTables(false)
+            .dropTableNoExceptions(lineTestTable);
 		database.createTable(lineTestTable);
 
 		Coordinate coordinate1 = new Coordinate(2, 3);

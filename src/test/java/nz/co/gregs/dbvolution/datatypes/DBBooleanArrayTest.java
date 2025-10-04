@@ -212,8 +212,8 @@ public class DBBooleanArrayTest extends AbstractTest {
 	@Test
 	public void testGetFromResultSet() throws Exception {
 		final BooleanArrayTable boolArrayTable = new BooleanArrayTable();
-		database.preventDroppingOfTables(false);
-		database.dropTableNoExceptions(boolArrayTable);
+		database.setPreventDroppingOfTables(false)
+            .dropTableNoExceptions(boolArrayTable);
 		database.createTable(boolArrayTable);
 		final Boolean[] theValue = new Boolean[]{false, true, true};
 		boolArrayTable.boolArrayColumn.setValue(theValue);

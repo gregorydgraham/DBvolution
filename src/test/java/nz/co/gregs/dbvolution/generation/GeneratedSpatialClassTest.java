@@ -31,8 +31,8 @@ public class GeneratedSpatialClassTest extends AbstractTest {
 	@Test
 	public void testGetSchema() throws SQLException, IOException {
 		if (database.supportsGeometryTypesFullyInSchema()) {
-			database.preventDroppingOfTables(false);
-			database.dropTableNoExceptions(new Spatialgen());
+			database.setPreventDroppingOfTables(false)
+              .dropTableNoExceptions(new Spatialgen());
 			database.createTable(new Spatialgen());
 			int classesTested = 0;
 
@@ -108,7 +108,7 @@ public class GeneratedSpatialClassTest extends AbstractTest {
 			}
 			assertThat(classesTested, is(1));
 
-			database.preventDroppingOfTables(false);
+			database.setPreventDroppingOfTables(false);
 			database.dropTable(new Spatialgen());
 		} else {
 			System.out.print("NOT IMPLEMENTED: spatial schema generation for " + database.getLabel() + " has not been implemented");

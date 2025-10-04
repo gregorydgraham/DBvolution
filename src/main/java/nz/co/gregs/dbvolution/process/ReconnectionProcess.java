@@ -64,7 +64,7 @@ public class ReconnectionProcess extends ClusterProcess {
 				LOGGER.fine(msg);
 				encoder.addLine(msg);
 				try {
-					encoder.addLine(cluster.reconnectQuarantinedDatabases());
+					encoder.addLine(cluster.reconnectQuarantinedDatabases().getMessage());
 				} catch (UnableToRemoveLastDatabaseFromClusterException | SQLException ex) {
 					Logger.getLogger(ReconnectionProcess.class.getName()).log(Level.SEVERE, null, ex);
 				}

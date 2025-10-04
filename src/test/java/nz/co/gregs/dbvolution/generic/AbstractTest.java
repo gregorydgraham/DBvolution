@@ -15,6 +15,7 @@
  */
 package nz.co.gregs.dbvolution.generic;
 
+import nz.co.gregs.dbvolution.utility.ReconnectionResults;
 import nz.co.gregs.dbvolution.databases.MSSQLServer2017ContainerDB;
 import nz.co.gregs.dbvolution.databases.Oracle11XEContainerDB;
 import nz.co.gregs.dbvolution.databases.DBDatabase;
@@ -406,6 +407,7 @@ public abstract class AbstractTest {
 
   public static synchronized void setup(DBDatabase database) throws Exception {
     try {
+      database.setLabel("DATABASE_TO_TEST");
       if (database != null) {
         if (database instanceof DBDatabaseCluster) {
           try {
@@ -421,25 +423,25 @@ public abstract class AbstractTest {
         Date secondDate = DATETIME_FORMAT.parse(secondDateStr);
 
         var marque = new Marque();
-        database.preventDroppingOfTables(false);
-        database.dropTableIfExists(new Marque());
+        database.setPreventDroppingOfTables(false)
+                .dropTableIfExists(new Marque());
         database.createTable(marque);
 
-        database.preventDroppingOfTables(false);
         var carCompany = new CarCompany();
-        database.dropTableNoExceptions(carCompany);
+        database.setPreventDroppingOfTables(false)
+                .dropTableNoExceptions(carCompany);
         database.createTable(carCompany);
 
-        database.preventDroppingOfTables(false);
-        database.dropTableNoExceptions(new CompanyLogo());
+        database.setPreventDroppingOfTables(false)
+                .dropTableNoExceptions(new CompanyLogo());
         database.createTable(new CompanyLogo());
 
-        database.preventDroppingOfTables(false);
-        database.dropTableNoExceptions(new CompanyText());
+        database.setPreventDroppingOfTables(false)
+                .dropTableNoExceptions(new CompanyText());
         database.createTable(new CompanyText());
 
-        database.preventDroppingOfTables(false);
-        database.dropTableNoExceptions(new LinkCarCompanyAndLogo());
+        database.setPreventDroppingOfTables(false)
+                .dropTableNoExceptions(new LinkCarCompanyAndLogo());
         database.createOrUpdateTable(new LinkCarCompanyAndLogo());
 
         insertCarCompanies(database);
@@ -450,7 +452,7 @@ public abstract class AbstractTest {
           if (database instanceof DBDatabaseCluster) {
             try {
               DBDatabaseCluster cluster = (DBDatabaseCluster) database;
-              String reconnectResults = cluster.reconnectQuarantinedDatabases();
+              ReconnectionResults reconnectResults = cluster.reconnectQuarantinedDatabases();
               System.out.println(reconnectResults);
               cluster.waitUntilSynchronised();
             } catch (Exception ex) {
