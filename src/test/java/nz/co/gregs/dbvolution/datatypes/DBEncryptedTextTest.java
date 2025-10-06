@@ -34,10 +34,10 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
-import java.util.concurrent.TimeUnit;
 import nz.co.gregs.dbvolution.DBRow;
 import nz.co.gregs.dbvolution.DBTable;
 import nz.co.gregs.dbvolution.annotations.DBAutoIncrement;
@@ -48,12 +48,16 @@ import nz.co.gregs.dbvolution.exceptions.IncorrectPasswordException;
 import nz.co.gregs.dbvolution.exceptions.UnableToDecryptInput;
 import nz.co.gregs.dbvolution.generic.AbstractTest;
 import nz.co.gregs.dbvolution.utility.encryption.Encrypted;
+import nz.co.gregs.separatedstring.Encoder;
+import nz.co.gregs.separatedstring.SeparatedString;
 import static org.hamcrest.Matchers.*;
 import static org.hamcrest.MatcherAssert.assertThat;
 import org.junit.Test;
 
 public class DBEncryptedTextTest extends AbstractTest {
 
+  private static final int MAX_THREADS = 1000;
+  
 	public DBEncryptedTextTest(Object testIterationName, Object db) {
 		super(testIterationName, db);
 	}
@@ -179,7 +183,7 @@ public class DBEncryptedTextTest extends AbstractTest {
 
 	@Test
 	public void testDBEncryptedStringWithLotsOfBackgroundThreads() throws SQLException, IncorrectPasswordException, CannotEncryptInputException, UnableToDecryptInput {
-
+    
     var succeeded = false;
 		var insertRow = new EncryptedTextTestTableWithThreads();
 		String passphrase = "very secret phraseAAA!!!{}|!@#$%^&*()_+-=';:/?.,<>\"";
@@ -200,36 +204,65 @@ public class DBEncryptedTextTest extends AbstractTest {
     ArrayList<Callable<String>> taskGroup = new ArrayList<>();
     
     // Make a lot of background threads
-    for (int index = 0; index < 50; index++) {
+    for (int index = 0; index < MAX_THREADS/2; index++) {
       addBackgroundThread(index, taskGroup);
     }
     // insert the actual task into the middle of the background threads
     taskGroup.add(() -> {
+      Encoder result  = SeparatedString.builder().encoder();
       try{
         database.insert(insertRow);
         DBTable<EncryptedTextTestTableWithThreads> table = database.getDBTable(new EncryptedTextTestTableWithThreads());
         table.setBlankQueryAllowed(true);
-
         var allRows = table.getAllRows();
+        
         for (var row : allRows) {
+          result.addLine(row.toString());
           assertThat(row.encryptedString.getEncryptedValue(), is(encryptedValue));
           assertThat(row.encryptedString.getEncryptedValue(), not(correctSecret));
           assertThat(row.encryptedString.decryptWith(passphrase), is(correctSecret));
         }
       } finally {
       }
-      return null;
+      return result.encode();
     });
     // Add the other half of the background threads
-    for (int index = 50; index < 100; index++) {
+    for (int index = MAX_THREADS/2; index < MAX_THREADS; index++) {
       addBackgroundThread(index, taskGroup);
     }
     
     // Set the whole thing off and hope that it works
     try {
       List<Future<String>> allFutures = threadpool.invokeAll(taskGroup);
-      threadpool.awaitTermination(10, TimeUnit.MINUTES);
-      assertThat(allFutures.get(50).isDone(), is(true));
+      long successfulTasks = allFutures.stream()
+              .filter((f) -> f.isDone())
+              .filter((f) -> !f.isCancelled())
+              .count();
+      long presentTasks = allFutures.stream()
+              .filter((f) -> {
+                try {
+                  return f.get() != null;
+                } catch (InterruptedException ex) {
+                  System.getLogger(DBEncryptedTextTest.class.getName()).log(System.Logger.Level.ERROR, (String) null, ex);
+                } catch (ExecutionException ex) {
+                  System.getLogger(DBEncryptedTextTest.class.getName()).log(System.Logger.Level.ERROR, (String) null, ex);
+                }
+                return false;
+              })
+              .filter((f) -> {
+                try {
+                  return !f.get().isEmpty();
+                } catch (InterruptedException ex) {
+                  System.getLogger(DBEncryptedTextTest.class.getName()).log(System.Logger.Level.ERROR, (String) null, ex);
+                } catch (ExecutionException ex) {
+                  System.getLogger(DBEncryptedTextTest.class.getName()).log(System.Logger.Level.ERROR, (String) null, ex);
+                }
+                return false;
+              })
+              .count();
+      assertThat(successfulTasks, is(MAX_THREADS+1l));
+      assertThat(presentTasks, is(MAX_THREADS+1l));
+      assertThat(allFutures.get(MAX_THREADS/2).isDone(), is(true));
       succeeded = true;
     } catch (InterruptedException ex) {
       System.getLogger(DBEncryptedTextTest.class.getName()).log(System.Logger.Level.ERROR, (String) null, ex);
