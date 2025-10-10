@@ -62,6 +62,8 @@ public class TestingDatabase extends H2MemoryDB {
   private boolean failOnDelete = false;
   private boolean generateBrokenActions;
   private boolean returnIncorrectActionResults;
+  private SQLException exceptionToThrow;
+  private boolean throwExceptionAtLowestLevel;
 
   public void setFailOnUpdate(boolean failOnUpdate) {
     this.failOnUpdate = failOnUpdate;
@@ -149,10 +151,26 @@ public class TestingDatabase extends H2MemoryDB {
     this.returnIncorrectActionResults = incorrectResults;
   }
 
+  public void setThrowExceptionAtLowestLevel(boolean throwException) {
+    this.throwExceptionAtLowestLevel = throwException;
+  }
+
+  public void setThrowExceptionAtLowestLevel(boolean throwException, SQLException intendedException) {
+    this.throwExceptionAtLowestLevel = throwException;
+    this.exceptionToThrow = intendedException;
+  }
+
   @Override
   public DBStatement getDBStatement() throws SQLException {
     if (returnIncorrectActionResults) {
-      return new IncorrectActionResultsDBStatement(this,getConnection());
+      return new IncorrectActionResultsDBStatement(this, getConnection());
+    }
+    if (throwExceptionAtLowestLevel) {
+      if (exceptionToThrow != null) {
+        return new DBStatementThatThrowsException(this, getConnection(), exceptionToThrow);
+      } else {
+        return new DBStatementThatThrowsException(this, getConnection());
+      }
     }
     return super.getDBStatement();
   }
@@ -214,20 +232,6 @@ public class TestingDatabase extends H2MemoryDB {
     public DBActionList delete(Collection<E> oldRows) throws SQLException {
       brake.checkBrake();
       return super.delete(oldRows);
-    }
-  }
-
-  private static class BrokenInsert extends DBInsert {
-
-    private static final long serialVersionUID = 1L;
-
-    public BrokenInsert(DBInsert action) {
-      super(action.getRow());
-    }
-
-    @Override
-    public DBActionList execute(DBDatabase db) throws SQLException, DBSQLException {
-      throw new SQLException("Deliberate Error During DBInsert.execute()");
     }
   }
 
@@ -300,8 +304,8 @@ public class TestingDatabase extends H2MemoryDB {
 
   private static class IncorrectActionResultsDBStatement extends DBStatement {
 
-    private long MIN_INDEX = 100000000l ;
-    private long MAX_INDEX = Long.MAX_VALUE;
+    private final long MIN_INDEX = 100000000l ;
+    private final long MAX_INDEX = Long.MAX_VALUE;
 
     public IncorrectActionResultsDBStatement(DBDatabase db, DBConnection connection) {
       super(db, connection);
@@ -315,6 +319,38 @@ public class TestingDatabase extends H2MemoryDB {
     @Override
     public long execute(QueryIntention queryIntention, String sql) throws SQLException {
       return ThreadLocalRandom.current().nextLong(MIN_INDEX, MAX_INDEX);
+    }
+
+  }
+
+  private static class DBStatementThatThrowsException extends DBStatement {
+
+    private SQLException intendedException = new SQLException("DELIBERATE ERROR");
+
+    public DBStatementThatThrowsException(DBDatabase db, DBConnection connection) {
+      super(db, connection);
+    }
+
+    public DBStatementThatThrowsException(DBDatabase db, DBConnection connection, SQLException intendedException) {
+      super(db, connection);
+      this.intendedException = intendedException;
+    }
+
+    public long throwException() throws SQLException {
+      if (intendedException!=null){
+        throw intendedException;
+      }
+      throw new SQLException("DELIBERATE ERROR");
+    }
+
+    @Override
+    public long execute(StatementDetails details) throws SQLException {
+      return throwException();
+    }
+
+    @Override
+    public long execute(QueryIntention queryIntention, String sql) throws SQLException {
+      return throwException();
     }
 
   }
