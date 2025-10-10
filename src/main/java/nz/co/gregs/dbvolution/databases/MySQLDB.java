@@ -147,7 +147,7 @@ public class MySQLDB extends DBDatabaseImplementation implements SupportsPolygon
 	private final static Regex TABLE_DOES_NOT_EXIST = Regex.startingAnywhere().literal("Table ").noneOfThisCharacter(' ').atLeastOnceGreedy().literal(" does not exist").toRegex();
 
 	@Override
-	public ResponseToException addFeatureToFixException(Exception exp, QueryIntention intent, StatementDetails details) throws Exception {
+	public ResponseToException addFeatureToFixException(SQLException exp, QueryIntention intent, StatementDetails details) throws SQLException {
 		String message = exp.getMessage();
 		if (TABLE_ALREADY_EXISTS.matchesEntireString(message)) {
 			return ResponseToException.SKIPQUERY;

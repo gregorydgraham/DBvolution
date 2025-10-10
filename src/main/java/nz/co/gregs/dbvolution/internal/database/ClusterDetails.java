@@ -57,6 +57,7 @@ import nz.co.gregs.dbvolution.exceptions.*;
 import nz.co.gregs.dbvolution.reflection.DataModel;
 import nz.co.gregs.dbvolution.utility.StringCheck;
 import nz.co.gregs.dbvolution.utility.PreferencesImproved;
+import nz.co.gregs.dbvolution.utility.Timeout;
 import nz.co.gregs.dbvolution.utility.encryption.Encryption_Internal;
 import nz.co.gregs.separatedstring.Builder;
 import nz.co.gregs.separatedstring.Decoder;
@@ -96,6 +97,7 @@ public class ClusterDetails implements Serializable {
 	private boolean preferredDatabaseRequired;
 	private boolean stillRunning = true;
 	private final PropertyChangeSupport propertyChangeSupport;
+  private Timeout timeout;
 
 	public ClusterDetails(String label) {
 		this.clusterLabel = label;
@@ -1113,5 +1115,10 @@ public class ClusterDetails implements Serializable {
         queue.remove(action);
       }
     }
+  }
+
+  public void setTimeout(Timeout maximumTimeForDatabaseEvents) {
+    this.timeout = maximumTimeForDatabaseEvents;
+    this.members.stream().forEach((e)->e.database.setTimeout(maximumTimeForDatabaseEvents));
   }
 }

@@ -69,6 +69,7 @@ import nz.co.gregs.regexi.Regex;
 import static nz.co.gregs.dbvolution.databases.QueryIntention.*;
 import static nz.co.gregs.dbvolution.databases.DBDatabaseImplementation.ResponseToException.*;
 import nz.co.gregs.dbvolution.utility.Preventer;
+import nz.co.gregs.dbvolution.utility.Timeout;
 
 /**
  * DBDatabase is the repository of all knowledge about your database.
@@ -120,6 +121,7 @@ public abstract class DBDatabaseImplementation implements DBDatabase, Serializab
 	protected transient Preventer droppingOfTables = new Preventer();
 	protected transient Preventer droppingDatabase = new Preventer();
 	protected transient Preventer deletingAllRowsFromTable = new Preventer();
+  private transient Timeout timeout = Timeout.milliseconds(15000l);
 
 	{
 		Runtime.getRuntime().addShutdownHook(new StopDatabase(this));
@@ -391,7 +393,7 @@ public abstract class DBDatabaseImplementation implements DBDatabase, Serializab
 	 * to work with those databases.
 	 */
 	@Override
-	public     DBConnection getConnection() throws UnableToCreateDatabaseConnectionException, UnableToFindJDBCDriver, SQLException {
+	public DBConnection getConnection() throws UnableToCreateDatabaseConnectionException, UnableToFindJDBCDriver, SQLException {
 		if (terminated) {
 			throw new DatabaseShutdownInProgress();
 		} else {
@@ -2093,7 +2095,7 @@ public abstract class DBDatabaseImplementation implements DBDatabase, Serializab
 	 * @throws SQLException accessing the database may cause exceptions
 	 */
 	@Override
-	public ResponseToException addFeatureToFixException(Exception exp, QueryIntention intent, StatementDetails details) throws Exception {
+	public ResponseToException addFeatureToFixException(SQLException exp, QueryIntention intent, StatementDetails details) throws SQLException {
     if (DUPLICATE_COLUMN_NAME.matchesWithinString(exp.getMessage())){
       return SKIPQUERY;
     }
@@ -2296,6 +2298,16 @@ public abstract class DBDatabaseImplementation implements DBDatabase, Serializab
     droppingOfTables.reset();
   }
 
+  @Override
+  public void setTimeout(Timeout maximumTimeForDatabaseEvents) {
+    this.timeout = maximumTimeForDatabaseEvents;
+  }
+  
+  @Override
+  public Timeout getTimeout(){
+    return this.timeout;
+  }
+
 	public static enum ResponseToException {
 		REPLACECONNECTION(),
 		REQUERY(),
@@ -2395,7 +2407,7 @@ public abstract class DBDatabaseImplementation implements DBDatabase, Serializab
 		boolean tableExists;
 		String testQuery = getDefinition().getTableExistsSQL(table);
 		try (DBStatement dbStatement = getDBStatement()) {
-			var dets = new StatementDetails("CHECK FOR TABLE " + table.getTableName(), QueryIntention.CHECK_TABLE_EXISTS, testQuery, dbStatement);
+			var dets = new StatementDetails("CHECK FOR TABLE " + table.getTableName(), QueryIntention.CHECK_TABLE_EXISTS, testQuery, dbStatement, timeout);
 			try (ResultSet results = dbStatement.executeQuery(dets)) {
         tableExists = (results != null);
       }

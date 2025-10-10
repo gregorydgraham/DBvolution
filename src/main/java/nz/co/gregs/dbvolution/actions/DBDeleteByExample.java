@@ -69,7 +69,8 @@ public class DBDeleteByExample extends DBDelete {
 		}
 		try (DBStatement statement = db.getDBStatement()) {
 			for (String sql : getSQLStatements(db)) {
-				addAlteredRows(statement.execute("DELETE ROW", QueryIntention.DELETE_ROW, sql));
+        final long result = statement.execute("DELETE ROW", QueryIntention.DELETE_ROW, sql);
+				deleteAction.addAlteredRows(result);
 			}
 		}
 		return actions;

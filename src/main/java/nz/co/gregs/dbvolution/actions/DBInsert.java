@@ -149,7 +149,7 @@ public class DBInsert extends DBAction {
 
 		try (DBStatement statement = db.getDBStatement()) {
 			for (String sql : getSQLStatements(db)) {
-				StatementDetails statementDetails = new StatementDetails("INSERT ROW", QueryIntention.INSERT_ROW, sql, statement);
+				StatementDetails statementDetails = new StatementDetails("INSERT ROW", QueryIntention.INSERT_ROW, sql, statement, db.getTimeout());
 				if (defn.supportsGeneratedKeys()) {
 					try {
 						final List<QueryableDatatype<?>> primaryKeys = table.getPrimaryKeys();
@@ -218,7 +218,7 @@ public class DBInsert extends DBAction {
 				} else {
 					try {
 						newInsert.executeStatementAndHandleIntegrityConstraintViolation(statement, statementDetails, db, table);
-						updatePrimaryKeyByRetreivingLastInsert(statement, defn, table);
+						updatePrimaryKeyByRetreivingLastInsert(statement, db, defn, table);
 						updateSequenceIfNecessary(defn, db, sql, table, statement);
 					} catch (SQLException ex) {
 						throw ex;
@@ -246,12 +246,12 @@ public class DBInsert extends DBAction {
 		return actions;
 	}
 
-	private void updatePrimaryKeyByRetreivingLastInsert(final DBStatement statement, final DBDefinition defn, DBRow table) throws SQLException {
+	private void updatePrimaryKeyByRetreivingLastInsert(final DBStatement statement, DBDatabase db, final DBDefinition defn, DBRow table) throws SQLException {
 		final var primaryKeyWrappers = table.getPrimaryKeyPropertyWrappers();
 		if (primaryKeyWrappers.size() > 0) {
 			if (defn.supportsRetrievingLastInsertedRowViaSQL()) {
 				String retrieveSQL = defn.getRetrieveLastInsertedRowSQL();
-				var dets = new StatementDetails("RETRIEVE LAST INSERT", QueryIntention.RETRIEVE_LAST_INSERT, retrieveSQL, statement);
+				var dets = new StatementDetails("RETRIEVE LAST INSERT", QueryIntention.RETRIEVE_LAST_INSERT, retrieveSQL, statement, db.getTimeout());
 				try (ResultSet rs = statement.executeQuery(dets)) {
 					if (rs != null) {
 						for (var primaryKeyWrapper : primaryKeyWrappers) {
@@ -288,15 +288,17 @@ public class DBInsert extends DBAction {
 	}
 
 	private void executeStatementAndHandleIntegrityConstraintViolation(final DBStatement statement, StatementDetails statementDetails, DBDatabase db, DBRow row) throws SQLException {
-		try {
-      long rowsInserted = statement.execute(statementDetails);
+		long rowsInserted;
+    try {
+      rowsInserted = statement.execute(statementDetails);
       addAlteredRows(rowsInserted);
 		} catch (SQLException ohNo) {
 			boolean throwException = true;
 			if (db.getDefinition().isPrimaryKeyAlreadyExistsException(ohNo)) {
 				if (row.getPrimaryKeysAllHaveValue()) {
 					db.delete(row);
-					addAlteredRows(statement.execute(statementDetails));
+          rowsInserted = statement.execute(statementDetails);
+					addAlteredRows(rowsInserted);
 					throwException = false;
 				}
 			}

@@ -386,7 +386,7 @@ public class PostgresDB extends DBDatabaseImplementation implements SupportsPoly
   private static final Regex GEOMETRY_DOES_NOT_EXIST = Regex.empty().literal("ERROR: type \"geometry\" does not exist").toRegex();
 
 	@Override
-	public ResponseToException addFeatureToFixException(Exception exp, QueryIntention intent, StatementDetails details) throws Exception {
+	public ResponseToException addFeatureToFixException(SQLException exp, QueryIntention intent, StatementDetails details) throws SQLException {
 		String message = exp.getMessage();
     if (intent.is(QueryIntention.CREATE_TABLE) && TABLE_EXISTS.matchesWithinString(message)) {
       //message.matches("ERROR: relation \"[^\"]*\" already exists.*")) {
@@ -399,7 +399,7 @@ public class PostgresDB extends DBDatabaseImplementation implements SupportsPoly
     if(GEOMETRY_DOES_NOT_EXIST.matchesWithinString(message)){
       var stmt = details.getDBStatement();
       var sql = "CREATE EXTENSION postgis;";
-      stmt.execute(new StatementDetails("Enable POSTGIS extensions", QueryIntention.ALLOW_IDENTITY_INSERT, sql, stmt));
+      stmt.execute(new StatementDetails("Enable POSTGIS extensions", QueryIntention.ALLOW_IDENTITY_INSERT, sql, stmt, getTimeout()));
       return ResponseToException.REQUERY;
     }
 //		if ((exp instanceof org.postgresql.util.PSQLException)) {

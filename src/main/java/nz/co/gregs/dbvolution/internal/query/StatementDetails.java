@@ -35,6 +35,7 @@ import java.sql.Statement;
 import nz.co.gregs.dbvolution.databases.DBStatement;
 import nz.co.gregs.dbvolution.databases.QueryIntention;
 import nz.co.gregs.dbvolution.utility.StringCheck;
+import nz.co.gregs.dbvolution.utility.Timeout;
 
 /**
  *
@@ -43,7 +44,7 @@ import nz.co.gregs.dbvolution.utility.StringCheck;
 public class StatementDetails {
 
 	private final String sql;
-	private Exception exception;
+	private SQLException exception;
 	private QueryIntention intention;
 
 	private String label = "Unlabelled SQL";
@@ -51,19 +52,19 @@ public class StatementDetails {
 	private boolean withGeneratedKeys = false;
 	private String namedPKColumn;
 	private DBStatement activeStatement;
-	private Long timeout;
+	private Timeout timeout;
 //  private int attemptCount = 0;
   private long rowCount;
 
-	public StatementDetails(String label, QueryIntention intent, String sql, DBStatement statement) {
-		this(label, intent, sql, null, false, false, "", statement);
+	public StatementDetails(String label, QueryIntention intent, String sql, DBStatement statement, Timeout timeout) {
+		this(label, intent, sql, null, false, false, "", statement, timeout);
 	}
 
 	public StatementDetails copy() {
-		return new StatementDetails(label, intention, sql, exception, withGeneratedKeys, ignoreExceptions, namedPKColumn, activeStatement);
+		return new StatementDetails(label, intention, sql, exception, withGeneratedKeys, ignoreExceptions, namedPKColumn, activeStatement, timeout);
 	}
 
-	public StatementDetails(String label, QueryIntention intent, String sql, Exception except, boolean generatedKeys, boolean ignoreExceptions, String pkColumn, DBStatement statement) {
+	public StatementDetails(String label, QueryIntention intent, String sql, SQLException except, boolean generatedKeys, boolean ignoreExceptions, String pkColumn, DBStatement statement, Timeout timeout) {
 		this.label = label;
 		this.sql = sql;
 		this.intention = intent;
@@ -72,13 +73,14 @@ public class StatementDetails {
 		this.ignoreExceptions = ignoreExceptions;
 		this.namedPKColumn = pkColumn;
 		this.activeStatement = statement;
+    this.timeout = timeout;
 	}
 
 	public String getSql() {
 		return sql;
 	}
 
-	public Exception getException() {
+	public SQLException getException() {
 		return exception;
 	}
 
@@ -175,11 +177,11 @@ public class StatementDetails {
 		this.activeStatement = statement;
 	}
 
-	public void setTimeout(Long timeoutTime) {
+	public void setTimeout(Timeout timeoutTime) {
 		timeout = timeoutTime;
 	}
 
-	public Long getTimeout() {
+	public Timeout getTimeout() {
 		return timeout;
 	}
 

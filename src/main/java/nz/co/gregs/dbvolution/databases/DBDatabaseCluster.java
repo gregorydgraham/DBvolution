@@ -59,6 +59,7 @@ import nz.co.gregs.dbvolution.internal.database.ClusterCleanupActions;
 import nz.co.gregs.dbvolution.internal.database.DatabaseList;
 import nz.co.gregs.dbvolution.internal.query.StatementDetails;
 import nz.co.gregs.dbvolution.process.ClusterProcess;
+import nz.co.gregs.dbvolution.utility.Timeout;
 import nz.co.gregs.separatedstring.Encoder;
 import nz.co.gregs.separatedstring.SeparatedString;
 import org.apache.commons.logging.Log;
@@ -241,6 +242,12 @@ public class DBDatabaseCluster extends DBDatabaseImplementation {
 	public SettingsBuilder<?, ?> getURLInterpreter() {
 		return new DBDatabaseClusterSettingsBuilder();
 	}
+
+  @Override
+  public void setTimeout(Timeout maximumTimeForDatabaseEvents) {
+    super.setTimeout(maximumTimeForDatabaseEvents);
+    getDetails().setTimeout(maximumTimeForDatabaseEvents);
+  }
 
 	public static enum Status {
 		/**
@@ -661,7 +668,7 @@ public class DBDatabaseCluster extends DBDatabaseImplementation {
 	}
 
 	@Override
-	public ResponseToException addFeatureToFixException(Exception exp, QueryIntention intent, StatementDetails details) throws Exception {
+	public ResponseToException addFeatureToFixException(SQLException exp, QueryIntention intent, StatementDetails details) throws SQLException {
 		throw new UnsupportedOperationException("DBDatabaseCluster.addFeatureToFixException(Exception) should not be called");
 	}
 

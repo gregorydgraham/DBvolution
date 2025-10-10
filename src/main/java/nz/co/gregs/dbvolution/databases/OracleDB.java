@@ -142,7 +142,7 @@ public abstract class OracleDB extends DBDatabaseImplementation implements Suppo
   private static QueryExceptionHandler[] exceptionHandlers = new QueryExceptionHandler[0];
 
   @Override
-  public ResponseToException addFeatureToFixException(Exception exp, QueryIntention intent, StatementDetails details) throws Exception {
+  public ResponseToException addFeatureToFixException(SQLException exp, QueryIntention intent, StatementDetails details) throws SQLException {
 
     if (exceptionHandlers.length == 0) {
       exceptionHandlers = new QueryExceptionHandler[]{

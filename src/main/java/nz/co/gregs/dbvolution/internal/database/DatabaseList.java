@@ -34,10 +34,10 @@ import java.io.Serializable;
 import java.util.*;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import nz.co.gregs.dbvolution.databases.DBDatabase;
 import nz.co.gregs.dbvolution.databases.DBDatabaseCluster;
 import static nz.co.gregs.dbvolution.databases.DBDatabaseCluster.Status.*;
-import nz.co.gregs.dbvolution.exceptions.NoAvailableDatabaseException;
 
 /**
  *
@@ -78,7 +78,11 @@ public class DatabaseList implements Serializable {
   }
 
   public synchronized Iterator<DBDatabase> iterator() {
-    return map.values().stream().map((v)->v.database).iterator();
+    return stream().map((v)->v.database).iterator();
+  }
+
+  public Stream<EntryValue> stream() {
+    return map.values().stream();
   }
 
   /**
@@ -216,11 +220,11 @@ public class DatabaseList implements Serializable {
   }
 
   public List<DBDatabase> toList() {
-    return map.values().stream().map((v)->v.database).collect(Collectors.toList());
+    return stream().map((v)->v.database).collect(Collectors.toList());
   }
 
   public List<DBDatabase> toList(DBDatabaseCluster.Status... statuses) {
-    return map.values().stream().filter((v)->v.status.anyOf(statuses)).map((v)->v.database).collect(Collectors.toList());
+    return stream().filter((v)->v.status.anyOf(statuses)).map((v)->v.database).collect(Collectors.toList());
   }
 
   public synchronized DBDatabaseCluster.Status getStatusOf(DBDatabase statusOfThisDatabase) {

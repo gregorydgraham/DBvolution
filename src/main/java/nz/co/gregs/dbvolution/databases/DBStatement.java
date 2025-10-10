@@ -31,6 +31,7 @@ import nz.co.gregs.dbvolution.exceptions.UnableToFindJDBCDriver;
 import nz.co.gregs.dbvolution.internal.query.QueryTimeout;
 import nz.co.gregs.dbvolution.internal.query.StatementDetails;
 import nz.co.gregs.dbvolution.utility.StringCheck;
+import nz.co.gregs.dbvolution.utility.Timeout;
 import nz.co.gregs.regexi.Regex;
 import nz.co.gregs.regexi.internal.PartialRegex;
 
@@ -118,13 +119,13 @@ public class DBStatement implements AutoCloseable {
 
 	private ResultSet executeQueryWithTimeout(StatementDetails details) throws SQLException {
 		ResultSet queryResult = null;
-		final Long timeoutTime = details.getTimeout();
-		QueryTimeout timer = new QueryTimeout(details, timeoutTime);
+		QueryTimeout timer = new QueryTimeout(details);
 		try {
 			queryResult = executeQueryWithInternalStatement(details);
 			timer.noLongerRequired();
 			if (timer.queryTimedOut()) {
-				throw new SQLTimeoutException("Execution Timed Out");
+        LOG.log(Level.WARNING, "Execution Timed Out: database query exceeded {0}{1}", new Object[]{details.getTimeout().getAmountAsSingleUnit(), details.getTimeout().getUnit()});
+				throw new SQLTimeoutException("Execution Timed Out: database query exceeded "+ timer.getDuration().getSeconds()+"seconds "+timer.getDuration().getNano()+"nano");
 			}
 		} finally {
 			timer.noLongerRequired();
@@ -133,12 +134,15 @@ public class DBStatement implements AutoCloseable {
 	}
 
 	private ResultSet executeQueryWithInternalStatement(StatementDetails details) throws SQLException {
-		return getInternalStatement().executeQuery(details.getSql());
+    final Statement stat = getInternalStatement();
+    final String sql = details.getSql();
+    final ResultSet result = stat.executeQuery(sql);
+		return result;
 	}
 
 	private ResultSet addFeatureAndAttemptQueryAgain(StatementDetails details) throws SQLException, Exception, LoopDetectedInRecursiveSQL {
 		ResultSet executeQuery;
-		final Exception exp = details.getException();
+		final SQLException exp = details.getException();
 		final QueryIntention intent = details.getIntention();
 		if (!checkForBrokenConnection(exp)) {
 			try {
@@ -148,7 +152,7 @@ public class DBStatement implements AutoCloseable {
 				}
 			} catch (LoopDetectedInRecursiveSQL loop) {
 				throw loop;
-			} catch (Exception ex) {
+			} catch (SQLException ex) {
 				if (intent.is(QueryIntention.CHECK_TABLE_EXISTS)) {
 					// Checking the table will generate exceptions that we don't need to investigate
 				} else if (details.isIgnoreExceptions()) {
@@ -156,7 +160,7 @@ public class DBStatement implements AutoCloseable {
 				} else {
 //				LOG.info("REPEATED EXCEPTIONS FROM: " + sql, exp);
 				}
-				Exception ex1 = exp;
+				SQLException ex1 = exp;
 				while (!ex1.getMessage().equals(ex.getMessage())) {
 					ResponseToException response = handleResponseFromFixingException(exp, intent, details);
 					if (response.equals(ResponseToException.SKIPQUERY)) {
@@ -479,7 +483,7 @@ public class DBStatement implements AutoCloseable {
 	 * @throws SQLException Database exceptions may be thrown
 	 */
 	public long execute(String label, QueryIntention queryIntention, String sql) throws SQLException {
-		return execute(new StatementDetails(label, queryIntention, sql, this));
+		return execute(new StatementDetails(label, queryIntention, sql, this, database.getTimeout()));
 	}
 
 	/**
@@ -504,7 +508,7 @@ public class DBStatement implements AutoCloseable {
 	 * @throws SQLException Database exceptions may be thrown
 	 */
 	public long execute(QueryIntention queryIntention, String sql) throws SQLException {
-    return execute(new StatementDetails(queryIntention.toString(), queryIntention, sql, this));
+    return execute(new StatementDetails(queryIntention.toString(), queryIntention, sql, this, database.getTimeout()));
 	}
 
 	/**
@@ -554,14 +558,13 @@ public class DBStatement implements AutoCloseable {
 	}
 
 	private long executeWithTimeout(StatementDetails details) throws SQLException {
-		final Long timeoutTime = this.getTIMEOUT_IN_MILLISECONDS();
-		QueryTimeout timer = new QueryTimeout(details, timeoutTime);
+		QueryTimeout timer = new QueryTimeout(details);
 
 		try {
       long executeOnInternalStatement = executeOnInternalStatement(details);
 			timer.noLongerRequired();
 			if (timer.queryTimedOut()) {
-				throw new SQLTimeoutException("Execution Timed Out");
+				throw new SQLTimeoutException("Execution Timed Out: database action exceeded "+timer.getDuration());
 			}
       return executeOnInternalStatement;
 		} finally {
@@ -586,7 +589,7 @@ public class DBStatement implements AutoCloseable {
 	private long addFeatureAndAttemptExecuteAgain(StatementDetails details, List<String> previousExceptions) throws SQLException {
 		details.setDBStatement(this);
 		String sql = details.getSql();
-		Exception exp = details.getException();
+		SQLException exp = details.getException();
 		QueryIntention intent = details.getIntention();
 		if (DROP_INTENTION_MATCHER.matchesWithinString(details.getIntention().name())
 				&& DROP_EXCEPTION_MATCHER.matchesWithinString(exp.getMessage())) {
@@ -600,7 +603,7 @@ public class DBStatement implements AutoCloseable {
 					if (response.equals(ResponseToException.SKIPQUERY)) {
 						return 0;
 					}
-				} catch (Exception ex) {
+				} catch (SQLException ex) {
 					throw new SQLException("Failed To Add Support On " + database.getJdbcURL() + " For SQL: " + exp.getMessage() + " : \nIntent: "+details.getIntention()+"; Original Query: " + sql, ex);
 				}
 			}
@@ -609,6 +612,8 @@ public class DBStatement implements AutoCloseable {
       } catch (SQLException exp2) {
         final String exp2GetMessage = exp2.getMessage();
         final String exp2GetLocalizedMessage = exp2.getLocalizedMessage();
+        // if we get a different exception then try to fix the new problem 
+        // recursively
 				if (!previousExceptions.contains(exp2GetMessage)||!previousExceptions.contains(exp2GetLocalizedMessage)) {
           previousExceptions.add(exp2GetMessage);
           previousExceptions.add(exp2GetLocalizedMessage);
@@ -624,7 +629,7 @@ public class DBStatement implements AutoCloseable {
 		}
 	}
 
-	public ResponseToException handleResponseFromFixingException(Exception exp, QueryIntention intent, StatementDetails details) throws Exception {
+	public ResponseToException handleResponseFromFixingException(SQLException exp, QueryIntention intent, StatementDetails details) throws SQLException {
 		details.setDBStatement(this);
 		try {
 			ResponseToException response = database.addFeatureToFixException(exp, intent, details);
@@ -641,7 +646,7 @@ public class DBStatement implements AutoCloseable {
 				default:
 					break;
 			}
-		} catch (Exception exc) {
+		} catch (SQLException exc) {
 			throw exc;
 		}
 		return NOT_HANDLED;

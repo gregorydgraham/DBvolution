@@ -58,6 +58,7 @@ import nz.co.gregs.dbvolution.exceptions.*;
 import nz.co.gregs.dbvolution.databases.metadata.Options;
 import nz.co.gregs.dbvolution.internal.query.StatementDetails;
 import nz.co.gregs.dbvolution.transactions.DBTransaction;
+import nz.co.gregs.dbvolution.utility.Timeout;
 
 /**
  * A DBDatabaseHandle makes it easy to switch between databases.
@@ -84,6 +85,16 @@ public class DBDatabaseHandle implements DBDatabase {
 	private static final long serialVersionUID = 1L;
 
 	protected DBDatabase wrappedDatabase;
+
+  @Override
+  public void setTimeout(Timeout maximumTimeForDatabaseEvents) {
+    wrappedDatabase.setTimeout(maximumTimeForDatabaseEvents);
+  }
+  
+  @Override
+  public Timeout getTimeout() {
+    return wrappedDatabase.getTimeout();
+  }
 
 	@Override
 	public DBDatabase setPreventAccidentalDeletingAllRowsFromTable(boolean b) {
@@ -595,7 +606,7 @@ public class DBDatabaseHandle implements DBDatabase {
 	}
 
 	@Override
-	public ResponseToException addFeatureToFixException(Exception exp, QueryIntention intent, StatementDetails details) throws Exception {
+	public ResponseToException addFeatureToFixException(SQLException exp, QueryIntention intent, StatementDetails details) throws SQLException {
 		return wrappedDatabase.addFeatureToFixException(exp, intent, details);
 	}
 

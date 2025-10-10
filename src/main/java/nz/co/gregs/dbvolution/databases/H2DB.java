@@ -237,7 +237,7 @@ public class H2DB extends DBDatabaseImplementation {
   private final static Regex UNKNOWN_DATA_TYPE = Regex.empty().literalCaseInsensitive("Unknown data type: \"DBV_").endRegex();
 
 	@Override
-	public ResponseToException addFeatureToFixException(Exception exp, QueryIntention intent, StatementDetails details) throws Exception {
+	public ResponseToException addFeatureToFixException(SQLException exp, QueryIntention intent, StatementDetails details) throws SQLException {
 		if ((exp instanceof JdbcException)) {
 			String message = exp.getMessage();
 			if (message != null) {

@@ -122,7 +122,7 @@ new MySQL_5_7SettingsBuilder()
 	private final static Pattern TABLE_ALREADY_EXISTS = Pattern.compile("Table '[^']*' already exists");
 
 	@Override
-	public ResponseToException addFeatureToFixException(Exception exp, QueryIntention intent, StatementDetails details) throws Exception {
+	public ResponseToException addFeatureToFixException(SQLException exp, QueryIntention intent, StatementDetails details) throws SQLException {
 		if (intent.is(QueryIntention.DROP_TABLE) && TABLE_ALREADY_EXISTS.matcher(exp.getMessage()).matches()) {
 			return ResponseToException.SKIPQUERY;
 		} else if (FUNCTION_DOES_NOT_EXISTS.matcher(exp.getMessage()).matches()) {

@@ -1270,7 +1270,7 @@ public class DBDatabaseClusterTest extends AbstractTest {
       }
 
       // test we can add an H2 Memory DB
-      try (DBDatabase newH2DB = H2MemoryDB.createANewRandomDatabase("INSERT_ERROR_H2_", "_DB")) {
+      try (TestingDatabase newH2DB = TestingDatabase.createANewRandomDatabase("INSERT_ERROR_H2_", "_DB")) {
         assertThat(newH2DB.tableExists(new Marque()), is(false));
         cluster.addDatabase(newH2DB);
         start = Instant.now();
@@ -1335,8 +1335,20 @@ public class DBDatabaseClusterTest extends AbstractTest {
         start = Instant.now();
         tooFar = start.plus(OFFSET, ChronoUnit.MILLIS).toEpochMilli();
         // Will notice that newH2DB can't insert the new "BYD", quarantine it, and then synchronise it 
+        // DOESN'T WORK because DBInsert will gazzump rows
+        cluster.insert(BYD);
+        assertThat(cluster.getDatabaseStatus(newH2DB).toString(), is(DBDatabaseCluster.Status.READY.toString()));
+        try {
+          cluster.waitUntilDatabaseIsSynchronised(newH2DB);
+        } catch (UnableToSynchronizeDatabase ex) {
+          ex.printStackTrace();
+          Assert.fail("Failed to synchronise the database: " + ex.getMessage());
+        }
+        // Instead we need use TestingDatabase to generate bogus results
+        newH2DB.setGenerateBrokenActions(true);
         cluster.insert(BYD);
         assertThat(cluster.getDatabaseStatus(newH2DB).toString(), is(not(DBDatabaseCluster.Status.READY.toString())));
+        newH2DB.setGenerateBrokenActions(false);
         try {
           cluster.waitUntilDatabaseIsSynchronised(newH2DB);
         } catch (UnableToSynchronizeDatabase ex) {

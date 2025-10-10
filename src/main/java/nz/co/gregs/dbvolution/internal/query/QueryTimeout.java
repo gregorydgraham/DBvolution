@@ -29,6 +29,7 @@
 package nz.co.gregs.dbvolution.internal.query;
 
 import java.sql.SQLException;
+import java.time.Duration;
 import java.util.Date;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
@@ -37,6 +38,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import nz.co.gregs.dbvolution.databases.DBStatement;
+import nz.co.gregs.dbvolution.utility.Timeout;
 
 /**
  * A timer class that will automatically cancel a database query.
@@ -54,39 +56,38 @@ public class QueryTimeout {
 	private StatementDetails details = null;
 	private boolean stillRequired = true;
 	private static Long standardTimeoutOffset = null;
-	private static final long DEFAULT_TIMEOUT_MILLISECONDS = 15000L;
+	private static final Timeout DEFAULT_TIMEOUT = Timeout.seconds(15l);
 	private ScheduledFuture<?> timeoutHandler;
-	private final TimeOut timeout = new TimeOut();
+	private final TimeOutTask timeoutTask = new TimeOutTask();
   private final String identifier;
   private double runDuration;
 
-	public QueryTimeout(StatementDetails details, Long timeoutTime) {
+	public QueryTimeout(StatementDetails details) {
 		this.details = details;
 		this.statement = details.getDBStatement();
 		this.identifier = details.getLabel()+" => "+details.getSql();
 		this.timestamp = new Date();
-		scheduleIfRequired(timeoutTime);
+		scheduleIfRequired(details.getTimeout());
 	}
 
-	private void scheduleIfRequired(Long timeoutTime) {
+	private void scheduleIfRequired(Timeout timeoutTime) {
 		// special cases first
-		if (timeoutTime == null || timeoutTime == 0L) {
-			// null or zero is not a valid timeout value, use the default instead
-			scheduleOnTimerService(DEFAULT_TIMEOUT_MILLISECONDS);
-			return;
-		}
-		if (timeoutTime < 0) {
-			// negative implies no timeout
-			this.timeoutHandler = null;
+		if (timeoutTime == null) {
+			// null is not a valid timeout value, use the default instead
+			scheduleOnTimerService(DEFAULT_TIMEOUT);
 			return;
 		}
 		// not a special case so proceed
 		scheduleOnTimerService(timeoutTime);
 	}
 
-	private void scheduleOnTimerService(Long timeoutTimeInMilliseconds) {
-		timeoutHandler = TIMER_SERVICE.schedule(timeout, timeoutTimeInMilliseconds, TimeUnit.MILLISECONDS);
-	}
+  private void scheduleOnTimerService(Timeout timeout) {
+    // Timeout NEVER and IMMEDIATELY supply valid amounts and units
+    // so just use the Timeout as a supplier
+    long amount = timeout.getAmountAsSingleUnit();
+    TimeUnit unit = TimeUnit.of(timeout.getUnit());
+    timeoutHandler = TIMER_SERVICE.schedule(timeoutTask, amount, unit);
+  }
 
 	public static Long getStandardTimeoutOffset() {
 		if (standardTimeoutOffset == null) {
@@ -97,7 +98,7 @@ public class QueryTimeout {
 				ticks++;
 			}
 			standardTimeoutOffset = Math.max(
-					DEFAULT_TIMEOUT_MILLISECONDS, // at least 10s timeout
+					DEFAULT_TIMEOUT.getAmountAsSingleUnit(), // at least 10s timeout
 					((new Date()).getTime() - startDate.getTime()) * 15);// 15x1sec-equivalents
 		}
 		return standardTimeoutOffset;
@@ -113,8 +114,15 @@ public class QueryTimeout {
 			timeoutHandler.cancel(true);
 		}
 	}
+  
+  public Duration getDuration(){
+    final long seconds = Double.valueOf(runDuration).longValue();
+    final double onlyNanosPart = runDuration-seconds;
+    final long nanos = Double.valueOf(onlyNanosPart*1000000000).longValue();
+    return Duration.ofSeconds(seconds, nanos);
+  }
 
-	private class TimeOut implements Runnable {
+	private class TimeOutTask implements Runnable {
 
 		@Override
 		public void run() {

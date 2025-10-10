@@ -170,7 +170,7 @@ public class SQLiteDB extends DBDatabaseImplementation {
 			.toRegex();
 
 	@Override
-	public ResponseToException addFeatureToFixException(Exception exp, QueryIntention intent, StatementDetails details) throws Exception {
+	public ResponseToException addFeatureToFixException(SQLException exp, QueryIntention intent, StatementDetails details) throws SQLException {
 		String message = exp.getMessage();
 		if (intent.is(QueryIntention.CREATE_TABLE) && TABLE_ALREADY_EXISTS.matchesWithinString(message)) {
 			return ResponseToException.SKIPQUERY;

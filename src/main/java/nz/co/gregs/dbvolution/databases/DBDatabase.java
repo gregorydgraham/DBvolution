@@ -56,6 +56,7 @@ import nz.co.gregs.dbvolution.exceptions.*;
 import nz.co.gregs.dbvolution.databases.metadata.Options;
 import nz.co.gregs.dbvolution.internal.query.StatementDetails;
 import nz.co.gregs.dbvolution.transactions.DBTransaction;
+import nz.co.gregs.dbvolution.utility.Timeout;
 
 /**
  *
@@ -111,7 +112,7 @@ public interface DBDatabase extends Serializable, AutoCloseable {
 	 * @return the preferred response to the exception
 	 * @throws SQLException accessing the database may cause exceptions
 	 */
-	DBDatabaseImplementation.ResponseToException addFeatureToFixException(Exception exp, QueryIntention intent, StatementDetails details) throws Exception;
+	DBDatabaseImplementation.ResponseToException addFeatureToFixException(SQLException exp, QueryIntention intent, StatementDetails details) throws SQLException;
 
 	boolean isMemoryDatabase();
 
@@ -1230,5 +1231,9 @@ public interface DBDatabase extends Serializable, AutoCloseable {
 	public DBDatabaseMetaData getDBDatabaseMetaData(Options options) throws SQLException;
 
   void preventAccidentalDeletingAllRowsFromTable(DBAction action) throws AccidentalDroppingOfTableException;
+
+  void setTimeout(Timeout maximumTimeForDatabaseEvents);
+
+  public Timeout getTimeout();
 
 }

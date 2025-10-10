@@ -380,11 +380,12 @@ public class QueryDetails implements DBQueryable, Serializable {
 
 	private void getResultSetCount(QueryOptions options) throws SQLException {
 		long result = 0L;
-		try (DBStatement dbStatement = options.getQueryDatabase().getDBStatement()) {
+    final DBDatabase queryDatabase = options.getQueryDatabase();
+		try (DBStatement dbStatement = queryDatabase.getDBStatement()) {
 			final List<String> sqlForCount = getSQLForCountInternal(this, options);
 			for (String sql : sqlForCount) {
 				printSQLIfRequired(sql);
-				var dets = new StatementDetails(getLabel(), QueryIntention.SIMPLE_SELECT_QUERY, sql, dbStatement);
+				var dets = new StatementDetails(getLabel(), QueryIntention.SIMPLE_SELECT_QUERY, sql, dbStatement, queryDatabase.getTimeout());
 				try (ResultSet resultSet = dbStatement.executeQuery(dets)) {
 					if (resultSet != null) {
 						if (resultSet.next()) {
@@ -1256,7 +1257,7 @@ public class QueryDetails implements DBQueryable, Serializable {
 			final DBDatabase queryDatabase = options.getQueryDatabase();
 			try (DBStatement dbStatement = queryDatabase.getDBStatement()) {
 				printSQLIfRequired(sql);
-				final StatementDetails statementDetails = new StatementDetails(getLabel(), QueryIntention.SIMPLE_SELECT_QUERY, sql, dbStatement);
+				final StatementDetails statementDetails = new StatementDetails(getLabel(), QueryIntention.SIMPLE_SELECT_QUERY, sql, dbStatement, queryDatabase.getTimeout());
 				statementDetails.setIgnoreExceptions(this.isQuietExceptions());
 				try (ResultSet resultSet = getResultSetForSQL(dbStatement, statementDetails, sql)) {
 					if (resultSet != null) {
@@ -1428,8 +1429,7 @@ public class QueryDetails implements DBQueryable, Serializable {
 	 * Recursive queries may cause loops
 	 */
 	protected synchronized ResultSet getResultSetForSQL(final DBStatement statement, StatementDetails statementDetails, String sql) throws SQLException, SQLTimeoutException, LoopDetectedInRecursiveSQL {
-		final Long timeoutTime = this.getTimeoutInMilliseconds();
-		statementDetails.setTimeout(timeoutTime);
+		statementDetails.setTimeout(statementDetails.getTimeout());
 		return statement.executeQuery(statementDetails);
 	}
 
