@@ -106,6 +106,7 @@ public class Brake implements Serializable {
         } catch (InterruptedException ex) {
           LOG.log(Level.SEVERE, "Brake has been released by an interrupt.", ex);
           this.release();
+          Thread.currentThread().interrupt();
         }
       }
     }

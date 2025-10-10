@@ -244,8 +244,9 @@ public class DBEncryptedTextTest extends AbstractTest {
                   return f.get() != null;
                 } catch (InterruptedException ex) {
                   System.getLogger(DBEncryptedTextTest.class.getName()).log(System.Logger.Level.ERROR, (String) null, ex);
+                  Thread.currentThread().interrupt();
                 } catch (ExecutionException ex) {
-                  System.getLogger(DBEncryptedTextTest.class.getName()).log(System.Logger.Level.ERROR, (String) null, ex);
+                  System.getLogger(DBEncryptedTextTest.class.getName()).log(System.Logger.Level.ERROR, ex.getCause().getMessage(), ex);
                 }
                 return false;
               })
@@ -254,6 +255,7 @@ public class DBEncryptedTextTest extends AbstractTest {
                   return !f.get().isEmpty();
                 } catch (InterruptedException ex) {
                   System.getLogger(DBEncryptedTextTest.class.getName()).log(System.Logger.Level.ERROR, (String) null, ex);
+                  Thread.currentThread().interrupt();
                 } catch (ExecutionException ex) {
                   System.getLogger(DBEncryptedTextTest.class.getName()).log(System.Logger.Level.ERROR, (String) null, ex);
                 }
@@ -266,6 +268,7 @@ public class DBEncryptedTextTest extends AbstractTest {
       succeeded = true;
     } catch (InterruptedException ex) {
       System.getLogger(DBEncryptedTextTest.class.getName()).log(System.Logger.Level.ERROR, (String) null, ex);
+      Thread.currentThread().interrupt();
     }
     assertThat(succeeded, is(true));
     threadpool.shutdownNow();

@@ -247,10 +247,8 @@ public abstract class DBAction implements Serializable {
   }
 
   protected void executeOnStatement(DBDatabase db, DBActionList actions) throws SQLException {
-    try (final DBStatement statement = db.getDBStatement()) {
-      for (String sql : actions.getSQL(db)) {
-        rowsAltered += statement.execute(getIntent(), sql);
-      }
+    for (DBAction action : actions) {
+      action.executeOnStatement(db);
     }
   }
 

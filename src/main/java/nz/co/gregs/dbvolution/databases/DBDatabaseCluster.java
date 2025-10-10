@@ -100,7 +100,7 @@ import org.apache.commons.logging.LogFactory;
  * Oracle-compatible mode: null strings and empty strings will be equivalent.
  * This may change the results of your queries.</p>
  *
- * @author gregorygraham
+ * @author Gregory Graham
  */
 public class DBDatabaseCluster extends DBDatabaseImplementation {
 
@@ -691,15 +691,6 @@ public class DBDatabaseCluster extends DBDatabaseImplementation {
 		}
 	}
 
-//	@Override
-//	public synchronized void setPreventDroppingOfTables(boolean droppingTablesIsAMistake) {
-//		super.setPreventDroppingOfTables(droppingTablesIsAMistake);
-//		DBDatabase[] dbs = getDetails().getReadyDatabases();
-//		for (DBDatabase next : dbs) {
-//			next.setPreventDroppingOfTables(droppingTablesIsAMistake);
-//		}
-//	}
-
   @Override
   public DBDatabase setPreventDroppingOfTables(boolean droppingTablesIsAMistake) {
     if (droppingTablesIsAMistake) {
@@ -720,20 +711,6 @@ public class DBDatabaseCluster extends DBDatabaseImplementation {
   
   private void allowClusterToDropTables(DBDatabaseCluster cluster) {
     cluster.droppingOfTables.allow();
-    // because checking is done by the cluster and then actions are handled thru
-    // a non-recursive mechanism we don't need to change the members
-    // ... I think.
-//    DBDatabase[] allDatabases = cluster.getDetails().getAllDatabases();
-//    for (DBDatabase db : allDatabases) {
-//      if (db != null) {
-//        if (db instanceof DBDatabaseCluster) {
-//          allowClusterToDropTables((DBDatabaseCluster) db);
-//        } else {
-//          DBDatabase dangerous = db.setPreventDroppingOfTables(false);
-//          cluster.getDetails().replace(dangerous);
-//        }
-//      }
-//    }
   }
 
 	@Override
@@ -774,7 +751,7 @@ public class DBDatabaseCluster extends DBDatabaseImplementation {
 	}
 
 	@Override
-	public synchronized DBActionList dropTable(DBRow tableRow) throws SQLException, AutoCommitActionDuringTransactionException, AccidentalDroppingOfTableException {
+	public DBActionList dropTable(DBRow tableRow) throws SQLException, AutoCommitActionDuringTransactionException, AccidentalDroppingOfTableException {
 		removeTrackedTable(tableRow);
 		return super.dropTable(tableRow);
 	}
@@ -1006,7 +983,7 @@ public class DBDatabaseCluster extends DBDatabaseImplementation {
 	}
 
 	@Override
-	public synchronized DBActionList executeDBAction(DBAction action) throws SQLException, NoAvailableDatabaseException {
+	public DBActionList executeDBAction(DBAction action) throws SQLException, NoAvailableDatabaseException {
     if (getDetails().isShuttingDown()) {
       throw new DatabaseShutdownInProgress();
     }
@@ -1022,7 +999,7 @@ public class DBDatabaseCluster extends DBDatabaseImplementation {
     }
   }
 
-	private synchronized DBActionList executeDBActionOnClusterMembers(DBAction action) throws NoAvailableDatabaseException, SQLException {
+	private DBActionList executeDBActionOnClusterMembers(DBAction action) throws NoAvailableDatabaseException, SQLException {
 		LOG.debug("EXECUTING ACTION: " + action.getSQLStatements(this));
     // this is _immediately_ an important change to the state of the cluster so 
     // so synchronising the whole method is reasonable
@@ -1140,6 +1117,7 @@ public class DBDatabaseCluster extends DBDatabaseImplementation {
       }
     } catch (InterruptedException ex) {
       Logger.getLogger(DBDatabaseCluster.class.getName()).log(Level.SEVERE, null, ex);
+      Thread.currentThread().interrupt();
       throw new DBRuntimeException("Unable To Execute " + action.getIntent(), ex);
 		}
 		if (actionsPerformed.isEmpty() && !tasks.isEmpty()) {
@@ -1275,16 +1253,6 @@ public class DBDatabaseCluster extends DBDatabaseImplementation {
   
   private void allowClusterToDeleteAllRows(DBDatabaseCluster cluster) {
     cluster.deletingAllRowsFromTable.allow();
-//    DBDatabase[] allDatabases = cluster.getDetails().getAllDatabases();
-//    for (DBDatabase db : allDatabases) {
-//      if (db != null) {
-//        if (db instanceof DBDatabaseCluster) {
-//          allowClusterToDeleteAllRows((DBDatabaseCluster) db);
-//        } else {
-//          ((DBDatabaseImplementation) db).deletingAllRowsFromTable = ALLOW;
-//        }
-//      }
-//    }
   }
 
 	@Override
@@ -1315,17 +1283,6 @@ public class DBDatabaseCluster extends DBDatabaseImplementation {
 	public boolean supportsDifferenceBetweenNullAndEmptyString() {
 		return getDetails().getSupportsDifferenceBetweenNullAndEmptyString();
 	}
-
-//	private void addActionToQueues(DBAction action) {
-//    getDetails().addActionToQueues(action);
-//	}
-
-//	private void removeActionFromQueue(DBAction action) {
-//		for (DBDatabase db : getDetails().getAllDatabases()) {
-//			Queue<DBAction> queue = getDetails().getActionQueue(db);
-//			queue.remove(action);
-//		}
-//	}
 
 	private synchronized void synchronizeAddedDatabases(boolean blocking) throws SQLException {
 		boolean block = blocking || (getDetails().getReadyDatabases().length < 2);
@@ -1426,7 +1383,7 @@ public class DBDatabaseCluster extends DBDatabaseImplementation {
 	}
 
 	@Override
-	public synchronized void stop() {
+	public void stop() {
 		stopCluster();
 	}
 
@@ -1552,7 +1509,6 @@ public class DBDatabaseCluster extends DBDatabaseImplementation {
 		private final DBDatabase database;
 		private final DBAction action;
 		private final DBDatabaseCluster cluster;
-//		private DBActionList actionList = new DBActionList();
 		private Consequence consequence;
     private final long expectedResult;
     private final TaskResults results = new TaskResults();

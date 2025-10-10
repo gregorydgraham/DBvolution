@@ -431,6 +431,7 @@ public class ClusterDetails implements Serializable {
 			readyDatabaseIsAvailable.await(100, TimeUnit.MILLISECONDS);
 		} catch (InterruptedException ex) {
 			Logger.getLogger(ClusterDetails.class.getName()).log(Level.SEVERE, null, ex);
+      Thread.currentThread().interrupt();
 		} finally {
 			synchronisingLock.unlock();
 		}
@@ -756,6 +757,7 @@ public class ClusterDetails implements Serializable {
 			}
 		} catch (InterruptedException ex) {
 			LOG.log(Level.SEVERE, "INTERRUPTED WHILE TRYING TO SYNCHRONISE CLUSTER", ex);
+      Thread.currentThread().interrupt();
 		} finally {
 			synchronisingLock.unlock();
 		}
@@ -770,6 +772,7 @@ public class ClusterDetails implements Serializable {
       }
     } catch (InterruptedException ex) {
       Logger.getLogger(ClusterDetails.class.getName()).log(Level.SEVERE, null, ex);
+      Thread.currentThread().interrupt();
     } finally {
       synchronisingLock.unlock();
     }
@@ -835,13 +838,10 @@ public class ClusterDetails implements Serializable {
         if (!stillRunning) {
           throw new DatabaseShutdownInProgress();
         }
-//        if (!Status.READY.equals(getStatusOf(database))) {
-//          throw new UnableToSynchronizeDatabase(clusterLabel, database);
-//        }
       }
     } catch (InterruptedException ex) {
       LOG.log(Level.SEVERE, "Interrupted while trying to synchronize cluster " + clusterLabel, ex);
-//      throw new UnableToSynchronizeDatabase(clusterLabel, database, ex);
+      Thread.currentThread().interrupt();
     } finally {
       synchronisingLock.unlock();
     }

@@ -464,6 +464,7 @@ public abstract class DBDatabaseImplementation implements DBDatabase, Serializab
                 getConnectionSynchronizeObject.wait(SLEEP_BETWEEN_CONNECTION_RETRIES_MILLIS + ThreadLocalRandom.current().nextInt(10));
               } catch (InterruptedException ex) {
                 LOG.error("Caught interrupt while waiting for DBDatabaseImplementation.getRawConnection", ex);
+                Thread.currentThread().interrupt();
               }
             } else {
               throw noConnection;
