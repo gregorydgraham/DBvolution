@@ -29,6 +29,7 @@
 package nz.co.gregs.dbvolution.expressions;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 import nz.co.gregs.dbvolution.datatypes.QueryableDatatype;
@@ -73,9 +74,7 @@ public abstract class InExpression<B, R extends InResult<B>, D extends Queryable
 
 	public final BooleanExpression isIn(R... values){
 		ArrayList<R> list = new ArrayList<>(values.length);
-		for (R value : values) {
-			list.add(value);
-		}
+    list.addAll(Arrays.asList(values));
 		return isInCollection(list);
 	}
 
@@ -83,7 +82,7 @@ public abstract class InExpression<B, R extends InResult<B>, D extends Queryable
 
 	@SuppressWarnings("unchecked")
 	public final BooleanExpression isIn(B... possibleValues) {
-		List<R> exps = new ArrayList<R>(0);
+		List<R> exps = new ArrayList<>(0);
 		for (B possibleValue : possibleValues) {
 			final R expression = this.expression(possibleValue);
 			exps.add(expression);
@@ -93,7 +92,7 @@ public abstract class InExpression<B, R extends InResult<B>, D extends Queryable
 
 	@SuppressWarnings("unchecked")
 	public final BooleanExpression isIn(D... possibleValues) {
-		List<R> exps = new ArrayList<R>(0);
+		List<R> exps = new ArrayList<>(0);
 		for (D possibleValue : possibleValues) {
 			final R expression = this.expression(possibleValue);
 			exps.add(expression);
@@ -103,9 +102,7 @@ public abstract class InExpression<B, R extends InResult<B>, D extends Queryable
 	
 	public final BooleanExpression isNotIn(R... values){
 		ArrayList<R> list = new ArrayList<>(values.length);
-		for (R value : values) {
-			list.add(value);
-		}
+    list.addAll(Arrays.asList(values));
 		return isNotInCollection(list);
 	}
 
@@ -113,7 +110,7 @@ public abstract class InExpression<B, R extends InResult<B>, D extends Queryable
 
 	@SuppressWarnings("unchecked")
 	public final BooleanExpression isNotIn(B... possibleValues) {
-		List<R> exps = new ArrayList<R>(0);
+		List<R> exps = new ArrayList<>(0);
 		for (B possibleValue : possibleValues) {
 			final R expression = this.expression(possibleValue);
 			exps.add(expression);
@@ -123,7 +120,7 @@ public abstract class InExpression<B, R extends InResult<B>, D extends Queryable
 
 	@SuppressWarnings("unchecked")
 	public final BooleanExpression isNotIn(D... possibleValues) {
-		List<R> exps = new ArrayList<R>(0);
+		List<R> exps = new ArrayList<>(0);
 		for (D possibleValue : possibleValues) {
 			final R expression = this.expression(possibleValue);
 			exps.add(expression);
