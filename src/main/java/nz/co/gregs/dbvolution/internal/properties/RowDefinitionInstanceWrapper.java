@@ -44,6 +44,7 @@ public class RowDefinitionInstanceWrapper<ROW extends RowDefinition> implements 
 	private final List<PropertyWrapper<?, ?, ?>> foreignKeyProperties;
 	private final List<PropertyWrapper<?, ?, ?>> recursiveForeignKeyProperties;
 	private final List<PropertyWrapper<?, ?, ?>> primaryKeyProperties;
+  private boolean hasMultipartPK;
 
 	/**
 	 * Called by
@@ -98,7 +99,11 @@ public class RowDefinitionInstanceWrapper<ROW extends RowDefinition> implements 
 		this.primaryKeyProperties = new ArrayList<PropertyWrapper<?, ?, ?>>();
 		for (var propertyDefinition : classWrapper.primaryKeyDefinitions()) {
 			this.primaryKeyProperties.add(new PropertyWrapper<>(this, propertyDefinition, rowDefinition));
+      hasMultipartPK = primaryKeyProperties.size()>1;
 		}
+    for (PropertyWrapper<?, ?, ?> pkPart : primaryKeyProperties) {
+      pkPart.setIsPartOfMultipartPK(hasMultipartPK);
+    }
 	}
 
 	private void addPropertyWrapperToCollection(List<PropertyWrapper<?, ?, ?>> collection, PropertyWrapper<?, ?, ?> propertyWrapper) {
@@ -291,8 +296,15 @@ public class RowDefinitionInstanceWrapper<ROW extends RowDefinition> implements 
 	 * Gets the property that is the primary key, if one is marked. Note:
 	 * multi-column primary key tables are not yet supported.
 	 *
-	 * <p style="color: #F90;">Support DBvolution at
-	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
+	 * @return the primary key property or null if no primary key
+	 */
+	public boolean hasMultipartPrimaryKey() {
+		return hasMultipartPK;
+	}
+
+	/**
+	 * Gets the property that is the primary key, if one is marked. Note:
+	 * multi-column primary key tables are not yet supported.
 	 *
 	 * @return the primary key property or null if no primary key
 	 */
@@ -316,8 +328,6 @@ public class RowDefinitionInstanceWrapper<ROW extends RowDefinition> implements 
 	 *
 	 * @param database database
 	 * @param columnName columnName
-	 * <p style="color: #F90;">Support DBvolution at
-	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
 	 * @return the Java property associated with the column name supplied. Null if
 	 * no such column is found.
 	 */
@@ -332,8 +342,6 @@ public class RowDefinitionInstanceWrapper<ROW extends RowDefinition> implements 
 	 * Only provides access to properties annotated with {@code DBColumn}.
 	 *
 	 * @param propertyName propertyName
-	 * <p style="color: #F90;">Support DBvolution at
-	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
 	 * @return property of the wrapped {@link RowDefinition} associated with the
 	 * java field name supplied. Null if no such property is found.
 	 */
