@@ -62,6 +62,7 @@ public class PropertyWrapper<ROW extends RowDefinition, BASETYPE, QDT extends Qu
 	private final PropertyWrapperDefinition<ROW, BASETYPE> propertyDefinition;
 	private final RowDefinition target;
 	private Boolean isAutomaticValueField;
+  private boolean isPartOfMultipartPK;
 
 	/**
 	 * @param instanceWrapper instanceWrapper
@@ -826,7 +827,6 @@ public class PropertyWrapper<ROW extends RowDefinition, BASETYPE, QDT extends Qu
 		QueryableDatatype<BASETYPE> staleQDT = propertyWrapperDefinition.getQueryableDatatype(staleRow);
 		if (freshQDT.getValue() != staleQDT.getValue()) {
 			new InternalQueryableDatatypeProxy<>(staleQDT).setValueFromDatabase(freshQDT.getValue());
-//			staleQDT.setValue(freshQDT.getValue());
 		}
 	}
 
@@ -837,4 +837,12 @@ public class PropertyWrapper<ROW extends RowDefinition, BASETYPE, QDT extends Qu
 		}
 		return isAutomaticValueField;
 	}
+
+  void setIsPartOfMultipartPK(boolean hasMultipartPK) {
+    isPartOfMultipartPK = hasMultipartPK;
+  }
+
+  public boolean isPartOfMultipartPK() {
+    return isPartOfMultipartPK;
+  }
 }
