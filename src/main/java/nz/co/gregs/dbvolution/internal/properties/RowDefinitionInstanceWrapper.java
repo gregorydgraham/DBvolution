@@ -103,6 +103,26 @@ public class RowDefinitionInstanceWrapper<ROW extends RowDefinition> implements 
 		}
     for (PropertyWrapper<?, ?, ?> pkPart : primaryKeyProperties) {
       pkPart.setIsPartOfMultipartPK(hasMultipartPK);
+      allProperties
+              .stream()
+              .filter((pw)->pw.javaName().equals(pkPart.javaName()))
+              .forEach((pw)->pw.setIsPartOfMultipartPK(hasMultipartPK));
+      columnProperties
+              .stream()
+              .filter((pw)->pw.javaName().equals(pkPart.javaName()))
+              .forEach((pw)->pw.setIsPartOfMultipartPK(hasMultipartPK));
+      autoFillingProperties
+              .stream()
+              .filter((pw)->pw.javaName().equals(pkPart.javaName()))
+              .forEach((pw)->pw.setIsPartOfMultipartPK(hasMultipartPK));
+      foreignKeyProperties
+              .stream()
+              .filter((pw)->pw.javaName().equals(pkPart.javaName()))
+              .forEach((pw)->pw.setIsPartOfMultipartPK(hasMultipartPK));
+      recursiveForeignKeyProperties
+              .stream()
+              .filter((pw)->pw.javaName().equals(pkPart.javaName()))
+              .forEach((pw)->pw.setIsPartOfMultipartPK(hasMultipartPK));
     }
 	}
 
