@@ -27,7 +27,6 @@ import nz.co.gregs.dbvolution.DBRow;
 import nz.co.gregs.dbvolution.databases.SQLiteDB;
 import nz.co.gregs.dbvolution.databases.supports.SupportsPolygonDatatype;
 import nz.co.gregs.dbvolution.datatypes.*;
-import nz.co.gregs.dbvolution.datatypes.spatial2D.*;
 import nz.co.gregs.dbvolution.exceptions.IncorrectGeometryReturnedForDatatype;
 import nz.co.gregs.dbvolution.generation.DBTableField;
 import nz.co.gregs.dbvolution.internal.datatypes.DateRepeatImpl;
@@ -75,6 +74,11 @@ public class SQLiteDefinition extends DBDefinition implements SupportsPolygonDat
 				+ " )";
 	}
 
+  @Override
+  public String getInlinePrimaryKeyClause() {
+    return " PRIMARY KEY ON CONFLICT ABORT ";
+  }
+
 	@Override
 	public boolean supportsGeneratedKeys() {
 		return false;
@@ -92,7 +96,7 @@ public class SQLiteDefinition extends DBDefinition implements SupportsPolygonDat
 
 	@Override
 	public String getColumnAutoIncrementSuffix() {
-		return " PRIMARY KEY AUTOINCREMENT ";
+		return " PRIMARY KEY ON CONFLICT ABORT AUTOINCREMENT ";
 	}
 
 	@Override
@@ -102,7 +106,7 @@ public class SQLiteDefinition extends DBDefinition implements SupportsPolygonDat
 
 	@Override
 	protected String getSpecialAutoIncrementType() {
-		return " INTEGER PRIMARY KEY AUTOINCREMENT ";
+		return " INTEGER PRIMARY KEY ON CONFLICT ABORT AUTOINCREMENT ";
 	}
 
 	@Override

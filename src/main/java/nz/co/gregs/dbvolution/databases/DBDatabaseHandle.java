@@ -49,7 +49,7 @@ import nz.co.gregs.dbvolution.actions.DBAction;
 import nz.co.gregs.dbvolution.actions.DBActionList;
 import nz.co.gregs.dbvolution.actions.DBQueryable;
 import nz.co.gregs.dbvolution.columns.ColumnProvider;
-import nz.co.gregs.dbvolution.databases.DBDatabaseImplementation.ResponseToException;
+import nz.co.gregs.dbvolution.databases.DBDatabase.ResponseToException;
 import nz.co.gregs.dbvolution.databases.connections.DBConnection;
 import nz.co.gregs.dbvolution.databases.definitions.DBDefinition;
 import nz.co.gregs.dbvolution.databases.metadata.DBDatabaseMetaData;

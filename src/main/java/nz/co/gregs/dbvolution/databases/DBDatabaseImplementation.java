@@ -67,7 +67,7 @@ import nz.co.gregs.dbvolution.internal.query.StatementDetails;
 import nz.co.gregs.dbvolution.utility.StringCheck;
 import nz.co.gregs.regexi.Regex;
 import static nz.co.gregs.dbvolution.databases.QueryIntention.*;
-import static nz.co.gregs.dbvolution.databases.DBDatabaseImplementation.ResponseToException.*;
+import static nz.co.gregs.dbvolution.databases.DBDatabase.ResponseToException.*;
 import nz.co.gregs.dbvolution.utility.Preventer;
 import nz.co.gregs.dbvolution.utility.Timeout;
 
@@ -2309,17 +2309,6 @@ public abstract class DBDatabaseImplementation implements DBDatabase, Serializab
     return this.timeout;
   }
 
-	public static enum ResponseToException {
-		REPLACECONNECTION(),
-		REQUERY(),
-		SKIPQUERY(),
-		EMULATE_RECURSIVE_QUERY(),
-		NOT_HANDLED;
-
-		ResponseToException() {
-		}
-	}
-
 	@Override
 	public <K extends DBRow> DBQueryInsert<K> getDBQueryInsert(K mapper) {
 		return new DBQueryInsert<>(this, mapper);
@@ -2656,7 +2645,7 @@ public abstract class DBDatabaseImplementation implements DBDatabase, Serializab
       REGULAR_THREAD_POOL_FUTURE = null;
     }
     final RunRegularProcessors runRegularProcessors = new RunRegularProcessors(this, this);
-    REGULAR_THREAD_POOL_FUTURE = REGULAR_THREAD_POOL.scheduleWithFixedDelay(runRegularProcessors, 10, 10, TimeUnit.SECONDS);
+    REGULAR_THREAD_POOL_FUTURE = REGULAR_THREAD_POOL.scheduleWithFixedDelay(runRegularProcessors, 1, 1, TimeUnit.SECONDS);
   }
 
   public final void addRegularProcess(RegularProcess processor) {

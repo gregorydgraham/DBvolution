@@ -24,7 +24,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.sql.DataSource;
 import static nz.co.gregs.dbvolution.databases.DBDatabaseImplementation.DUPLICATE_COLUMN_NAME;
-import static nz.co.gregs.dbvolution.databases.DBDatabaseImplementation.ResponseToException.SKIPQUERY;
+import static nz.co.gregs.dbvolution.databases.DBDatabase.ResponseToException.SKIPQUERY;
 import nz.co.gregs.dbvolution.databases.metadata.H2DBDatabaseMetaData;
 import nz.co.gregs.dbvolution.databases.metadata.Options;
 import nz.co.gregs.dbvolution.databases.settingsbuilders.H2SettingsBuilder;

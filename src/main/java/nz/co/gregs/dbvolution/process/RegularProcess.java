@@ -67,94 +67,95 @@ import org.apache.commons.logging.LogFactory;
  */
 public abstract class RegularProcess implements Serializable {
 
-	public static final long serialVersionUID = 1l;
+  public static final long serialVersionUID = 1l;
 
-	final transient Log LOG = LogFactory.getLog(RegularProcess.class);
+  final transient Log LOG = LogFactory.getLog(RegularProcess.class);
 
-	private Instant nextRun = Instant.now();
-	ChronoUnit timeField = ChronoUnit.MINUTES;
-	private int timeOffset = 5;
-	private DBDatabase dbDatabase;
-	private String lastResult = "Not Processed Yet";
-	private Instant lastRunTime = Instant.now();
-	private String simpleName = null;
-	private boolean stopped = false;
+  private Instant nextRun = Instant.now();
+  ChronoUnit timeField = ChronoUnit.MINUTES;
+  private int timeOffset = 5;
+  private DBDatabase dbDatabase;
+  private String lastResult = "Not Processed Yet";
+  private Instant lastRunTime = Instant.now();
+  private String simpleName = null;
+  private boolean stopped = false;
+  private ProcessorRunState running = ProcessorRunState.STARTING;
 
-	/**
-	 * Method that does all the processing that needs to be regularly performed.
-	 *
-	 * <p>
-	 * If {@link #preprocess() } returns true, process() is called to perform the
-	 * actual processing.
-	 *
-	 * <p>
-	 * {@link #postprocess() } will be called to clean up any resources after
-	 * processing and
-	 * {@link #handleExceptionDuringProcessing(java.lang.Exception)} can be
-	 * overloaded if exceptions during processing need to be handled.
-	 *
-	 * @return the output from processing
-	 * @throws Exception any exception can thrown
-	 */
-	public abstract String process() throws Exception;
+  /**
+   * Method that does all the processing that needs to be regularly performed.
+   *
+   * <p>
+   * If {@link #preprocess() } returns true, process() is called to perform the
+   * actual processing.
+   *
+   * <p>
+   * {@link #postprocess() } will be called to clean up any resources after
+   * processing and
+   * {@link #handleExceptionDuringProcessing(java.lang.Exception)} can be
+   * overloaded if exceptions during processing need to be handled.
+   *
+   * @return the output from processing
+   * @throws Exception any exception can thrown
+   */
+  public abstract String process() throws Exception;
 
-	public final boolean isDueToRun() {
-		return hasExceededTimeLimit();
-	}
+  public final boolean isDueToRun() {
+    return hasExceededTimeLimit();
+  }
 
-	public final boolean hasExceededTimeLimit() {
-		return nextRun.isBefore(Instant.now());
-	}
+  public final boolean hasExceededTimeLimit() {
+    return nextRun.isBefore(Instant.now());
+  }
 
-	/**
-	 * Sets the time field and offset value to use when generating the next run
-	 * time.
-	 *
-	 * <p>
-	 * Note that {@link DBDatabase} regular processes are checked once a minute.
-	 *
-	 * @param calendarTimeField the time unit to offset the regular process by
-	 * @param offset the number time units to offset by
-	 */
-	public final void setTimeOffset(ChronoUnit calendarTimeField, int offset) {
-		timeField = calendarTimeField;
-		timeOffset = offset;
-	}
+  /**
+   * Sets the time field and offset value to use when generating the next run
+   * time.
+   *
+   * <p>
+   * Note that {@link DBDatabase} regular processes are checked once a minute.
+   *
+   * @param calendarTimeField the time unit to offset the regular process by
+   * @param offset the number time units to offset by
+   */
+  public final void setTimeOffset(ChronoUnit calendarTimeField, int offset) {
+    timeField = calendarTimeField;
+    timeOffset = offset;
+  }
 
-	/**
-	 * A method that is called before {@link #process() } and will stop processing
-	 * if FALSE is returned.
-	 *
-	 * <p>
-	 * By default this method returns true always.
-	 *
-	 * @return TRUE if processing should continue, FALSE otherwise.
-	 */
-	public boolean preprocess() {
-		return true;
-	}
+  /**
+   * A method that is called before {@link #process() } and will stop processing
+   * if FALSE is returned.
+   *
+   * <p>
+   * By default this method returns true always.
+   *
+   * @return TRUE if processing should continue, FALSE otherwise.
+   */
+  public boolean preprocess() {
+    return true;
+  }
 
-	/**
-	 * A method that is always called after {@link #preprocess() } and {@link #process()
-	 * }.
-	 *
-	 * <p>
-	 * By default this method does nothing.
-	 */
-	public void postprocess() {
-	}
+  /**
+   * A method that is always called after {@link #preprocess() } and {@link #process()
+   * }.
+   *
+   * <p>
+   * By default this method does nothing.
+   */
+  public void postprocess() {
+  }
 
-	/**
-	 * Provides a way to intercept exceptions thrown during processing.
-	 *
-	 * <p>
-	 * By default, this method logs the exception as a warning.
-	 *
-	 * @param ex the exception that has occurred
-	 */
-	public void handleExceptionDuringProcessing(Exception ex) {
-		LOG.warn("Exception during regular processor "+this.getSimpleName(), ex);
-	}
+  /**
+   * Provides a way to intercept exceptions thrown during processing.
+   *
+   * <p>
+   * By default, this method logs the exception as a warning.
+   *
+   * @param ex the exception that has occurred
+   */
+  public void handleExceptionDuringProcessing(Exception ex) {
+    LOG.warn("Exception during regular processor " + this.getSimpleName(), ex);
+  }
 
   /**
    * Called after all other methods, including 
@@ -168,87 +169,122 @@ public abstract class RegularProcess implements Serializable {
 
   }
 
-	/**
-	 * Used to generate the next run time for this process
-	 *
-	 */
-	public final void offsetTime() {
-		lastRunTime = Instant.now();
-		var duration = Duration.ZERO.plus(timeOffset, timeField);
-		Instant instant = Instant.now().plus(duration);
-		nextRun = instant;
-	}
+  /**
+   * Used to generate the next run time for this process
+   *
+   */
+  public final void offsetTime() {
+    lastRunTime = Instant.now();
+    var duration = Duration.ZERO.plus(timeOffset, timeField);
+    Instant instant = Instant.now().plus(duration);
+    nextRun = instant;
+  }
 
-	/**
-	 * Returns the (last) database that this process has been added to using {@link DBDatabaseImplementation#addRegularProcess(nz.co.gregs.dbvolution.utility.RegularProcess)
-	 * }.
-	 *
-	 * @return the database that this process should work upon.
-	 */
-	protected final DBDatabase getDatabase() {
-		return dbDatabase;
-	}
+  /**
+   * Returns the (last) database that this process has been added to using {@link DBDatabaseImplementation#addRegularProcess(nz.co.gregs.dbvolution.utility.RegularProcess)
+   * }.
+   *
+   * @return the database that this process should work upon.
+   */
+  protected final DBDatabase getDatabase() {
+    return dbDatabase;
+  }
 
-	/**
-	 * Used by  {@link DBDatabaseImplementation#addRegularProcess(nz.co.gregs.dbvolution.utility.RegularProcess) }
-	 * to set the database.
-	 *
-	 * <p>
-	 * You probably don't need this method.
-	 *
-	 * @param db the database this process interacts with
-	 */
-	public final void setDatabase(DBDatabase db) {
-		this.dbDatabase = db;
-	}
+  /**
+   * Used by  {@link DBDatabaseImplementation#addRegularProcess(nz.co.gregs.dbvolution.utility.RegularProcess) }
+   * to set the database.
+   *
+   * <p>
+   * You probably don't need this method.
+   *
+   * @param db the database this process interacts with
+   */
+  public final void setDatabase(DBDatabase db) {
+    this.dbDatabase = db;
+  }
 
-	public final void stop() {
-		this.dbDatabase = null;
-		this.stopped = true;
-	}
+  public final void stop() {
+    this.dbDatabase = null;
+    this.stopped = true;
+  }
 
-	public final boolean canRun() {
-		boolean canRun = false;
-		if (stopped) {
-			LOG.warn("This database is stopped and " + this.getClass().getSimpleName() + " can not proceed.");
-		} else if (this.dbDatabase == null) {
-			LOG.warn(this.getClass().getSimpleName() + " has not had setDatabase(DBDatabase) called and can not proceed.");
-		} else {
-			canRun = true;
-		}
-		return canRun;
-	}
+  public final boolean canRun() {
+    boolean canRun = false;
+    if (stopped) {
+      LOG.warn("This database is stopped and " + this.getClass().getSimpleName() + " can not proceed.");
+    } else if (this.dbDatabase == null) {
+      LOG.warn(this.getClass().getSimpleName() + " has not had setDatabase(DBDatabase) called and can not proceed.");
+    } else {
+      canRun = true;
+    }
+    return canRun;
+  }
 
-	public String getLastResult() {
-		return lastResult;
-	}
+  public String getLastResult() {
+    return lastResult;
+  }
 
-	public Instant getLastRuntime() {
-		return lastRunTime;
-	}
+  public Instant getLastRuntime() {
+    return lastRunTime;
+  }
 
-	public Instant getNextRuntime() {
-		return nextRun;
-	}
+  public Instant getNextRuntime() {
+    return nextRun;
+  }
 
-	public void setLastResult(String process) {
-		this.lastResult = process;
-	}
+  public void setLastResult(String process) {
+    this.lastResult = process;
+  }
 
-	public String getSimpleName() {
-		if (simpleName == null || simpleName.isEmpty()) {
-			return this.getClass().getSimpleName();
-		} else {
-			return simpleName;
-		}
-	}
+  public String getSimpleName() {
+    if (simpleName == null || simpleName.isEmpty()) {
+      return this.getClass().getSimpleName();
+    } else {
+      return simpleName;
+    }
+  }
 
-	public void setSimpleName(String simpleName) {
-		this.simpleName = simpleName;
-	}
+  public void setSimpleName(String simpleName) {
+    this.simpleName = simpleName;
+  }
 
-	public void clearSimpleName() {
-		this.simpleName = null;
-	}
+  public void clearSimpleName() {
+    this.simpleName = null;
+  }
+
+  boolean isNotRunning() {
+    return running.isNotRunning();
+  }
+
+  void setRunning() {
+    this.running = ProcessorRunState.RUNNING;
+  }
+
+  void setBetweenRuns() {
+    this.running = ProcessorRunState.BETWEEN_RUNS;
+  }
+
+  public static enum ProcessorRunState {
+    STARTING,
+    RUNNING,
+    BETWEEN_RUNS,
+    STOPPED;
+
+    public boolean isRunning() {
+      return this.equals(RUNNING);
+    }
+
+    public boolean isNotRunning() {
+      return !this.equals(RUNNING);
+    }
+
+    public boolean hasStarted() {
+      return !this.equals(STARTING);
+    }
+
+    public boolean isStopped() {
+      return !this.equals(STOPPED);
+    }
+  }
 
 }

@@ -44,19 +44,17 @@ public class MultiplePrimaryKeyTests extends AbstractTest {
 	}
 
 	@Before
-	public void createTables() throws SQLException {
-		try {
-			database.setPreventDroppingOfTables(false)
-              .dropTableNoExceptions(new Colleagues());
-			database.createTable(new Colleagues());
-			database.setPreventDroppingOfTables(false)
-              .dropTableNoExceptions(new User());
-			database.createTable(new User());
-		} catch (SQLException ex) {
-			; // An exception is thrown if the table already exists
-		}
-		User u1 = new User(1);
-		User u2 = new User(2);
+  public void createTables() throws SQLException {
+    database.setPreventDroppingOfTables(false)
+            .dropTableNoExceptions(new Colleagues());
+    database.createTable(new Colleagues());
+
+    database.setPreventDroppingOfTables(false)
+            .dropTableNoExceptions(new User());
+    database.createTable(new User());
+
+    User u1 = new User(1);
+    User u2 = new User(2);
 		User u3 = new User(3);
 		User u4 = new User(4);
 		database.insert(u1, u2, u3, u4);

@@ -38,7 +38,7 @@ import nz.co.gregs.dbvolution.databases.DBDatabaseImplementation;
  * @author gregorygraham
  */
 public class RunRegularProcessors implements Runnable {
-  
+
   DBDatabase database;
   private final DBDatabaseImplementation outer;
 
@@ -52,7 +52,10 @@ public class RunRegularProcessors implements Runnable {
   public void run() {
     for (RegularProcess process : outer.getRegularProcessors()) {
       process.setDatabase(database);
-      if (process.canRun() && process.isDueToRun()) {
+      if (process.isNotRunning()
+              && process.canRun()
+              && process.isDueToRun()) {
+        process.setRunning();
         try {
           if (process.preprocess()) {
             process.setLastResult(process.process());
@@ -63,9 +66,10 @@ public class RunRegularProcessors implements Runnable {
         } finally {
           process.cleanUp();
           process.offsetTime();
+          process.setBetweenRuns();
         }
       }
     }
   }
-  
+
 }

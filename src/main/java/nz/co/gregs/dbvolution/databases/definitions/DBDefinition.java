@@ -2478,29 +2478,47 @@ public abstract class DBDefinition implements Serializable {
 	 * @see AutoIncrementFieldClassAndDatatypeMismatch
 	 */
 	public final String getSQLTypeAndModifiersOfDBDatatype(PropertyWrapper<?, ?, ?> field) {
-		if (field.isAutoIncrement()) {
-			if (propertyWrapperConformsToAutoIncrementType(field)) {
-				if (hasSpecialAutoIncrementType()) {
-					return getSpecialAutoIncrementType();
-				} else if (hasSpecialPrimaryKeyTypeForDBDatatype(field)) {
-					return getSpecialPrimaryKeyTypeOfDBDatatype(field) + getColumnAutoIncrementSuffix();
-				} else {
-					return getSQLTypeOfDBDatatype(field) + getColumnAutoIncrementSuffix();
-				}
-			} else {
-				throw new AutoIncrementFieldClassAndDatatypeMismatch(field);
-			}
-		}
-		if (field.isPrimaryKey()) {
-			if (hasSpecialPrimaryKeyTypeForDBDatatype(field)) {
-				return getSpecialPrimaryKeyTypeOfDBDatatype(field);
-			} else {
-				return getSQLTypeOfDBDatatype(field);
-			}
-		} else {
-			return getSQLTypeOfDBDatatype(field);
-		}
-	}
+    if (field.isAutoIncrement()) {
+      if (propertyWrapperConformsToAutoIncrementType(field)) {
+        if (hasSpecialAutoIncrementType()) {
+          return getSpecialAutoIncrementType();
+        } else if (hasSpecialPrimaryKeyTypeForDBDatatype(field)) {
+          return getSpecialPrimaryKeyTypeOfDBDatatype(field) + getColumnAutoIncrementSuffix();
+        } else {
+          if (field.isPrimaryKey()
+                  && prefersInlinePrimaryKeyDefinition()
+                  && !field.isPartOfMultipartPK()) {
+            return getSQLTypeOfDBDatatype(field)
+                    + getInlinePrimaryKeyClause()
+                    + getColumnAutoIncrementSuffix();
+          } else {
+            return getSQLTypeOfDBDatatype(field)
+                    + getColumnAutoIncrementSuffix();
+          }
+        }
+      } else {
+        throw new AutoIncrementFieldClassAndDatatypeMismatch(field);
+      }
+    }
+    if (field.isPrimaryKey()) {
+      if (hasSpecialPrimaryKeyTypeForDBDatatype(field)) {
+        return getSpecialPrimaryKeyTypeOfDBDatatype(field);
+      } else {
+        if (prefersInlinePrimaryKeyDefinition() 
+                && !field.isPartOfMultipartPK()) {
+          return getSQLTypeOfDBDatatype(field) + getInlinePrimaryKeyClause();
+        } else {
+          return getSQLTypeOfDBDatatype(field);
+        }
+      }
+    } else {
+      return getSQLTypeOfDBDatatype(field);
+    }
+  }
+
+  public final boolean prefersInlinePrimaryKeyDefinition() {
+    return !prefersTrailingPrimaryKeyDefinition();
+  }
 
 	/**
 	 * Provides the name that DBvolution will use for the sequence of a
@@ -7274,6 +7292,10 @@ public abstract class DBDefinition implements Serializable {
             .withSuffix(";")
             .encoder();
     return sep;
+  }
+
+  public String getInlinePrimaryKeyClause() {
+    return " PRIMARY KEY ";
   }
 
 	public static enum GroupByClauseMethod {

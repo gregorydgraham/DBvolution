@@ -30,7 +30,6 @@
  */
 package nz.co.gregs.dbvolution.process;
 
-import nz.co.gregs.dbvolution.databases.DBDatabase;
 import nz.co.gregs.dbvolution.databases.DBDatabaseCluster;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;

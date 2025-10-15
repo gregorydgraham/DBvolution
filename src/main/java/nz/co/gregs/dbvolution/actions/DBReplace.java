@@ -48,11 +48,11 @@ import org.apache.commons.logging.LogFactory;
  *
  * @author Gregory Graham
  */
-public class DBInsert extends DBAction {
+public class DBReplace extends DBAction {
 
 	private static final long serialVersionUID = 1l;
 
-	private static final Log LOG = LogFactory.getLog(DBInsert.class);
+	private static final Log LOG = LogFactory.getLog(DBReplace.class);
 
 	private final ArrayList<Long> generatedKeys = new ArrayList<>();
 	private final DBRow originalRow;
@@ -65,7 +65,7 @@ public class DBInsert extends DBAction {
 	 * @param <R> the table affected
 	 * @param row the row to insert
 	 */
-	protected <R extends DBRow> DBInsert(R row) {
+	protected <R extends DBRow> DBReplace(R row) {
 		super(row, QueryIntention.INSERT_ROW);
 		originalRow = row;
 	}
@@ -95,7 +95,7 @@ public class DBInsert extends DBAction {
 	 * @return a DBActionList of the actions performed on the database.
 	 */
 	public static DBActionList save(DBDatabase database, DBRow row) throws SQLException {
-		DBInsert dbInsert = new DBInsert(row);
+		DBReplace dbInsert = new DBReplace(row);
 		final DBActionList executedActions = database.executeDBAction(dbInsert);
 		return executedActions;
 	}
@@ -144,7 +144,7 @@ public class DBInsert extends DBAction {
 	public DBActionList execute(DBDatabase db) throws SQLException, DBSQLException {
 		final DBDefinition defn = db.getDefinition();
 		DBRow table = originalRow;
-		final DBInsert newInsert = new DBInsert(table);
+		final DBReplace newInsert = new DBReplace(table);
 		DBActionList actions = new DBActionList(newInsert);
 
 		try (DBStatement statement = db.getDBStatement()) {
@@ -288,8 +288,24 @@ public class DBInsert extends DBAction {
 	}
 
 	private void executeStatementAndHandleIntegrityConstraintViolation(final DBStatement statement, StatementDetails statementDetails, DBDatabase db, DBRow row) throws SQLException {
-    long rowsInserted = statement.execute(statementDetails);
-    addAlteredRows(rowsInserted);
+		long rowsInserted;
+    try {
+      rowsInserted = statement.execute(statementDetails);
+      addAlteredRows(rowsInserted);
+		} catch (SQLException ohNo) {
+			boolean throwException = true;
+			if (db.getDefinition().isPrimaryKeyAlreadyExistsException(ohNo)) {
+				if (row.getPrimaryKeysAllHaveValue()) {
+					db.delete(row);
+          rowsInserted = statement.execute(statementDetails);
+					addAlteredRows(rowsInserted);
+					throwException = false;
+				}
+			}
+			if (throwException) {
+				throw ohNo;
+			}
+		}
 	}
 
 	private void updateSequenceIfNecessary(final DBDefinition defn, DBDatabase db, String sql, DBRow table, final DBStatement statement) throws SQLException {
@@ -309,7 +325,7 @@ public class DBInsert extends DBAction {
 		}
 	}
 
-	private synchronized void setPrimaryKeyOfStoredRows(final long pkValue, DBRow table, final DBInsert newInsert) {
+	private synchronized void setPrimaryKeyOfStoredRows(final long pkValue, DBRow table, final DBReplace newInsert) {
 		QueryableDatatype<?> pkQDT = this.originalRow.getPrimaryKeys().get(0);
 		new InternalQueryableDatatypeProxy<>(pkQDT).setValueFromDatabase(pkValue);
 		pkQDT = this.row.getPrimaryKeys().get(0);
@@ -420,7 +436,7 @@ public class DBInsert extends DBAction {
 	public static DBActionList getInserts(DBRow... rows) throws SQLException {
 		DBActionList inserts = new DBActionList();
 		for (DBRow row : rows) {
-			inserts.add(new DBInsert(row));
+			inserts.add(new DBReplace(row));
 		}
 		return inserts;
 	}

@@ -421,12 +421,12 @@ public abstract class AbstractTest {
         }
         Date firstDate = DATETIME_FORMAT.parse(firstDateStr);
         Date secondDate = DATETIME_FORMAT.parse(secondDateStr);
-
+        
         var marque = new Marque();
         database.setPreventDroppingOfTables(false)
                 .dropTableIfExists(new Marque());
         database.createTable(marque);
-
+        
         var carCompany = new CarCompany();
         database.setPreventDroppingOfTables(false)
                 .dropTableNoExceptions(carCompany);

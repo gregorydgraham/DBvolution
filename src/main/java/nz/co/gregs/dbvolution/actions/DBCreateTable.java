@@ -125,6 +125,7 @@ public class DBCreateTable extends DBAction {
 		List<String> fkClauses = new ArrayList<>();
 		pkFields.clear();
 		spatial2DFields.clear();
+    boolean primaryKeyIsMultipart = false;
 		for (var field : fields) {
 			if (field.isColumn() && !field.getQueryableDatatype().hasColumnExpression()) {
 				String colName = field.columnName();
@@ -137,6 +138,7 @@ public class DBCreateTable extends DBAction {
 
 				if (field.isPrimaryKey()) {
 					pkFields.add(field);
+          primaryKeyIsMultipart = field.isPartOfMultipartPK();
 				}
 				if (field.isSpatial2DType()) {
 					spatial2DFields.add(field);
@@ -156,7 +158,7 @@ public class DBCreateTable extends DBAction {
 		}
 
 		// primary keys
-		if (definition.prefersTrailingPrimaryKeyDefinition()) {
+		if (definition.prefersTrailingPrimaryKeyDefinition()||primaryKeyIsMultipart) {
 			String pkStart = lineSeparator + definition.getCreateTablePrimaryKeyClauseStart();
 			String pkMiddle = definition.getCreateTablePrimaryKeyClauseMiddle();
 			String pkEnd = definition.getCreateTablePrimaryKeyClauseEnd() + lineSeparator;

@@ -112,7 +112,7 @@ public interface DBDatabase extends Serializable, AutoCloseable {
 	 * @return the preferred response to the exception
 	 * @throws SQLException accessing the database may cause exceptions
 	 */
-	DBDatabaseImplementation.ResponseToException addFeatureToFixException(SQLException exp, QueryIntention intent, StatementDetails details) throws SQLException;
+	ResponseToException addFeatureToFixException(SQLException exp, QueryIntention intent, StatementDetails details) throws SQLException;
 
 	boolean isMemoryDatabase();
 
@@ -1236,4 +1236,14 @@ public interface DBDatabase extends Serializable, AutoCloseable {
 
   public Timeout getTimeout();
 
+	public static enum ResponseToException {
+		REPLACECONNECTION(),
+		REQUERY(),
+		SKIPQUERY(),
+		EMULATE_RECURSIVE_QUERY(),
+		NOT_HANDLED;
+
+		ResponseToException() {
+		}
+	}
 }

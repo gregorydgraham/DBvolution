@@ -17,6 +17,7 @@ package nz.co.gregs.dbvolution.databases.definitions;
 
 import com.vividsolutions.jts.geom.*;
 import com.vividsolutions.jts.io.WKTReader;
+import java.sql.SQLException;
 import java.text.*;
 import java.util.*;
 import nz.co.gregs.dbvolution.DBRow;
@@ -56,7 +57,7 @@ public class MSSQLServerDBDefinition extends DBDefinition {
 
 	private static final String[] RESERVED_WORDS_ARRAY = new String[]{"ADD", "EXTERNAL", "PROCEDURE", "ALL", "FETCH", "PUBLIC", "ALTER", "FILE", "RAISERROR", "AND", "FILLFACTOR", "READ", "ANY", "FOR", "READTEXT", "AS", "FOREIGN", "RECONFIGURE", "ASC", "FREETEXT", "REFERENCES", "AUTHORIZATION", "FREETEXTTABLE", "REPLICATION", "BACKUP", "FROM", "RESTORE", "BEGIN", "FULL", "RESTRICT", "BETWEEN", "FUNCTION", "RETURN", "BREAK", "GOTO", "REVERT", "BROWSE", "GRANT", "REVOKE", "BULK", "GROUP", "RIGHT", "BY", "HAVING", "ROLLBACK", "CASCADE", "HOLDLOCK", "ROWCOUNT", "CASE", "IDENTITY", "ROWGUIDCOL", "CHECK", "IDENTITY_INSERT", "RULE", "CHECKPOINT", "IDENTITYCOL", "SAVE", "CLOSE", "IF", "SCHEMA", "CLUSTERED", "IN", "SECURITYAUDIT", "COALESCE", "INDEX", "SELECT", "COLLATE", "INNER", "SEMANTICKEYPHRASETABLE", "COLUMN", "INSERT", "SEMANTICSIMILARITYDETAILSTABLE", "COMMIT", "INTERSECT", "SEMANTICSIMILARITYTABLE", "COMPUTE", "INTO", "SESSION_USER", "CONSTRAINT", "IS", "SET", "CONTAINS", "JOIN", "SETUSER", "CONTAINSTABLE", "KEY", "SHUTDOWN", "CONTINUE", "KILL", "SOME", "CONVERT", "LEFT", "STATISTICS", "CREATE", "LIKE", "SYSTEM_USER", "CROSS", "LINENO", "TABLE", "CURRENT", "LOAD", "TABLESAMPLE", "CURRENT_DATE", "MERGE", "TEXTSIZE", "CURRENT_TIME", "NATIONAL", "THEN", "CURRENT_TIMESTAMP", "NOCHECK", "TO", "CURRENT_USER", "NONCLUSTERED", "TOP", "CURSOR", "NOT", "TRAN", "DATABASE", "NULL", "TRANSACTION", "DBCC", "NULLIF", "TRIGGER", "DEALLOCATE", "OF", "TRUNCATE", "DECLARE", "OFF", "TRY_CONVERT", "DEFAULT", "OFFSETS", "TSEQUAL", "DELETE", "ON", "UNION", "DENY", "OPEN", "UNIQUE", "DESC", "OPENDATASOURCE", "UNPIVOT", "DISK", "OPENQUERY", "UPDATE", "DISTINCT", "OPENROWSET", "UPDATETEXT", "DISTRIBUTED", "OPENXML", "USE", "DOUBLE", "OPTION", "USER", "DROP", "OR", "VALUES", "DUMP", "ORDER", "VARYING", "ELSE", "OUTER", "VIEW", "END", "OVER", "WAITFOR", "ERRLVL", "PERCENT", "WHEN", "ESCAPE", "PIVOT", "WHERE", "EXCEPT", "PLAN", "WHILE", "EXEC", "PRECISION", "WITH", "EXECUTE", "PRIMARY", "WITHIN GROUP", "EXISTS", "PRINT", "WRITETEXT", "EXIT", "PROC"};
 	private static final List<String> RESERVED_WORDS = Arrays.asList(RESERVED_WORDS_ARRAY);
-
+  
 	@Override
 	public String getDateFormattedForQuery(Date date) {
 		DateFormat format = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS");
@@ -1391,6 +1392,32 @@ public class MSSQLServerDBDefinition extends DBDefinition {
 	@Override
 	public boolean isDuplicateColumnException(Exception exc) {
 		return DUPLICATE_COLUMN_EXCEPTION.matchesWithinString(exc.getMessage());
+	}
+  
+  // Violation of PRIMARY KEY constraint 'PK__marque__0EBACAF281097EB4'. Cannot insert duplicate key in object 'dbo.marque'. The duplicate key value is (1139)
+	private static final Regex DUPLICATE_ROW_EXCEPTION
+          = Regex.startingAnywhere()
+                  .beginOrGroup()
+                  .literalCaseInsensitive("Violation of PRIMARY KEY constraint '")
+                  .anyCharacterExcept("'").oneOrMoreGreedy()
+                  .literalCaseInsensitive("'. Cannot insert duplicate key in object '")
+                  .anyCharacterExcept("'").oneOrMoreGreedy()
+                  .literalCaseInsensitive("'. The duplicate key value is (")
+                  .digits()
+                  .literal(")")
+                  .endOrGroup()
+                  .toRegex();
+
+	@Override
+	public boolean isPrimaryKeyAlreadyExistsException(Exception alreadyExists) {
+		Throwable exc = alreadyExists;
+		while (exc != null) {
+			if ((exc instanceof SQLException) && DUPLICATE_ROW_EXCEPTION.matchesWithinString(exc.getMessage())) {
+				return true;
+			}
+			exc = exc.getCause();
+		}
+		return false;
 	}
 
 }

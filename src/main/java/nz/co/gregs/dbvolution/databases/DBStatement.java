@@ -22,8 +22,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import nz.co.gregs.dbvolution.databases.DBDatabaseImplementation.ResponseToException;
-import static nz.co.gregs.dbvolution.databases.DBDatabaseImplementation.ResponseToException.*;
+import nz.co.gregs.dbvolution.databases.DBDatabase.ResponseToException;
+import static nz.co.gregs.dbvolution.databases.DBDatabase.ResponseToException.*;
 import nz.co.gregs.dbvolution.databases.connections.DBConnection;
 import nz.co.gregs.dbvolution.databases.definitions.DBDefinition;
 import nz.co.gregs.dbvolution.exceptions.UnableToCreateDatabaseConnectionException;
@@ -31,7 +31,6 @@ import nz.co.gregs.dbvolution.exceptions.UnableToFindJDBCDriver;
 import nz.co.gregs.dbvolution.internal.query.QueryTimeout;
 import nz.co.gregs.dbvolution.internal.query.StatementDetails;
 import nz.co.gregs.dbvolution.utility.StringCheck;
-import nz.co.gregs.dbvolution.utility.Timeout;
 import nz.co.gregs.regexi.Regex;
 import nz.co.gregs.regexi.internal.PartialRegex;
 

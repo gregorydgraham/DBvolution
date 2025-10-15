@@ -26,7 +26,7 @@ import nz.co.gregs.dbvolution.databases.supports.SupportsPolygonDatatype;
 import nz.co.gregs.dbvolution.exceptions.ExceptionDuringDatabaseFeatureSetup;
 import nz.co.gregs.dbvolution.internal.query.StatementDetails;
 import nz.co.gregs.regexi.Regex;
-import static nz.co.gregs.dbvolution.databases.DBDatabaseImplementation.ResponseToException.*;
+import static nz.co.gregs.dbvolution.databases.DBDatabase.ResponseToException.*;
 import static nz.co.gregs.dbvolution.databases.QueryIntention.*;
 
 /**
