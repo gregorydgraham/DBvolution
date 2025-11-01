@@ -183,8 +183,11 @@ public class DBDatabaseTest extends AbstractTest {
               .literalCaseInsensitive("column")
               .anyCharacter().zeroOrMoreGreedy()
               .literalCaseInsensitive("not found")
-              .or().literalCaseInsensitive("no such columm")
+              .or().literalCaseInsensitive("no such column")
               .or().literalCaseInsensitive("ora-00904")
+              .or().literalCaseInsensitive("unknown column '").anythingButThis("'").literalCaseInsensitive("' in 'field list'")
+              .or().literalCaseInsensitive("column ").anythingGreedy().literal("does not exist")
+              .or().literalCaseInsensitive("invalid column name '").anythingButThis("'").literalCaseInsensitive("'.")
               .endOrGroup()
               .toRegex();
       if(!columnNotFound.matchesWithinString(except.getLocalizedMessage())){
