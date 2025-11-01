@@ -59,11 +59,7 @@ public class DataRepo {
   }
   
   public static DataRepo getDataRepoFor(Options options) throws SQLException, IOException {
-    var repo = DataRepoGenerator.generateClasses(
-            options.getDBDatabase(), 
-            options.getPackageName(), 
-            options
-    );
+    var repo = DataRepoGenerator.generateClasses(options);
     return repo;
   }
 

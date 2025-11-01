@@ -24,6 +24,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import nz.co.gregs.dbvolution.DBRow;
 import nz.co.gregs.dbvolution.databases.DBDatabase;
 import nz.co.gregs.dbvolution.databases.metadata.DBDatabaseMetaData;
 import nz.co.gregs.dbvolution.databases.metadata.TableMetaData;
@@ -71,7 +72,10 @@ class DataRepoGenerator {
    * @throws java.io.IOException java.io.IOException
    */
   static public DataRepo generateClasses(DBDatabase database, String packageName) throws SQLException, FileNotFoundException, IOException {
-    return generateClasses(database, packageName, new Options());
+    final Options opts = Options.empty()
+            .setDBDatabase(database)
+            .setPackageName(packageName);
+    return generateClasses(opts);
   }
 
   /**
@@ -133,13 +137,7 @@ class DataRepoGenerator {
    * @throws java.io.FileNotFoundException java.io.FileNotFoundException
    * @throws java.io.IOException java.io.IOException
    */
-  static public DataRepo generateClasses(DBDatabase database, String packageName, Options options) throws SQLException, FileNotFoundException, IOException {
-    options.setDBDatabase(database);
-    options.setPackageName(packageName);
-    return generateClasses(options);
-  }
-
-  static private DataRepo generateClasses(Options options) throws SQLException, FileNotFoundException, IOException {
+  static public DataRepo generateClasses(Options options) throws SQLException, FileNotFoundException, IOException {
     DBDatabase database = options.getDBDatabase();
     String packageName = options.getPackageName();
 
@@ -243,11 +241,6 @@ class DataRepoGenerator {
    * found on the database 1 Database exceptions may be thrown
    */
   private static DataRepo parseObjectTypes(Options options) throws SQLException {
-//		Options opts = Options
-//				.copy(options)
-//				.setDBDatabase(db)
-//				.setPackageName(packageName)
-//				.setObjectTypes(dbObjectTypes);
     DataRepo datarepo = getDataRepo(options);
 
     return datarepo;
@@ -255,7 +248,6 @@ class DataRepoGenerator {
 
   public static DataRepo getDataRepo(Options opts) throws SQLException, NoAvailableDatabaseException {
     DataRepo datarepo = new DataRepo(opts);
-
     DBDatabase db = opts.getDBDatabase();
 
     if (db != null) {
@@ -267,61 +259,63 @@ class DataRepoGenerator {
       List<TableMetaData> tables = metaData.getTables();
       for (TableMetaData table : tables) {
         final String tableName = table.getTableName();
-        if (schema == null) {
-          schema = table.getSchema();
-        }
-        final String className = Utility.toClassCase(tableName);
-        DBTableClass dbTableClass = new DBTableClass(tableName, schema, opts.getPackageName(), className);
-        datarepo.addTable(dbTableClass);
-
-        List<TableMetaData.PrimaryKey> primaryKeys = table.getPrimaryKeys();
-        List<String> pkNames = new ArrayList<>();
-        for (TableMetaData.PrimaryKey primaryKey : primaryKeys) {
-          pkNames.add(primaryKey.getName());
-        }
-        String classTableName = dbTableClass.getTableName();
-
-        List<TableMetaData.ForeignKey> foreignKeys = table.getForeignKeys(catalog, schema, classTableName);
-        Map<String, TableMetaData.ForeignKey> fkNames = new HashMap<>();
-        foreignKeys.stream()
-                .forEach((fk) -> {
-                  fkNames.put(fk.getName(), fk);
-                });
-
-        List<TableMetaData.Column> columns = table.getColumns();
-        for (TableMetaData.Column col : columns) {
-          DBTableField dbTableField = new DBTableField();
-          dbTableClass.getFields().add(dbTableField);
-          dbTableField.columnName = col.getColumnName();
-          dbTableField.fieldName = Utility.toFieldCase(dbTableField.columnName);
-          dbTableField.referencedTable = col.getReferencedTable();
-          dbTableField.precision = col.getColumnSize();
-          dbTableField.comments = col.getRemarks();
-          dbTableField.isAutoIncrement = col.getIsAutoIncrement();
-          try {
-            dbTableField.sqlDataTypeInt = col.getDatatype();
-            dbTableField.sqlDataTypeName = col.getTypeName();
-            dbTableField.columnType = Utility.getQDTClassOfSQLType(db, dbTableField.sqlDataTypeName, dbTableField.sqlDataTypeInt, dbTableField.precision, opts.getTrimCharColumns());
-          } catch (UnknownJavaSQLTypeException ex) {
-            dbTableField.columnType = DBUnknownDatatype.class;
-            dbTableField.javaSQLDatatype = ex.getUnknownJavaSQLType();
+        if (opts.requiresTable(tableName)) {
+          if (schema == null) {
+            schema = table.getSchema();
           }
-          if (pkNames.contains(dbTableField.columnName)
-                  || (opts.getPkRecog() != null && opts.getPkRecog().isPrimaryKeyColumn(classTableName, dbTableField.columnName))) {
-            dbTableField.isPrimaryKey = true;
-          }
+          final String className = Utility.toClassCase(tableName);
+          DBTableClass dbTableClass = new DBTableClass(tableName, schema, opts.getPackageName(), className);
+          datarepo.addTable(dbTableClass);
 
-          TableMetaData.ForeignKey fk = fkNames.get(dbTableField.columnName);
-          ForeignKeyRecognisor fkRecog = opts.getFkRecog();
-          if (fk != null) {
-            dbTableField.isForeignKey = true;
-            dbTableField.referencesClass = Utility.toClassCase(fk.getPrimaryKeyTableName());
-            dbTableField.referencesField = fk.getPrimaryKeyColumnName();
-          } else if (fkRecog != null && fkRecog.isForeignKeyColumn(classTableName, dbTableField.columnName)) {
-            dbTableField.isForeignKey = true;
-            dbTableField.referencesField = fkRecog.getReferencedColumn(classTableName, dbTableField.columnName);
-            String fkTable = fkRecog.getReferencedTable(classTableName, dbTableField.columnName);
-            dbTableField.referencesClass = Utility.toClassCase(fkTable);
+          List<TableMetaData.PrimaryKey> primaryKeys = table.getPrimaryKeys();
+          List<String> pkNames = new ArrayList<>();
+          for (TableMetaData.PrimaryKey primaryKey : primaryKeys) {
+            pkNames.add(primaryKey.getName());
+          }
+          String classTableName = dbTableClass.getTableName();
+
+          List<TableMetaData.ForeignKey> foreignKeys = table.getForeignKeys(catalog, schema, classTableName);
+          Map<String, TableMetaData.ForeignKey> fkNames = new HashMap<>();
+          foreignKeys.stream()
+                  .forEach((fk) -> {
+                    fkNames.put(fk.getName(), fk);
+                  });
+
+          List<TableMetaData.Column> columns = table.getColumns();
+          for (TableMetaData.Column col : columns) {
+            DBTableField dbTableField = new DBTableField();
+            dbTableClass.getFields().add(dbTableField);
+            dbTableField.columnName = col.getColumnName();
+            dbTableField.fieldName = Utility.toFieldCase(dbTableField.columnName);
+            dbTableField.referencedTable = col.getReferencedTable();
+            dbTableField.precision = col.getColumnSize();
+            dbTableField.comments = col.getRemarks();
+            dbTableField.isAutoIncrement = col.getIsAutoIncrement();
+            try {
+              dbTableField.sqlDataTypeInt = col.getDatatype();
+              dbTableField.sqlDataTypeName = col.getTypeName();
+              dbTableField.columnType = Utility.getQDTClassOfSQLType(db, dbTableField.sqlDataTypeName, dbTableField.sqlDataTypeInt, dbTableField.precision, opts.getTrimCharColumns());
+            } catch (UnknownJavaSQLTypeException ex) {
+              dbTableField.columnType = DBUnknownDatatype.class;
+              dbTableField.javaSQLDatatype = ex.getUnknownJavaSQLType();
+            }
+            if (pkNames.contains(dbTableField.columnName)
+                    || (opts.getPkRecog() != null && opts.getPkRecog().isPrimaryKeyColumn(classTableName, dbTableField.columnName))) {
+              dbTableField.isPrimaryKey = true;
+            }
+
+            TableMetaData.ForeignKey fk = fkNames.get(dbTableField.columnName);
+            ForeignKeyRecognisor fkRecog = opts.getFkRecog();
+            if (fk != null) {
+              dbTableField.isForeignKey = true;
+              dbTableField.referencesClass = Utility.toClassCase(fk.getPrimaryKeyTableName());
+              dbTableField.referencesField = fk.getPrimaryKeyColumnName();
+            } else if (fkRecog != null && fkRecog.isForeignKeyColumn(classTableName, dbTableField.columnName)) {
+              dbTableField.isForeignKey = true;
+              dbTableField.referencesField = fkRecog.getReferencedColumn(classTableName, dbTableField.columnName);
+              String fkTable = fkRecog.getReferencedTable(classTableName, dbTableField.columnName);
+              dbTableField.referencesClass = Utility.toClassCase(fkTable);
+            }
           }
         }
       }
