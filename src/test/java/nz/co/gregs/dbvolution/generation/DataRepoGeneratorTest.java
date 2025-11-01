@@ -293,7 +293,7 @@ public class DataRepoGeneratorTest {
 				+ "\n"
 				+ "}");
 
-		var generateSchema = DataRepoGenerator.generateClasses(database, "nz.co.gregs.dbvolution.generation2", new Options());
+		var generateSchema = DataRepoGenerator.generateClasses(database, "nz.co.gregs.dbvolution.generation2");
 		for (DBTableClass dbcl : generateSchema.getTables()) {
 			if (testClassNames.contains(dbcl.getClassName())) {
 				classesTested++;
@@ -354,8 +354,10 @@ public class DataRepoGeneratorTest {
 				+ "\n"
 				+ "}");
 		final Options options = Options.empty()
-				.setIncludeForeignKeyColumnName(true);
-		var generateSchema = DataRepoGenerator.generateClasses(database, "nz.co.gregs.dbvolution.generation", options);
+            .setDBDatabase(database)
+            .setPackageName("nz.co.gregs.dbvolution.generation")
+            .setIncludeForeignKeyColumnName(true);
+		var generateSchema = DataRepoGenerator.generateClasses(options);
 		for (DBTableClass dbcl : generateSchema.getTables()) {
 			if (testClassNames.contains(dbcl.getClassName())) {
 				classesTested++;
@@ -524,9 +526,11 @@ public class DataRepoGeneratorTest {
 				+ "}");
 
 		Options options = Options.empty()
+            .setDBDatabase(database)
+            .setPackageName("nz.co.gregs.dbvolution.generation")
 				.setPkRecog(new UIDBasedPKRecognisor())
 				.setFkRecog(new FKBasedFKRecognisor());
-		var generateSchema = DataRepoGenerator.generateClasses(database, "nz.co.gregs.dbvolution.generation", options);
+		var generateSchema = DataRepoGenerator.generateClasses(options);
 		if (generateSchema != null) {
 			for (DBTableClass dbcl : generateSchema.getTables()) {
 				if (dbcl != null && testClassNames.contains(dbcl.getClassName())) {

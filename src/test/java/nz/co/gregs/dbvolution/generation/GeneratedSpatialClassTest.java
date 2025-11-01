@@ -89,7 +89,7 @@ public class GeneratedSpatialClassTest extends AbstractTest {
 			ArrayList<Regex> testClasses = new ArrayList<Regex>(1);
 			testClasses.add(regex);
 			List<String> testClassNames = Arrays.asList(new String[]{"Spatialgen"});
-			var generateSchema = DataRepoGenerator.generateClasses(database, "nz.co.gregs.dbvolution.generation", new Options());
+			var generateSchema = DataRepoGenerator.generateClasses(database, "nz.co.gregs.dbvolution.generation");
 
 			for (DBTableClass dbcl : generateSchema.getTables()) {
 				if (testClassNames.contains(dbcl.getClassName())) {
