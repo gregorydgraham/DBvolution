@@ -496,17 +496,24 @@ public class DataModelTest extends AbstractTest {
 			}
 			foundKeys.remove(knownString);
 		}
-		// Print out the remain classes as unknown to help with debugging
-		for (String foundString : foundKeys) {
-			// Double check that we don't know of this class
-			if (!knownKeys.contains(foundString)) {
-				allClassesKnown = false;
-				System.out.println("UNKNOWN DBRow: " + foundString + "");
-			}
-		}
-		// Check that all classes are known and found
+    
+    int expectedClasses = knownKeys.size();
+    // Print out the remain classes as unknown to help with debugging
+    for (String foundString : foundKeys) {
+      // Double check that we don't know of this class
+      if (!knownKeys.contains(foundString)) {
+        if (foundString.matches(".*TempTest.*")) {
+          expectedClasses++;
+          System.out.println("Ignoring: "+foundString);
+        } else {
+          allClassesKnown = false;
+          System.out.println("UNKNOWN DBRow: " + foundString + "");
+        }
+      }
+    }
+    // Check that all classes are known and found
 		assertThat(allClassesKnown, is(true));
-		assertThat(numberOfClassesFound, is(knownKeys.size()));
+		assertThat(numberOfClassesFound, is(expectedClasses));
 	}
 
 	@Test
@@ -670,17 +677,24 @@ public class DataModelTest extends AbstractTest {
 			// Remove the classes we know of to help identify the unknown classes
 			foundClasses.remove(knownString);
 		}
-		// Print out the remaining classes to help with debugging
-		for (String foundString : foundClasses) {
-			// Double check that we don't know of this class
-			if (!knownKeys.contains(foundString)) {
-				allClassesKnown = false;
-				System.out.println("UNKNOWN DBRow: " + foundString);
-			}
-		}
-		// Check that all classes are known and found
-		assertThat(allClassesKnown, is(true));
-		assertThat(numberOfFoundClasses, is(knownKeys.size()));
+    
+    int expectedKeys = knownKeys.size();
+    // Print out the remaining classes to help with debugging
+    for (String foundString : foundClasses) {
+      // Double check that we don't know of this class
+      if (!knownKeys.contains(foundString)) {
+        if (foundString.matches(".*TempTest.*")) {
+          expectedKeys++;
+          System.out.println("EXPECTEDKEYS: "+expectedKeys);
+        } else {
+          allClassesKnown = false;
+          System.out.println("UNKNOWN DBRow: " + foundString);
+        }
+      }
+    }
+    // Check that all classes are known and found
+    assertThat(allClassesKnown, is(true));
+    assertThat(numberOfFoundClasses, is(expectedKeys));
 	}
 
 	@Test

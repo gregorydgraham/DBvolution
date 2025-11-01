@@ -26,14 +26,12 @@ import nz.co.gregs.dbvolution.datatypes.DBUnknownDatatype;
  */
 public class DBTableClass {
 
-	private static final long serialVersionUID = 1L;
-
 	private final Class<DBUnknownDatatype> unknownDatatype = DBUnknownDatatype.class;
 	private final String packageName;
 	private final String className;
 	private final String tableName;
 	private final String tableSchema;
-	private final List<DBTableField> fields = new ArrayList<DBTableField>();
+	private final List<DBTableField> fields = new ArrayList<>();
 	private String javaSource;
 	private Class<? extends DBRow> generatedClass;
 	private DBRow generatedInstance;
@@ -133,7 +131,7 @@ public class DBTableClass {
 		this.generatedClass = generatedClass;
 	}
 
-	Class<? extends DBRow> getGeneratedClass() {
+	public Class<? extends DBRow> getGeneratedClass() {
 		return this.generatedClass;
 	}
 
@@ -143,4 +141,11 @@ public class DBTableClass {
 	void setJavaSource(String javaSource) {
 		this.javaSource = javaSource;
 	}
+
+  public boolean matches(DBRow table) {
+    return this.getClassName().toLowerCase().equals(
+            table.getClass().getSimpleName().toLowerCase())
+            ||this.getTableName().toLowerCase().equals(
+                    table.getTableName().toLowerCase());
+  }
 }

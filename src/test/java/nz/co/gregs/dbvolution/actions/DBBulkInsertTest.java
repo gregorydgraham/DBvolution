@@ -57,7 +57,7 @@ public class DBBulkInsertTest extends AbstractTest {
 		database.createTableNoExceptions(new BulkInsertTestTable());
 		final BulkInsertTestTable row = new BulkInsertTestTable("Lada");
 		final BulkInsertTestTable row2 = new BulkInsertTestTable("Saab");
-
+    
 		DBActionList result = database.insert(row, row2);
 		assertThat(result.size(), is(2));
 

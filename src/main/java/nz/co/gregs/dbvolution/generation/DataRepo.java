@@ -35,6 +35,7 @@ import java.io.IOException;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 //import javax.tools.*;
 import nz.co.gregs.dbvolution.DBRow;
 import nz.co.gregs.dbvolution.databases.DBDatabase;
@@ -46,90 +47,106 @@ import nz.co.gregs.dbvolution.databases.DBDatabase;
 public class DataRepo {
 
 //	private final DBDatabase database;
-	private final List<DBTableClass> views = new ArrayList<DBTableClass>(0);
-	private final List<DBTableClass> tables = new ArrayList<DBTableClass>(0);
-	final List<DBRow> rows = new ArrayList<>(0);
-//	private final String packageName;
+  private final List<DBTableClass> views = new ArrayList<>(0);
+  private final List<DBTableClass> tables = new ArrayList<>(0);
+  final List<DBRow> rows = new ArrayList<>(0);
+  
+  private final Options options;
 
-	public static DataRepo getDataRepoFor(DBDatabase database, String packageName) throws SQLException, IOException {
-		var repo = DataRepoGenerator.generateClasses(database, packageName);
-		return repo;
-	}
-	private final Options options;
+  public static DataRepo getDataRepoFor(DBDatabase database, String packageName) throws SQLException, IOException {
+    var repo = DataRepoGenerator.generateClasses(database, packageName);
+    return repo;
+  }
+  
+  public static DataRepo getDataRepoFor(Options options) throws SQLException, IOException {
+    var repo = DataRepoGenerator.generateClasses(
+            options.getDBDatabase(), 
+            options.getPackageName(), 
+            options
+    );
+    return repo;
+  }
 
-	public DataRepo(Options options) {
-		this.options = options.copy();
-	}
+  public DataRepo(Options options) {
+    this.options = options.copy();
+  }
 
-	void addViews(List<DBTableClass> generatedViews) {
-		this.views.addAll(generatedViews);
-	}
+  void addViews(List<DBTableClass> generatedViews) {
+    this.views.addAll(generatedViews);
+  }
 
-	void addTables(List<DBTableClass> generatedTables) {
-		this.tables.addAll(generatedTables);
-	}
+  void addTables(List<DBTableClass> generatedTables) {
+    this.tables.addAll(generatedTables);
+  }
 
-	void addView(DBTableClass generatedView) {
-		this.views.add(generatedView);
-	}
+  void addView(DBTableClass generatedView) {
+    this.views.add(generatedView);
+  }
 
-	void addTable(DBTableClass generatedTable) {
-		this.tables.add(generatedTable);
-	}
+  void addTable(DBTableClass generatedTable) {
+    this.tables.add(generatedTable);
+  }
 
-	public List<DBTableClass> getTables() {
-		List<DBTableClass> knownEntities = new ArrayList<DBTableClass>(0);
-		knownEntities.addAll(tables);
-		return knownEntities;
-	}
+  public List<DBTableClass> getTables() {
+    List<DBTableClass> knownEntities = new ArrayList<>(0);
+    knownEntities.addAll(tables);
+    return knownEntities;
+  }
 
-	public List<DBTableClass> getViews() {
-		List<DBTableClass> knownEntities = new ArrayList<DBTableClass>(0);
-		knownEntities.addAll(views);
-		return knownEntities;
-	}
+  public List<DBTableClass> getViews() {
+    List<DBTableClass> knownEntities = new ArrayList<>(0);
+    knownEntities.addAll(views);
+    return knownEntities;
+  }
 
-	public List<DBTableClass> getAllKnownEntities() {
-		List<DBTableClass> knownEntities = new ArrayList<DBTableClass>(0);
-		knownEntities.addAll(views);
-		knownEntities.addAll(tables);
-		return knownEntities;
-	}
+  public List<DBTableClass> getAllKnownEntities() {
+    List<DBTableClass> knownEntities = new ArrayList<>(0);
+    knownEntities.addAll(views);
+    knownEntities.addAll(tables);
+    return knownEntities;
+  }
 
-	public DBDatabase getDatabase() {
-		return options.getDBDatabase();
-	}
+  public DBDatabase getDatabase() {
+    return options.getDBDatabase();
+  }
 
-	public List<DBRow> getRows() {
-		List<DBRow> knownEntities = new ArrayList<DBRow>(0);
-		knownEntities.addAll(rows);
-		return knownEntities;
-	}
+  public List<DBRow> getRows() {
+    List<DBRow> knownEntities = new ArrayList<>(0);
+    knownEntities.addAll(rows);
+    return knownEntities;
+  }
 
-	void compile(Options options) {
-		final List<DBTableClass> knownEntities = getAllKnownEntities();
-		DBRowSubclassGenerator.generate(knownEntities, options);
-		for (DBTableClass t : knownEntities) {
-			rows.add(t.getGeneratedInstance());
-		}
-	}
+  public void compile(Options options) {
+    final List<DBTableClass> knownEntities = getAllKnownEntities();
+    DBRowSubclassGenerator.generate(knownEntities, options);
+    for (DBTableClass t : knownEntities) {
+      rows.add(t.getGeneratedInstance());
+    }
+  }
 
-	public DBRow getInstanceForName(String className) {
-		for (DBRow row : rows) {
-			if (row.getClass().getSimpleName().equals(className)) {
-				return row;
-			} else if (row.getClass().getCanonicalName().equals(className)) {
-				return row;
-			}
-		}
-		return null;
-	}
+  public DBRow getInstanceForName(String className) {
+    for (DBRow row : rows) {
+      if (row.getClass().getSimpleName().equals(className)) {
+        return row;
+      } else if (row.getClass().getCanonicalName().equals(className)) {
+        return row;
+      }
+    }
+    return null;
+  }
 
-	/**
-	 * @return the packageName
-	 */
-	public String getPackageName() {
-		return options.getPackageName();
-	}
+  /**
+   * @return the packageName
+   */
+  public String getPackageName() {
+    return options.getPackageName();
+  }
+
+  public Optional<DBTableClass> getTable(DBRow table) {
+    return getTables()
+            .stream()
+            .filter((t) -> t.matches(table))
+            .findFirst();
+  }
 
 }

@@ -39,8 +39,9 @@ public class DBRowSubclassGenerator {
 		compileClasses.addAll(dbTableClasses);
 
 		List<DBTableClass> rejectedClasses = new ArrayList<>(0);
-
-		while (rejectedClasses.size() != compileClasses.size()) {
+    int loopCount = 0;
+		while (rejectedClasses.size() != compileClasses.size()&& loopCount<100) {
+      loopCount++;
 			rejectedClasses.clear();
 			for (DBTableClass compileThis : compileClasses) {
 				try {
