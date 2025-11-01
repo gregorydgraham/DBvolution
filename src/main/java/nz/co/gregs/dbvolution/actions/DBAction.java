@@ -192,7 +192,9 @@ public abstract class DBAction implements Serializable {
 	 * @throws SQLException Database operations may throw SQLExceptions
 	 */
   @Deprecated
-	public abstract DBActionList execute(DBDatabase db) throws SQLException;
+	public DBActionList execute(DBDatabase db) throws SQLException{
+    return execute2(db);
+  }
 
 	public boolean requiresRunOnIndividualDatabaseBeforeCluster() {
 		// this was FALSE to allow for efficiency
