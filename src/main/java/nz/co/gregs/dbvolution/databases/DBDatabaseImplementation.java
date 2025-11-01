@@ -671,7 +671,7 @@ public abstract class DBDatabaseImplementation implements DBDatabase, Serializab
 		DBActionList changes = new DBActionList();
 		for (DBRow row : rows) {
 			changes.addAll(getDBTable(row).delete(row));
-		}
+	}
 		return changes;
 	}
 
@@ -689,7 +689,7 @@ public abstract class DBDatabaseImplementation implements DBDatabase, Serializab
 		if (list.size() > 0) {
 			for (DBRow row : list) {
 				changes.addAll(getDBTable(row).delete(row));
-			}
+      }
 		}
 		return changes;
 	}
@@ -708,7 +708,7 @@ public abstract class DBDatabaseImplementation implements DBDatabase, Serializab
 	@Override
 	public final DBActionList update(DBRow... rows) throws SQLException {
 		return DBUpdate.update(this, rows);
-	}
+      }
 
 	/**
 	 *
@@ -724,7 +724,7 @@ public abstract class DBDatabaseImplementation implements DBDatabase, Serializab
 	@Override
 	public final DBActionList update(Collection<? extends DBRow> listOfRowsToUpdate) throws SQLException {
 		return DBUpdate.update(this, listOfRowsToUpdate);
-	}
+      }
 
 	/**
 	 *
@@ -1213,7 +1213,7 @@ public abstract class DBDatabaseImplementation implements DBDatabase, Serializab
 			case 0:
 				return getDBQuery();
 			case 1:
-				return getDBQuery(examples.toArray(new DBRow[]{})[0]);
+				return getDBQuery(examples.toArray(new DBRow[0])[0]);
 			default:
 				List<DBRow> list = new ArrayList<>(examples);
 				DBRow[] toArray = list.toArray(new DBRow[]{});
@@ -2316,7 +2316,7 @@ public abstract class DBDatabaseImplementation implements DBDatabase, Serializab
 
 	@Override
 	public DBActionList executeDBAction(DBAction action) throws SQLException, NoAvailableDatabaseException {
-		if (terminated) {
+ 		if (terminated) {
       throw new DatabaseShutdownInProgress();
     }
     preventAccidentalDDLDuringTransaction(action);
