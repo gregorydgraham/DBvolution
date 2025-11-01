@@ -30,9 +30,9 @@
  */
 package nz.co.gregs.dbvolution;
 
+import nz.co.gregs.dbvolution.actions.BrokenAction;
 import java.sql.SQLException;
 import java.util.Collection;
-import java.util.List;
 import java.util.concurrent.ThreadLocalRandom;
 import nz.co.gregs.dbvolution.actions.*;
 import nz.co.gregs.dbvolution.databases.DBDatabase;
@@ -41,7 +41,6 @@ import nz.co.gregs.dbvolution.databases.H2MemoryDB;
 import nz.co.gregs.dbvolution.databases.QueryIntention;
 import nz.co.gregs.dbvolution.databases.connections.DBConnection;
 import nz.co.gregs.dbvolution.databases.settingsbuilders.H2MemorySettingsBuilder;
-import nz.co.gregs.dbvolution.exceptions.DBSQLException;
 import nz.co.gregs.dbvolution.exceptions.NoAvailableDatabaseException;
 import nz.co.gregs.dbvolution.internal.query.StatementDetails;
 import nz.co.gregs.dbvolution.utility.Brake;
@@ -235,72 +234,6 @@ public class TestingDatabase extends H2MemoryDB {
     }
   }
 
-  private static class BrokenAction extends DBAction {
-
-    private static final long serialVersionUID = 1L;
-    private final DBAction delegate;
-
-    public BrokenAction(DBAction action) {
-      super(action.getRow(), action.getIntent());
-      this.delegate = action;
-    }
-
-    @Override
-    public DBActionList execute(DBDatabase db) throws SQLException, DBSQLException {
-      throw new SQLException("Deliberate Error During DBAction.execute()");
-    }
-
-    @Override
-    public QueryIntention getIntent() {
-      return delegate.getIntent();
-    }
-
-    @Override
-    public long getRowsAltered() {
-      return delegate.getRowsAltered();
-    }
-
-    @Override
-    public DBRow getRow() {
-      return delegate.getRow();
-    }
-
-    @Override
-    public List<String> getSQLStatements(DBDatabase db) {
-      return delegate.getSQLStatements(db);
-    }
-
-    @Override
-    public boolean requiresRunOnIndividualDatabaseBeforeCluster() {
-      return delegate.requiresRunOnIndividualDatabaseBeforeCluster();
-    }
-
-    @Override
-    public boolean runOnDatabaseDuringCluster(DBDatabase initialDatabase, DBDatabase next) {
-      return delegate.runOnDatabaseDuringCluster(initialDatabase, next);
-    }
-
-    @Override
-    public DBActionList execute2(DBDatabase db) throws SQLException {
-      throw new SQLException("Deliberate Error During DBAction.execute2()");
-    }
-
-    @Override
-    public long getExpectedAlteredRows() {
-      return delegate.getExpectedAlteredRows();
-    }
-
-    @Override
-    public void setExpectedAlteredRows(long expectedResult) {
-      delegate.setExpectedAlteredRows(expectedResult);
-    }
-
-    @Override
-    protected DBActionList getRevertDBActionList() {
-      return new DBActionList();
-    }
-    
-  }
 
   private static class IncorrectActionResultsDBStatement extends DBStatement {
 
