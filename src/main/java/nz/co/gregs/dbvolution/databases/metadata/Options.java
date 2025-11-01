@@ -5,7 +5,10 @@
  */
 package nz.co.gregs.dbvolution.databases.metadata;
 
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.stream.Collectors;
+import nz.co.gregs.dbvolution.DBRow;
 import nz.co.gregs.dbvolution.databases.DBDatabase;
 
 /*
@@ -27,6 +30,7 @@ public class Options {
   private String packageName;
   private String[] objectTypes;
   private boolean compileImmediately = true;
+  private ArrayList<DBRow> requiredTables = new ArrayList(0);
 
   public Options() {
   }
@@ -185,5 +189,28 @@ public class Options {
   public boolean isCompileImmediately() {
     return compileImmediately;
   }
+
+  public Options setRequiredTables(DBRow... tables) {
+    requiredTables.clear();
+    requiredTables.addAll(Arrays.asList(tables));
+    return this;
+  }
+
+  /**
+   * @return the requiredTables
+   */
+  public boolean requiresTable(String tableName) {
+    if(requiredNames.isEmpty()&&!requiredTables.isEmpty()){
+      requiredNames.addAll(
+              requiredTables.stream()
+              .map((t)->t.getTableName().toLowerCase())
+              .collect(Collectors.toList())
+      );
+    }
+    return requiredTables.isEmpty()
+            ||requiredNames.contains(tableName.toLowerCase());
+  }
+  
+  private final ArrayList<String> requiredNames = new ArrayList<>(0);
 
 }
