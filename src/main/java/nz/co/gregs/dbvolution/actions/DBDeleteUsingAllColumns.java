@@ -64,7 +64,7 @@ public class DBDeleteUsingAllColumns extends DBDelete {
 	public DBActionList execute(DBDatabase db) throws SQLException {
 		DBRow table = getRow();
 		final DBDeleteUsingAllColumns dbDeleteUsingAllColumns = new DBDeleteUsingAllColumns(table);
-		DBActionList actions = new DBActionList(dbDeleteUsingAllColumns);
+		DBActionList actions = DBActionList.of(dbDeleteUsingAllColumns);
 		List<DBRow> rowsToBeDeleted = db.get(table);
 		for (DBRow deletingRow : rowsToBeDeleted) {
 			dbDeleteUsingAllColumns.savedRows.add(DBRow.copyDBRow(deletingRow));
@@ -110,7 +110,7 @@ public class DBDeleteUsingAllColumns extends DBDelete {
 
 	@Override
 	protected DBActionList getActions() {//DBRow row) {
-		return new DBActionList(new DBDeleteUsingAllColumns(getRow()));
+		return DBActionList.of(new DBDeleteUsingAllColumns(getRow()));
 	}
 
 	/**
@@ -130,7 +130,7 @@ public class DBDeleteUsingAllColumns extends DBDelete {
 	 */
 	@Override
 	protected DBActionList getActions(DBDatabase db, DBRow row) throws SQLException {
-		return new DBActionList(new DBDeleteUsingAllColumns(db, row));
+		return DBActionList.of(new DBDeleteUsingAllColumns(db, row));
 	}
 
 }

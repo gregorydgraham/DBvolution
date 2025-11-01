@@ -145,7 +145,7 @@ public class DBReplace extends DBAction {
 		final DBDefinition defn = db.getDefinition();
 		DBRow table = originalRow;
 		final DBReplace newInsert = new DBReplace(table);
-		DBActionList actions = new DBActionList(newInsert);
+		DBActionList actions = DBActionList.of(newInsert);
 
 		try (DBStatement statement = db.getDBStatement()) {
 			for (String sql : getSQLStatements(db)) {

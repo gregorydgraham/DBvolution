@@ -65,7 +65,7 @@ public class DBDeleteByPrimaryKey extends DBDelete {
 	public DBActionList execute(DBDatabase db) throws SQLException {
 		DBRow table = getRow();
 		final DBDeleteByPrimaryKey newDeleteAction = new DBDeleteByPrimaryKey(table);
-		DBActionList actions = new DBActionList(newDeleteAction);
+		DBActionList actions = DBActionList.of(newDeleteAction);
 		DBRow example = DBRow.getPrimaryKeyExample(table);
 		List<DBRow> rowsToBeDeleted = db.get(example);
 		for (DBRow deletingRow : rowsToBeDeleted) {
@@ -113,7 +113,7 @@ public class DBDeleteByPrimaryKey extends DBDelete {
 
 	@Override
 	protected DBActionList getActions() {//DBRow row) {
-		return new DBActionList(new DBDeleteByPrimaryKey(getRow()));
+		return DBActionList.of(new DBDeleteByPrimaryKey(getRow()));
 	}
 
 	/**
@@ -133,6 +133,6 @@ public class DBDeleteByPrimaryKey extends DBDelete {
 	 */
 	@Override
 	protected DBActionList getActions(DBDatabase db, DBRow row) throws SQLException {
-		return new DBActionList(new DBDeleteByPrimaryKey(db, row));
+		return DBActionList.of(new DBDeleteByPrimaryKey(db, row));
 	}
 	}

@@ -50,7 +50,7 @@ public class DBUpdateSimpleTypes extends DBUpdate {
 	public DBActionList execute(DBDatabase db) throws SQLException {
 		DBRow table = originalRow;
     final DBUpdateSimpleTypes newUpdate = new DBUpdateSimpleTypes(table);
-		DBActionList actions = new DBActionList(newUpdate);
+		DBActionList actions = DBActionList.of(newUpdate);
 		try (DBStatement statement = db.getDBStatement()) {
 			for (String sql : getSQLStatements(db)) {
 				    newUpdate.addAlteredRows(statement.execute("Update row", QueryIntention.UPDATE_ROW, sql));

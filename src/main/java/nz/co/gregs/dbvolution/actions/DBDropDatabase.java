@@ -82,7 +82,7 @@ public class DBDropDatabase extends DBAction {
 	@Override
 	protected DBActionList prepareActionList(DBDatabase db) throws AccidentalBlankQueryException, SQLException, UnableToInstantiateDBRowSubclassException {
 		final DBDropDatabase newAction = new DBDropDatabase(databaseName);
-		DBActionList actions = new DBActionList(newAction);
+		DBActionList actions = DBActionList.of(newAction);
 		return actions;
 	}
 

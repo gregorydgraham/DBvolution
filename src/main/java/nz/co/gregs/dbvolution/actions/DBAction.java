@@ -191,6 +191,7 @@ public abstract class DBAction implements Serializable {
 	 * on the database
 	 * @throws SQLException Database operations may throw SQLExceptions
 	 */
+  @Deprecated
 	public abstract DBActionList execute(DBDatabase db) throws SQLException;
 
 	public boolean requiresRunOnIndividualDatabaseBeforeCluster() {
@@ -256,6 +257,7 @@ public abstract class DBAction implements Serializable {
 		DBActionList actions = prepareActionList(db);
 		prepareRollbackData(db, actions);
 		executeOnStatement(db,actions);
+    updateActionsAfterExecution(db,actions);
 		return actions;
 	}
 
@@ -265,6 +267,10 @@ public abstract class DBAction implements Serializable {
 
 	protected void prepareRollbackData(DBDatabase db, DBActionList actions) throws SQLException, DBRuntimeException {
 		throw new UnsupportedOperationException("Not supported yet.");
+	}
+
+	protected void updateActionsAfterExecution(DBDatabase db, DBActionList actions) throws SQLException, DBRuntimeException {
+		//throw new UnsupportedOperationException("Not supported yet.");
 	}
 
   public long getExpectedAlteredRows() {

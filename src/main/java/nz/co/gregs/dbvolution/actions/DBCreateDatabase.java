@@ -81,7 +81,7 @@ public class DBCreateDatabase extends DBAction {
 	@Override
 	protected DBActionList prepareActionList(DBDatabase db) throws AccidentalBlankQueryException, SQLException, UnableToInstantiateDBRowSubclassException {
 		final DBCreateDatabase newAction = new DBCreateDatabase(databaseName);
-		DBActionList actions = new DBActionList(newAction);
+		DBActionList actions = DBActionList.of(newAction);
 		return actions;
 	}
 

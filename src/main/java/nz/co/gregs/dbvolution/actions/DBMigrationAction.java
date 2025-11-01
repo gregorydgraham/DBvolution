@@ -145,7 +145,7 @@ public class DBMigrationAction<R extends DBRow> extends DBAction {
 
 	@Override
   public DBActionList execute(DBDatabase db) throws SQLException {
-    DBActionList actions = new DBActionList(new DBMigrationAction<>(sourceMigration, getRow(), extraExamples));
+    DBActionList actions = DBActionList.of(new DBMigrationAction<>(sourceMigration, getRow(), extraExamples));
 
     try (DBStatement statement = db.getDBStatement()) {
       for (String sql : getSQLStatements(db)) {

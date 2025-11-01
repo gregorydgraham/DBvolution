@@ -151,6 +151,14 @@ public interface DBDatabase extends Serializable, AutoCloseable {
 
 	public DBActionList executeDBAction(DBAction action) throws SQLException;
 
+	public default DBActionList executeDBActions(DBActionList actions) throws SQLException{
+    DBActionList result = new DBActionList(actions.size());
+    for (DBAction action : actions) {
+      result.addAll(this.executeDBAction(action));
+    }
+    return result;
+  }
+
 	public void handleErrorDuringExecutingSQL(DBDatabase suspectDatabase, Throwable sqlException, String sqlString);
 
 	public DBActionList deleteAllRowsFromTable(DBRow table) throws SQLException;

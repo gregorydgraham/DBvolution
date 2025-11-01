@@ -90,7 +90,7 @@ public class DBCreateForeignKeys extends DBAction {
 	@Override
 	protected DBActionList prepareActionList(DBDatabase db) throws AccidentalBlankQueryException, SQLException, UnableToInstantiateDBRowSubclassException {
 		final DBCreateForeignKeys newAction = new DBCreateForeignKeys(getRow());
-		DBActionList actions = new DBActionList(newAction);
+		DBActionList actions = DBActionList.of(newAction);
 		return actions;
 	}
 

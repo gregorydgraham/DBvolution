@@ -62,7 +62,7 @@ public class DBDeleteByExample extends DBDelete {
 	public DBActionList execute(DBDatabase db) throws SQLException {
 		DBRow table = getRow();
 		final DBDeleteByExample deleteAction = new DBDeleteByExample(table);
-		DBActionList actions = new DBActionList(deleteAction);
+		DBActionList actions = DBActionList.of(deleteAction);
 		List<DBRow> rowsToBeDeleted = db.get(table);
 		for (DBRow deletingRow : rowsToBeDeleted) {
 			deleteAction.savedRows.add(DBRow.copyDBRow(deletingRow));
@@ -106,7 +106,7 @@ public class DBDeleteByExample extends DBDelete {
 
 	@Override
 	protected DBActionList getActions() {//DBRow row) {
-		return new DBActionList(new DBDeleteByExample(getRow()));
+		return DBActionList.of(new DBDeleteByExample(getRow()));
 	}
 
 	/**
@@ -126,6 +126,6 @@ public class DBDeleteByExample extends DBDelete {
 	 */
 	@Override
 	protected DBActionList getActions(DBDatabase db, DBRow row) throws SQLException {
-		return new DBActionList(new DBDeleteByExample(db, row));
+		return DBActionList.of(new DBDeleteByExample(db, row));
 	}
 }

@@ -57,7 +57,7 @@ public class DBCreateIndexesOnAllFields extends DBAction {
 	public static DBActionList createIndexes(DBDatabase db, DBRow... rows) throws NoAvailableDatabaseException, SQLException {
 		DBActionList actions = new DBActionList();
 		for (DBRow row : rows) {
-			DBActionList updates = new DBActionList(new DBCreateIndexesOnAllFields(row));
+			DBActionList updates = DBActionList.of(new DBCreateIndexesOnAllFields(row));
 			for (DBAction act : updates) {
 				actions.addAll(db.executeDBAction(act));
 			}
@@ -100,7 +100,7 @@ public class DBCreateIndexesOnAllFields extends DBAction {
 	@Override
 	protected DBActionList prepareActionList(DBDatabase db) throws AccidentalBlankQueryException, SQLException, UnableToInstantiateDBRowSubclassException {
 		final DBCreateIndexesOnAllFields newAction = new DBCreateIndexesOnAllFields(getRow());
-		DBActionList actions = new DBActionList(newAction);
+		DBActionList actions = DBActionList.of(newAction);
 		return actions;
 	}
 

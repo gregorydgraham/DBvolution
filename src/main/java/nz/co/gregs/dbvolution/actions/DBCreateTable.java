@@ -99,7 +99,7 @@ public class DBCreateTable extends DBAction {
 	protected DBActionList prepareActionList(DBDatabase db) throws AccidentalBlankQueryException, SQLException, UnableToInstantiateDBRowSubclassException {
 		DBRow table = getRow();
 		final DBCreateTable newAction = new DBCreateTable(table, includeForeignKeyClauses);
-		DBActionList actions = new DBActionList(newAction);
+		DBActionList actions = DBActionList.of(newAction);
 		return actions;
 	}
 

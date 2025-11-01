@@ -98,7 +98,7 @@ public class DBAlterTableAddColumnIfNeeded extends DBAction {
 	@Override
 	protected DBActionList prepareActionList(DBDatabase db) throws AccidentalBlankQueryException, SQLException, UnableToInstantiateDBRowSubclassException {
 		final DBAlterTableAddColumnIfNeeded newAction = new DBAlterTableAddColumnIfNeeded(existingTable, columnPropertyWrapper);
-		DBActionList actions = new DBActionList(newAction);
+		DBActionList actions = DBActionList.of(newAction);
 		return actions;
 	}
 

@@ -145,7 +145,7 @@ public class DBInsert extends DBAction {
 		final DBDefinition defn = db.getDefinition();
 		DBRow table = originalRow;
 		final DBInsert newInsert = new DBInsert(table);
-		DBActionList actions = new DBActionList(newInsert);
+		DBActionList actions = DBActionList.of(newInsert);
 
 		try (DBStatement statement = db.getDBStatement()) {
 			for (String sql : getSQLStatements(db)) {

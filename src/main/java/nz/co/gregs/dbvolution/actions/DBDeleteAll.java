@@ -73,7 +73,7 @@ public class DBDeleteAll extends DBDelete {
 	protected DBActionList prepareActionList(DBDatabase db) throws SQLException, DBRuntimeException {
 		DBRow table = getRow();
 		final DBDeleteAll deleteAction = new DBDeleteAll(table);
-		DBActionList actions = new DBActionList(deleteAction);
+		DBActionList actions = DBActionList.of(deleteAction);
 		return actions;
 	}
 
@@ -107,7 +107,7 @@ public class DBDeleteAll extends DBDelete {
 
 	@Override
 	protected DBActionList getActions() {
-		return new DBActionList(new DBDeleteAll(getRow()));
+		return DBActionList.of(new DBDeleteAll(getRow()));
 	}
 
 	/**
@@ -125,6 +125,6 @@ public class DBDeleteAll extends DBDelete {
 	 */
 	@Override
 	protected DBActionList getActions(DBDatabase db, DBRow row) throws SQLException {
-		return new DBActionList(new DBDeleteAll(db, row));
+		return DBActionList.of(new DBDeleteAll(db, row));
 	}
 }

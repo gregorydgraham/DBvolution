@@ -50,87 +50,88 @@ import nz.co.gregs.dbvolution.transactions.DBTransaction;
  */
 public class DBActionList extends ArrayList<DBAction> {
 
-	private static final long serialVersionUID = 1L;
+  private static final long serialVersionUID = 1L;
 
-	/**
-	 * Creates a new DBActionList containing the DBactions provided in the order
-	 * specified.
-	 *
-	 * @param actions the list of actions to include in this DBActionList
-	 */
-	public DBActionList(DBAction... actions) {
-		super(0);
-		addAll(Arrays.asList(actions));
-	}
-  
-	/**
-	 * Creates a new DBActionList containing the DBactions provided in the order
-	 * specified.
-	 *
-	 * @param actions the list of actions to include in this DBActionList
-	 */
-	public DBActionList(Collection<DBAction> actions) {
-		super(0);
-		addAll(actions);
-	}
+  /**
+   * Creates a new empty DBActionList.
+   *
+   */
+  public DBActionList() {
+    super(0);
+  }
 
-	/**
-	 * Returns the SQL that would be executed on the database provided.
-	 *
-	 * @param db the target database.
-	 * @return a List of SQL statements appropriate to the actions of this
-	 * DBActionList and the database.
-	 */
-	public synchronized List<String> getSQL(DBDatabase db) {
-		List<String> sqlList = new ArrayList<>();
-		for (DBAction act : this) {
-			sqlList.addAll(act.getSQLStatements(db));
-		}
-		return sqlList;
-	}
+  /**
+   * Creates a new empty DBActionList.
+   *
+   * @param size the expected size of the action list.
+   */
+  public DBActionList(int size) {
+    super(size);
+  }
 
-	/**
-	 * Executes every action in this DBActionList on the database provided.
-	 *
-	 * @param database the target database.
-	 * @return a new DBActionList containing the DBActions after execution.
-	 * @throws SQLException Database actions may throw SQLException
-	 */
-	public synchronized DBActionList execute(DBDatabase database) throws SQLException {
-		DBActionList executed = new DBActionList();
-		for (DBAction action : this) {
-			executed.addAll(database.executeDBAction(action));
-		}
-		return executed;
-	}
+  /**
+   * Returns the SQL that would be executed on the database provided.
+   *
+   * @param db the target database.
+   * @return a List of SQL statements appropriate to the actions of this
+   * DBActionList and the database.
+   */
+  public synchronized List<String> getSQL(DBDatabase db) {
+    List<String> sqlList = new ArrayList<>();
+    for (DBAction act : this) {
+      sqlList.addAll(act.getSQLStatements(db));
+    }
+    return sqlList;
+  }
 
-	/**
-	 * Provides a list of {@link DBAction DBActions} intended to revert changed
-	 * rows to their previous state.
-	 *
-	 * <p>
-	 * Creating revert scripts is particularly tricky in databases so be sure to
-	 * check that the revert script does what you intend.
-	 *
-	 * <p>
-	 * The actions returned will be in the correct order to, for instance,
-	 * re-insert a deleted row before updating it.
-	 *
-	 * <p>
-	 * Despite the warning above this method works well for handling simple
-	 * inserts and deletes, you should watch out for complex updates that may
-	 * change a different selection from the original.
-	 *
-	 *
-	 * @return A DBactionList of DBActions required to revert the actions within
-	 * this DBActionList.
-	 */
-	public DBActionList getRevertActionList() {
-		DBAction[] toArray = toArray(new DBAction[]{});
-		DBActionList reverts = new DBActionList();
-		for (int i = toArray.length - 1; i >= 0; i--) {
-			reverts.addAll(toArray[i].getRevertDBActionList());
-		}
-		return reverts;
-	}
+  /**
+   * Executes every action in this DBActionList on the database provided.
+   *
+   * @param database the target database.
+   * @return a new DBActionList containing the DBActions after execution.
+   * @throws SQLException Database actions may throw SQLException
+   */
+  public synchronized DBActionList execute(DBDatabase database) throws SQLException {
+    return database.executeDBActions(this);
+  }
+
+  /**
+   * Provides a list of {@link DBAction DBActions} intended to revert changed
+   * rows to their previous state.
+   *
+   * <p>
+   * Creating revert scripts is particularly tricky in databases so be sure to
+   * check that the revert script does what you intend.
+   *
+   * <p>
+   * The actions returned will be in the correct order to, for instance,
+   * re-insert a deleted row before updating it.
+   *
+   * <p>
+   * Despite the warning above this method works well for handling simple
+   * inserts and deletes, you should watch out for complex updates that may
+   * change a different selection from the original.
+   *
+   *
+   * @return A DBactionList of DBActions required to revert the actions within
+   * this DBActionList.
+   */
+  public DBActionList getRevertActionList() {
+    DBAction[] toArray = toArray(new DBAction[]{});
+    DBActionList reverts = new DBActionList();
+    for (int i = toArray.length - 1; i >= 0; i--) {
+      reverts.addAll(toArray[i].getRevertDBActionList());
+    }
+    return reverts;
+  }
+
+  public static DBActionList of(DBAction... actions) {
+    return of(Arrays.asList(actions));
+  }
+
+  public static DBActionList of(Collection<DBAction> actions) {
+    DBActionList list = new DBActionList(actions.size());
+    list.addAll(actions);
+    return list;
+  }
 }
