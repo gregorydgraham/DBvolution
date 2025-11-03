@@ -77,25 +77,6 @@ public class DBAlterTableAddColumnIfNeeded extends DBAction {
 	}
 
 	@Override
-	public DBActionList execute(DBDatabase db) throws SQLException {
-		return execute2(db);
-	}
-
-//	@Override
-//	public DBActionList execute2(DBDatabase db) throws SQLException {
-//		DBActionList actions = prepareActionList(db);
-//		prepareRollbackData(db, actions);
-//		try {
-//			executeOnStatement(db);
-//		} catch (Exception exc) {
-//			if (!db.getDefinition().isDuplicateColumnException(exc)) {
-//				throw exc;
-//			}
-//		}
-//		return actions;
-//	}
-
-	@Override
 	protected DBActionList prepareActionList(DBDatabase db) throws AccidentalBlankQueryException, SQLException, UnableToInstantiateDBRowSubclassException {
 		final DBAlterTableAddColumnIfNeeded newAction = new DBAlterTableAddColumnIfNeeded(existingTable, columnPropertyWrapper);
 		DBActionList actions = DBActionList.of(newAction);
