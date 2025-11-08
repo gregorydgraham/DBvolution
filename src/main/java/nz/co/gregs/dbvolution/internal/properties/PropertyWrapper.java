@@ -87,9 +87,6 @@ public class PropertyWrapper<ROW extends RowDefinition, BASETYPE, QDT extends Qu
 	 * For example: <br>
 	 * {@code "DBInteger nz.co.mycompany.myproject.Vehicle.fkSpecOptionColour<fk_17> = [15241672]"}
 	 *
-	 * <p style="color: #F90;">Support DBvolution at
-	 * <a href="http://patreon.com/dbvolution" target=new>Patreon</a></p>
-	 *
 	 * @return a String representing this PropertyWrapper
 	 */
 	@Override
@@ -825,18 +822,20 @@ public class PropertyWrapper<ROW extends RowDefinition, BASETYPE, QDT extends Qu
 		final PropertyWrapperDefinition<?, BASETYPE> propertyWrapperDefinition = this.getPropertyWrapperDefinition();
 		QueryableDatatype<BASETYPE> freshQDT = propertyWrapperDefinition.getQueryableDatatype(freshRow);
 		QueryableDatatype<BASETYPE> staleQDT = propertyWrapperDefinition.getQueryableDatatype(staleRow);
-		if (freshQDT.getValue() != staleQDT.getValue()) {
-			new InternalQueryableDatatypeProxy<>(staleQDT).setValueFromDatabase(freshQDT.getValue());
-		}
+    freshQDT.copyTo(staleQDT);
 	}
 
 	public boolean isAutomaticValueField() {
-		if (isAutomaticValueField == null) {
-			final QDT qdt = this.getQueryableDatatype();
-			isAutomaticValueField = qdt.hasDefaultInsertValue() || qdt.hasDefaultUpdateValue();
-		}
-		return isAutomaticValueField;
-	}
+    if (isAutomaticValueField == null) {
+      if (this.isAutoIncrement()) {
+        isAutomaticValueField = true;
+      } else {
+        final QDT qdt = this.getQueryableDatatype();
+        isAutomaticValueField = qdt.hasDefaultInsertValue() || qdt.hasDefaultUpdateValue();
+      }
+    }
+    return isAutomaticValueField;
+  }
 
   void setIsPartOfMultipartPK(boolean hasMultipartPK) {
     isPartOfMultipartPK = hasMultipartPK;
