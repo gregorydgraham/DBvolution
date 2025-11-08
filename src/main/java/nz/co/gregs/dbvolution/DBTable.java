@@ -219,7 +219,7 @@ public class DBTable<E extends DBRow> {
 	 * @throws java.sql.SQLException java.sql.SQLException
 	 *
 	 */
-	public E getFirstRow() throws SQLException, AccidentalCartesianJoinException, AccidentalBlankQueryException {
+	public E getFirstRow() throws SQLException, UnexpectedNumberOfRowsException, AccidentalCartesianJoinException, AccidentalBlankQueryException {
 		List<E> allRows = getAllRows();
     if (allRows.size()<1){
       throw new UnexpectedNumberOfRowsException(allRows.size());
