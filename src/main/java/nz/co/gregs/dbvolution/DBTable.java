@@ -221,6 +221,9 @@ public class DBTable<E extends DBRow> {
 	 */
 	public E getFirstRow() throws SQLException, AccidentalCartesianJoinException, AccidentalBlankQueryException {
 		List<E> allRows = getAllRows();
+    if (allRows.size()<1){
+      throw new UnexpectedNumberOfRowsException(allRows.size());
+    }
 		return allRows.get(0);
 	}
 
