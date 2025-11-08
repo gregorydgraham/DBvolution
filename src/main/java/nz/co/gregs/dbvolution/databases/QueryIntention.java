@@ -112,7 +112,9 @@ public enum QueryIntention {
 	}
   
   boolean isDML(){
-    return isOneOf(UPDATE_ROW,UPDATE_ROW_WITH_LARGE_OBJECT,DELETE_ALL_ROWS, DELETE_BY_EXAMPLE,DELETE_ROW, INSERT_QUERY, INSERT_ROW,INSERT_ROW_WITH_LARGE_OBJECT);
+    return !isDDL();
+    // theoretically there are statements that are neither DML nor DDL but I don't think it matters ... yet...
+    //isOneOf(UPDATE_ROW,UPDATE_ROW_WITH_LARGE_OBJECT,DELETE_ALL_ROWS, DELETE_BY_EXAMPLE,DELETE_ROW, INSERT_QUERY, INSERT_ROW, BULK_INSERT,INSERT_ROW_WITH_LARGE_OBJECT);
   }
 	
 	@Override
