@@ -149,7 +149,7 @@ public class DBInsert extends DBAction {
 
 		try (DBStatement statement = db.getDBStatement()) {
 			for (String sql : getSQLStatements(db)) {
-				StatementDetails statementDetails = new StatementDetails("INSERT ROW", QueryIntention.INSERT_ROW, sql, statement, db.getTimeout());
+				StatementDetails statementDetails = new StatementDetails("INSERT ROW", QueryIntention.INSERT_ROW, sql, statement, db.getTimeout(), table);
 				if (defn.supportsGeneratedKeys()) {
 					try {
 						final List<QueryableDatatype<?>> primaryKeys = table.getPrimaryKeys();
@@ -251,7 +251,7 @@ public class DBInsert extends DBAction {
 		if (primaryKeyWrappers.size() > 0) {
 			if (defn.supportsRetrievingLastInsertedRowViaSQL()) {
 				String retrieveSQL = defn.getRetrieveLastInsertedRowSQL();
-				var dets = new StatementDetails("RETRIEVE LAST INSERT", QueryIntention.RETRIEVE_LAST_INSERT, retrieveSQL, statement, db.getTimeout());
+				var dets = new StatementDetails("RETRIEVE LAST INSERT", QueryIntention.RETRIEVE_LAST_INSERT, retrieveSQL, statement, db.getTimeout(), table);
 				try (ResultSet rs = statement.executeQuery(dets)) {
 					if (rs != null) {
 						for (var primaryKeyWrapper : primaryKeyWrappers) {
