@@ -1249,6 +1249,7 @@ public interface DBDatabase extends Serializable, AutoCloseable {
 		REQUERY(),
 		SKIPQUERY(),
 		EMULATE_RECURSIVE_QUERY(),
+    REBUILD_TABLE(),
 		NOT_HANDLED;
 
 		ResponseToException() {
