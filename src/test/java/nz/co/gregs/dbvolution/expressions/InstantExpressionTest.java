@@ -94,9 +94,7 @@ public class InstantExpressionTest extends AbstractTest {
 
 		Instant systemInstant = database.getCurrentInstant();
 
-//		System.out.println("SYSTEMINSTANT: " + systemInstant);
-		final Instant now = Instant.now();
-		final Instant buffered = now.minus(10, ChronoUnit.MINUTES);
+		final Instant buffered = Instant.now().minus(10, ChronoUnit.MINUTES);
 
 		assertThat(systemInstant, is(greaterThan(buffered)));
 
@@ -1323,7 +1321,7 @@ public class InstantExpressionTest extends AbstractTest {
 
 		assertThat(allRows.size(), is(23));
 
-		List<InstantExpression> dates = new ArrayList<InstantExpression>();
+		List<InstantExpression> dates = new ArrayList<>();
 		dates.add(InstantExpression.value(march23rd2013Instant));
 		dates.add(InstantExpression.value(april2nd2011Instant));
 
