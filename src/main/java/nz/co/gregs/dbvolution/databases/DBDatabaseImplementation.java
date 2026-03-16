@@ -2097,11 +2097,17 @@ public abstract class DBDatabaseImplementation implements DBDatabase, Serializab
 	 */
 	@Override
 	public ResponseToException addFeatureToFixException(SQLException exp, QueryIntention intent, StatementDetails details) throws SQLException {
-    if (DUPLICATE_COLUMN_NAME.matchesWithinString(exp.getMessage())){
+    final String message = exp.getMessage();
+    if (DUPLICATE_COLUMN_NAME.matchesWithinString(message)){
       return SKIPQUERY;
     }
-    if ( intent.isOneOf(CHECK_TABLE_EXISTS, DELETE_ALL_ROWS) && DOESNT_EXIST.matchesWithinString(exp.getMessage())){
+    boolean doesntExist = DOESNT_EXIST.matchesWithinString(message);
+    if ( intent.isOneOf(CHECK_TABLE_EXISTS, DELETE_ALL_ROWS) && doesntExist){
       return SKIPQUERY;
+    }
+    if(intent.equals(DELETE_ALL_ROWS) && doesntExist){
+      rebuildTable(exp,intent,details);
+      return REQUERY;
     }
     throw exp;
   }
@@ -2397,7 +2403,7 @@ public abstract class DBDatabaseImplementation implements DBDatabase, Serializab
 		boolean tableExists;
 		String testQuery = getDefinition().getTableExistsSQL(table);
 		try (DBStatement dbStatement = getDBStatement()) {
-			var dets = new StatementDetails("CHECK FOR TABLE " + table.getTableName(), QueryIntention.CHECK_TABLE_EXISTS, testQuery, dbStatement, timeout);
+			var dets = new StatementDetails("CHECK FOR TABLE " + table.getTableName(), QueryIntention.CHECK_TABLE_EXISTS, testQuery, dbStatement, timeout, table);
 			try (ResultSet results = dbStatement.executeQuery(dets)) {
         tableExists = (results != null);
       }
@@ -2664,6 +2670,18 @@ public abstract class DBDatabaseImplementation implements DBDatabase, Serializab
 		return getURLInterpreter().generatesURLForDatabase();
 
 	}
+
+  private void rebuildTable(SQLException exp, QueryIntention intent, StatementDetails details) {
+    for (DBRow table : details.getTablesInvolved()) {
+      try {
+        this.createTable(table);
+      } catch (SQLException ex) {
+        LOG.warn("ATTEMPTED BUT UNABLE TO REBUILD TABLE DURING DELETE ALL: "+table.getTableName(), ex);
+      } catch (AutoCommitActionDuringTransactionException ex) {
+        LOG.warn("ATTEMPTED BUT UNABLE TO REBUILD TABLE DURING DELETE ALL: "+table.getTableName(), ex);
+      }
+    }
+  }
 
 
 	private static class StopDatabase extends Thread {
