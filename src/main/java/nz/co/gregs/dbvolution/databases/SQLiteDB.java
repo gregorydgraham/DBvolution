@@ -174,10 +174,9 @@ public class SQLiteDB extends DBDatabaseImplementation {
 		String message = exp.getMessage();
 		if (intent.is(QueryIntention.CREATE_TABLE) && TABLE_ALREADY_EXISTS.matchesWithinString(message)) {
 			return ResponseToException.SKIPQUERY;
-		} else if (intent.is(QueryIntention.CHECK_TABLE_EXISTS)) {
-			if (TABLE_DOESNT_EXIST_REGEX.matchesWithinString(message)) {
+		}
+    if (intent.is(QueryIntention.CHECK_TABLE_EXISTS) && TABLE_DOESNT_EXIST_REGEX.matchesWithinString(message)) {
 				return ResponseToException.SKIPQUERY;
-			}
 		}
 		return super.addFeatureToFixException(exp, intent, details);
 	}
