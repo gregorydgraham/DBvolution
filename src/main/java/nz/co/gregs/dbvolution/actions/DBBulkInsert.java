@@ -62,25 +62,36 @@ public class DBBulkInsert extends DBAction {
 		rows.add(row);
 	}
 
-	public synchronized DBActionList insert(DBDatabase database) throws SQLException {
+	public DBActionList insert(DBDatabase database) throws SQLException {
 		return save(database);
 	}
 
-	public DBActionList save(DBDatabase database) throws SQLException {
-		DBActionList changes = new DBActionList();
+	public synchronized DBActionList save(DBDatabase database) throws SQLException {
 		if (database.getDefinition().supportsBulkInserts()) {
 			return database.executeDBAction(this);
 		} else {
-			for (DBRow rowToInsert : rows) {
-				changes.addAll(database.insert(rowToInsert));
-			}
-		}
-		return changes;
+      return insertAsSingleRows(database);
+    }
 	}
+
+  protected DBActionList insertAsSingleRows(DBDatabase database) throws SQLException {
+    DBActionList changes = new DBActionList(0);
+    for (DBRow rowToInsert : rows) {
+      final DBActionList insert = database.insert(rowToInsert);
+      this.addAlteredRows(insert.getRowsAlteredCount());
+    }
+    changes.add(this);
+    return changes;
+  }
 
 	@Override
 	protected DBActionList getRevertDBActionList() {
-		throw new UnsupportedOperationException("Not supported yet.");
+    DBActionList reverts = new DBActionList(1);
+    for (DBRow current : rows) {
+      DBDeleteByExample dbDeleteByExample = new DBDeleteByExample(current);
+      reverts.add(dbDeleteByExample);
+    }
+    return reverts;
 	}
 
 	@Override
@@ -158,7 +169,6 @@ public class DBBulkInsert extends DBAction {
 
 	@Override
 	public DBActionList execute(DBDatabase db) throws SQLException {
-		DBActionList actions = new DBActionList();
 		boolean allRowsCanBeBulkInserted = true;
 		for (DBRow current : rows) {
 			allRowsCanBeBulkInserted = allRowsCanBeBulkInserted && canBeBulkInserted(current);
@@ -169,15 +179,10 @@ public class DBBulkInsert extends DBAction {
 					     addAlteredRows(statement.execute("BULK INSERT", QueryIntention.BULK_INSERT, sql));
 				}
 			}
-			for (DBRow current : rows) {
-				actions.add(new DBInsert(current));
-			}
 		} else {
-			for (DBRow current : rows) {
-				actions.addAll(new DBInsert(current).execute(db));
-			}
+      insertAsSingleRows(db);
 		}
-		return actions;
+		return DBActionList.of(this);
 	}
 
 	/* In this method we need to generate the SQL and execute it */
@@ -205,7 +210,7 @@ public class DBBulkInsert extends DBAction {
     return strs;
 	}
 
-	public void addAll(DBRow[] listOfRowsToInsert) {
+	public void addAll(DBRow... listOfRowsToInsert) {
 		rows.addAll(Arrays.asList(listOfRowsToInsert));
 	}
 
