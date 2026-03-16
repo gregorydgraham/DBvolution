@@ -195,7 +195,7 @@ public class RecursiveQueryDetails<T extends DBRow> extends QueryDetails {
 			String descendingQuery = getRecursiveSQL(database, recursiveDetails, recursiveDetails.getKeyToFollow(), direction);
 			query.setTimeoutInMilliseconds(recursiveDetails.getTimeoutInMilliseconds());
 			final QueryDetails queryDetails = query.getQueryDetails();
-			final StatementDetails statementDetails = new StatementDetails(getLabel(), QueryIntention.RECURSIVE_QUERY, descendingQuery, dbStatement,database.getTimeout());
+			final StatementDetails statementDetails = new StatementDetails(getLabel(), QueryIntention.RECURSIVE_QUERY, descendingQuery, dbStatement, database.getTimeout(), recursiveDetails.getAllQueryTables().toArray(new DBRow[0]));
 			statementDetails.setIgnoreExceptions(this.isQuietExceptions());
 			try (ResultSet resultSet = queryDetails.getResultSetForSQL(dbStatement, statementDetails, descendingQuery)) {
 				if (resultSet != null) {
