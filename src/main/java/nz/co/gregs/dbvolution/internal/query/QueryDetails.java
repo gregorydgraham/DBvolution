@@ -385,7 +385,7 @@ public class QueryDetails implements DBQueryable, Serializable {
 			final List<String> sqlForCount = getSQLForCountInternal(this, options);
 			for (String sql : sqlForCount) {
 				printSQLIfRequired(sql);
-				var dets = new StatementDetails(getLabel(), QueryIntention.SIMPLE_SELECT_QUERY, sql, dbStatement, queryDatabase.getTimeout());
+				var dets = new StatementDetails(getLabel(), QueryIntention.SIMPLE_SELECT_QUERY, sql, dbStatement, queryDatabase.getTimeout(), allQueryTables.toArray(new DBRow[0]));
 				try (ResultSet resultSet = dbStatement.executeQuery(dets)) {
 					if (resultSet != null) {
 						if (resultSet.next()) {
@@ -1257,7 +1257,7 @@ public class QueryDetails implements DBQueryable, Serializable {
 			final DBDatabase queryDatabase = options.getQueryDatabase();
 			try (DBStatement dbStatement = queryDatabase.getDBStatement()) {
 				printSQLIfRequired(sql);
-				final StatementDetails statementDetails = new StatementDetails(getLabel(), QueryIntention.SIMPLE_SELECT_QUERY, sql, dbStatement, queryDatabase.getTimeout());
+				final StatementDetails statementDetails = new StatementDetails(getLabel(), QueryIntention.SIMPLE_SELECT_QUERY, sql, dbStatement, queryDatabase.getTimeout(), allQueryTables.toArray(new DBRow[0]));
 				statementDetails.setIgnoreExceptions(this.isQuietExceptions());
 				try (ResultSet resultSet = getResultSetForSQL(dbStatement, statementDetails, sql)) {
 					if (resultSet != null) {
