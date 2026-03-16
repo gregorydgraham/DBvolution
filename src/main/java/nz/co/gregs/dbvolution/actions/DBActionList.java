@@ -51,6 +51,7 @@ import nz.co.gregs.dbvolution.transactions.DBTransaction;
 public class DBActionList extends ArrayList<DBAction> {
 
   private static final long serialVersionUID = 1L;
+  private long rowsAltered = 0;
 
   /**
    * Creates a new empty DBActionList.
@@ -133,5 +134,14 @@ public class DBActionList extends ArrayList<DBAction> {
     DBActionList list = new DBActionList(actions.size());
     list.addAll(actions);
     return list;
+  }
+
+  public long getRowsAlteredCount() {
+    if (rowsAltered == 0) {
+      for (DBAction act : this) {
+        rowsAltered += act.getRowsAltered();
+      }
+    }
+    return rowsAltered;
   }
 }
