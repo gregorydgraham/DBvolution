@@ -46,8 +46,10 @@ public class DBBulkInsertTest extends AbstractTest {
 		CarCompany example = new CarCompany();
 		example.uidCarCompany.permittedValues(124, 125);
 		final List<CarCompany> allRows = database.getDBTable(example).getAllRows();
-//		database.print(allRows);
-		assertThat(result.size(), is(2));
+    
+		assertThat(result.size(), is(1));
+    assertThat(result.get(0), instanceOf(DBBulkInsert.class));
+    assertThat(result.getRowsAlteredCount(), is(2l));
 	}
 	
 	@Test
@@ -59,7 +61,10 @@ public class DBBulkInsertTest extends AbstractTest {
 		final BulkInsertTestTable row2 = new BulkInsertTestTable("Saab");
     
 		DBActionList result = database.insert(row, row2);
-		assertThat(result.size(), is(2));
+    
+		assertThat(result.size(), is(1));
+    assertThat(result.get(0), instanceOf(DBBulkInsert.class));
+    assertThat(result.getRowsAlteredCount(), is(2l));
 
 		assertThat(row.pk.isDefined(), is(true));
 		assertThat(row.pk.getValue(), is(1l));
