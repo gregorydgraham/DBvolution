@@ -32,6 +32,8 @@ package nz.co.gregs.dbvolution.internal.query;
 
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.util.Arrays;
+import nz.co.gregs.dbvolution.DBRow;
 import nz.co.gregs.dbvolution.databases.DBStatement;
 import nz.co.gregs.dbvolution.databases.QueryIntention;
 import nz.co.gregs.dbvolution.utility.StringCheck;
@@ -53,18 +55,18 @@ public class StatementDetails {
 	private String namedPKColumn;
 	private DBStatement activeStatement;
 	private Timeout timeout;
-//  private int attemptCount = 0;
+  private DBRow[] tablesInvolved;
   private long rowCount;
 
-	public StatementDetails(String label, QueryIntention intent, String sql, DBStatement statement, Timeout timeout) {
-		this(label, intent, sql, null, false, false, "", statement, timeout);
+	public StatementDetails(String label, QueryIntention intent, String sql, DBStatement statement, Timeout timeout, DBRow... rows) {
+		this(label, intent, sql, null, false, false, "", statement, timeout, rows);
 	}
 
 	public StatementDetails copy() {
-		return new StatementDetails(label, intention, sql, exception, withGeneratedKeys, ignoreExceptions, namedPKColumn, activeStatement, timeout);
+		return new StatementDetails(label, intention, sql, exception, withGeneratedKeys, ignoreExceptions, namedPKColumn, activeStatement, timeout, tablesInvolved);
 	}
 
-	public StatementDetails(String label, QueryIntention intent, String sql, SQLException except, boolean generatedKeys, boolean ignoreExceptions, String pkColumn, DBStatement statement, Timeout timeout) {
+	public StatementDetails(String label, QueryIntention intent, String sql, SQLException except, boolean generatedKeys, boolean ignoreExceptions, String pkColumn, DBStatement statement, Timeout timeout, DBRow... rows) {
 		this.label = label;
 		this.sql = sql;
 		this.intention = intent;
@@ -74,6 +76,7 @@ public class StatementDetails {
 		this.namedPKColumn = pkColumn;
 		this.activeStatement = statement;
     this.timeout = timeout;
+    this.tablesInvolved = Arrays.copyOf(rows, rows.length);
 	}
 
 	public String getSql() {
@@ -101,8 +104,9 @@ public class StatementDetails {
 		return ignoreExceptions;
 	}
 
-	public final void setIgnoreExceptions(boolean ignoreExceptions) {
+	public final StatementDetails setIgnoreExceptions(boolean ignoreExceptions) {
 		this.ignoreExceptions = ignoreExceptions;
+    return this;
 	}
 
 	public boolean requiresGeneratedKeys() {
@@ -184,6 +188,10 @@ public class StatementDetails {
 	public Timeout getTimeout() {
 		return timeout;
 	}
+  
+  public DBRow[] getTablesInvolved(){
+    return tablesInvolved;
+  }
 
 //  public int getAttemptCount() {
 //    return attemptCount;
