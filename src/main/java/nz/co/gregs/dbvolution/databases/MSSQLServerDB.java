@@ -334,7 +334,7 @@ public class MSSQLServerDB extends DBDatabaseImplementation implements SupportsP
       String table = allMatches.get(0).getNamedCapture("table");
       DBStatement stmt = details.getDBStatement();
       final String sql = "SET IDENTITY_INSERT [" + table + "] ON;"+System.lineSeparator()+details.getSql()+"SET IDENTITY_INSERT [" + table + "] OFF;";
-      stmt.execute(new StatementDetails("Allow identity insertion", QueryIntention.ALLOW_IDENTITY_INSERT, sql, stmt, getTimeout()));
+      stmt.execute(new StatementDetails("Allow identity insertion", QueryIntention.ALLOW_IDENTITY_INSERT, sql, stmt, getTimeout(), details.getTablesInvolved()));
       return ResponseToException.SKIPQUERY;
     } 
     if (intent.is(QueryIntention.CREATE_TABLE) && CREATING_EXISTING_TABLE_PATTERN.matchesWithinString(message)) {
