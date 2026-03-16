@@ -85,6 +85,7 @@ public class DBMultiPoint2D extends QueryableDatatype<MultiPoint> implements Mul
 	 *
 	 * @param point the value to be set in the database.
 	 */
+  @Override
 	public void setValue(MultiPoint point) {
 		setLiteralValue(point);
 	}
