@@ -20,6 +20,8 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import nz.co.gregs.dbvolution.actions.DBActionList;
+import nz.co.gregs.dbvolution.actions.DBBulkInsert;
+import nz.co.gregs.dbvolution.actions.DBInsert;
 import nz.co.gregs.dbvolution.example.CarCompany;
 import nz.co.gregs.dbvolution.example.Marque;
 import nz.co.gregs.dbvolution.generic.AbstractTest;
@@ -61,7 +63,11 @@ public class DBDatabaseInsertTest extends AbstractTest {
     marques.getAllRows();
 
 		final int updatedNumberOfCarCompanies = allCarCompanies.getAllRows().size();
-		assertThat(changes.size(), is(3));
+//		assertThat(changes.size(), is(3));
+		assertThat(changes.size(), is(2));
+    assertThat(changes.get(0), instanceOf(DBBulkInsert.class));
+    assertThat(changes.get(1), instanceOf(DBInsert.class));
+    assertThat(changes.getRowsAlteredCount(), is(3l));
 		assertThat(marques.getAllRows().size(), is(originalNumberOfMarques + 2));
 		assertThat(
 				updatedNumberOfCarCompanies,
