@@ -205,8 +205,7 @@ public class MultiPoint2DExpression extends Spatial2DExpression<MultiPoint, Mult
 
 	@Override
 	protected boolean isNullSafetyTerminator() {
-		return moreNullProtectionRequired == false
-				|| super.isNullSafetyTerminator();
+		return super.isNullSafetyTerminator();
 	}
 
 	@Override
