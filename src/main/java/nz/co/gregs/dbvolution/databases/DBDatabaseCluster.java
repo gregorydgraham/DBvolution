@@ -999,135 +999,131 @@ public class DBDatabaseCluster extends DBDatabaseImplementation {
     }
   }
 
-//  private transient final Object EXECUTING_ON_MEMBERS = new Object();
-  
-	private DBActionList executeDBActionOnClusterMembers(DBAction action) throws NoAvailableDatabaseException, SQLException {
-//    synchronized (EXECUTING_ON_MEMBERS) {
-      LOG.debug("EXECUTING ACTION: " + action.getSQLStatements(this));
-      // this is _immediately_ an important change to the state of the cluster so 
-      // so synchronising the whole method is reasonable
-      // ... probably
-      getDetails().addActionToQueues(action);
-      long expectedResult = 0;
-      List<ActionTask> tasks = new ArrayList<>();
-      DBActionList actionsPerformed = new DBActionList();
-      try {
-        // get all the ready databases we can work on
-        DBDatabase[] readyDatabases = getDetails().getRandomReadyDatabaseArray();
-        if (readyDatabases.length == 0) {
-          throw new NoAvailableDatabaseException(this);
-        }
-        DBDatabase firstDatabase = null;
-        SQLException firstException = null;
-        boolean succeeded = false;
-        if (action.requiresRunOnIndividualDatabaseBeforeCluster()) {
-          // Because of autoincrement PKs we need to execute on one database first
-          // We need a marker to indicate that the action has been successfully 
-          // completed
-          succeeded = false;
-          // and we need to know the databases that have failed to act on the 
-          // request, so we don't endless try another database if (for instance)
-          // the database table doesn't exist.
-          DatabaseList failures = new DatabaseList();
-          // using a while loop because our target conditions are constantly 
-          // changing
-          int index = 0;
-          while (!succeeded && index < readyDatabases.length && failures.size() != readyDatabases.length) {
-            // get a random database
-            DBDatabase database = readyDatabases[index];
-            // make sure we move the counter on
-            index++;
-            // be positive
-            firstDatabase = database;
-            // be pessimistic
-            boolean notYetFailed = failures.add(database);
-            // if this database is new to the failed list then we can try the 
-            // action
-            if (notYetFailed) {
-              // prepare for errors
-              try {
-                // make our task to perform
-                final ActionTask task = new ActionTask(this, database, action, Consequence.None);
-                // for real do the action, via the task
-                TaskResults callResults = task.call();
-                if (callResults.wasSuccessful()) {
-                  // store all the actions that were performed
-                  actionsPerformed.addAll(callResults.getActionsTaken());
-                  // store the result count for later
-                  expectedResult = callResults.getRowsAltered();
-                  // set the expectedResult on the action so the later calls 
-                  // are checked against the correct number
-                  action.setExpectedAlteredRows(expectedResult);
-                  // it didn't throw an exception so we can remove it from the queue
-                  getDetails().removeActionFromQueue(database, action);
-                  // celebrate
-                  LOG.debug("EXECUTED - cluster " + getLabel() + " used " + database.getLabel() + " for first execution of " + action.getIntent() + ":expect=" + action.getExpectedAlteredRows() + ":" + action.getSQLStatements(database));
-                  // pretend we weren't pessimistic
-                  failures.remove(database);
-                  // mark the work as done
-                  succeeded = true;
-                } else {
-                  // it didn't succeed but also didn't throw an exception, so 
-                  // proceed like a failure occurred
-                  // make sure the loop is aware of the issue
-                  succeeded = false;
-                  // clear the first database because we still haven't succeeded
-                  firstDatabase = null;
-                  // set exception if there was one
-                  if (firstException == null && callResults.exception != null) {
-                    firstException = callResults.exception;
-                  }
-                }
-              } catch (SQLException ex) {
-                // an exception was thrown so pessimism was correct
+  private DBActionList executeDBActionOnClusterMembers(DBAction action) throws NoAvailableDatabaseException, SQLException {
+    LOG.debug("EXECUTING ACTION: " + action.getSQLStatements(this));
+    // this is _immediately_ an important change to the state of the cluster so 
+    // so synchronising the whole method is reasonable
+    // ... probably
+    getDetails().addActionToQueues(action);
+    long expectedResult = 0;
+    List<ActionTask> tasks = new ArrayList<>();
+    DBActionList actionsPerformed = new DBActionList();
+    try {
+      // get all the ready databases we can work on
+      DBDatabase[] readyDatabases = getDetails().getRandomReadyDatabaseArray();
+      if (readyDatabases.length == 0) {
+        throw new NoAvailableDatabaseException(this);
+      }
+      DBDatabase firstDatabase = null;
+      SQLException firstException = null;
+      boolean succeeded = false;
+      if (action.requiresRunOnIndividualDatabaseBeforeCluster()) {
+        // Because of autoincrement PKs we need to execute on one database first
+        // We need a marker to indicate that the action has been successfully 
+        // completed
+        succeeded = false;
+        // and we need to know the databases that have failed to act on the 
+        // request, so we don't endless try another database if (for instance)
+        // the database table doesn't exist.
+        DatabaseList failures = new DatabaseList();
+        // using a while loop because our target conditions are constantly 
+        // changing
+        int index = 0;
+        while (!succeeded && index < readyDatabases.length && failures.size() != readyDatabases.length) {
+          // get a random database
+          DBDatabase database = readyDatabases[index];
+          // make sure we move the counter on
+          index++;
+          // be positive
+          firstDatabase = database;
+          // be pessimistic
+          boolean notYetFailed = failures.add(database);
+          // if this database is new to the failed list then we can try the 
+          // action
+          if (notYetFailed) {
+            // prepare for errors
+            try {
+              // make our task to perform
+              final ActionTask task = new ActionTask(this, database, action, Consequence.None);
+              // for real do the action, via the task
+              TaskResults callResults = task.call();
+              if (callResults.wasSuccessful()) {
+                // store all the actions that were performed
+                actionsPerformed.addAll(callResults.getActionsTaken());
+                // store the result count for later
+                expectedResult = callResults.getRowsAltered();
+                // set the expectedResult on the action so the later calls 
+                // are checked against the correct number
+                action.setExpectedAlteredRows(expectedResult);
+                // it didn't throw an exception so we can remove it from the queue
+                getDetails().removeActionFromQueue(database, action);
+                // celebrate
+                LOG.debug("EXECUTED - cluster " + getLabel() + " used " + database.getLabel() + " for first execution of " + action.getIntent() + ":expect=" + action.getExpectedAlteredRows() + ":" + action.getSQLStatements(database));
+                // pretend we weren't pessimistic
+                failures.remove(database);
+                // mark the work as done
+                succeeded = true;
+              } else {
+                // it didn't succeed but also didn't throw an exception, so 
+                // proceed like a failure occurred
                 // make sure the loop is aware of the issue
                 succeeded = false;
                 // clear the first database because we still haven't succeeded
                 firstDatabase = null;
-                // grab the first exception if we haven't already
-                if (firstException == null) {
-                  firstException = ex;
+                // set exception if there was one
+                if (firstException == null && callResults.exception != null) {
+                  firstException = callResults.exception;
                 }
+              }
+            } catch (SQLException ex) {
+              // an exception was thrown so pessimism was correct
+              // make sure the loop is aware of the issue
+              succeeded = false;
+              // clear the first database because we still haven't succeeded
+              firstDatabase = null;
+              // grab the first exception if we haven't already
+              if (firstException == null) {
+                firstException = ex;
               }
             }
           }
         }
-        if (!succeeded) {
-          getDetails().removeActionFromQueues(action);
-          throw firstException;
-        } else {
-          // Now execute on all the other databases
-          for (DBDatabase nextDB : readyDatabases) {
-            // make sure we don't run it on the 
-            if (firstDatabase != null && nextDB.equals(firstDatabase)) {
-              // skip this database as it's already been actioned
-              continue;
-            }
-            if (action.runOnDatabaseDuringCluster(firstDatabase, nextDB)) {
-              final ActionTask task
-                      = new ActionTask(
-                              this,
-                              nextDB,
-                              action,
-                              Consequence.Quarantine,
-                              expectedResult
-                      );
-              tasks.add(task);
-              getDetails().removeActionFromQueue(nextDB, action);
-            }
+      }
+      if (!succeeded) {
+        getDetails().removeActionFromQueues(action);
+        throw firstException;
+      } else {
+        // Now execute on all the other databases
+        for (DBDatabase nextDB : readyDatabases) {
+          // make sure we don't run it on the 
+          if (firstDatabase != null && nextDB.equals(firstDatabase)) {
+            // skip this database as it's already been actioned
+            continue;
           }
-          ACTION_THREAD_POOL.invokeAll(tasks);
+          if (action.runOnDatabaseDuringCluster(firstDatabase, nextDB)) {
+            final ActionTask task
+                    = new ActionTask(
+                            this,
+                            nextDB,
+                            action,
+                            Consequence.Quarantine,
+                            expectedResult
+                    );
+            tasks.add(task);
+            getDetails().removeActionFromQueue(nextDB, action);
+          }
         }
-      } catch (InterruptedException ex) {
-        Logger.getLogger(DBDatabaseCluster.class.getName()).log(Level.SEVERE, null, ex);
-        Thread.currentThread().interrupt();
-        throw new DBRuntimeException("Unable To Execute " + action.getIntent(), ex);
+        ACTION_THREAD_POOL.invokeAll(tasks);
       }
-      if (actionsPerformed.isEmpty() && !tasks.isEmpty()) {
-        actionsPerformed = tasks.get(0).getActionList();
-      }
-      return actionsPerformed;
-//    }
+    } catch (InterruptedException ex) {
+      Logger.getLogger(DBDatabaseCluster.class.getName()).log(Level.SEVERE, null, ex);
+      Thread.currentThread().interrupt();
+      throw new DBRuntimeException("Unable To Execute " + action.getIntent(), ex);
+    }
+    if (actionsPerformed.isEmpty() && !tasks.isEmpty()) {
+      actionsPerformed = tasks.get(0).getActionList();
+    }
+    return actionsPerformed;
   }
 
 	@Override
@@ -1546,26 +1542,36 @@ public class DBDatabaseCluster extends DBDatabaseImplementation {
         }else{
           checkForQuarantine(useDB);
         }
-      } catch (SQLException|NoAvailableDatabaseException e) {
+      } catch (SQLException|NoAvailableDatabaseException except) {
         HandlerAdvice advice = 
-                cluster.handleExceptionDuringAction(e, 
+                cluster.handleExceptionDuringAction(except, 
                         useDB, 
                         action, 
                         consequence.isQuarantine()
                 );
         this.results.status = TaskStatus.FAILED;
-        if(e instanceof NoAvailableDatabaseException)
-          results.exception = new DBSQLException("Cluster change failed due to lack of available database", e);
+        if(except instanceof NoAvailableDatabaseException)
+          results.exception = new DBSQLException("Cluster change failed due to lack of available database", except);
         else {
-          this.results.exception = (SQLException) e;
+          this.results.exception = (SQLException) except;
         }
         results.handlerAdvice = advice;
         if (advice.equals(HandlerAdvice.ABORT)
                 || advice.equals(HandlerAdvice.REQUERY)) {
-          LOG.warn("Cluster "+cluster.getLabel()+" failed to action "+action.getIntent()+" on database "+database.getLabel()+", response is: "+advice.name(), e);
+          logException(
+                  except, 
+                  Level.WARNING, 
+                  "Cluster {0} failed to action {1} on database {2}, response is {3}", 
+                  cluster.getLabel(), action.getIntent(), database.getLabel(), advice.name()
+          );
+//          LOG.warn("Cluster "+cluster.getLabel()+" failed to action "+action.getIntent()+" on database "+database.getLabel()+", response is: "+advice.name(), e);
         }
       }
       return results;
+    }
+      
+    public void logException(Throwable exception, Level level, String message, Object... messageItems) { 
+      cluster.getDetails().logException(exception, level, message, messageItems);
     }
 
     private static long sumRowsAltered(DBActionList actions) {
