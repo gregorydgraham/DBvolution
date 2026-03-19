@@ -30,6 +30,7 @@
  */
 package nz.co.gregs.dbvolution.utility;
 
+import java.io.Serializable;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
@@ -41,7 +42,7 @@ import nz.co.gregs.dbvolution.internal.query.QueryTimeout;
  *
  * @author gregorygraham
  */
-public class Timeout {
+public class Timeout implements Serializable{
   
 	protected static final Logger LOGGER = Logger.getLogger(QueryTimeout.class.getName());
 
@@ -85,6 +86,7 @@ public class Timeout {
       };
     }
   };
+  private static final long serialVersionUID = 1L;
 
   private Duration duration;
 
