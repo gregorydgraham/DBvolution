@@ -175,8 +175,10 @@ public class DBDatabaseTest extends AbstractTest {
       assertThat(database.tableExists(originalColumnTable), is(true));
       assertThat(database.tableExists(newColumntable), is(true));
 
+      try{
       // Ensure we can't query on the new structure because there are missing
       // columns
+      database.setQuietExceptionsPreference(true);
       SQLException except = Assert.assertThrows(SQLException.class, () -> database.getDBTable(newColumntable).setBlankQueryAllowed(true).getAllRows());
       Regex columnNotFound = Regex.startingAnywhere()
               .beginOrGroup()
@@ -195,6 +197,9 @@ public class DBDatabaseTest extends AbstractTest {
         except.printStackTrace();
       }
       Assert.assertTrue("Incorrect SQLException", columnNotFound.matchesWithinString(except.getLocalizedMessage()));
+      }finally{
+        database.setQuietExceptionsPreference(false);
+      }
 
       // Update the table to the new specification
       database.createOrUpdateTable(newColumntable);
