@@ -142,21 +142,21 @@ public class DBDatabaseClusterTest extends AbstractTest {
 					brake.apply();
 					cluster.addDatabase(slowSynchingDB);
 					assertThat(cluster.getDatabaseStatus(slowSynchingDB), not(DBDatabaseCluster.Status.READY));
-          Looper loop = Looper.loopUntilSuccessOrLimit(5);
+          final Looper loop = Looper.loopUntilSuccessOrLimit(5);
           loop.loop(
                   (index) -> {
                     try {
                       assertThat(slowSynchingDB.getDBTable(testTable).count(), is(0l));
                     } catch (SQLException ex) {
                       System.out.print("KNOWN ERROR OCCURRED: this sometimes occurs because synchronising the cluster involves dropping and creating tables");
-                      System.out.println(", and in this test we directly query a clustered database." + ex);
+                      System.out.println(", and in this test we directly query a clustered database, which is inappropriate." + ex);
                       System.out.println("KNOWN ERROR OCCURRED: " + ex);
                       System.out.print("KNOWN ERROR OCCURRED: this sometimes occurs because synchronising the cluster involves dropping and creating tables");
-                      System.out.println(", and in this test we directly query a clustered database." + ex);
+                      System.out.println(", and in this test we directly query a clustered database, which is inappropriate." + ex);
                     }
                   });
 
-          Looper looper = Looper.loopUntilSuccessOrLimit(5);
+          final Looper looper = Looper.loopUntilSuccessOrLimit(5);
           looper.loop(
                   (index) -> {
                     try {
@@ -1652,12 +1652,13 @@ public class DBDatabaseClusterTest extends AbstractTest {
 
         // perform (or not 🤞) the insert
         try {
+          cluster.setQuietExceptionsPreference(true);
           insert = cluster.insert(tab);
         } catch (SQLException sqlex) {
           didThrowException = true;
+        } finally{
+          cluster.setQuietExceptionsPreference(false);
         }
-
-        cluster.print(cluster.get(tab));
 
         // check that everything happened as it should have
         // - insert failed
