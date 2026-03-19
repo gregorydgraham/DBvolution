@@ -30,6 +30,7 @@
  */
 package nz.co.gregs.dbvolution.internal.database;
 
+import java.time.ZonedDateTime;
 import java.util.logging.Level;
 
 /**
@@ -42,6 +43,7 @@ public class LoggedException {
   private final Level level;
   private final String message;
   private final Object[] messageItems;
+  private final ZonedDateTime time = ZonedDateTime.now();
 
   public LoggedException(Throwable exception, Level level, String message, Object[] messageItems) {
     this.exception = exception;
@@ -76,6 +78,13 @@ public class LoggedException {
    */
   public Object[] getMessageItems() {
     return messageItems;
+  }
+
+  /**
+   * @return the time
+   */
+  public ZonedDateTime getTime() {
+    return time;
   }
   
 }
